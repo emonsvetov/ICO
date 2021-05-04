@@ -1,2 +1,0 @@
-# ICO
-Incentco v3
