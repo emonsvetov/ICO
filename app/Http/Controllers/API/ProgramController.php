@@ -9,6 +9,9 @@ use App\Http\Requests\ProgramRequest;
 use App\Models\Program;
 use App\Models\Organization;
 
+use App\Events\ProgramCreated;
+
+
 class ProgramController extends Controller
 {
     public function index( Organization $organization )
@@ -54,6 +57,9 @@ class ProgramController extends Controller
         {
             return response(['errors' => 'Program Creation failed'], 422);
         }
+
+        
+        ProgramCreated::dispatch( $newProgram );
         
         return response([ 'program' => $newProgram ]);
     }

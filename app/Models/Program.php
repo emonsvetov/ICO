@@ -11,6 +11,11 @@ class Program extends Model
 
     protected $guarded = [];
 
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+    
     public function programs()
     {
         return $this->hasMany(Program::class);
