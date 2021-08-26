@@ -25,4 +25,9 @@ class Program extends Model
     {
         return $this->hasMany(Program::class)->with('childrenPrograms');
     }
+
+    public function events()
+    {
+        return $this->hasMany(Event::class);
+    }
 }
