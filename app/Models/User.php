@@ -8,7 +8,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+use App\Notifications\ResetPasswordNotification;
+
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -18,6 +20,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
+        'organization_id',
         'name',
         'email',
         'password',
@@ -46,5 +49,14 @@ class User extends Authenticatable
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);
+    }
+
+    
+    public function sendPasswordResetNotification($token)
+    {
+        
+        $url = env('APP_URL', 'http://localhost') . '/reset-password?token=' . $token;
+
+        $this->notify(new ResetPasswordNotification($url));
     }
 }

@@ -57,9 +57,13 @@ class ParticipantGroupUserController extends Controller
             return response(['errors' => 'Not all Users belong to the Organization'], 422);
         }
 
-        
 
-        $participantGroup->users()->attach( $insert );
+        $participantGroup->users()->newPivotQuery()->upsert( 
+            $insert, 
+            ['user_id', 'participant_group_id'], 
+            ['user_id', 'participant_group_id']
+    );
+        
 
         if ( !$participantGroup->users )
         {

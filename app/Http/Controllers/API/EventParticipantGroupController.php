@@ -59,9 +59,12 @@ class EventParticipantGroupController extends Controller
             return response(['errors' => 'Not all ParticipantGroups belong to the Organization'], 422);
         }
 
-        
 
-        $event->participant_groups()->attach( $insert );
+        $event->participant_groups()->newPivotQuery()->upsert( 
+                $insert, 
+                ['participant_group_id', 'event_id'], 
+                ['participant_group_id', 'event_id']
+        );
 
         if ( !$event->participant_groups )
         {
