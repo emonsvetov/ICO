@@ -17,8 +17,22 @@ class CreateEventsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('organization_id');
             $table->unsignedBigInteger('program_id');
-
+			
+			$table->boolean('enable')->nullable();
             $table->string('name');
+			$table->integer('type_id'); //dropdown pending
+			$table->string('icon');
+			$table->float('amount');
+			$table->boolean('allow_amount_overriding');
+			$table->integer('email_template_id'); //dropdown pending
+			$table->boolean('post_to_social_wall');
+			$table->text('message');
+			$table->boolean('include_in budget')->nullable(); //pending to check
+			$table->boolean('enable_schedule_award')->nullable();
+			$table->boolean('is_birthday_award')->nullable();
+			$table->boolean('is_anniversary_award')->nullable();
+			$table->integer('ledger_code')->nullable();
+		
 
             $table->timestamps();
 
