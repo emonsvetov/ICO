@@ -27,7 +27,7 @@ class CreateEventsTable extends Migration
 			$table->integer('email_template_id'); //dropdown pending
 			$table->boolean('post_to_social_wall');
 			$table->text('message');
-			$table->boolean('include_in budget')->nullable(); //pending to check
+			$table->boolean('include_in_budget')->nullable(); //pending to check
 			$table->boolean('enable_schedule_award')->nullable();
 			$table->boolean('is_birthday_award')->nullable();
 			$table->boolean('is_anniversary_award')->nullable();
