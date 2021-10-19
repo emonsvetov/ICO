@@ -24,8 +24,20 @@ class UserRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|string',
+            'first_name' => 'required|string',
+			'last_name' =>  'required|string',
             'email' => 'required|email|unique:users',
+			'phone'=> 'nullable|string|max:50',
+			'award_level'=> 'required|string',
+			'work_anniversary'=> 'nullable|date',
+			'dob'=> 'nullable|date',
+			'username'=> 'nullable|string',
+			'division'=> 'nullable|string',
+			'office_location'=> 'nullable|string',
+			'position_title'=> 'nullable|string',
+			'position_grade_level'=> 'nullable|string',
+			'supervisor_employee_number'=> 'nullable|integer',
+			'organizational_head_employee_number'=> 'nullable|integer',
         ];
     }
 }
