@@ -27,7 +27,7 @@ class UserRegisterRequest extends FormRequest
             'first_name' => 'required|string',
 			'last_name' =>  'required|string',
             'email' => 'required|email|unique:users',
-            'password' => 'required',
+            'password' => 'required|confirmed',
         ];
     }
 }

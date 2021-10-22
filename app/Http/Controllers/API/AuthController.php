@@ -22,12 +22,10 @@ class AuthController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        $user = User::create([
-            'organization_id' => $organization->id,
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password)
-        ]);
+        $registerFields = $request->validated();
+        $registerFields['password'] = bcrypt($request->password);
+
+        $user = User::create( $registerFields );
 
         if ( !$user )
         {
