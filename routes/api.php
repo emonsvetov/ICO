@@ -98,4 +98,3 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
 
 });
-

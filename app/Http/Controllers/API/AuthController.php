@@ -24,7 +24,7 @@ class AuthController extends Controller
 
         $registerFields = $request->validated();
         $registerFields['password'] = bcrypt($request->password);
-
+        $registerFields['organization_id'] = $organization->id;
         $user = User::create( $registerFields );
 
         if ( !$user )

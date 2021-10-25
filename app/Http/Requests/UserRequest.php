@@ -24,11 +24,10 @@ class UserRequest extends FormRequest
     public function rules()
     {
         return [
-            'organization_id' => 'nullable|integer',
             'user_status_id' => 'nullable|integer',
             'first_name' => 'required|string',
 			'last_name' =>  'required|string',
-            'email' => 'required|email|unique:users',
+            'email' => 'required|email|unique:users,id',
             'email_verified_at'=>'nullable',
             'password'=>'required|string',
 			'phone'=> 'nullable|string|max:50',
@@ -43,10 +42,9 @@ class UserRequest extends FormRequest
 			'position_grade_level'=> 'nullable|string',
 			'supervisor_employee_number'=> 'nullable|integer',
 			'organizational_head_employee_number'=> 'nullable|integer',
-
-            'deactivated'=> 'nullable',
-            'activated'=> 'nullable',
-            'state_updated'=> 'nullable',
+            'deactivated'=> 'nullable|date_format:Y-m-d H:i:s',
+            'activated'=> 'nullable|date_format:Y-m-d H:i:s',
+            'state_updated'=> 'nullable|date_format:Y-m-d H:i:s',
             'last_location'=> 'nullable|string',
             'update_id'=> 'nullable|integer',
         ];
