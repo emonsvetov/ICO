@@ -98,4 +98,3 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Route::delete('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'destroy'])->name('api.v1.organization.user.destroy');
 
 });
-
