@@ -12,6 +12,6 @@ class Permission extends Model
 
     public function profiles()
     {
-        return $this->belongsToMany('App\Role')->withTimestamps();
+        return $this->belongsToMany(Role::class)->withTimestamps();
     }
 }

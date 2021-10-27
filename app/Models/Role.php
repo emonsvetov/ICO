@@ -12,12 +12,12 @@ class Role extends Model
 
     public function permissions()
     {
-        return $this->belongsToMany('App\Permission')->withTimestamps();
+        return $this->belongsToMany(Permission::class)->withTimestamps();
     }
 
     public function users()
     {
-        return $this->belongsToMany('App\User')->withTimestamps();
+        return $this->belongsToMany(User::class)->withTimestamps();
     }
 
     public function allowTo($permission)
