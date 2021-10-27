@@ -96,5 +96,4 @@ Route::middleware(['auth:api', 'json.response'])->group(function () {
 Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () {
 
 
-
 });

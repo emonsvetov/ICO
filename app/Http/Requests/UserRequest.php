@@ -27,7 +27,7 @@ class UserRequest extends FormRequest
             'user_status_id' => 'nullable|integer',
             'first_name' => 'required|string',
 			'last_name' =>  'required|string',
-            'email' => 'required|email|unique:users,id',
+            'email' => 'required|email|unique:users',
             'email_verified_at'=>'nullable',
             'password'=>'required|string',
 			'phone'=> 'nullable|string|max:50',
