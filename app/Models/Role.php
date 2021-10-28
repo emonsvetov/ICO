@@ -24,4 +24,14 @@ class Role extends Model
     {
         return $this->permissions()->save($permission);
     }
+
+    public function revoke($permission)
+    {
+        return $this->permissions()->detach($permission);
+    }
+
+    public function permissionNames()
+    {
+        return $this->permissions->flatten()->pluck('name')->unique();
+    }
 }
