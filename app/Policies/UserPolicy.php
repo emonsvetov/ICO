@@ -17,7 +17,7 @@ class UserPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('viewAny-user');
+       // return $user->permissions()->contains('viewAny-user');
     }
 
     /**
