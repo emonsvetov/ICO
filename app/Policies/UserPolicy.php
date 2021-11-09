@@ -17,7 +17,7 @@ class UserPolicy
      */
     public function viewAny(User $user)
     {
-       // return $user->permissions()->contains('viewAny-user');
+       return $user->permissions()->contains('view-user');
     }
 
     /**
@@ -27,9 +27,9 @@ class UserPolicy
      * @param  \App\Models\User  $model
      * @return mixed
      */
-    public function view(User $user, User $model)
+    public function view(User $authenticatedUser, User $user)
     {
-        return $user->permissions()->contains('view-user');
+        return $authenticatedUser->id === $user->id ||  $user->permissions()->contains('view-user');
     }
 
     /**
