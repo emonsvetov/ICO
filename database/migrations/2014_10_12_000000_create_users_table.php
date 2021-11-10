@@ -27,8 +27,8 @@ class CreateUsersTable extends Migration
 			$table->string('last_name');
 			//$table->string('email',320)->nullable();
 			$table->string('phone',50)->nullable();
-			$table->string('award_level');
-			$table->date('work_anniversary')->nullable();;
+			$table->string('award_level')->nullable();
+			$table->date('work_anniversary')->nullable();
 			$table->date('dob')->nullable();
 			$table->string('username')->nullable();
             $table->integer('employee_number')->nullable();
