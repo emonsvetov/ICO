@@ -17,7 +17,8 @@ class UserPolicy
      */
     public function viewAny(User $user)
     {
-       return $user->permissions()->contains('view-user');
+        return $user->permissions()->contains('view-user');
+        //
     }
 
     /**
@@ -29,7 +30,7 @@ class UserPolicy
      */
     public function view(User $authenticatedUser, User $user)
     {
-        return $authenticatedUser->id === $user->id ||  $user->permissions()->contains('view-user');
+        return $authenticatedUser->id === $user->id ||  $authenticatedUser->permissions()->contains('view-user');
     }
 
     /**
@@ -40,7 +41,7 @@ class UserPolicy
      */
     public function create(User $user)
     {
-        return $user->permissions()->contains('create-user');
+        //return $user->permissions()->contains('create-user');
     }
 
     /**
