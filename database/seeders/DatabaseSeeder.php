@@ -66,6 +66,30 @@ class DatabaseSeeder extends Seeder
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime
             ],
+            [
+                'name' => 'create-permission',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'update-permission',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'delete-permission',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'view-permission',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
         ]);
     }
 }
