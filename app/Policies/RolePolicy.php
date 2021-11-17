@@ -18,7 +18,7 @@ class RolePolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-role');
+        return $user->permissions()->contains('view-permission-role');
     }
 
     /**
@@ -30,7 +30,7 @@ class RolePolicy
      */
     public function view(User $user, Role $role)
     {
-        return $user->permissions()->contains('view-role');
+        return $user->permissions()->contains('view-permission-role');
     }
 
     /**
@@ -41,7 +41,7 @@ class RolePolicy
      */
     public function create(User $user)
     {
-        return $user->permissions()->contains('create-role');
+        return $user->permissions()->contains('create-permission-role');
     }
 
     /**
@@ -53,7 +53,7 @@ class RolePolicy
      */
     public function update(User $user, Role $role)
     {
-        return $user->permissions()->contains('update-role');
+        return $user->permissions()->contains('update-permission-role');
     }
 
     /**
@@ -65,7 +65,7 @@ class RolePolicy
      */
     public function delete(User $user, Role $role)
     {
-        return $user->permissions()->contains('delete-role');
+        return $user->permissions()->contains('delete-permission-role');
     }
 
     /**
@@ -91,4 +91,29 @@ class RolePolicy
     {
         //
     }*/
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Permission  $permission
+     * @return mixed
+     */
+    public function assign(User $user, Role $role)
+    {
+        return $user->permissions()->contains('update-permission-role');
+    }
+     /**
+     * Determine whether the user can delete the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Permission  $permission
+     * @return mixed
+     */
+    public function revoke(User $user, Role $role)
+    {
+        return $user->permissions()->contains('delete-permission-role');
+    }
+   
+    
 }

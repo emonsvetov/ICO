@@ -18,7 +18,7 @@ class PermissionPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-permission');
+        return $user->permissions()->contains('view-permission-role');
     }
 
     /**
@@ -28,9 +28,10 @@ class PermissionPolicy
      * @param  \App\Models\Permission  $permission
      * @return mixed
      */
-    public function view(User $user, Permission $permission)
+    public function view(User $user, Role $role)
     {
-        return $user->permissions()->contains('view-permission');
+        //print_r('testing'); die;
+        return $user->permissions()->contains('view-permission-role');
     }
 
     /**
@@ -100,7 +101,7 @@ class PermissionPolicy
      */
     public function assign(User $user, Permission $permission)
     {
-        return $user->permissions()->contains('update-permissionrole');
+        return $user->permissions()->contains('update-permission-role');
     }
      /**
      * Determine whether the user can delete the model.
@@ -111,6 +112,6 @@ class PermissionPolicy
      */
     public function revoke(User $user, Permission $permission)
     {
-        return $user->permissions()->contains('delete-permission');
+        return $user->permissions()->contains('delete-permission-role');
     }
 }

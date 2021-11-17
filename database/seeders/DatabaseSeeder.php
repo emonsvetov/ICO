@@ -67,25 +67,25 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => $current_datetime
             ],
             [
-                'name' => 'create-permission',
+                'name' => 'create-permission-role',
                 'description' => null,
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime
             ],
             [
-                'name' => 'update-permission',
+                'name' => 'update-permission-role',
                 'description' => null,
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime
             ],
             [
-                'name' => 'delete-permission',
+                'name' => 'delete-permission-role',
                 'description' => null,
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime
             ],
             [
-                'name' => 'view-permission',
+                'name' => 'view-permission-role',
                 'description' => null,
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime
