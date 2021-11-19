@@ -17,8 +17,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         'App\User' => 'App\Policies\UserPolicy',
-        'App\Role' => 'App\Policies\RoleAndPermissionPolicy',
-        'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
+        'App\Role' => 'App\Policies\RolePolicy',
+        //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
 
@@ -30,6 +30,7 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
+
         if (! $this->app->routesAreCached()) {
             Passport::routes();
         }
