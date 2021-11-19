@@ -49,6 +49,8 @@ class AuthController extends Controller
 
         $accessToken = auth()->user()->createToken('authToken')->accessToken;
 
+        auth()->user()->roles->map->permissions->flatten()->pluck('name')->unique();
+
         return response(['user' => auth()->user(), 'access_token' => $accessToken]);
 
     }

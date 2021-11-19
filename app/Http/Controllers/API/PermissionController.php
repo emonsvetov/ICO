@@ -36,6 +36,8 @@ class PermissionController extends Controller
             $role->allowTo($permission);
         }
         
+        $role->refresh();
+
         $role->permissions;
 
         return response( $role );

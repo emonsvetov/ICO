@@ -21,6 +21,11 @@ class RoleController extends Controller
 
         if ( $roles->isNotEmpty() ) 
         { 
+            foreach ($roles as $role) 
+            {
+                $role->permissions;
+            }
+            
             return response( $roles );
         }
 
@@ -92,6 +97,8 @@ class RoleController extends Controller
         { 
             return response(['errors' => 'Invalid'], 404);
         }
+        
+        $user->roles->map->permissions->flatten()->pluck('name')->unique();
 
         return response( $user->roles );
     }
