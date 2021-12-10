@@ -21,11 +21,31 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'organization_id',
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
+        'award_level',
+        'user_status_id',
+        'email_verified_at',
+        'phone',
+        'work_anniversary',
+        'dob',
+		'username',
+        'employee_number',
+		'division',
+        'office_location',
+        'position_title',
+        'position_grade_level',
+        'supervisor_employee_number',
+        'organizational_head_employee_number',
+        'deactivated',
+        'activated',
+        'state_updated',
+        'last_location',
+        'update_id'
     ];
-
+    
     /**
      * The attributes that should be hidden for arrays.
      *
@@ -58,5 +78,32 @@ class User extends Authenticatable implements MustVerifyEmail
         $url = env('APP_URL', 'http://localhost') . '/reset-password?token=' . $token;
 
         $this->notify(new ResetPasswordNotification($url));
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class)->withTimestamps();
+    }
+
+    public function assignRole($role)
+    {
+        return $this->roles()->sync($role);
+        //return $this->roles()->save($role);
+        //$this->permissions()->save($permission);
+    }
+
+    public function permissions()
+    {
+        return $this->roles->map->permissions->flatten()->pluck('name')->unique();
+    }
+
+    public function roleNames()
+    {
+        return $this->roles->flatten()->pluck('name')->unique();
+    }
+
+    public function revokeRole($role)
+    {
+        return $this->roles()->detach($role);
     }
 }

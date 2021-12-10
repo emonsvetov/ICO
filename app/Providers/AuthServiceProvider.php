@@ -16,6 +16,9 @@ class AuthServiceProvider extends ServiceProvider
      * @var array
      */
     protected $policies = [
+        'App\User' => 'App\Policies\UserPolicy',
+        'App\Role' => 'App\Policies\RolePolicy',
+        //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
 
@@ -42,5 +45,14 @@ class AuthServiceProvider extends ServiceProvider
                 ->action('Verify Email Address', $verifyUrl);
         });
 
+        /* USE THIS IF YOU WANT AN ADMIN USER
+        Gate::before(function (User $user)
+                    {
+                        if($user->roles->pluck('name')->contains('admin'))
+                        {
+                            return true;
+                        }
+                    });
+        */
     }
 }

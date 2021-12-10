@@ -24,7 +24,7 @@ class AuthController extends Controller
 
         $registerFields = $request->validated();
         $registerFields['password'] = bcrypt($request->password);
-
+        $registerFields['organization_id'] = $organization->id;
         $user = User::create( $registerFields );
 
         if ( !$user )
@@ -48,6 +48,8 @@ class AuthController extends Controller
         }
 
         $accessToken = auth()->user()->createToken('authToken')->accessToken;
+
+        auth()->user()->roles->map->permissions->flatten()->pluck('name')->unique();
 
         return response(['user' => auth()->user(), 'access_token' => $accessToken]);
 
