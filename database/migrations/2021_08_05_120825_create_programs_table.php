@@ -33,7 +33,7 @@ class CreateProgramsTable extends Migration
             $table->string('public_contact_email',165)->nullable();
             $table->string('prefix',8)->nullable();
             $table->string('external_id',45)->nullable();
-			//Label  - don’t use 
+			//Label  - donï¿½t use 
             //$table->integer('program_type_id')->nullable(); //pending dropdown
             $table->string('corporate_entity', 250)->nullable();
             //Expiration Rule:
@@ -158,6 +158,10 @@ class CreateProgramsTable extends Migration
             $table->boolean('team_management_view')->nullable();
             //Goal Tracker
             $table->boolean('uses_goal_tracker')->nullable();
+
+            $table->string('status', 20)->nullable();
+
+            $table->fulltext('name');
 
 			$table->timestamps();
         });

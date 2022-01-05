@@ -10,7 +10,7 @@ use App\Models\Program;
 use App\Models\Organization;
 
 use App\Events\ProgramCreated;
-
+use DB;
 
 class ProgramController extends Controller
 {
@@ -19,16 +19,42 @@ class ProgramController extends Controller
         
         if ( $organization )
         {
+            $status = request()->get('status');
+            $keyword = request()->get('keyword');
+            $sortby = request()->get('sortby', 'id');
+            $direction = request()->get('direction', 'asc');
+
             $where = [
                 'organization_id'=>$organization->id
             ];
-            if(request()->get('status'))    {
-                $where['status'] = request()->get('status');
+            if( $status )    {
+                $where['status'] = $status;
             }
-            $programs = Program::whereNull('program_id')
-                                ->where($where)
-                                ->with('childrenPrograms')
-                                ->paginate(request()->get('limit', 10));
+
+            if( $sortby == "name" ) 
+            {
+                $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+                $orderByRaw = "{$sortby} {$collation} {$direction}";
+            }
+            else
+            {
+                $orderByRaw = "{$sortby} {$direction}";
+            }
+            
+            $query = Program::whereNull('program_id')
+            ->where($where);
+
+            if( $keyword )    {
+                $query = $query->where('name', 'LIKE', "%{$keyword}%");
+            }
+
+            $query = $query->orderByRaw($orderByRaw);
+            // DB::enableQueryLog();
+            
+            $programs = $query
+                        ->with('childrenPrograms')
+                        ->paginate(request()->get('limit', 10));
+            // return (DB::getQueryLog());
         }
         else
         {
