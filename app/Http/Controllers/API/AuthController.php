@@ -5,20 +5,27 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+use Illuminate\Auth\Events\Registered;
+
 use App\Http\Requests\UserRegisterRequest;
 use App\Http\Requests\UserLoginRequest;
+use App\Models\Organization;
 use App\Models\User;
 
 class AuthController extends Controller
 {
     
-    public function register(UserRegisterRequest $request)
+    public function register(UserRegisterRequest $request, Organization $organization)
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password)
-        ]);
+        if ( ! $organization )
+        {
+            return response(['errors' => 'Invalid Organization'], 422);
+        }
+
+        $registerFields = $request->validated();
+        $registerFields['password'] = bcrypt($request->password);
+        $registerFields['organization_id'] = $organization->id;
+        $user = User::create( $registerFields );
 
         if ( !$user )
         {
@@ -26,6 +33,8 @@ class AuthController extends Controller
         }
 
         $accessToken = $user->createToken('authToken')->accessToken;
+
+        event(new Registered($user));
         
         return response([ 'user' => $user, 'access_token' => $accessToken]);
     }
@@ -39,6 +48,8 @@ class AuthController extends Controller
         }
 
         $accessToken = auth()->user()->createToken('authToken')->accessToken;
+
+        auth()->user()->roles->map->permissions->flatten()->pluck('name')->unique();
 
         return response(['user' => auth()->user(), 'access_token' => $accessToken]);
 

@@ -19,17 +19,21 @@ class ProgramController extends Controller
         
         if ( $organization )
         {
+            $where = [
+                'organization_id'=>$organization->id
+            ];
+            if(request()->get('status'))    {
+                $where['status'] = request()->get('status');
+            }
             $programs = Program::whereNull('program_id')
-                                ->where('organization_id', $organization->id)
+                                ->where($where)
                                 ->with('childrenPrograms')
-                                ->get();
+                                ->paginate(request()->get('limit', 10));
         }
         else
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
-       
-
         if ( $programs->isNotEmpty() ) 
         { 
             return response( $programs );

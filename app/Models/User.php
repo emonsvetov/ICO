@@ -8,7 +8,9 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
 
-class User extends Authenticatable
+use App\Notifications\ResetPasswordNotification;
+
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -18,11 +20,32 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name',
+        'organization_id',
+        'first_name',
+        'last_name',
         'email',
         'password',
+        'award_level',
+        'user_status_id',
+        'email_verified_at',
+        'phone',
+        'work_anniversary',
+        'dob',
+		'username',
+        'employee_number',
+		'division',
+        'office_location',
+        'position_title',
+        'position_grade_level',
+        'supervisor_employee_number',
+        'organizational_head_employee_number',
+        'deactivated',
+        'activated',
+        'state_updated',
+        'last_location',
+        'update_id'
     ];
-
+    
     /**
      * The attributes that should be hidden for arrays.
      *
@@ -41,4 +64,46 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    
+    public function participant_groups()
+    {
+        return $this->belongsToMany(ParticipantGroup::class);
+    }
+
+    
+    public function sendPasswordResetNotification($token)
+    {
+        
+        $url = env('APP_URL', 'http://localhost') . '/reset-password?token=' . $token;
+
+        $this->notify(new ResetPasswordNotification($url));
+    }
+
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class)->withTimestamps();
+    }
+
+    public function assignRole($role)
+    {
+        return $this->roles()->sync($role);
+        //return $this->roles()->save($role);
+        //$this->permissions()->save($permission);
+    }
+
+    public function permissions()
+    {
+        return $this->roles->map->permissions->flatten()->pluck('name')->unique();
+    }
+
+    public function roleNames()
+    {
+        return $this->roles->flatten()->pluck('name')->unique();
+    }
+
+    public function revokeRole($role)
+    {
+        return $this->roles()->detach($role);
+    }
 }
