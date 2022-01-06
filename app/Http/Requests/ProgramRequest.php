@@ -25,11 +25,11 @@ class ProgramRequest extends FormRequest
     {
         return [
             'program_id'            => 'nullable|integer',
-            'name'                  => 'required|string',
-            'setup_fee'             => 'required|numeric',
-            'is_pay_in_advance'     => 'required|boolean',
-            'is_invoice_for_rewards'=> 'required|boolean',
-            'is_add_default_merchants'=> 'required|boolean',
+            'name'                  => 'nullable|string',
+            'setup_fee'             => 'nullable|numeric',
+            'is_pay_in_advance'     => 'nullable|boolean',
+            'is_invoice_for_rewards'=> 'nullable|boolean',
+            'is_add_default_merchants'=> 'nullable|boolean',
 			//new
             'public_contact_email'=>'nullable|string|email',
             'prefix'=>'nullable|string',
