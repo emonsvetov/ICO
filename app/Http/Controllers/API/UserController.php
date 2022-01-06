@@ -22,9 +22,14 @@ class UserController extends Controller
             $direction = request()->get('direction', 'asc');
             $limit = request()->get('limit', 10);
 
-            $where = [
-                'organization_id'=>$organization->id
-            ];
+            $where[] = ['organization_id', $organization->id];
+
+            if( $keyword)
+            {
+                $where[] = [ DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%" ];
+               
+                //more search criteria here
+            }
 
             if( $sortby == 'name' )
             {
@@ -36,19 +41,9 @@ class UserController extends Controller
             }
 
             // DB::enableQueryLog();
-            $query = User::where($where);
-            if( $keyword)
-            {
-                $query = $query->where(
-                    DB::raw("CONCAT(first_name, ' ', last_name)"), 
-                    'LIKE', 
-                    "%{$keyword}%"
-                );
-                //more search criteria here
-            }
-
-            $users = $query->orderByRaw($orderByRaw)
-            ->paginate( $limit );
+            $users = User::where($where)
+                        ->orderByRaw($orderByRaw)
+                        ->paginate( $limit );
 
             // return (DB::getQueryLog());
 
