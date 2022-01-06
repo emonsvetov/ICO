@@ -55,14 +55,14 @@ class ProgramController extends Controller
             if ( request()->has('minimal') )
             {
                 $programs = $query->select('id', 'name')
-                                  ->with('childrenPrograms:program_id,id,name');                                  
+                                  ->with('childrenPrograms:program_id,id,name')
+                                  ->get();
             }
             else {
-                $programs = $query->with('childrenPrograms');
+                $programs = $query->with('childrenPrograms')
+                                  ->paginate(request()->get('limit', 10));
             }
-            
-            
-            $programs = $query->paginate(request()->get('limit', 10));
+
         }
         else
         {
