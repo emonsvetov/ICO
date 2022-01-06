@@ -24,11 +24,16 @@ class ProgramController extends Controller
             $sortby = request()->get('sortby', 'id');
             $direction = request()->get('direction', 'asc');
 
-            $where = [
-                'organization_id'=>$organization->id
-            ];
-            if( $status )    {
-                $where['status'] = $status;
+            $where[] = ['organization_id', $organization->id];
+
+            if( $status )
+            {
+                $where[] = ['status', $status];
+            }
+
+            if( $keyword )
+            {
+                $where[] = ['name', 'LIKE', "%{$keyword}%"];    
             }
 
             if( $sortby == "name" ) 
@@ -41,25 +46,30 @@ class ProgramController extends Controller
                 $orderByRaw = "{$sortby} {$direction}";
             }
             
-            $query = Program::whereNull('program_id')
-            ->where($where);
-
-            if( $keyword )    {
-                $query = $query->where('name', 'LIKE', "%{$keyword}%");
-            }
-
-            $query = $query->orderByRaw($orderByRaw);
-            // DB::enableQueryLog();
             
-            $programs = $query
-                        ->with('childrenPrograms')
-                        ->paginate(request()->get('limit', 10));
-            // return (DB::getQueryLog());
+            $query = Program::whereNull('program_id')
+                            ->where($where)
+                            ->orderByRaw($orderByRaw);
+            
+
+            if ( request()->has('minimal') )
+            {
+                $programs = $query->select('id', 'name')
+                                  ->with('childrenPrograms:program_id,id,name');                                  
+            }
+            else {
+                $programs = $query->with('childrenPrograms');
+            }
+            
+            
+            $programs = $query->paginate(request()->get('limit', 10));
         }
         else
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
+
+
         if ( $programs->isNotEmpty() ) 
         { 
             return response( $programs );
