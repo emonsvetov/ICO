@@ -26,6 +26,8 @@ class ProgramRequest extends FormRequest
         return [
             'program_id'            => 'nullable|integer',
             'name'                  => 'required|string',
+            'type'                  => 'required|string',
+            'status'                => 'nullable|string',
             'setup_fee'             => 'required|numeric',
             'is_pay_in_advance'     => 'required|boolean',
             'is_invoice_for_rewards'=> 'required|boolean',
@@ -107,6 +109,7 @@ class ProgramRequest extends FormRequest
 			'address'=>'nullable|string',
 			'address_ext'=>'nullable|string',
 			'city'=>'nullable|string',
+            'state'=>'nullable|string',
 			'zip'=>'nullable|string',
             //Social Wall
             'allow_hierarchy_to_view_social_wall'=>'nullable|boolean',
