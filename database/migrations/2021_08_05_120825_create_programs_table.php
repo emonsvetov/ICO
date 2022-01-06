@@ -159,10 +159,6 @@ class CreateProgramsTable extends Migration
             //Goal Tracker
             $table->boolean('uses_goal_tracker')->nullable();
 
-            $table->string('status', 20)->nullable();
-
-            $table->fulltext('name');
-
 			$table->timestamps();
         });
     }
