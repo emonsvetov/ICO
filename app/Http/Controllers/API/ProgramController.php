@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\ProgramRequest;
-use App\Models\Program;
-use App\Models\Organization;
-
+use App\Http\Controllers\Controller;
 use App\Events\ProgramCreated;
+use App\Models\Organization;
+use Illuminate\Http\Request;
+use App\Models\Program;
 use DB;
 
 class ProgramController extends Controller
@@ -67,12 +66,14 @@ class ProgramController extends Controller
             if ( request()->has('minimal') )
             {
                 $programs = $query->select('id', 'name')
-                                  ->with('childrenPrograms:program_id,id,name')
-                                  ->get();
+                ->with(['children' => function($query){
+                    return $query->select('id','name','program_id');
+                }])
+                ->get();
             }
             else {
-                $programs = $query->with('childrenPrograms')
-                                  ->paginate(request()->get('limit', 10));
+                $programs = $query->with('children')
+                ->paginate(request()->get('limit', 10));
             }
 
             // return (DB::getQueryLog());
@@ -128,14 +129,20 @@ class ProgramController extends Controller
         return response( [] );
     }
 
-    public function update(ProgramRequest $request, Organization $organization, Program $program )
+    public function update(Request $request, Organization $organization, Program $program )
     {
         if ( ! $program->exists ) 
         { 
             return response(['errors' => 'No Program Found'], 404);
         }
 
-        $program->update( $request->validated() );
+        if( $request->isMethod('patch') ) {
+            $program->update( $request->all() );
+        }
+        else
+        {
+            Validator::make($request->all(), (new ProgramRequest())->rules())->validate();
+        }
 
         return response([ 'program' => $program ]);
     }
