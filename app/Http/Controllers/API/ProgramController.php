@@ -23,17 +23,20 @@ class ProgramController extends Controller
             $keyword = request()->get('keyword');
             $sortby = request()->get('sortby', 'id');
             $direction = request()->get('direction', 'asc');
+            $findById = request()->get('findById', false);
 
             $where[] = ['organization_id', $organization->id];
+
+            $orWhere = [];
 
             if( $status )
             {
                 $where[] = ['status', $status];
             }
 
-            if( $keyword )
+            if( $keyword && !$findById )
             {
-                $where[] = ['name', 'LIKE', "%{$keyword}%"];    
+                $where[] = ['name', 'LIKE', "%{$keyword}%"];
             }
 
             if( $sortby == "name" ) 
@@ -45,11 +48,28 @@ class ProgramController extends Controller
             {
                 $orderByRaw = "{$sortby} {$direction}";
             }
-            
+            // DB::enableQueryLog();
+
+            function orWhere( $keyword ) {
+                return $query->orWhere(function($query1) {
+                    $query1->where('id', 'LIKE', "%{$keyword}%")
+                    ->where('name', 'LIKE', "%{$keyword}%");
+                    return $query1;
+                });
+            }
             
             $query = Program::whereNull('program_id')
-                            ->where($where)
-                            ->orderByRaw($orderByRaw);
+                            ->where($where);
+
+            if( $keyword && $findById )
+            {
+                $query = $query->where(function($query1) use($keyword) {
+                    $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                    ->orWhere('name', 'LIKE', "%{$keyword}%");
+                });
+            }
+
+            $query = $query->orderByRaw($orderByRaw);
             
 
             if ( request()->has('minimal') )
@@ -62,6 +82,8 @@ class ProgramController extends Controller
                 $programs = $query->with('childrenPrograms')
                                   ->paginate(request()->get('limit', 10));
             }
+
+            // return (DB::getQueryLog());
 
         }
         else

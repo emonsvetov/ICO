@@ -43,7 +43,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'activated',
         'state_updated',
         'last_location',
-        'update_id'
+        'update_id',
+        'role'
     ];
     
     /**
