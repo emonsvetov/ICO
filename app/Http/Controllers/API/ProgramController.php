@@ -49,14 +49,6 @@ class ProgramController extends Controller
                 $orderByRaw = "{$sortby} {$direction}";
             }
             // DB::enableQueryLog();
-
-            function orWhere( $keyword ) {
-                return $query->orWhere(function($query1) {
-                    $query1->where('id', 'LIKE', "%{$keyword}%")
-                    ->where('name', 'LIKE', "%{$keyword}%");
-                    return $query1;
-                });
-            }
             
             $query = Program::whereNull('program_id')
                             ->where($where);
