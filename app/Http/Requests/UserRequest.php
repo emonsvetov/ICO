@@ -47,6 +47,7 @@ class UserRequest extends FormRequest
             'state_updated'=> 'nullable|date_format:Y-m-d H:i:s',
             'last_location'=> 'nullable|string',
             'update_id'=> 'nullable|integer',
+            'role'=> 'nullable|string',
         ];
     }
 }
