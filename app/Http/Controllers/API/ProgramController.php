@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\API;
 
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\ProgramMoveRequest;
 use App\Http\Requests\ProgramRequest;
 use App\Http\Controllers\Controller;
 use App\Events\ProgramCreated;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use App\Models\Program;
-use DB;
 
 class ProgramController extends Controller
 {
@@ -22,20 +22,12 @@ class ProgramController extends Controller
             $keyword = request()->get('keyword');
             $sortby = request()->get('sortby', 'id');
             $direction = request()->get('direction', 'asc');
-            $findById = request()->get('findById', false);
 
             $where[] = ['organization_id', $organization->id];
-
-            $orWhere = [];
 
             if( $status )
             {
                 $where[] = ['status', $status];
-            }
-
-            if( $keyword && !$findById )
-            {
-                $where[] = ['name', 'LIKE', "%{$keyword}%"];
             }
 
             if( $sortby == "name" ) 
@@ -47,12 +39,11 @@ class ProgramController extends Controller
             {
                 $orderByRaw = "{$sortby} {$direction}";
             }
-            // DB::enableQueryLog();
-            
-            $query = Program::whereNull('program_id')
-                            ->where($where);
 
-            if( $keyword && $findById )
+            $query = Program::whereNull('program_id')
+                        ->where($where);
+
+            if( $keyword )
             {
                 $query = $query->where(function($query1) use($keyword) {
                     $query1->orWhere('id', 'LIKE', "%{$keyword}%")
@@ -62,7 +53,6 @@ class ProgramController extends Controller
 
             $query = $query->orderByRaw($orderByRaw);
             
-
             if ( request()->has('minimal') )
             {
                 $programs = $query->select('id', 'name')
@@ -75,9 +65,6 @@ class ProgramController extends Controller
                 $programs = $query->with('children')
                 ->paginate(request()->get('limit', 10));
             }
-
-            // return (DB::getQueryLog());
-
         }
         else
         {
@@ -129,22 +116,27 @@ class ProgramController extends Controller
         return response( [] );
     }
 
-    public function update(Request $request, Organization $organization, Program $program )
+    public function update(ProgramRequest $request, Organization $organization, Program $program )
     {
         if ( ! $program->exists ) 
         { 
             return response(['errors' => 'No Program Found'], 404);
         }
 
-        if( $request->isMethod('patch') ) {
-            $program->update( $request->all() );
-        }
-        else
-        {
-            Validator::make($request->all(), (new ProgramRequest())->rules())->validate();
-        }
+        $program->update( $request->validated() );
 
         return response([ 'program' => $program ]);
     }
 
+    public function move(ProgramMoveRequest $request, Organization $organization, Program $program )
+    {
+        if ( ! $program->exists ) 
+        {
+            return response(['errors' => 'No Program Found'], 404);
+        }
+
+        $program->update( $request->validated() );
+
+        return response([ 'program' => $program ]);
+    }
 }
