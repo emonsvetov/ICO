@@ -155,8 +155,9 @@ class ProgramRequest extends FormRequest
             //Team
             'team_management_view'=>'nullable|boolean',
             //Goal Tracker
-            'uses_goal_tracker'=>'nullable|boolean'
-            
+            'uses_goal_tracker'=>'nullable|boolean',
+            'country'=>'nullable|string',
+            'transaction_fee'=>'nullable|numeric',
         ];
     }
 }

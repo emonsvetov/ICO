@@ -18,12 +18,12 @@ class Program extends Model
     
     public function programs()
     {
-        return $this->hasMany(Program::class);
+        return $this->hasMany(Program::class, 'program_id');
     }
 
-    public function childrenPrograms()
+    public function children()
     {
-        return $this->hasMany(Program::class)->with('childrenPrograms');
+        return $this->hasMany(Program::class, 'program_id')->with('children');
     }
 
     public function events()

@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\ProgramMoveRequest;
 use App\Http\Requests\ProgramRequest;
-use App\Models\Program;
-use App\Models\Organization;
-
+use App\Http\Controllers\Controller;
 use App\Events\ProgramCreated;
-use DB;
+use App\Models\Organization;
+use Illuminate\Http\Request;
+use App\Models\Program;
 
 class ProgramController extends Controller
 {
@@ -31,11 +30,6 @@ class ProgramController extends Controller
                 $where[] = ['status', $status];
             }
 
-            if( $keyword )
-            {
-                $where[] = ['name', 'LIKE', "%{$keyword}%"];    
-            }
-
             if( $sortby == "name" ) 
             {
                 $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
@@ -45,24 +39,32 @@ class ProgramController extends Controller
             {
                 $orderByRaw = "{$sortby} {$direction}";
             }
-            
-            
-            $query = Program::whereNull('program_id')
-                            ->where($where)
-                            ->orderByRaw($orderByRaw);
-            
 
+            $query = Program::whereNull('program_id')
+                        ->where($where);
+
+            if( $keyword )
+            {
+                $query = $query->where(function($query1) use($keyword) {
+                    $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                    ->orWhere('name', 'LIKE', "%{$keyword}%");
+                });
+            }
+
+            $query = $query->orderByRaw($orderByRaw);
+            
             if ( request()->has('minimal') )
             {
                 $programs = $query->select('id', 'name')
-                                  ->with('childrenPrograms:program_id,id,name')
-                                  ->get();
+                ->with(['children' => function($query){
+                    return $query->select('id','name','program_id');
+                }])
+                ->get();
             }
             else {
-                $programs = $query->with('childrenPrograms')
-                                  ->paginate(request()->get('limit', 10));
+                $programs = $query->with('children')
+                ->paginate(request()->get('limit', 10));
             }
-
         }
         else
         {
@@ -126,4 +128,15 @@ class ProgramController extends Controller
         return response([ 'program' => $program ]);
     }
 
+    public function move(ProgramMoveRequest $request, Organization $organization, Program $program )
+    {
+        if ( ! $program->exists ) 
+        {
+            return response(['errors' => 'No Program Found'], 404);
+        }
+
+        $program->update( $request->validated() );
+
+        return response([ 'program' => $program ]);
+    }
 }
