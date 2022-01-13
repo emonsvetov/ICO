@@ -12,8 +12,7 @@ class EventIconController extends Controller
 
     public function index(Request $request )
     {
-        // auth()->user()->id;
-        $auth_id = 1;
+        $auth_id = auth()->user()->id;
         $event_icons = EventIcon::where("user_id", $auth_id)->orWhere("user_id", null )->get();
         if ( $event_icons->isNotEmpty() )
         {
@@ -25,6 +24,7 @@ class EventIconController extends Controller
 
     public function store(Request $request )
     {
+        $auth_id = auth()->user()->id;
         $files = $request->file('icon');
 
             foreach ($files as $file) {
@@ -32,7 +32,7 @@ class EventIconController extends Controller
                 $file->move(public_path() . '/uploads/icons/', $name);
 
                 $icon = new EventIcon([
-                    "user_id" => 1,
+                    "user_id" => $auth_id,
                     "path" => '/uploads/icons/'.$file->getClientOriginalName()
                 ]);
                 $icon->save(); // Finally, save the record.
