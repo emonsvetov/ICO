@@ -29,6 +29,7 @@ class EventRequest extends FormRequest
 			'enable'=> 'boolean|nullable',
 			'type_id'=> 'required|numeric', //dropdown pending
 			'icon'=> 'required|string|max:255',
+            'icon_id'=> 'required|numeric',
 			'amount'=> ['required',new Decimal82()],
 			'allow_amount_overriding'=> 'required|boolean',
 			'email_template_id'=> 'required|integer', //dropdown pending
