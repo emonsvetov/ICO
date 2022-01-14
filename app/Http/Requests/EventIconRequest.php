@@ -24,8 +24,9 @@ class EventIconRequest extends FormRequest
     public function rules()
     {
         return [
-            'icon' => 'required',
-            'icon.*' => 'mimes:png,jpeg,jpg,ico',
+            // 'icon' => 'required',
+            // 'icon.*' => 'mimes:png,jpeg,jpg,ico | max:2048',
+            'icon' => 'mimes:png,jpeg,jpg,ico | max:2048',
         ];
     }
 }
