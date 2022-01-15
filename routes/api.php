@@ -120,4 +120,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'revoke'])->name('api.v1.organization.permission.revoke')->middleware('can:update,role');
 
 
+    //Merchants
+
+    Route::post('/v1/organization/{organization}/merchant', [App\Http\Controllers\API\MerchantController::class, 'store'])->name('api.v1.organization.merchant.store');
+
+
 });
