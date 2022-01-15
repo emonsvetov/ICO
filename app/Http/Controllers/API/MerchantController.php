@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Traits\MerchantMediaUploadTrait;
 use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -9,6 +10,7 @@ use App\Models\Merchant;
 
 class MerchantController extends Controller
 {
+    use MerchantMediaUploadTrait;
     /**
      * Display a listing of the resource.
      *
@@ -37,8 +39,16 @@ class MerchantController extends Controller
      */
     public function store(MerchantRequest $request)
     {
-        $files = $request->hasFile('logo');
-        return [$files];
+
+        $newMerchant = Merchant::create( $request->validated() );
+
+        if( $newMerchant )  {
+            $update = $this->handleMerchantMediaUpload( $request, $newMerchant->id );
+            if( $update )   {
+                $updated = $newMerchant->update( $update );
+            }
+            return response([ 'merchant' => $newMerchant, 'updated' => $updated, 'uploads' => $update ]);
+        }
     }
 
     /**
