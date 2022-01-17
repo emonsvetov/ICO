@@ -15,6 +15,7 @@ class CreateEventIconsTable extends Migration
     {
         Schema::create('event_icons', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('organization_id');
             $table->unsignedbigInteger('user_id')->nullable();
             $table->string('path');
             $table->timestamps();

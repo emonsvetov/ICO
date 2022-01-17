@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EventIcon;
+use App\Models\Organization;
 use Illuminate\Support\Facades\Validator;
 
 class EventIconController extends Controller
@@ -23,7 +24,7 @@ class EventIconController extends Controller
         return response( [] );
     }
 
-    public function store(Request $request )
+    public function store(Request $request, Organization $organization  )
     {
         $auth_id = auth()->user()->id;
         // $auth_id = 1;
@@ -46,7 +47,8 @@ class EventIconController extends Controller
 
                 EventIcon::create([
                     "user_id" => $auth_id,
-                    "path" => $filename
+                    "path" => $filename,
+                    "organization_id" => $organization->id
                 ]);
             }
 
