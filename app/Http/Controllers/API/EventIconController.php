@@ -13,8 +13,8 @@ class EventIconController extends Controller
 
     public function index(Request $request )
     {
-        // $auth_id = 1;
-        $auth_id = auth()->user()->id;
+        $auth_id = 1;
+        // $auth_id = auth()->user()->id;
         $event_icons = EventIcon::where("user_id", $auth_id)->orWhere("user_id", null )->get();
         if ( $event_icons->isNotEmpty() )
         {
@@ -26,8 +26,8 @@ class EventIconController extends Controller
 
     public function store(Request $request, Organization $organization  )
     {
-        $auth_id = auth()->user()->id;
-        // $auth_id = 1;
+        // $auth_id = auth()->user()->id;
+        $auth_id = 1;
 
         $validator = Validator::make($request->all(),
         [
