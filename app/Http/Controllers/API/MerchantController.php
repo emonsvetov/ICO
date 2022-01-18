@@ -27,7 +27,7 @@ class MerchantController extends Controller
             $sortby = request()->get('sortby', 'id');
             $direction = request()->get('direction', 'asc');
 
-            $where = [];
+            $where = ['deleted'=>0];
 
             if( $sortby == "name" )
             {
@@ -49,10 +49,7 @@ class MerchantController extends Controller
                 });
             }
 
-            $query = $query->where(function($query2) {
-                $query2->orWhere('deleted', null)
-                ->orWhere('deleted', 0);
-            })->orderByRaw($orderByRaw);
+            $query = $query->orderByRaw($orderByRaw);
             
             if ( request()->has('minimal') )
             {

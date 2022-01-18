@@ -26,20 +26,20 @@ class Merchants extends Migration
             $table->integer('redemption_callback_id')->nullable();
             $table->string('category')->nullable();
             $table->string('merchant_code', 3);
-            $table->boolean('website_is_redemption_url')->nullable();
-            $table->boolean('get_gift_codes_from_root')->nullable();
-            $table->boolean('is_default')->nullable();
-            $table->boolean('giftcodes_require_pin')->nullable();
-            $table->integer('display_rank_by_priority')->nullable();
-            $table->integer('display_rank_by_redemptions')->nullable();
-            $table->boolean('requires_shipping')->nullable();
-            $table->boolean('physical_order')->nullable();
-            $table->boolean('is_premium')->nullable();
-            $table->boolean('use_tango_api')->nullable();
+            $table->boolean('website_is_redemption_url')->default(0);
+            $table->boolean('get_gift_codes_from_root')->default(0);
+            $table->boolean('is_default')->default(0);
+            $table->boolean('giftcodes_require_pin')->default(0);
+            $table->integer('display_rank_by_priority')->default(0);
+            $table->integer('display_rank_by_redemptions')->default(0);
+            $table->boolean('requires_shipping')->default(0);
+            $table->boolean('physical_order')->default(0);
+            $table->boolean('is_premium')->default(0);
+            $table->boolean('use_tango_api')->default(0);
             $table->integer('toa_id')->nullable();
-            $table->smallInteger('status', 0);
-            $table->boolean('display_popup')->nullable();
-            $table->boolean('deleted')->nullable();
+            $table->smallInteger('status')->default(0);
+            $table->boolean('display_popup')->default(0);
+            $table->boolean('deleted')->default(0);
 
             $table->timestamps();
 
