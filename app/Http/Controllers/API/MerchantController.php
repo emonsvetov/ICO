@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Traits\MerchantMediaUploadTrait;
-use App\Http\Requests\MerchantRequest;
 use App\Http\Requests\MerchantStatusRequest;
+use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Organization;
 use App\Models\Merchant;
 
 class MerchantController extends Controller
@@ -18,49 +17,42 @@ class MerchantController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index( Organization $organization )
+    public function index()
     {
         
-        if ( $organization )
+        $keyword = request()->get('keyword');
+        $sortby = request()->get('sortby', 'id');
+        $direction = request()->get('direction', 'asc');
+
+        $where = ['deleted'=>0];
+
+        if( $sortby == "name" )
         {
-            $keyword = request()->get('keyword');
-            $sortby = request()->get('sortby', 'id');
-            $direction = request()->get('direction', 'asc');
-
-            $where = ['deleted'=>0];
-
-            if( $sortby == "name" )
-            {
-                $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-                $orderByRaw = "{$sortby} {$collation} {$direction}";
-            }
-            else
-            {
-                $orderByRaw = "{$sortby} {$direction}";
-            }
-
-            $query = Merchant::where( $where );
-
-            if( $keyword )
-            {
-                $query = $query->where(function($query1) use($keyword) {
-                    $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                    ->orWhere('name', 'LIKE', "%{$keyword}%");
-                });
-            }
-
-            $query = $query->orderByRaw($orderByRaw);
-            
-            if ( request()->has('minimal') )
-            {
-                $merchants = $query->select('id', 'name')->get();
-            } else {
-                $merchants = $query->paginate(request()->get('limit', 10));
-            }
+            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+            $orderByRaw = "{$sortby} {$collation} {$direction}";
         }
         else
         {
-            return response(['errors' => 'Invalid Organization'], 422);
+            $orderByRaw = "{$sortby} {$direction}";
+        }
+
+        $query = Merchant::where( $where );
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('name', 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        $query = $query->orderByRaw($orderByRaw);
+        
+        if ( request()->has('minimal') )
+        {
+            $merchants = $query->select('id', 'name')->get();
+        } else {
+            $merchants = $query->paginate(request()->get('limit', 10));
         }
 
         if ( $merchants->isNotEmpty() ) 
@@ -72,43 +64,25 @@ class MerchantController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(MerchantRequest $request, Organization $organization)
+    public function store(MerchantRequest $request)
     {
+        $newMerchant = Merchant::create( $request->validated() );
 
-        if ( $organization )
+        if ( !$newMerchant )
         {
-            $newMerchant = Merchant::create( $request->validated() );
-
-            if ( !$newMerchant )
-            {
-                return response(['errors' => 'Merchant Creation failed'], 422);
-            }
-
-            $uploads = $this->handleMerchantMediaUpload( $request, $newMerchant );
-            if( $uploads )   {
-                $newMerchant->update( $uploads );
-            }
-            return response([ 'merchant' => $newMerchant ]);
+            return response(['errors' => 'Merchant Creation failed'], 422);
         }
-        else
-        {
-            return response(['errors' => 'Invalid Organization'], 422);
+
+        $uploads = $this->handleMerchantMediaUpload( $request, $newMerchant );
+        if( $uploads )   {
+            $newMerchant->update( $uploads );
         }
+        return response([ 'merchant' => $newMerchant ]);
     }
 
     /**
@@ -117,7 +91,7 @@ class MerchantController extends Controller
      * @param  \App\Models\Merchant  $merchant
      * @return \Illuminate\Http\Response
      */
-    public function show( $organization, Merchant $merchant )
+    public function show( Merchant $merchant )
     {
         if ( $merchant ) 
         { 
@@ -128,24 +102,13 @@ class MerchantController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Merchant  $merchant
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Merchant $merchant)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Merchant  $merchant
      * @return \Illuminate\Http\Response
      */
-    public function update(MerchantRequest $request, Organization $organization, Merchant $merchant)
+    public function update(MerchantRequest $request, Merchant $merchant)
     {
         
         if ( ! $merchant->exists ) 
@@ -171,24 +134,16 @@ class MerchantController extends Controller
      * @param  \App\Models\Merchant  $merchant
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Organization $organization, Merchant $merchant)
+    public function delete(Merchant $merchant)
     {
-        if( !$organization )
-        {
-            return response(['errors' => 'Invalid Organization'], 422);
-        }
 
         $merchant->update(['deleted'=>true]);
 
         return response( ['deleted' => true] );
     }    
     
-    public function changeStatus(MerchantStatusRequest $request, Organization $organization, Merchant $merchant)
+    public function changeStatus(MerchantStatusRequest $request, Merchant $merchant)
     {
-        if( !$organization )
-        {
-            return response(['errors' => 'Invalid Organization'], 422);
-        }
 
         if ( ! $merchant->exists ) 
         { 

@@ -121,11 +121,11 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Merchants
 
-    Route::post('/v1/organization/{organization}/merchant', [App\Http\Controllers\API\MerchantController::class, 'store']);
-    Route::get('/v1/organization/{organization}/merchant', [App\Http\Controllers\API\MerchantController::class, 'index']);
-    Route::get('/v1/organization/{organization}/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'show']);
-    Route::put('/v1/organization/{organization}/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'update']);
-    Route::delete('/v1/organization/{organization}/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'destroy']);
-    Route::patch('/v1/organization/{organization}/merchant/{merchant}/status', [App\Http\Controllers\API\MerchantController::class, 'changeStatus']);
+    Route::post('/v1/merchant', [App\Http\Controllers\API\MerchantController::class, 'store']);
+    Route::get('/v1/merchant', [App\Http\Controllers\API\MerchantController::class, 'index']);
+    Route::get('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'show']);
+    Route::put('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'update']);
+    Route::delete('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'delete']);
+    Route::patch('/v1/merchant/{merchant}/status', [App\Http\Controllers\API\MerchantController::class, 'changeStatus']);
 
 });
