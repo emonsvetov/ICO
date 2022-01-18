@@ -37,7 +37,7 @@ class Merchants extends Migration
             $table->boolean('is_premium')->nullable();
             $table->boolean('use_tango_api')->nullable();
             $table->integer('toa_id')->nullable();
-            $table->smallInteger('status')->nullable();
+            $table->smallInteger('status', 0);
             $table->boolean('display_popup')->nullable();
             $table->boolean('deleted')->nullable();
 
