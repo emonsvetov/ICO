@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EventIcon;
 use App\Models\Organization;
+use Illuminate\Contracts\Cache\Store;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class EventIconController extends Controller
 {
@@ -42,12 +44,12 @@ class EventIconController extends Controller
             foreach($request->file('icon') as $image) {
                 // $filename = time().rand(3, 5). '.'.$image->getClientOriginalExtension();
 
-                $filename = '/uploads/icons/'.$image->getClientOriginalName();
-                $image->move(public_path() . '/uploads/icons/', $filename);
-
+                $filename = $image->getClientOriginalName();
+                $image->move(Storage::path('public/uploads/icons') , $filename);
+                $path = 'uploads/icons/' . $filename ;
                 EventIcon::create([
                     "user_id" => $auth_id,
-                    "path" => $filename,
+                    "path" => $path,
                     "organization_id" => $organization->id
                 ]);
             }
