@@ -119,5 +119,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'assign'])->name('api.v1.organization.permission.assign')->middleware('can:update,role');
     Route::delete('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'revoke'])->name('api.v1.organization.permission.revoke')->middleware('can:update,role');
 
+    //Merchants
+
+    Route::post('/v1/merchant', [App\Http\Controllers\API\MerchantController::class, 'store']);
+    Route::get('/v1/merchant', [App\Http\Controllers\API\MerchantController::class, 'index']);
+    Route::get('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'show']);
+    Route::put('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'update']);
+    Route::delete('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'delete']);
+    Route::patch('/v1/merchant/{merchant}/status', [App\Http\Controllers\API\MerchantController::class, 'changeStatus']);
 
 });
