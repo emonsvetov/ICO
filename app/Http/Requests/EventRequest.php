@@ -28,7 +28,7 @@ class EventRequest extends FormRequest
             'name' => 'required|string',
 			'enable'=> 'boolean|nullable',
 			'type_id'=> 'required|numeric', //dropdown pending
-			'icon'=> 'required|string|max:255',
+			'event_icon_id'=> 'required|integer',
 			'amount'=> ['required',new Decimal82()],
 			'allow_amount_overriding'=> 'required|boolean',
 			'email_template_id'=> 'required|integer', //dropdown pending
@@ -38,6 +38,7 @@ class EventRequest extends FormRequest
 			'enable_schedule_award'=> 'boolean|nullable',
 			'is_birthday_award'=> 'boolean|nullable',
 			'is_anniversary_award'=> 'boolean|nullable',
+			'award_message_editable'=> 'boolean|nullable',
 			'ledger_code'=> 'numeric|nullable',
         ];
     }

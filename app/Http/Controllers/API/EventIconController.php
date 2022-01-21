@@ -6,62 +6,54 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\EventIcon;
 use App\Models\Organization;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\EventIconRequest;
 
 class EventIconController extends Controller
 {
 
-    public function index(Request $request )
+    public function index( Request $request, Organization $organization )
     {
-        $auth_id = 1;
-        // $auth_id = auth()->user()->id;
-        $event_icons = EventIcon::where("user_id", $auth_id)->orWhere("user_id", null )->get();
-        if ( $event_icons->isNotEmpty() )
+        if ( !$organization )
         {
-            return response( $event_icons );
+            return response(['errors' => 'Invalid Organization'], 422);
         }
 
+        $eventIcons = EventIcon::where("deleted", 0)->get();
+        if ( $eventIcons->isNotEmpty() )
+        {
+            return response( $eventIcons );
+        }
         return response( [] );
     }
 
-    public function store(Request $request, Organization $organization  )
+    public function store(EventIconRequest $request, Organization $organization  )
     {
-        // $auth_id = auth()->user()->id;
-        $auth_id = 1;
-
-        $validator = Validator::make($request->all(),
-        [
-            'icon' => 'required',
-            'icon.*' => 'required|image|mimes:jpeg,png,jpg,gif,ico|max:2048'
-        ]
-        );
-        if($validator->fails()) {
-            return response()->json(["status" => "failed", "message" => "Validation error", "errors" => $validator->errors()]);
+        if ( !$organization )
+        {
+            return response(['errors' => 'Invalid Organization'], 422);
         }
+        $icons = [];
         if($request->has('icon')) {
-            foreach($request->file('icon') as $image) {
-                // $filename = time().rand(3, 5). '.'.$image->getClientOriginalExtension();
-
-                $filename = '/uploads/icons/'.$image->getClientOriginalName();
-                $image->move(public_path() . '/uploads/icons/', $filename);
-
-                EventIcon::create([
-                    "user_id" => $auth_id,
-                    "path" => $filename,
+            foreach($request->file('icon') as $icon) {
+                $path = $icon->store('eventIcons');
+                $icons[] = $created = EventIcon::create([
+                    "name" => $icon->getClientOriginalName(),
+                    "path" => $path,
                     "organization_id" => $organization->id
                 ]);
             }
-
-
-            $response["status"] = "successs";
-            $response["message"] = "Success! image(s) uploaded";
         }
+        return response()->json($icons);
+    }
 
-        else {
-            $response["status"] = "failed";
-            $response["message"] = "Failed! image(s) not uploaded";
+    public function delete(Organization $organization, EventIcon $eventIcon )
+    {
+        if ( !$organization )
+        {
+            return response(['errors' => 'Invalid Organization'], 422);
         }
-        return response()->json($response);
-
+        $deleted = ['deleted' => 1];
+        $eventIcon->update( $deleted );
+        return response()->json( $deleted );
     }
 }

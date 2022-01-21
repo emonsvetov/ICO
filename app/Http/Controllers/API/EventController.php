@@ -10,6 +10,7 @@ use App\Models\ParticipantGroup;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Event;
+use DB;
 
 class EventController extends Controller
 {
@@ -22,12 +23,11 @@ class EventController extends Controller
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
         
-        
         $events = Event::where('organization_id', $organization->id)
                         ->where('program_id', $program->id)
                         ->orderBy('name')
-                        ->get();        
-       
+                        ->with('icon')
+                        ->get();
 
         if ( $events->isNotEmpty() ) 
         { 
@@ -69,6 +69,8 @@ class EventController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
+
+        $event->icon = $event->icon->toArray();
 
         if ( $event ) 
         { 
