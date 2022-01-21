@@ -92,6 +92,8 @@ class EventController extends Controller
             return response(['errors' => 'No Program Found'], 404);
         }
 
+        // return $request->validated();
+
         $event->update( $request->validated() );
 
         return response([ 'event' => $event ]);

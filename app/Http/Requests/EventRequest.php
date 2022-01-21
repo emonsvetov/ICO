@@ -29,10 +29,10 @@ class EventRequest extends FormRequest
 			'enable'=> 'boolean|nullable',
 			'type_id'=> 'required|numeric', //dropdown pending
 			'event_icon_id'=> 'required|integer',
-			'amount'=> ['required',new Decimal82()],
-			'allow_amount_overriding'=> 'required|boolean',
+			'amount'=> ['required', new Decimal82()],
+			'allow_amount_overriding'=> 'nullable|boolean',
 			'email_template_id'=> 'required|integer', //dropdown pending
-			'post_to_social_wall'=> 'required|boolean',
+			'post_to_social_wall'=> 'nullable|boolean',
 			'message'=> 'required|string',
 			'include_in_budget'=> 'boolean|nullable',
 			'enable_schedule_award'=> 'boolean|nullable',

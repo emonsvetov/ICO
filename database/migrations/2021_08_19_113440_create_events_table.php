@@ -27,7 +27,7 @@ class CreateEventsTable extends Migration
 			$table->boolean('post_to_social_wall')->default(0);
 			$table->text('message');
 			$table->boolean('include_in_budget')->default(0); //pending to check
-			$table->boolean('enable_schedule_award')->nullable();
+			$table->boolean('enable_schedule_award')->default(0);
 			$table->boolean('is_birthday_award')->default(0);
 			$table->boolean('is_anniversary_award')->default(0);
 			$table->boolean('award_message_editable')->default(0);
