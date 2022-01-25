@@ -11,10 +11,14 @@ class Event extends Model
 
     protected $guarded = [];
 
-    
     public function program()
     {
         return $this->belongsTo(Program::class);
+    }
+
+    public function icon()
+    {
+        return $this->belongsTo(EventIcon::class, 'event_icon_id');
     }
 
     public function participant_groups()
