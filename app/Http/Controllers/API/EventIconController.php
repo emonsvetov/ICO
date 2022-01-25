@@ -18,7 +18,7 @@ class EventIconController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        $eventIcons = EventIcon::where("deleted", 0)->get();
+        $eventIcons = EventIcon::where(["deleted" => 0, "organization_id"=>$organization->id])->get();
         if ( $eventIcons->isNotEmpty() )
         {
             return response( $eventIcons );
