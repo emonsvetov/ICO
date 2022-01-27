@@ -30,4 +30,9 @@ class Program extends Model
     {
         return $this->hasMany(Event::class);
     }
+
+    public function merchants()
+    {
+        return $this->belongsToMany(Merchant::class);
+    }
 }

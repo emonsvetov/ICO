@@ -9,4 +9,9 @@ class Merchant extends Model
 {
     use HasFactory;
     protected $guarded = [];
+
+    public function programs()
+    {
+        return $this->belongsToMany(Program::class);
+    }
 }
