@@ -130,4 +130,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'delete']);
     Route::patch('/v1/merchant/{merchant}/status', [App\Http\Controllers\API\MerchantController::class, 'changeStatus']);
 
+    //Giftcodes
+
+    Route::post('/v1/giftcode/{merchant}/import', [App\Http\Controllers\API\GiftCodeController::class, 'import']);
+
 });
