@@ -16,8 +16,9 @@ class CreateEventIconsTable extends Migration
         Schema::create('event_icons', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('organization_id');
-            $table->unsignedbigInteger('user_id')->nullable();
+            $table->string('name', 100);
             $table->string('path');
+            $table->boolean('deleted')->default(0);
             $table->timestamps();
         });
     }
