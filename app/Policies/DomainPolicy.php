@@ -5,10 +5,16 @@ namespace App\Policies;
 use App\Models\Domain;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Support\Facades\Gate;
 
 class DomainPolicy
 {
     use HandlesAuthorization;
+
+    public function before(User $user, $ability)
+    {
+        return true; //allowed until we have roles + permissions
+    }
 
     /**
      * Determine whether the user can view any models.
@@ -28,7 +34,7 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function view(User $user, Domain $domain)
+    public function view(User $user)
     {
         return $user->permissions()->contains('view-domain');
     }
@@ -51,7 +57,7 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function update(User $user, Domain $domain)
+    public function update(User $user)
     {
         return $user->permissions()->contains('update-domain');
     }
@@ -63,7 +69,7 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function delete(User $user, Domain $domain)
+    public function delete(User $user)
     {
         return $user->permissions()->contains('delete-domain');
     }

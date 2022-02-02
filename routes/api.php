@@ -96,7 +96,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'show'])->name('api.v1.organization.user.show');//->middleware('can:view,user')
     //Route::post('/v1/organization/{organization}/user', [App\Http\Controllers\API\UserController::class, 'store'])->name('api.v1.organization.user.store');
     Route::put('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'update'])->name('api.v1.organization.user.update')->middleware('can:update,user');
-    Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->name('api.v1.organization.user.store');//middleware still missing
+    Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->name('api.v1.organization.user.store')->middleware('can:create,user');
     //Route::delete('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'destroy'])->name('api.v1.organization.user.destroy')->middleware('can:delete,user');
 
     Route::get('/v1/organization', [App\Http\Controllers\API\OrganizationController::class, 'index'])->name('api.v1.organization.index')->middleware('can:viewAny,App\Organization');
@@ -120,5 +120,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'assign'])->name('api.v1.organization.permission.assign')->middleware('can:update,role');
     Route::delete('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'revoke'])->name('api.v1.organization.permission.revoke')->middleware('can:update,role');
 
-
+    //Domain Routes
+    Route::post('/v1/organization/{organization}/domain', 
+    [App\Http\Controllers\API\DomainController::class, 'store'])->name('api.v1.domain.store')->middleware('can:create,App\Domain');
 });

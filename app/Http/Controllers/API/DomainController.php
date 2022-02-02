@@ -15,78 +15,116 @@ class DomainController extends Controller
     public function index( Organization $organization )
     {
         
-        if ( !$organization->id )
+        if ( $organization )
         {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
+            // $status = request()->get('status');
+            $keyword = request()->get('keyword');
+            $sortby = request()->get('sortby', 'id');
+            $direction = request()->get('direction', 'asc');
+
+            $where[] = ['organization_id', $organization->id];
+
+            if( $sortby == "name" )
+            {
+                $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+                $orderByRaw = "{$sortby} {$collation} {$direction}";
+            }
+            else
+            {
+                $orderByRaw = "{$sortby} {$direction}";
+            }
+
+            $query = Domain::where($where);
+
+            if( $keyword )
+            {
+                $query = $query->where(function($query1) use($keyword) {
+                    $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                    ->orWhere('name', 'LIKE', "%{$keyword}%");
+                });
+            }
+
+            $query = $query->orderByRaw($orderByRaw);
+            
+            if ( request()->has('minimal') )
+            {
+                $domains = $query->select('id', 'name')
+                                //   ->with(['children' => function($query){
+                                //       return $query->select('id','name','program_id');
+                                //   }])
+                                ->get();
+            }
+            else 
+            {
+                $domains = $query->paginate(request()->get('limit', 10));
+            }
+        }
+        else
+        {
+            return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        $domains = Domain::where('organization_id', $organization->id)
-                    ->orderBy('name')
-                    ->get();
 
         if ( $domains->isNotEmpty() ) 
-        {
+        { 
             return response( $domains );
         }
 
         return response( [] );
     }
 
-    public function store(DomainRequest $request, Organization $organization, Program $program )
+    public function store(DomainRequest $request, Organization $organization )
     {
                  
         if ( !( $organization->id ) )
         {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
+            return response(['errors' => 'Invalid Organization'], 422);
         }
         
-        $newEvent = Domain::create( 
+        $newDomain = Domain::create( 
             $request->validated() + 
             [
-                'organization_id' => $organization->id,
-                'program_id' => $program->id
-            ] 
+                'organization_id' => $organization->id
+            ]
         );
 
-        if ( !$newEvent )
+        if ( !$newDomain )
         {
-            return response(['errors' => 'Event Creation failed'], 422);
+            return response(['errors' => 'Doman creation failed'], 422);
         }
 
-        
-        
-        return response([ 'event' => $newEvent ]);
+        return response([ 'domain' => $newDomain ]);
     }
 
     public function show( Organization $organization, Domain $domain )
     {
-        if ( !( $organization->id == $program->organization_id && $program->id == $event->program_id ) )        
+        if ( !$organization->id )        
         {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
+            return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        if ( $event ) 
+        if ( $domain ) 
         { 
-            return response( $event );
+            return response( $domain );
         }
 
         return response( [] );
     }
 
-    public function update(EventRequest $request, Organization $organization, Program $program, Event $event )
+    public function update(DomainRequest $request, Organization $organization, Domain $domain )
     {
-        if ( !( $organization->id == $program->organization_id && $program->id == $event->program_id ) )
+        if ( !$organization->id || !$domain->id )
         {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
+            return response(['errors' => 'Invalid Organization or Domain'], 422);
         }
         
-        if ( $event->organization_id != $organization->id ) 
+        if ( $domain->organization_id != $organization->id ) 
         { 
-            return response(['errors' => 'No Program Found'], 404);
+            return response(['errors' => 'Invalid Organization or Domain'], 404);
         }
 
-        $event->update( $request->validated() );
+        $domain->update( $request->validated() );
 
-        return response([ 'event' => $event ]);
+        return response([ 'domain' => $domain ]);
     }
 }
