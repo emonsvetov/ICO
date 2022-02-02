@@ -24,7 +24,7 @@ class DomainPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-domain');
+        return $user->permissions()->contains('view-domains');
     }
 
     /**

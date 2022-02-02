@@ -90,6 +90,18 @@ class PermissionSeeder extends Seeder
                 'updated_at' => $current_datetime
             ],
             [
+                'name' => 'view-domains',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'view-domain',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
                 'name' => 'create-domain',
                 'description' => null,
                 'created_at' => $current_datetime,
@@ -103,12 +115,6 @@ class PermissionSeeder extends Seeder
             ],
             [
                 'name' => 'delete-domain',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'view-domain',
                 'description' => null,
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime

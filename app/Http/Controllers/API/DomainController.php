@@ -11,10 +11,8 @@ use App\Models\Domain;
 
 class DomainController extends Controller
 {
-    
     public function index( Organization $organization )
     {
-        
         if ( $organization )
         {
             // $status = request()->get('status');
@@ -126,5 +124,16 @@ class DomainController extends Controller
         $domain->update( $request->validated() );
 
         return response([ 'domain' => $domain ]);
+    }
+
+    public function delete(Organization $organization, Domain $domain )
+    {
+        if ( !$organization )
+        {
+            return response(['errors' => 'Invalid Organization'], 422);
+        }
+        $deleted = ['deleted' => 1];
+        $domain->update( $deleted );
+        return response()->json( $deleted );
     }
 }
