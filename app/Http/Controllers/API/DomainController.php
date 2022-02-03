@@ -20,7 +20,7 @@ class DomainController extends Controller
             $sortby = request()->get('sortby', 'id');
             $direction = request()->get('direction', 'asc');
 
-            $where[] = ['organization_id', $organization->id];
+            $where = ['organization_id'=>$organization->id, 'deleted'=>0];
 
             if( $sortby == "name" )
             {
@@ -128,9 +128,9 @@ class DomainController extends Controller
 
     public function delete(Organization $organization, Domain $domain )
     {
-        if ( !$organization )
+        if ( !$organization || !$domain )
         {
-            return response(['errors' => 'Invalid Organization'], 422);
+            return response(['errors' => 'Invalid Organization or Domain'], 422);
         }
         $deleted = ['deleted' => 1];
         $domain->update( $deleted );

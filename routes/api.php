@@ -130,6 +130,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     [App\Http\Controllers\API\DomainController::class, 'show'])->name('api.v1.domain.show')->middleware('can:view,App\Domain');
     Route::put('/v1/organization/{organization}/domain/{domain}', 
     [App\Http\Controllers\API\DomainController::class, 'update'])->name('api.v1.domain.show')->middleware('can:update,App\Domain');
+    Route::delete('/v1/organization/{organization}/domain/{domain}', 
+    [App\Http\Controllers\API\DomainController::class, 'delete'])->name('api.v1.domain.show')->middleware('can:delete,App\Domain');
     Route::get('/v1/organization/{organization}/domain/{domain}/generateSecretKey', 
     [App\Http\Controllers\API\DomainController::class, 'generateSecretKey'])->name('api.v1.domain.show')->middleware('can:generateSecretKey,App\Domain');
 
