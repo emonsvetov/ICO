@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\DomainIPRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
 use App\Models\Organization;
 use Illuminate\Support\Str;
 use App\Models\Domain;
+use App\Models\DomainIP;
 
 class DomainController extends Controller
 {
@@ -100,8 +102,10 @@ class DomainController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
+        $domain->domain_ips; //trigger association
+
         if ( $domain ) 
-        { 
+        {
             return response( $domain );
         }
 
