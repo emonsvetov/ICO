@@ -136,4 +136,12 @@ class DomainController extends Controller
         $domain->update( $deleted );
         return response()->json( $deleted );
     }
+
+    public function generateSecretKey(Organization $organization, Domain $domain )
+    {
+        if ( !$organization OR !$domain )
+        {
+            return response(['errors' => 'Invalid Organization or Domain'], 422);
+        }
+    }
 }

@@ -126,6 +126,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     [App\Http\Controllers\API\DomainController::class, 'index'])->name('api.v1.domain.index')->middleware('can:viewAny,App\Domain');
     Route::post('/v1/organization/{organization}/domain', 
     [App\Http\Controllers\API\DomainController::class, 'store'])->name('api.v1.domain.store')->middleware('can:create,App\Domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}', 
+    [App\Http\Controllers\API\DomainController::class, 'show'])->name('api.v1.domain.show')->middleware('can:view,App\Domain');
+    Route::put('/v1/organization/{organization}/domain/{domain}', 
+    [App\Http\Controllers\API\DomainController::class, 'update'])->name('api.v1.domain.show')->middleware('can:update,App\Domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}/generateSecretKey', 
+    [App\Http\Controllers\API\DomainController::class, 'generateSecretKey'])->name('api.v1.domain.show')->middleware('can:generateSecretKey,App\Domain');
 
     //Merchant Routes
     Route::post('/v1/merchant', [App\Http\Controllers\API\MerchantController::class, 'store']);
