@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use App\Rules\Decimal82;
 
 class DomainRequest extends FormRequest
@@ -34,7 +35,11 @@ class DomainRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/|unique:domains',
+            'name' => [
+                "required",
+                "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/",
+                Rule::unique('domains', 'name')->ignore($this->domain)
+            ],
 			'secret_key'=> 'sometimes|nullable|string'
         ];
     }

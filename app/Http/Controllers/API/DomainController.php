@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
 use App\Http\Requests\DomainRequest;
 use App\Models\Organization;
+use Illuminate\Support\Str;
 use App\Models\Domain;
 
 class DomainController extends Controller
@@ -20,7 +19,7 @@ class DomainController extends Controller
             $sortby = request()->get('sortby', 'id');
             $direction = request()->get('direction', 'asc');
 
-            $where[] = ['organization_id', $organization->id];
+            $where = ['organization_id'=>$organization->id, 'deleted'=>0];
 
             if( $sortby == "name" )
             {
@@ -128,12 +127,24 @@ class DomainController extends Controller
 
     public function delete(Organization $organization, Domain $domain )
     {
-        if ( !$organization )
+        if ( !$organization || !$domain )
         {
-            return response(['errors' => 'Invalid Organization'], 422);
+            return response(['errors' => 'Invalid Organization or Domain'], 422);
         }
         $deleted = ['deleted' => 1];
         $domain->update( $deleted );
         return response()->json( $deleted );
+    }
+
+    public function generateSecretKey(Organization $organization, Domain $domain )
+    {
+        if ( !$organization OR !$domain )
+        {
+            return response(['errors' => 'Invalid Organization or Domain'], 422);
+        }
+
+        $secret_key = sha1 ( Str::random(10) );
+
+        return response([ 'secret_key' => $secret_key ]);
     }
 }

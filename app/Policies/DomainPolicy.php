@@ -75,26 +75,14 @@ class DomainPolicy
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Determine whether the user can delete the model.
      *
      * @param  \App\Models\User  $user
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    /*public function restore(User $user, Domain $domain)
+    public function generateSecretKey(User $user)
     {
-        //
-    }*/
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\Domain  $domain
-     * @return mixed
-     */
-    /*public function forceDelete(User $user, Domain $domain)
-    {
-        //
-    }*/
+        return $user->permissions()->contains('generate-secretkey');
+    }
 }
