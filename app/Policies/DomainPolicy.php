@@ -85,4 +85,14 @@ class DomainPolicy
     {
         return $user->permissions()->contains('generate-secretkey');
     }
+
+    public function addIp(User $user)
+    {
+        return $user->permissions()->contains('add-ip');
+    }
+
+    public function deleteIp(User $user)
+    {
+        return $user->permissions()->contains('delete-ip');
+    }
 }
