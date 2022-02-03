@@ -34,7 +34,7 @@ class DomainRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => 'required|regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/|unique:domains',
+            'name' => "required|regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/|unique:domains,name,{$this->domain->id}",
 			'secret_key'=> 'sometimes|nullable|string'
         ];
     }

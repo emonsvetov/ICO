@@ -143,5 +143,9 @@ class DomainController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Domain'], 422);
         }
+
+        $secret_key = sha1 ( generateRandomString () );
+
+        return response([ 'secret_key' => $secret_key ]);
     }
 }
