@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
 use App\Http\Requests\DomainRequest;
 use App\Models\Organization;
+use Illuminate\Support\Str;
 use App\Models\Domain;
 
 class DomainController extends Controller
@@ -144,7 +143,7 @@ class DomainController extends Controller
             return response(['errors' => 'Invalid Organization or Domain'], 422);
         }
 
-        $secret_key = sha1 ( generateRandomString () );
+        $secret_key = sha1 ( Str::random(10) );
 
         return response([ 'secret_key' => $secret_key ]);
     }
