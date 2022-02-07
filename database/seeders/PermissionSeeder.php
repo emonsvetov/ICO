@@ -119,6 +119,30 @@ class PermissionSeeder extends Seeder
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime
             ],
+            [
+                'name' => 'create-merchant',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'update-merchant',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'delete-merchant',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'view-merchant',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
         ]);
     }
 }

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Merchant;
+use App\Policies\MerchantPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Passport;
@@ -19,6 +21,7 @@ class AuthServiceProvider extends ServiceProvider
         'App\User' => 'App\Policies\UserPolicy',
         'App\Role' => 'App\Policies\RolePolicy',
         'App\Domain' => 'App\Policies\DomainPolicy',
+        Merchant::class => MerchantPolicy::class,
         //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
@@ -36,9 +39,8 @@ class AuthServiceProvider extends ServiceProvider
             Passport::routes();
         }
 
-        VerifyEmail::toMailUsing(function ($notifiable, $url) 
-        {
-            $verifyUrl = env('APP_URL', 'http://localhost') . substr( $url, strpos($url, "/email/verify/"));
+        VerifyEmail::toMailUsing(function ($notifiable, $url) {
+            $verifyUrl = env('APP_URL', 'http://localhost') . substr($url, strpos($url, "/email/verify/"));
 
             return (new MailMessage)
                 ->subject('Verify Email Address')
