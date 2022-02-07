@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Passport;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
+use App\Models\Program;
+use App\Policies\ProgramPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,7 @@ class AuthServiceProvider extends ServiceProvider
         'App\User' => 'App\Policies\UserPolicy',
         'App\Role' => 'App\Policies\RolePolicy',
         'App\Domain' => 'App\Policies\DomainPolicy',
+        Program::class => ProgramPolicy::class,
         //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
@@ -36,9 +39,8 @@ class AuthServiceProvider extends ServiceProvider
             Passport::routes();
         }
 
-        VerifyEmail::toMailUsing(function ($notifiable, $url) 
-        {
-            $verifyUrl = env('APP_URL', 'http://localhost') . substr( $url, strpos($url, "/email/verify/"));
+        VerifyEmail::toMailUsing(function ($notifiable, $url) {
+            $verifyUrl = env('APP_URL', 'http://localhost') . substr($url, strpos($url, "/email/verify/"));
 
             return (new MailMessage)
                 ->subject('Verify Email Address')

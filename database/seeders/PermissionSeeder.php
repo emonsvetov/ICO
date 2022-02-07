@@ -119,6 +119,30 @@ class PermissionSeeder extends Seeder
                 'created_at' => $current_datetime,
                 'updated_at' => $current_datetime
             ],
+            [
+                'name' => 'view-program',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'create-program',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'update-program',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
+            [
+                'name' => 'delete-program',
+                'description' => null,
+                'created_at' => $current_datetime,
+                'updated_at' => $current_datetime
+            ],
         ]);
     }
 }

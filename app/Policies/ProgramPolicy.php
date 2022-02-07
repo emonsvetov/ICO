@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\Program;
+use App\Models\User;
+use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Auth\Access\Response;
+
+class ProgramPolicy
+{
+    use HandlesAuthorization;
+
+    /**
+     * Determine whether the user can view the model.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function view(User $user, Program $program)
+    {
+        return $user->permissions()->contains('view-program') && $user->organization_id === $program->organization_id
+                ? Response::allow()
+                : abort(response()->json(['error' => 'Unauthenticated.'], 401));
+    }
+
+    /**
+     * Determine whether the user can create models.
+     *
+     * @param  \App\Models\User  $user
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function create(User $user)
+    {
+        return $user->permissions()->contains('create-program')
+                   ? Response::allow()
+                   : abort(response()->json(['error' => 'Unauthenticated.'], 401));
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Program  $program
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function update(User $user, Program $program)
+    {
+        return $user->permissions()->contains('update-program') && $user->organization_id === $program->organization_id
+                ? Response::allow()
+                : abort(response()->json(['error' => 'Unauthenticated.'], 401));
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Program  $program
+     * @return \Illuminate\Auth\Access\Response|bool
+     */
+    public function delete(User $user, Program $program)
+    {
+        return $user->permissions()->contains('delete-program') && $user->organization_id === $program->organization_id
+                ? Response::allow()
+                : abort(response()->json(['error' => 'Unauthenticated.'], 401));
+    }
+}
