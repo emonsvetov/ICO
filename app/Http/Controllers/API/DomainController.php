@@ -2,72 +2,41 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\DomainAddProgramRequest;
+use App\Http\Traits\IndexableDomainTrait;
 use App\Http\Requests\DomainIPRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
+use App\Models\DomainProgram;
 use App\Models\Organization;
 use Illuminate\Support\Str;
-use App\Models\Domain;
 use App\Models\DomainIP;
+use App\Models\Domain;
+Use Exception;
 
 class DomainController extends Controller
 {
-    public function index( Organization $organization )
+    use IndexableDomainTrait;
+
+    public function index( Organization $organization, Domain $domain )
     {
         if ( $organization )
         {
-            // $status = request()->get('status');
-            $keyword = request()->get('keyword');
-            $sortby = request()->get('sortby', 'id');
-            $direction = request()->get('direction', 'asc');
-
-            $where = ['organization_id'=>$organization->id, 'deleted'=>0];
-
-            if( $sortby == "name" )
-            {
-                $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-                $orderByRaw = "{$sortby} {$collation} {$direction}";
-            }
-            else
-            {
-                $orderByRaw = "{$sortby} {$direction}";
-            }
-
-            $query = Domain::where($where);
-
-            if( $keyword )
-            {
-                $query = $query->where(function($query1) use($keyword) {
-                    $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                    ->orWhere('name', 'LIKE', "%{$keyword}%");
-                });
-            }
-
-            $query = $query->orderByRaw($orderByRaw);
-            
-            if ( request()->has('minimal') )
-            {
-                $domains = $query->select('id', 'name')
-                                //   ->with(['children' => function($query){
-                                //       return $query->select('id','name','program_id');
-                                //   }])
-                                ->get();
-            }
-            else 
-            {
-                $domains = $query->paginate(request()->get('limit', 10));
-            }
+            $this->model = $domain;
+            $this->organization = $organization;
+            $domains = $this->indexable_domain($organization);
         }
         else
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
+        return response( $domains );
 
-        if ( $domains->isNotEmpty() ) 
-        { 
-            return response( $domains );
-        }
+        // if ( $domains->isNotEmpty() ) 
+        // { 
+        //     return response( $domains );
+        // }
 
         return response( [] );
     }
@@ -150,5 +119,23 @@ class DomainController extends Controller
         $secret_key = sha1 ( Str::random(10) );
 
         return response([ 'secret_key' => $secret_key ]);
+    }
+
+    public function addProgram( DomainAddProgramRequest $request, Organization $organization, Domain $domain )
+    {
+        if ( !$organization || !$domain )
+        {
+            return response(['errors' => 'Invalid Organization or Domain'], 422);
+        }
+
+        $validated = $request->validated();
+
+        try{
+            $domain->programs()->sync( [$validated['program_id']], false);
+        }   catch( Exception $e) {
+            return response(['errors' => 'Domain creation failed', 'e' => $e->getMessage()], 422);
+        }
+
+        return response([ 'success' => true ]);
     }
 }
