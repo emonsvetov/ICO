@@ -24,7 +24,7 @@ class DomainController extends Controller
         {
             $this->model = $domain;
             $this->organization = $organization;
-            $domains = $this->indexable_domain($organization);
+            $domains = $this->indexable_domain();
         }
         else
         {
