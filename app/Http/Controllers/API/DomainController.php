@@ -31,12 +31,10 @@ class DomainController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        return response( $domains );
-
-        // if ( $domains->isNotEmpty() ) 
-        // { 
-        //     return response( $domains );
-        // }
+        if ( $domains->isNotEmpty() ) 
+        { 
+            return response( $domains );
+        }
 
         return response( [] );
     }
@@ -119,23 +117,5 @@ class DomainController extends Controller
         $secret_key = sha1 ( Str::random(10) );
 
         return response([ 'secret_key' => $secret_key ]);
-    }
-
-    public function addProgram( DomainAddProgramRequest $request, Organization $organization, Domain $domain )
-    {
-        if ( !$organization || !$domain )
-        {
-            return response(['errors' => 'Invalid Organization or Domain'], 422);
-        }
-
-        $validated = $request->validated();
-
-        try{
-            $domain->programs()->sync( [$validated['program_id']], false);
-        }   catch( Exception $e) {
-            return response(['errors' => 'Domain creation failed', 'e' => $e->getMessage()], 422);
-        }
-
-        return response([ 'success' => true ]);
     }
 }
