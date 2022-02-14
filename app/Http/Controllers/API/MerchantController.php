@@ -95,55 +95,6 @@ class MerchantController extends Controller
      */
     public function show( Merchant $merchant )
     {
-
-        // Node::find(4)->moveTo(5, Node::find(1)); // same as Node::find(4)->moveTo(0, 2);
-        // Node::find(3)->moveTo(3, Node::find(2)); // same as Node::find(4)->moveTo(0, 2);
-
-        // return Node::find(3)->getChildren()->pluck('id')->toArray(); // [4]
-$parent = Node::find(1);
-$node = Node::find(2);
-$parent->addChild($node);
-$node = Node::find(3);
-
-        // $parent->addChild($node);
-        
-$children = Node::find(2)->getChildren();
-return $tree = $children->toTree();
-Node::createFromArray([
-    [
-        'id' => 1,
-        'children' => [
-            [
-                'id' => 2,
-                'childern' => [
-                    ['id' => 3],
-                    ['id' => 4],
-                    ['id' => 5],
-                ]
-            ],
-            ['id' => 3],
-        ]
-    ]
-]);
-        // $nodes = [
-        //     new Node(['id' => 1]),
-        //     new Node(['id' => 2]),
-        //     new Node(['id' => 3]),
-        //     new Node(['id' => 4, 'parent_id' => 1])
-        // ];
-        
-        // foreach ($nodes as $node) {
-        //     $node->save();
-        // }
-        exit;
-        
-        return MerchantNode::getRoots()->toArray(); // [1, 2, 3]
-        MerchantNode::find(1)->isRoot(); // true
-        MerchantNode::find(1)->isParent(); // true
-        MerchantNode::find(4)->isRoot(); // false
-        MerchantNode::find(4)->isParent(); // false
-        exit;
-        
         if ( $merchant ) 
         { 
             $merchant->submerchants;
