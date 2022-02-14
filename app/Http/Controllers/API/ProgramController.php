@@ -15,7 +15,6 @@ class ProgramController extends Controller
 {
     public function index( Organization $organization )
     {
-        
         if ( $organization )
         {
             $status = request()->get('status');

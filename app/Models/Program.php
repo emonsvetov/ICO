@@ -17,11 +17,6 @@ class Program extends Model
     {
         return $this->belongsTo(Organization::class);
     }
-    
-    public function programs()
-    {
-        return $this->hasMany(Program::class, 'program_id');
-    }
 
     public function children()
     {
