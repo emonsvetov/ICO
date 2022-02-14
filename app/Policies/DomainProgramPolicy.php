@@ -2,10 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\Domain;
-use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Support\Facades\Gate;
+use App\Models\Program;
+use App\Models\Domain;
+use App\Models\User;
 
 class DomainProgramPolicy
 {
@@ -22,8 +23,9 @@ class DomainProgramPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Domain $domain)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('view-domain-programs');
     }
 
@@ -33,8 +35,9 @@ class DomainProgramPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function add(User $user)
+    public function create(User $user)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('add-domain-program');
     }
 
@@ -45,9 +48,10 @@ class DomainProgramPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function delete(User $user, Domain $domain)
+    public function delete(User $user, Domain $domain, Program $program)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
+        if( $domain->organization_id !== $program->organization_id ) return false;
         return $user->permissions()->contains('delete-domain-program');
     }
 }

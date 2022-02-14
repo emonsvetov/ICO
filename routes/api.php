@@ -139,11 +139,11 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}', 
     [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.store')->middleware('can:deleteIp,domain');
     Route::get('/v1/organization/{organization}/domain/{domain}/program', 
-    [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index');
+    [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,domain');
     Route::post('/v1/organization/{organization}/domain/{domain}/program', 
-    [App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add');
+    [App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add')->middleware('can:create,domain');
     Route::delete('/v1/organization/{organization}/domain/{domain}/program/{program}', 
-    [App\Http\Controllers\API\DomainProgramController::class, 'delete'])->name('api.v1.domain.domainProgram')->middleware('can:delete,domain');
+    [App\Http\Controllers\API\DomainProgramController::class, 'delete'])->name('api.v1.domain.domainProgram')->middleware('can:delete,domain,program');
 
     //Merchant Routes
     Route::post('/v1/merchant', [App\Http\Controllers\API\MerchantController::class, 'store']);

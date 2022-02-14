@@ -24,7 +24,7 @@ class MerchantController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        $where = ['deleted'=>0];
+        $where = [];
 
         if( $sortby == "name" )
         {
