@@ -8,8 +8,6 @@ use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Merchant;
-use App\Models\MerchantNode;
-use App\Models\Node;
 
 class MerchantController extends Controller
 {
