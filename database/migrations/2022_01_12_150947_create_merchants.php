@@ -15,6 +15,7 @@ class CreateMerchants extends Migration
     {
         Schema::create('merchants', function (Blueprint $table) {
             $table->id();
+            $table->integer('parent_id')->nullable();
             $table->string('name');
             $table->string('logo', 165);
             $table->string('icon', 165);
@@ -39,7 +40,8 @@ class CreateMerchants extends Migration
             $table->integer('toa_id')->nullable();
             $table->smallInteger('status')->default(0);
             $table->boolean('display_popup')->default(0);
-            $table->boolean('deleted')->default(0);
+
+            $table->softDeletes();
 
             $table->timestamps();
 
@@ -59,6 +61,6 @@ class CreateMerchants extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('merchants');
     }
 }
