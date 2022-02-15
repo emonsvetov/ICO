@@ -4,18 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Program;
-use Organization;
-use App\Models\DomainIP;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Domain extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $guarded = [];
 
     public function programs()
     {
-        return $this->hasMany(Program::class);
+        return $this->belongsToMany(Program::class);
     }
 
     public function organization()

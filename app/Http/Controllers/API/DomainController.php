@@ -2,67 +2,66 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Requests\DomainIPRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
 use App\Models\Organization;
 use Illuminate\Support\Str;
 use App\Models\Domain;
-use App\Models\DomainIP;
+Use Exception;
 
 class DomainController extends Controller
 {
     public function index( Organization $organization )
     {
-        if ( $organization )
-        {
-            // $status = request()->get('status');
-            $keyword = request()->get('keyword');
-            $sortby = request()->get('sortby', 'id');
-            $direction = request()->get('direction', 'asc');
-
-            $where = ['organization_id'=>$organization->id, 'deleted'=>0];
-
-            if( $sortby == "name" )
-            {
-                $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-                $orderByRaw = "{$sortby} {$collation} {$direction}";
-            }
-            else
-            {
-                $orderByRaw = "{$sortby} {$direction}";
-            }
-
-            $query = Domain::where($where);
-
-            if( $keyword )
-            {
-                $query = $query->where(function($query1) use($keyword) {
-                    $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                    ->orWhere('name', 'LIKE', "%{$keyword}%");
-                });
-            }
-
-            $query = $query->orderByRaw($orderByRaw);
-            
-            if ( request()->has('minimal') )
-            {
-                $domains = $query->select('id', 'name')
-                                //   ->with(['children' => function($query){
-                                //       return $query->select('id','name','program_id');
-                                //   }])
-                                ->get();
-            }
-            else 
-            {
-                $domains = $query->paginate(request()->get('limit', 10));
-            }
-        }
-        else
+        if ( !( $organization->id ) )
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
+        $status = request()->get('status');
+        $keyword = request()->get( 'keyword' );
+        $sortby = request()->get('sortby', 'id');
+        $direction = request()->get('direction', 'asc');
+
+        $where = [];
+
+        $where = ['organization_id'=>$organization->id];
+
+        if( $status )
+        {
+            $where[] = ['status', $status];
+        }
+        
+        if( $sortby == 'name' )
+        {
+            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+            $orderByRaw = "{$sortby} {$collation} {$direction}";
+        }
+        else
+        {
+            $orderByRaw = "{$sortby} {$direction}";
+        }
+
+        $query = Domain::where($where);
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('name', 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        $query = $query->orderByRaw($orderByRaw);
+        
+        if ( request()->has('minimal') )
+        {
+            $domains = $query->select('id', 'name')->get();
+        }
+        else 
+        {
+            $domains = $query->paginate(request()->get('limit', 10));
+        }
 
         if ( $domains->isNotEmpty() ) 
         { 

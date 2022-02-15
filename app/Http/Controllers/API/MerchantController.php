@@ -8,6 +8,8 @@ use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Merchant;
+use App\Models\MerchantNode;
+use App\Models\Node;
 
 class MerchantController extends Controller
 {
@@ -24,7 +26,7 @@ class MerchantController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        $where = ['deleted'=>0];
+        $where = [];
 
         if( $sortby == "name" )
         {
@@ -95,6 +97,7 @@ class MerchantController extends Controller
     {
         if ( $merchant ) 
         { 
+            $merchant->submerchants;
             return response( $merchant );
         }
 

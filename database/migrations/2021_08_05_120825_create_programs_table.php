@@ -160,6 +160,7 @@ class CreateProgramsTable extends Migration
             $table->boolean('uses_goal_tracker')->nullable();
 
 			$table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -171,5 +172,8 @@ class CreateProgramsTable extends Migration
     public function down()
     {
         Schema::dropIfExists('programs');
+        Schema::table('programs', function (Blueprint $table) {
+            $table->dropSoftDeletes();
+        });
     }
 }

@@ -11,6 +11,9 @@ Use Singuler name for Controller name. For example `MerchantController.php`
 # Creating Migrations
 `php artisan make:migration create_some_table`
 
+# Create Table and Migrations as same time
+`php artisan make:model -m DomainProgram`
+
 # Running Migrations
 `php artisan migrate`
 
