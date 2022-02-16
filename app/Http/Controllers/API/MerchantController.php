@@ -28,15 +28,15 @@ class MerchantController extends Controller
 
         $where = [];
 
-        if( $sortby == "name" )
-        {
-            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-            $orderByRaw = "{$sortby} {$collation} {$direction}";
-        }
-        else
-        {
-            $orderByRaw = "{$sortby} {$direction}";
-        }
+        // if( $sortby == "name" )
+        // {
+        //     $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+        //     $orderByRaw = "{$sortby} {$collation} {$direction}";
+        // }
+        // else
+        // {
+        //     $orderByRaw = "{$sortby} {$direction}";
+        // }
 
         $query = Merchant::whereNull('parent_id')->where( $where );
 
@@ -48,7 +48,7 @@ class MerchantController extends Controller
             });
         }
 
-        $query = $query->orderByRaw($orderByRaw);
+        // $query = $query->orderByRaw($orderByRaw);
         
         if ( request()->has('minimal') )
         {
