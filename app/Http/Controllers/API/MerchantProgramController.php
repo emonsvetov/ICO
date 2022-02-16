@@ -5,7 +5,9 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMerchantProgramRequest;
 use App\Models\Merchant;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 
 class MerchantProgramController extends Controller
 {
@@ -54,10 +56,20 @@ class MerchantProgramController extends Controller
      * @param  \App\Models\Merchant  $merchant
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Merchant  $merchant)
+    public function destroy(Merchant  $merchant,Request $request)
     {
-        $merchant->programs()->detach();
+        $validator =  Validator::make($request->all(),[
+            'program_id' => 'required|exists:App\Models\Program,id',
+        ]);
+        if($validator->fails())
+        {
+            return response()->json([
+                "error" => 'validation_error',
+                "message" => $validator->errors(),
+            ], 422);
+        }
+        $merchant->programs()->detach($request->program_id);
 
-        return response(['deleted' => true]);
+		return response(['deleted' => true]);
     }
 }
