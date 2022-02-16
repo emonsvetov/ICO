@@ -8,6 +8,8 @@ use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Merchant;
+use App\Models\MerchantNode;
+use App\Models\Node;
 
 class MerchantController extends Controller
 {
@@ -24,7 +26,7 @@ class MerchantController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        $where = ['deleted'=>0];
+        $where = [];
 
         if( $sortby == "name" )
         {
@@ -36,7 +38,7 @@ class MerchantController extends Controller
             $orderByRaw = "{$sortby} {$direction}";
         }
 
-        $query = Merchant::where( $where );
+        $query = Merchant::whereNull('parent_id')->where( $where );
 
         if( $keyword )
         {
@@ -93,12 +95,12 @@ class MerchantController extends Controller
      */
     public function show( Merchant $merchant )
     {
-        if ( $merchant ) 
+        if ( ! $merchant->exists ) 
         { 
-            return response( $merchant );
+            return response(['errors' => 'Merchant Not Found'], 404);
         }
-
-        return response( [] );
+        $merchant->children;
+        return response( $merchant );
     }
 
     /**
@@ -136,11 +138,9 @@ class MerchantController extends Controller
      */
     public function delete(Merchant $merchant)
     {
-
-        $merchant->update(['deleted'=>true]);
-
+        $merchant->delete();
         return response( ['deleted' => true] );
-    }    
+    }
     
     public function changeStatus(MerchantStatusRequest $request, Merchant $merchant)
     {

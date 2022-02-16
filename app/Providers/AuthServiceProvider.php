@@ -7,8 +7,6 @@ use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Passport;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
-use App\Models\Program;
-use App\Policies\ProgramPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -21,7 +19,8 @@ class AuthServiceProvider extends ServiceProvider
         'App\User' => 'App\Policies\UserPolicy',
         'App\Role' => 'App\Policies\RolePolicy',
         'App\Domain' => 'App\Policies\DomainPolicy',
-        Program::class => ProgramPolicy::class,
+        'App\Models\Program' => 'App\Policies\ProgramPolicy',
+        'App\DomainProgram' => 'App\Policies\DomainProgramPolicy',
         //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];

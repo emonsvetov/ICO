@@ -32,17 +32,17 @@ class DomainRequest extends FormRequest
      *
      * @return array
      */
-public function rules()
-{
-    return [
-        'name' => [
-            "required",
-            "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/",
-            Rule::unique('domains', 'name')->ignore($this->domain)
-        ],
-        'secret_key'=> 'sometimes|nullable|string'
-    ];
-}
+    public function rules()
+    {
+        return [
+            'name' => [
+                "required",
+                "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/",
+                Rule::unique('domains', 'name')->ignore($this->domain)
+            ],
+            'secret_key'=> 'sometimes|nullable|string'
+        ];
+    }
 
     public function messages()
     {

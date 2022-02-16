@@ -117,38 +117,28 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'revoke'])->name('api.v1.organization.permission.revoke')->middleware('can:update,role');
 
     //Domain Routes
-    Route::get(
-        '/v1/organization/{organization}/domain',
-        [App\Http\Controllers\API\DomainController::class, 'index']
-    )->name('api.v1.domain.index')->middleware('can:viewAny,App\Domain');
-    Route::post(
-        '/v1/organization/{organization}/domain',
-        [App\Http\Controllers\API\DomainController::class, 'store']
-    )->name('api.v1.domain.store')->middleware('can:create,App\Domain');
-    Route::get(
-        '/v1/organization/{organization}/domain/{domain}',
-        [App\Http\Controllers\API\DomainController::class, 'show']
-    )->name('api.v1.domain.show')->middleware('can:view,App\Domain');
-    Route::put(
-        '/v1/organization/{organization}/domain/{domain}',
-        [App\Http\Controllers\API\DomainController::class, 'update']
-    )->name('api.v1.domain.update')->middleware('can:update,App\Domain');
-    Route::delete(
-        '/v1/organization/{organization}/domain/{domain}',
-        [App\Http\Controllers\API\DomainController::class, 'delete']
-    )->name('api.v1.domain.delete')->middleware('can:delete,App\Domain');
-    Route::get(
-        '/v1/organization/{organization}/domain/{domain}/generateSecretKey',
-        [App\Http\Controllers\API\DomainController::class, 'generateSecretKey']
-    )->name('api.v1.domain.generateSecretKey')->middleware('can:generateSecretKey,App\Domain');
-    Route::post(
-        '/v1/organization/{organization}/domain/{domain}/addip',
-        [App\Http\Controllers\API\DomainIPController::class, 'store']
-    )->name('api.v1.domain_ip.store')->middleware('can:addIp,App\Domain');
-    Route::delete(
-        '/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}',
-        [App\Http\Controllers\API\DomainIPController::class, 'delete']
-    )->name('api.v1.domain_ip.store')->middleware('can:deleteIp,App\Domain');
+    Route::get('/v1/organization/{organization}/domain', 
+    [App\Http\Controllers\API\DomainController::class, 'index'])->name('api.v1.domain.index')->middleware('can:viewAny,App\Domain');
+    Route::post('/v1/organization/{organization}/domain', 
+    [App\Http\Controllers\API\DomainController::class, 'store'])->name('api.v1.domain.store')->middleware('can:create,App\Domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}', 
+    [App\Http\Controllers\API\DomainController::class, 'show'])->name('api.v1.domain.show')->middleware('can:view,domain');
+    Route::put('/v1/organization/{organization}/domain/{domain}', 
+    [App\Http\Controllers\API\DomainController::class, 'update'])->name('api.v1.domain.update')->middleware('can:update,domain');
+    Route::delete('/v1/organization/{organization}/domain/{domain}', 
+    [App\Http\Controllers\API\DomainController::class, 'delete'])->name('api.v1.domain.delete')->middleware('can:delete,domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}/generateSecretKey', 
+    [App\Http\Controllers\API\DomainController::class, 'generateSecretKey'])->name('api.v1.domain.generateSecretKey')->middleware('can:generateSecretKey,domain');
+    Route::post('/v1/organization/{organization}/domain/{domain}/addip', 
+    [App\Http\Controllers\API\DomainIPController::class, 'store'])->name('api.v1.domain_ip.store')->middleware('can:addIp,domain');
+    Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}', 
+    [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.store')->middleware('can:deleteIp,domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}/program', 
+    [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,domain');
+    Route::post('/v1/organization/{organization}/domain/{domain}/program', 
+    [App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add')->middleware('can:create,domain');
+    Route::delete('/v1/organization/{organization}/domain/{domain}/program/{program}', 
+    [App\Http\Controllers\API\DomainProgramController::class, 'delete'])->name('api.v1.domain.domainProgram')->middleware('can:delete,domain,program');
 
     //Merchant Routes
     Route::post('/v1/merchant', [App\Http\Controllers\API\MerchantController::class, 'store']);
@@ -157,4 +147,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'update']);
     Route::delete('/v1/merchant/{merchant}', [App\Http\Controllers\API\MerchantController::class, 'delete']);
     Route::patch('/v1/merchant/{merchant}/status', [App\Http\Controllers\API\MerchantController::class, 'changeStatus']);
+
+    //Submerchant Routes
+    Route::get('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'index'])->middleware('can:viewAnySubmerchant,merchant');
+    Route::post('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'store'])->middleware('can:createSubmerchant,merchant');
+    Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:deleteSubmerchant,merchant');
+
 });
