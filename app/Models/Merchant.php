@@ -10,10 +10,10 @@ class Merchant extends Model
 {
     use HasFactory;
     use SoftDeletes;
-    
+  
     protected $guarded = [];
 
-    public function submerchants()
+    public function children()
     {
         return $this->hasMany(Merchant::class, 'parent_id')->with('children');
     }

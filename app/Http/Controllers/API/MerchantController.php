@@ -38,7 +38,7 @@ class MerchantController extends Controller
             $orderByRaw = "{$sortby} {$direction}";
         }
 
-        $query = Merchant::where( $where );
+        $query = Merchant::whereNull('parent_id')->where( $where );
 
         if( $keyword )
         {
@@ -95,13 +95,12 @@ class MerchantController extends Controller
      */
     public function show( Merchant $merchant )
     {
-        if ( $merchant ) 
+        if ( ! $merchant->exists ) 
         { 
-            $merchant->submerchants;
-            return response( $merchant );
+            return response(['errors' => 'Merchant Not Found'], 404);
         }
-
-        return response( [] );
+        $merchant->children;
+        return response( $merchant );
     }
 
     /**
@@ -139,11 +138,9 @@ class MerchantController extends Controller
      */
     public function delete(Merchant $merchant)
     {
-
-        $merchant->update(['deleted'=>true]);
-
+        $merchant->delete();
         return response( ['deleted' => true] );
-    }    
+    }
     
     public function changeStatus(MerchantStatusRequest $request, Merchant $merchant)
     {

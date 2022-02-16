@@ -24,7 +24,8 @@ class MerchantAddSubMerchantRequest extends FormRequest
     public function rules()
     {
         return [
-            'merchant_id' => 'required|integer'
+            'merchant_id' => 'required|integer',
+            'anscestor_id' => 'sometimes|integer'
         ];
     }
 }
