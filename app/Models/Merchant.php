@@ -10,7 +10,7 @@ class Merchant extends Model
 {
     use HasFactory;
     use SoftDeletes;
-
+  
     protected $guarded = [];
 
     public function children()

@@ -21,7 +21,7 @@ class MerchantPolicy
         // !!Merchant $merchant ; Probably more checks to determine whether a user can use a merchant's submerchants?
         return $user->permissions()->contains('view-submerchants');
     }
-
+  
     public function createSubmerchant(User $user, Merchant $merchant)
     {
         // !!Merchant $merchant...
