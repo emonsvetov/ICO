@@ -34,8 +34,9 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function view(User $user)
+    public function view(User $user, Domain $domain)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('view-domain');
     }
 
@@ -57,8 +58,9 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function update(User $user)
+    public function update(User $user, Domain $domain)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('update-domain');
     }
 
@@ -69,8 +71,9 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function delete(User $user)
+    public function delete(User $user, Domain $domain)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('delete-domain');
     }
 
@@ -81,18 +84,34 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function generateSecretKey(User $user)
+    public function generateSecretKey(User $user, Domain $domain)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('generate-secretkey');
     }
 
-    public function addIp(User $user)
+    public function addIp(User $user, Domain $domain)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('add-ip');
     }
 
-    public function deleteIp(User $user)
+    public function deleteIp(User $user, Domain $domain)
     {
+        if( $user->organization_id !== $domain->organization_id ) return false;
         return $user->permissions()->contains('delete-ip');
+    }
+
+    public function addProgram(User $user, Domain $domain)
+    {
+        return true;
+        if( $user->organization_id !== $domain->organization_id ) return false;
+        return $user->permissions()->contains('add-domain-program');
+    }
+
+    public function deleteProgram(User $user, Domain $domain)
+    {
+        if( $user->organization_id !== $domain->organization_id ) return false;
+        return $user->permissions()->contains('delete-domain-program');
     }
 }

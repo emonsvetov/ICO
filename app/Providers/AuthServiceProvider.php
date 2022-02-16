@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Models\Merchant;
-use App\Policies\MerchantPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Passport;
@@ -21,7 +19,8 @@ class AuthServiceProvider extends ServiceProvider
         'App\User' => 'App\Policies\UserPolicy',
         'App\Role' => 'App\Policies\RolePolicy',
         'App\Domain' => 'App\Policies\DomainPolicy',
-        Merchant::class => MerchantPolicy::class,
+        'App\Models\Merchant' => 'App\Policies\MerchantPolicy',
+        'App\DomainProgram' => 'App\Policies\DomainProgramPolicy',
         //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
