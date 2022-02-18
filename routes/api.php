@@ -158,4 +158,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'store'])->middleware('can:createSubmerchant,merchant');
     Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:deleteSubmerchant,merchant');
 
+    //Reports routes
+    Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index']);
 });
