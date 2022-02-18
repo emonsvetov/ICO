@@ -48,7 +48,7 @@ class MerchantController extends Controller
             });
         }
 
-        // $query = $query->orderByRaw($orderByRaw);
+        $query = $query->orderByRaw($orderByRaw);
         
         if ( request()->has('minimal') )
         {
