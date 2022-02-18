@@ -5,10 +5,10 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\ProgramAddMerchantRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
-use App\Models\Program;
 use App\Models\Merchant;
+use App\Models\Program;
 Use Exception;
-// use DB;
+use DB;
 
 class ProgramMerchantController extends Controller
 {
@@ -18,6 +18,12 @@ class ProgramMerchantController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
+
+        DB::enableQueryLog();
+
+        return($program->merchants);
+
+        return (DB::getQueryLog());
 
         if( !$program->merchants->isNotEmpty() ) return response( [] );
 
