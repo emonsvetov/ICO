@@ -6,13 +6,14 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
 
 use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -79,32 +80,5 @@ class User extends Authenticatable implements MustVerifyEmail
         $url = env('APP_URL', 'http://localhost') . '/reset-password?token=' . $token;
 
         $this->notify(new ResetPasswordNotification($url));
-    }
-
-    public function roles()
-    {
-        return $this->belongsToMany(Role::class)->withTimestamps();
-    }
-
-    public function assignRole($role)
-    {
-        return $this->roles()->sync($role);
-        //return $this->roles()->save($role);
-        //$this->permissions()->save($permission);
-    }
-
-    public function permissions()
-    {
-        return $this->roles->map->permissions->flatten()->pluck('name')->unique();
-    }
-
-    public function roleNames()
-    {
-        return $this->roles->flatten()->pluck('name')->unique();
-    }
-
-    public function revokeRole($role)
-    {
-        return $this->roles()->detach($role);
     }
 }

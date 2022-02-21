@@ -12,7 +12,7 @@ class RolePolicy
 
     public function before(User $user, $ability)
     {
-        return true; //allowed until we have roles + permissions
+        // return true; //allowed until we have roles + permissions
     }
     /**
      * Determine whether the user can view any models.
@@ -22,7 +22,7 @@ class RolePolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-role-permission');
+        return $user->can('view-role-permission');
     }
 
     /**
