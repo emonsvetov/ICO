@@ -62,9 +62,9 @@ class ProgramPolicy
         return $user->permissions()->contains('add-program-merchant');
     }
 
-    public function removeMerchant(User $user, Program $program)
+    public function removeMerchant(User $user, Program $program, Merchant $merchant)
     {
-        // !!Program $program...
+        // !!Program $program... !!Merchant $merchant
         return $user->permissions()->contains('remove-program-merchant');
     }
 }
