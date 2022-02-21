@@ -107,7 +107,7 @@ class ProgramMerchantController extends Controller
         }
 
         try{
-            $program->merchants()->detach( $merchant->id );
+            $program->merchants()->detach( $merchant );
         }   catch( Exception $e) {
             return response(['errors' => 'Merchant removal failed', 'e' => $e->getMessage()], 422);
         }

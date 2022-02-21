@@ -168,6 +168,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     [App\Http\Controllers\API\ProgramMerchantController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:addMerchant,program');
 
     Route::delete('/v1/organization/{organization}/program/{program}/merchant/{merchant}', 
-    [App\Http\Controllers\API\ProgramMerchantController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:removeMerchant,programMerchant,program,merchant');
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:removeMerchant,program,merchant');
 
 });
