@@ -10,4 +10,5 @@ class ProgramMerchant extends Model
     use HasFactory;
     protected $guarded = [];
     protected $table = 'program_merchant';
+    public $timestamps = true;
 }

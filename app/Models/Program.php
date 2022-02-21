@@ -30,6 +30,6 @@ class Program extends Model
 
     public function merchants()
     {
-        return $this->belongsToMany(Merchant::class, 'program_merchant');
+        return $this->belongsToMany(Merchant::class, 'program_merchant')->withTimestamps();
     }
 }
