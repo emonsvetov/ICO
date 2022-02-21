@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Requests\ProgramAddMerchantRequest;
+use App\Http\Requests\ProgramMerchantRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\Program;
 Use Exception;
-use DB;
+// use DB;
 
 class ProgramMerchantController extends Controller
 {
@@ -19,7 +19,7 @@ class ProgramMerchantController extends Controller
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
-        DB::enableQueryLog();
+        // DB::enableQueryLog();
 
         return($program->merchants);
 
@@ -81,7 +81,7 @@ class ProgramMerchantController extends Controller
         return response( [] );
     }
 
-    public function store( ProgramAddMerchantRequest $request, Organization $organization, Program $program )
+    public function store( ProgramMerchantRequest $request, Organization $organization, Program $program )
     {
         if ( !$organization || !$program )
         {
@@ -90,8 +90,20 @@ class ProgramMerchantController extends Controller
 
         $validated = $request->validated();
 
+        $columns = [];
+
+        if( isset( $validated['featured'] ) )
+        {
+            $columns['featured'] = $validated['featured'];
+        }
+
+        if( isset( $validated['cost_to_program'] ) )
+        {
+            $columns['cost_to_program'] = $validated['cost_to_program'];
+        }
+        
         try{
-            $program->merchants()->sync( [$validated['merchant_id'] ], false);
+            $program->merchants()->sync( [ $validated['merchant_id'] => $columns ], false);
         }   catch( Exception $e) {
             return response(['errors' => 'Merchant adding failed', 'e' => $e->getMessage()], 422);
         }

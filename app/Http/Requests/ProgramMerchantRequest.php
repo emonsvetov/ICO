@@ -4,11 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProgramAddMerchantRequest extends FormRequest
+class ProgramMerchantRequest extends FormRequest
 {
-    protected function prepareForValidation()
-    {
-    }
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -27,7 +24,9 @@ class ProgramAddMerchantRequest extends FormRequest
     public function rules()
     {
         return [
-            'merchant_id' => 'required|integer'
+            'merchant_id' => 'required|integer',
+            'featured' => 'sometimes|boolean',
+            'cost_to_program' => 'sometimes|boolean'
         ];
     }
 
