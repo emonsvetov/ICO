@@ -99,6 +99,18 @@ class ProgramMerchantController extends Controller
         return response([ 'success' => true ]);
     }
 
+    public function update(ProgramMerchantRequest $request, Organization $organization, Program $program, Merchant $merchant )
+    {
+        if ( !$organization || !$program || !$merchant )
+        {
+            return response(['errors' => 'Invalid Organization or Program or Merchant'], 422);
+        }
+
+        $program->update( $request->validated() );
+
+        return response([ 'program' => $program ]);
+    }
+
     public function delete(Organization $organization, Program $program, Merchant $merchant )
     {
         if ( !$organization || !$program || !$merchant )
