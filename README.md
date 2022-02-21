@@ -6,6 +6,14 @@
 
 Use Singuler name for Controller name. For example `MerchantController.php`
 
+## make Controller (for API), Model & Form Requests
+
+`php artisan make:controller DomainController --api --model=Domain --requests`
+
+## Create policy class for a given model
+
+`php artisan make:policy MerchantPolicy --model=Merchant`
+
 ## Migrations
 
 # Creating Migrations
