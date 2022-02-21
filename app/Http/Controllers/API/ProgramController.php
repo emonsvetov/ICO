@@ -110,6 +110,7 @@ class ProgramController extends Controller
     {
         if ( $program ) 
         { 
+            $program->merchants;
             return response( $program );
         }
 

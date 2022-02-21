@@ -19,12 +19,6 @@ class ProgramMerchantController extends Controller
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
-        // DB::enableQueryLog();
-
-        return($program->merchants);
-
-        return (DB::getQueryLog());
-
         if( !$program->merchants->isNotEmpty() ) return response( [] );
 
         $keyword = request()->get('keyword');

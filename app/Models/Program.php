@@ -30,6 +30,7 @@ class Program extends Model
 
     public function merchants()
     {
-        return $this->belongsToMany(Merchant::class, 'program_merchant')->withTimestamps();
+        return $this->belongsToMany(Merchant::class, 'program_merchant')
+        ->withPivot('featured', 'cost_to_program')->withTimestamps();
     }
 }
