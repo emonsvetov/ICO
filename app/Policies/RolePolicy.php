@@ -10,6 +10,10 @@ class RolePolicy
 {
     use HandlesAuthorization;
 
+    public function before(User $user, $ability)
+    {
+        return true; //allowed until we have roles + permissions
+    }
     /**
      * Determine whether the user can view any models.
      *
