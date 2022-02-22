@@ -26,6 +26,7 @@ class ProgramMerchantController extends Controller
         $direction = request()->get('direction', 'asc');
 
         $merchantIds = [];
+        $where = [];
 
         foreach($program->merchants as $merchant)    {
             $merchantIds[] = $merchant->id;
