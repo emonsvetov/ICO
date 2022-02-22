@@ -13,7 +13,7 @@ class CreateProgramBudgetTable extends Migration
      */
     public function up()
     {
-        Schema::create('c_months', function (Blueprint $table) {
+        Schema::create('months', function (Blueprint $table) {
             $table->id();
             $table->string('name')->nullable();
             $table->timestamps();
@@ -23,9 +23,11 @@ class CreateProgramBudgetTable extends Migration
             $table->id();
             $table->unsignedBigInteger('program_id');
             $table->float('budget');
-            $table->unSignedInteger('month_id');
+            $table->unsignedBigInteger('month_id');
             $table->integer('year');
             $table->tinyInteger('is_notified');
+            $table->foreign('program_id')->references('id')->on('programs')->onDelete('cascade');
+            $table->foreign('month_id')->references('id')->on('months')->onDelete('cascade');
             $table->timestamps();
         });
 
@@ -39,6 +41,7 @@ class CreateProgramBudgetTable extends Migration
      */
     public function down()
     {
+        Schema::dropIfExists('months');
         Schema::dropIfExists('program_budget');
     }
 }
