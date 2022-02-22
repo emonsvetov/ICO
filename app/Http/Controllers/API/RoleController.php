@@ -39,6 +39,8 @@ class RoleController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
+        $keyword = request()->get('keyword');
+
         // Permission::create(['name'=>'view-role-permission']);
 
         // $user = auth()->user();
@@ -50,7 +52,24 @@ class RoleController extends Controller
         // $user->assignRole(1);
         // return $user->getAllPermissions();
 
-        $roles = Role::orderBy('id','DESC')->paginate(20);
+        $where = [];
+
+        $query = Role::where( $where );
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('name', 'LIKE', "%{$keyword}%");
+            });
+        }
+        
+        if ( request()->has('minimal') )
+        {
+            $roles = $query->select('id', 'name')->get();
+        } else {
+            $roles = $query->paginate(request()->get('limit', 20));
+        }
 
         if ( $roles->isNotEmpty() ) 
         {
@@ -87,15 +106,15 @@ class RoleController extends Controller
     public function show( Organization $organization, Role $role )
     {
         if ( ! $organization->exists() || ! $role->exists() ) 
-        { 
+        {
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
-        $rolePermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
+        $role->permissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
             ->where("role_has_permissions.role_id", $role->id)
             ->get();
 
-        return response([ 'role' => $role, 'permissions' => $rolePermissions ]);
+        return response($role);
     }
     
     /**
@@ -107,7 +126,6 @@ class RoleController extends Controller
      */
     public function update(RoleRequest $request, Organization $organization, Role $role)
     {
-
         if ( ! $organization->exists() || ! $role->exists() ) 
         { 
             return response(['errors' => 'Invalid Organization or Role'], 422);
