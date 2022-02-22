@@ -2,12 +2,14 @@
     
 namespace App\Http\Controllers\API;
 
-
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\RoleRequest;
+use Spatie\Permission\Models\Role;
+use Illuminate\Http\Request;
+use App\Models\Organization;
 use App\Models\User;
+
 use DB;
     
 class RoleController extends Controller
@@ -30,8 +32,12 @@ class RoleController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(Request $request, Organization $organization)
     {
+        if ( ! $organization->exists() ) 
+        { 
+            return response(['errors' => 'Invalid Organization'], 422);
+        }
 
         // Permission::create(['name'=>'view-role-permission']);
 
@@ -60,13 +66,13 @@ class RoleController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(RoleRequest $request, Organization $organization)
     {
-        $this->validate($request, [
-            'name' => 'required|unique:roles,name',
-            'permission' => 'required',
-        ]);
-    
+        if ( ! $organization->exists() ) 
+        { 
+            return response(['errors' => 'Invalid Organization'], 422);
+        }
+
         $role = Role::create(['name' => $request->input('name')]);
         $role->syncPermissions($request->input('permission'));
 
@@ -78,11 +84,15 @@ class RoleController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show( Organization $organization, Role $role )
     {
-        $role = Role::find($id);
+        if ( ! $organization->exists() || ! $role->exists() ) 
+        { 
+            return response(['errors' => 'Invalid Organization or Role'], 422);
+        }
+
         $rolePermissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
-            ->where("role_has_permissions.role_id",$id)
+            ->where("role_has_permissions.role_id", $role->id)
             ->get();
 
         return response([ 'role' => $role, 'permissions' => $rolePermissions ]);
@@ -95,13 +105,14 @@ class RoleController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(RoleRequest $request, Organization $organization, Role $role)
     {
-        $this->validate($request, [
-            'name' => 'required',
-            'permission' => 'required',
-        ]);
-    
+
+        if ( ! $organization->exists() || ! $role->exists() ) 
+        { 
+            return response(['errors' => 'Invalid Organization or Role'], 422);
+        }
+
         $role = Role::find($id);
         $role->name = $request->input('name');
         $role->save();
@@ -116,9 +127,14 @@ class RoleController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Organization $organization, Role $role)
     {
-        Role::where('id',$id)->delete();
+        if ( ! $organization->exists() || ! $role->exists() ) 
+        { 
+            return response(['errors' => 'Invalid Organization or Role'], 422);
+        }
+
+        $role->where('id',$id)->delete();
         return response( ['deleted' => true] );
     }
 }
