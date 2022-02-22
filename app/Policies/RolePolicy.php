@@ -22,7 +22,7 @@ class RolePolicy
      */
     public function viewAny(User $user)
     {
-        return $user->can('view-role-permission');
+        return $user->can('role-list');
     }
 
     /**
@@ -34,7 +34,7 @@ class RolePolicy
      */
     public function view(User $authenticatedUser, User $user)
     {
-        return $authenticatedUser->id === $user->id || $authenticatedUser->permissions()->contains('view-role-permission');
+        return $authenticatedUser->id === $user->id || $authenticatedUser->can('role-view');
     }
 
     /**
@@ -45,7 +45,7 @@ class RolePolicy
      */
     public function create(User $user)
     {
-        return $user->permissions()->contains('create-role-permission');
+        return $user->can('role-create');
     }
 
     /**
@@ -57,7 +57,7 @@ class RolePolicy
      */
     public function update(User $user, Role $role)
     {
-        return $user->permissions()->contains('update-role-permission');
+        return $user->can('role-edit');
     }
 
     /**
@@ -69,31 +69,6 @@ class RolePolicy
      */
     public function delete(User $user, Role $role)
     {
-        return $user->permissions()->contains('delete-role-permission');
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\Role  $role
-     * @return mixed
-     */
-    public function restore(User $user, Role $role)
-    {
-        return $user->permissions()->contains('delete-role-permission');
-    }
-    
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\Role  $role
-     * @return mixed
-     */
-    public function forceDelete(User $user, Role $role)
-    {
-        //
+        return $user->can('role-delete');
     }
 }
