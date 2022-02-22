@@ -1,124 +1,62 @@
 <?php
-
+  
 namespace Database\Seeders;
-
+  
 use Illuminate\Database\Seeder;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
-
+use Spatie\Permission\Models\Permission;
+  
 class PermissionSeeder extends Seeder
 {
     /**
-     * Seed the application's database.
+     * Run the database seeds.
      *
      * @return void
      */
     public function run()
     {
-        $current_datetime = Carbon::now()->format('Y-m-d H:i:s');
-        DB::table('permissions')->insert([
-            [
-                'name' => 'create-user',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'update-user',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'delete-user',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'view-user',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'create-organization',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'update-organization',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'delete-organization',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'view-organization',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'create-role-permission',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'update-role-permission',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'delete-role-permission',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'view-role-permission',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'view-domains',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'view-domain',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'create-domain',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'update-domain',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-            [
-                'name' => 'delete-domain',
-                'description' => null,
-                'created_at' => $current_datetime,
-                'updated_at' => $current_datetime
-            ],
-        ]);
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $permissions = [
+           'organization-list',
+           'organization-create',
+           'organization-edit',
+           'organization-delete',
+           'user-list',
+           'user-create',
+           'user-edit',
+           'user-delete',
+           'role-list',
+           'role-create',
+           'role-edit',
+           'role-delete',
+           'permission-list',
+           'permission-create',
+           'permission-edit',
+           'permission-delete',
+           'domain-list',
+           'domain-create',
+           'domain-edit',
+           'domain-delete',
+           'program-list',
+           'program-create',
+           'program-edit',
+           'program-delete',
+           'program-merchant-list',
+           'program-merchant-edit',
+           'program-user-list',
+           'program-user-edit',
+           'merchant-list',
+           'merchant-create',
+           'merchant-edit',
+           'merchant-delete',
+           'reports-list',
+           'reports-view',
+           'physical-order-list',
+           'physical-order-view',
+        ];
+     
+        foreach ($permissions as $permission) {
+             Permission::create(['name' => $permission, 'guard_name' => 'api']);
+        }
     }
 }

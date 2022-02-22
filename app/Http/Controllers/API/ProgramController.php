@@ -94,13 +94,11 @@ class ProgramController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
         
-
         if ( !$newProgram )
         {
             return response(['errors' => 'Program Creation failed'], 422);
         }
 
-        
         ProgramCreated::dispatch( $newProgram );
         
         return response([ 'program' => $newProgram ]);
