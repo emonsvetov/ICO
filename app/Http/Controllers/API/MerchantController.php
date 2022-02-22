@@ -6,10 +6,12 @@ use App\Http\Traits\MerchantMediaUploadTrait;
 use App\Http\Requests\MerchantStatusRequest;
 use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\Merchant;
 use App\Models\MerchantNode;
 use App\Models\Node;
+use DB;
 
 class MerchantController extends Controller
 {
@@ -25,6 +27,8 @@ class MerchantController extends Controller
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
+
+        DB::enableQueryLog();
 
         $where = [];
 
@@ -52,10 +56,19 @@ class MerchantController extends Controller
         
         if ( request()->has('minimal') )
         {
-            $merchants = $query->select('id', 'name')->get();
+            $merchants = $query->select('id', 'name')
+            ->with(['children' => function($query){
+                return $query->select('id','name','parent_id')
+                ->with(['children' => function($query){
+                    return $query->select('id','name','parent_id');
+                }]);
+            }])
+            ->get();
         } else {
-            $merchants = $query->paginate(request()->get('limit', 10));
+            $merchants = $query->with('children')->paginate(request()->get('limit', 50));
         }
+
+        // Log::debug("Query:", DB::getQueryLog());
 
         if ( $merchants->isNotEmpty() ) 
         { 

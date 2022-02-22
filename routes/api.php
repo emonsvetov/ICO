@@ -122,28 +122,28 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'revoke'])->name('api.v1.organization.permission.revoke')->middleware('can:update,role');
 
     //Domain Routes
-    Route::get('/v1/organization/{organization}/domain', 
+    Route::get('/v1/organization/{organization}/domain',
     [App\Http\Controllers\API\DomainController::class, 'index'])->name('api.v1.domain.index')->middleware('can:viewAny,App\Domain');
-    Route::post('/v1/organization/{organization}/domain', 
+    Route::post('/v1/organization/{organization}/domain',
     [App\Http\Controllers\API\DomainController::class, 'store'])->name('api.v1.domain.store')->middleware('can:create,App\Domain');
-    Route::get('/v1/organization/{organization}/domain/{domain}', 
+    Route::get('/v1/organization/{organization}/domain/{domain}',
     [App\Http\Controllers\API\DomainController::class, 'show'])->name('api.v1.domain.show')->middleware('can:view,domain');
-    Route::put('/v1/organization/{organization}/domain/{domain}', 
+    Route::put('/v1/organization/{organization}/domain/{domain}',
     [App\Http\Controllers\API\DomainController::class, 'update'])->name('api.v1.domain.update')->middleware('can:update,domain');
-    Route::delete('/v1/organization/{organization}/domain/{domain}', 
+    Route::delete('/v1/organization/{organization}/domain/{domain}',
     [App\Http\Controllers\API\DomainController::class, 'delete'])->name('api.v1.domain.delete')->middleware('can:delete,domain');
-    Route::get('/v1/organization/{organization}/domain/{domain}/generateSecretKey', 
+    Route::get('/v1/organization/{organization}/domain/{domain}/generateSecretKey',
     [App\Http\Controllers\API\DomainController::class, 'generateSecretKey'])->name('api.v1.domain.generateSecretKey')->middleware('can:generateSecretKey,domain');
-    Route::post('/v1/organization/{organization}/domain/{domain}/addip', 
+    Route::post('/v1/organization/{organization}/domain/{domain}/addip',
     [App\Http\Controllers\API\DomainIPController::class, 'store'])->name('api.v1.domain_ip.store')->middleware('can:addIp,domain');
-    Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}', 
+    Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}',
     [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.store')->middleware('can:deleteIp,domain');
 
-    Route::get('/v1/organization/{organization}/domain/{domain}/program', 
+    Route::get('/v1/organization/{organization}/domain/{domain}/program',
     [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,domain');
-    Route::post('/v1/organization/{organization}/domain/{domain}/program', 
+    Route::post('/v1/organization/{organization}/domain/{domain}/program',
     [App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add')->middleware('can:create,domain');
-    Route::delete('/v1/organization/{organization}/domain/{domain}/program/{program}', 
+    Route::delete('/v1/organization/{organization}/domain/{domain}/program/{program}',
     [App\Http\Controllers\API\DomainProgramController::class, 'delete'])->name('api.v1.domain.domainProgram')->middleware('can:delete,domain,program');
 
     //Merchant Routes
@@ -161,13 +161,15 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //ProgramMerchant routes
 
-    Route::get('/v1/organization/{organization}/program/{program}/merchant', 
+    Route::get('/v1/organization/{organization}/program/{program}/merchant',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAnyMerchant,program');
 
-    Route::post('/v1/organization/{organization}/program/{program}/merchant', 
+    Route::post('/v1/organization/{organization}/program/{program}/merchant',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:addMerchant,program');
 
-    Route::delete('/v1/organization/{organization}/program/{program}/merchant/{merchant}', 
+    Route::delete('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:removeMerchant,program,merchant');
 
+    //Reports routes
+    Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index']);
 });
