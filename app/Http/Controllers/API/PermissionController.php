@@ -76,7 +76,7 @@ class PermissionController extends Controller
     public function store(PermissionRequest $request, Organization $organization)
     {
         if ( ! $organization->exists() ) 
-        { 
+        {
             return response(['errors' => 'Invalid Organization'], 422);
         }
 

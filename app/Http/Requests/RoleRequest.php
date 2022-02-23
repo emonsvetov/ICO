@@ -25,7 +25,16 @@ class RoleRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'permission' => 'required'
+            'permissions' => 'required|array',
+            'permissions.*' => 'required|integer', // check each item in the array
+        ];
+        
+    }
+
+    public function messages()
+    {
+        return [
+            'permissions.*' => 'Please select permissions',
         ];
     }
 }

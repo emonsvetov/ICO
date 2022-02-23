@@ -93,7 +93,7 @@ class RoleController extends Controller
         }
 
         $role = Role::create(['name' => $request->input('name')]);
-        $role->syncPermissions($request->input('permission'));
+        $role->syncPermissions($request->input('permissions'));
 
         return response([ 'role' => $role ]);
     }
@@ -131,11 +131,12 @@ class RoleController extends Controller
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
-        $role = Role::find($id);
+        // return $request->validated();
+
         $role->name = $request->input('name');
         $role->save();
-    
-        $role->syncPermissions($request->input('permission'));
+
+        $role->syncPermissions($request->input('permissions'));
     
         return response([ 'role' => $role ]);
     }
@@ -147,12 +148,12 @@ class RoleController extends Controller
      */
     public function destroy(Organization $organization, Role $role)
     {
-        if ( ! $organization->exists() || ! $role->exists() ) 
+        if ( ! $organization->exists() || ! $role->exists() )
         { 
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
-        $role->where('id',$id)->delete();
+        $role->delete();
         return response( ['deleted' => true] );
     }
 }
