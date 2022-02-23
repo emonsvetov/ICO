@@ -108,8 +108,14 @@ class ProgramController extends Controller
 
     public function show( $organization, Program $program )
     {
+        if ( $organization->id != $program->organization_id )
+        {
+            return response(['errors' => 'Invalid Organization or Program'], 422);
+        }
+
         if ( $program ) 
         { 
+            $program->merchants;
             return response( $program );
         }
 
@@ -118,9 +124,9 @@ class ProgramController extends Controller
 
     public function update(ProgramRequest $request, Organization $organization, Program $program )
     {
-        if ( ! $program->exists ) 
-        { 
-            return response(['errors' => 'No Program Found'], 404);
+        if ( $organization->id != $program->organization_id )
+        {
+            return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
         $program->update( $request->validated() );
@@ -130,9 +136,9 @@ class ProgramController extends Controller
 
     public function move(ProgramMoveRequest $request, Organization $organization, Program $program )
     {
-        if ( ! $program->exists ) 
+        if ( $organization->id != $program->organization_id )
         {
-            return response(['errors' => 'No Program Found'], 404);
+            return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
         $program->update( $request->validated() );
