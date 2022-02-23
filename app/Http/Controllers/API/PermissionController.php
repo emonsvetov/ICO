@@ -39,6 +39,8 @@ class PermissionController extends Controller
         }
 
         $keyword = request()->get('keyword');
+        $sortby = request()->get('sortby', 'id');
+        $direction = request()->get('direction', 'asc');
 
         $where = [];
 
@@ -51,6 +53,18 @@ class PermissionController extends Controller
                 ->orWhere('name', 'LIKE', "%{$keyword}%");
             });
         }
+
+        if( $sortby == "name" ) 
+        {
+            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+            $orderByRaw = "{$sortby} {$collation} {$direction}";
+        }
+        else
+        {
+            $orderByRaw = "{$sortby} {$direction}";
+        }
+
+        $query = $query->orderByRaw($orderByRaw);
         
         if ( request()->has('minimal') )
         {
@@ -82,6 +96,10 @@ class PermissionController extends Controller
 
         $permission = Permission::create(['name' => $request->input('name')]);
 
+        if( $request->input('roles') )  {
+            $permission->syncRoles( $request->input('roles') );
+        }
+
         return response([ 'permission' => $permission ]);
     }
     /**
@@ -96,6 +114,8 @@ class PermissionController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Permission'], 422);
         }
+
+        $permission->roles;
 
         return response($permission);
     }
@@ -116,6 +136,10 @@ class PermissionController extends Controller
 
         $permission->name = $request->input('name');
         $permission->save();
+
+        if( $request->input('roles') )  {
+            $permission->syncRoles( $request->input('roles') );
+        }
         
         return response([ 'permission' => $permission ]);
     }
@@ -132,7 +156,7 @@ class PermissionController extends Controller
             return response(['errors' => 'Invalid Organization or Permission'], 422);
         }
 
-        $permission->where('id',$id)->delete();
+        $permission->delete();
         return response( ['deleted' => true] );
     }
 }
