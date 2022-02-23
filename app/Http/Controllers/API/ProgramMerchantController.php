@@ -78,7 +78,7 @@ class ProgramMerchantController extends Controller
 
     public function store( ProgramMerchantRequest $request, Organization $organization, Program $program )
     {
-        if ( !$organization || !$program )
+        if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
@@ -108,9 +108,9 @@ class ProgramMerchantController extends Controller
 
     public function delete(Organization $organization, Program $program, Merchant $merchant )
     {
-        if ( !$organization || !$program || !$merchant )
+        if ( $organization->id != $program->organization_id )
         {
-            return response(['errors' => 'Invalid Organization or Program or Merchant'], 422);
+            return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
         try{
