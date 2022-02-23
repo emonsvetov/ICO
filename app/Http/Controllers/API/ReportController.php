@@ -18,7 +18,7 @@ class ReportController extends Controller
         $end_date = $request->get( 'end_date' );
 
         if( $end_date ) {
-            $end_date  = date("Y-m-d H:i:s", strtotime($end_date)); 
+            $end_date  = date("Y-m-d H:i:s", strtotime($end_date));
         }
 
         return response( [$merchant_id, $end_date]);
