@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 use App\Notifications\ResetPasswordNotification;
 
@@ -57,6 +58,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
+    protected $visible = [
+        // '*',
+        // 'programs'
+    ];
+
     /**
      * The attributes that should be cast to native types.
      *
@@ -66,13 +72,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
+    protected $appends = ['name'];
+
+    public function getNameAttribute()
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
     
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);
     }
 
-    
     public function sendPasswordResetNotification($token)
     {
         
@@ -81,30 +92,10 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->notify(new ResetPasswordNotification($url));
     }
 
-    public function roles()
+    public function programs()
     {
-        return $this->belongsToMany(Role::class)->withTimestamps();
-    }
-
-    public function assignRole($role)
-    {
-        return $this->roles()->sync($role);
-        //return $this->roles()->save($role);
-        //$this->permissions()->save($permission);
-    }
-
-    public function permissions()
-    {
-        return $this->roles->map->permissions->flatten()->pluck('name')->unique();
-    }
-
-    public function roleNames()
-    {
-        return $this->roles->flatten()->pluck('name')->unique();
-    }
-
-    public function revokeRole($role)
-    {
-        return $this->roles()->detach($role);
+        return $this->belongsToMany(Program::class, 'program_user')
+        // ->withPivot('featured', 'cost_to_program')
+        ->withTimestamps();
     }
 }
