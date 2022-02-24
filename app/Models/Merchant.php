@@ -17,4 +17,9 @@ class Merchant extends Model
     {
         return $this->hasMany(Merchant::class, 'parent_id')->with('children');
     }
+
+    public function programs()
+    {
+        return $this->belongsToMany(Program::class, 'program_merchant');
+    }
 }
