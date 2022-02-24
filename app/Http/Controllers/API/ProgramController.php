@@ -106,7 +106,6 @@ class ProgramController extends Controller
 
     public function show( Organization $organization, Program $program )
     {
-
         if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
@@ -114,6 +113,7 @@ class ProgramController extends Controller
 
         if ( $program ) 
         { 
+            $program->merchants;
             return response( $program );
         }
 
@@ -122,7 +122,6 @@ class ProgramController extends Controller
 
     public function update(ProgramRequest $request, Organization $organization, Program $program )
     {
-
         if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);

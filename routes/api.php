@@ -140,6 +140,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     [App\Http\Controllers\API\DomainIPController::class, 'store'])->name('api.v1.domain_ip.store')->middleware('can:addIp,domain');
     Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}', 
     [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.store')->middleware('can:deleteIp,domain');
+
     Route::get('/v1/organization/{organization}/domain/{domain}/program', 
     [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,domain');
     Route::post('/v1/organization/{organization}/domain/{domain}/program', 
@@ -159,5 +160,16 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'index'])->middleware('can:viewAnySubmerchant,merchant');
     Route::post('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'store'])->middleware('can:createSubmerchant,merchant');
     Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:deleteSubmerchant,merchant');
+
+    //ProgramMerchant routes
+
+    Route::get('/v1/organization/{organization}/program/{program}/merchant', 
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAnyMerchant,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/merchant', 
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:addMerchant,program');
+
+    Route::delete('/v1/organization/{organization}/program/{program}/merchant/{merchant}', 
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:removeMerchant,program,merchant');
 
 });
