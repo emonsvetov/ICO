@@ -12,20 +12,7 @@ use App\Models\User;
 use DB;
     
 class PermissionController extends Controller
-{
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    function __construct()
-    {
-        //  $this->middleware('permission:permission-list|permission-create|permission-edit|permission-delete', ['only' => ['index','store']]);
-        //  $this->middleware('permission:permission-create', ['only' => ['create','store']]);
-        //  $this->middleware('permission:permission-edit', ['only' => ['edit','update']]);
-        //  $this->middleware('permission:permission-delete', ['only' => ['destroy']]);
-    }
-    
+{  
     /**
      * Display a listing of the resource.
      *
@@ -42,7 +29,7 @@ class PermissionController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        $where = [];
+        $where = ['organization_id' => $organization->id];
 
         $query = Permission::where( $where );
 
@@ -94,7 +81,7 @@ class PermissionController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        $permission = Permission::create(['name' => $request->input('name')]);
+        $permission = Permission::create(['name' => $request->input('name'), 'organization_id' => $organization->id]);
 
         if( $request->input('roles') )  {
             $permission->syncRoles( $request->input('roles') );

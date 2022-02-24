@@ -18,10 +18,10 @@ class RoleSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $role = Role::create(['name' => 'Super Admin']);
-        $role = Role::create(['name' => 'Admin']);
-        $role = Role::create(['name' => 'Manager']);
-        $role = Role::create(['name' => 'Participant']);
+        $role = Role::create(['name' => 'Super Admin', 'organization_id' => 1]);
+        $role = Role::create(['name' => 'Admin', 'organization_id' => 1]);
+        $role = Role::create(['name' => 'Manager', 'organization_id' => 1]);
+        $role = Role::create(['name' => 'Participant', 'organization_id' => 1]);
         // $permissions = Permission::pluck('id','id')->all();
         // $role->syncPermissions($permissions);
         // $user = User::find(1); //ID:1 should always be a super admin!

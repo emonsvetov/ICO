@@ -13,10 +13,10 @@ class DeleteOldPermissions extends Migration
      */
     public function up()
     {
-        Schema::drop('roles');
-        Schema::drop('role_user');
-        Schema::drop('permissions');
-        Schema::drop('permission_role');
+        Schema::dropIfExists('roles');
+        Schema::dropIfExists('role_user');
+        Schema::dropIfExists('permissions');
+        Schema::dropIfExists('permission_role');
     }
 
     /**

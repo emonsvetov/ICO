@@ -19,19 +19,6 @@ class RoleController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    function __construct()
-    {
-        //  $this->middleware('permission:role-list|role-create|role-edit|role-delete', ['only' => ['index','store']]);
-        //  $this->middleware('permission:role-create', ['only' => ['create','store']]);
-        //  $this->middleware('permission:role-edit', ['only' => ['edit','update']]);
-        //  $this->middleware('permission:role-delete', ['only' => ['destroy']]);
-    }
-    
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index(Request $request, Organization $organization)
     {
         if ( ! $organization->exists() ) 
@@ -54,7 +41,7 @@ class RoleController extends Controller
         // $user->assignRole(1);
         // return $user->getAllPermissions();
 
-        $where = [];
+        $where = ['organization_id' => $organization->id];
 
         $query = Role::where( $where );
 
@@ -106,7 +93,7 @@ class RoleController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        $role = Role::create(['name' => $request->input('name')]);
+        $role = Role::create(['name' => $request->input('name'), 'organization_id' => $organization->id]);
         $role->syncPermissions($request->input('permissions'));
 
         return response([ 'role' => $role ]);
