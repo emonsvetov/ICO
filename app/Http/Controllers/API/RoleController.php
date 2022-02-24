@@ -106,7 +106,7 @@ class RoleController extends Controller
      */
     public function show( Organization $organization, Role $role )
     {
-        if ( ! $organization->exists() || ! $role->exists() ) 
+        if ( $organization->id != $role->organization_id ) 
         {
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
@@ -127,7 +127,7 @@ class RoleController extends Controller
      */
     public function update(RoleRequest $request, Organization $organization, Role $role)
     {
-        if ( ! $organization->exists() || ! $role->exists() ) 
+        if ( $organization->id != $role->organization_id ) 
         { 
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
@@ -149,8 +149,8 @@ class RoleController extends Controller
      */
     public function destroy(Organization $organization, Role $role)
     {
-        if ( ! $organization->exists() || ! $role->exists() )
-        { 
+        if ( $organization->id != $role->organization_id )
+        {
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 

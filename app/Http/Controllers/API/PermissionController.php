@@ -97,7 +97,7 @@ class PermissionController extends Controller
      */
     public function show( Organization $organization, Permission $permission )
     {
-        if ( ! $organization->exists() || ! $permission->exists() ) 
+        if ( $organization->id != $permission->organization_id ) 
         {
             return response(['errors' => 'Invalid Organization or Permission'], 422);
         }
@@ -116,7 +116,7 @@ class PermissionController extends Controller
      */
     public function update(PermissionRequest $request, Organization $organization, Permission $permission)
     {
-        if ( ! $organization->exists() || ! $permission->exists() ) 
+        if ( $organization->id != $permission->organization_id ) 
         { 
             return response(['errors' => 'Invalid Organization or Permission'], 422);
         }
@@ -138,7 +138,7 @@ class PermissionController extends Controller
      */
     public function destroy(Organization $organization, Permission $permission)
     {
-        if ( ! $organization->exists() || ! $permission->exists() ) 
+        if ( $organization->id != $permission->organization_id ) 
         { 
             return response(['errors' => 'Invalid Organization or Permission'], 422);
         }
