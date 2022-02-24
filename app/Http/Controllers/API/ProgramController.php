@@ -29,7 +29,7 @@ class ProgramController extends Controller
                 $where[] = ['status', $status];
             }
 
-            if( $sortby == "name" ) 
+            if( $sortby == "name" )
             {
                 $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
                 $orderByRaw = "{$sortby} {$collation} {$direction}";
@@ -51,7 +51,7 @@ class ProgramController extends Controller
             }
 
             $query = $query->orderByRaw($orderByRaw);
-            
+
             if ( request()->has('minimal') )
             {
                 $programs = $query->select('id', 'name')
@@ -72,8 +72,8 @@ class ProgramController extends Controller
         }
 
 
-        if ( $programs->isNotEmpty() ) 
-        { 
+        if ( $programs->isNotEmpty() )
+        {
             return response( $programs );
         }
 
@@ -84,37 +84,38 @@ class ProgramController extends Controller
     {
         if ( $organization )
         {
-            $newProgram = Program::create( 
-                                        $request->validated() + 
-                                        ['organization_id' => $organization->id] 
+            $newProgram = Program::create(
+                                        $request->validated() +
+                                        ['organization_id' => $organization->id]
                                         );
         }
         else
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
-        
+
 
         if ( !$newProgram )
         {
             return response(['errors' => 'Program Creation failed'], 422);
         }
 
-        
+
         ProgramCreated::dispatch( $newProgram );
-        
+
         return response([ 'program' => $newProgram ]);
     }
 
     public function show( $organization, Program $program )
     {
+        return response($organization);
         if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
-        if ( $program ) 
-        { 
+        if ( $program )
+        {
             $program->merchants;
             return response( $program );
         }
