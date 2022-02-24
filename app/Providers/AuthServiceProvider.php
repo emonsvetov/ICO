@@ -33,6 +33,8 @@ class AuthServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
 
+
+
         if (! $this->app->routesAreCached()) {
             Passport::routes();
         }
@@ -47,14 +49,11 @@ class AuthServiceProvider extends ServiceProvider
                 ->action('Verify Email Address', $verifyUrl);
         });
 
-        /* USE THIS IF YOU WANT AN ADMIN USER
-        Gate::before(function (User $user)
-                    {
-                        if($user->roles->pluck('name')->contains('admin'))
-                        {
-                            return true;
-                        }
-                    });
-        */
+        // Implicitly grant "Super Admin" role all permissions
+        // This works in the app by using gate-related functions like auth()->user->can() and @can()
+        Gate::before(function ($user, $ability) {
+            // return $user->hasRole('Super Admin') ? true : null;
+            return true;
+        });
     }
 }

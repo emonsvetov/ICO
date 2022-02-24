@@ -42,12 +42,10 @@ class UserController extends Controller
 
             // DB::enableQueryLog();
             $users = User::where($where)
-                        ->orderByRaw($orderByRaw)
-                        ->paginate( $limit );
+            ->orderByRaw($orderByRaw)
+            ->paginate( $limit );
 
-            // return (DB::getQueryLog());
-
-                        
+            // return (DB::getQueryLog());             
         }
         else
         {

@@ -93,20 +93,27 @@ class ProgramController extends Controller
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
+<<<<<<< HEAD
 
 
+=======
+        
+>>>>>>> Development
         if ( !$newProgram )
         {
             return response(['errors' => 'Program Creation failed'], 422);
         }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> Development
         ProgramCreated::dispatch( $newProgram );
 
         return response([ 'program' => $newProgram ]);
     }
 
-    public function show( $organization, Program $program )
+    public function show( Organization $organization, Program $program )
     {
         return response($organization);
         if ( $organization->id != $program->organization_id )
