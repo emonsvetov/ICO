@@ -1,139 +1,160 @@
 <?php
-
+    
 namespace App\Http\Controllers\API;
 
+use Spatie\Permission\Models\Permission;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
 use App\Http\Requests\RoleRequest;
+use Spatie\Permission\Models\Role;
+use Illuminate\Http\Request;
 use App\Models\Organization;
-use App\Models\Role;
 use App\Models\User;
 
-
+use DB;
+    
 class RoleController extends Controller
 {
-    public function index( Organization $organization )
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request, Organization $organization)
     {
-        $roles = Role::where('organization_id', $organization->id)                       
-                     ->orderBy('name')
-                     ->get();
+        if ( ! $organization->exists() ) 
+        { 
+            return response(['errors' => 'Invalid Organization'], 422);
+        }
+
+        $keyword = request()->get('keyword');
+        $sortby = request()->get('sortby', 'id');
+        $direction = request()->get('direction', 'asc');
+
+        // Permission::create(['name'=>'view-role-permission']);
+
+        // $user = auth()->user();
+
+        // $user->givePermissionTo('view-role-permission');
+
+        // $role = Role::find(1);
+        // $user = User::find(1);
+        // $user->assignRole(1);
+        // return $user->getAllPermissions();
+
+        $where = ['organization_id' => $organization->id];
+
+        $query = Role::where( $where );
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('name', 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        if( $sortby == "name" ) 
+        {
+            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+            $orderByRaw = "{$sortby} {$collation} {$direction}";
+        }
+        else
+        {
+            $orderByRaw = "{$sortby} {$direction}";
+        }
+
+        $query = $query->orderByRaw($orderByRaw);
+        
+        if ( request()->has('minimal') )
+        {
+            $roles = $query->select('id', 'name')->get();
+        } else {
+            $roles = $query->paginate(request()->get('limit', 20));
+        }
 
         if ( $roles->isNotEmpty() ) 
-        { 
-            foreach ($roles as $role) 
-            {
-                $role->permissions;
-            }
-            
+        {
             return response( $roles );
         }
 
         return response( [] );
     }
-
+    
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function store(RoleRequest $request, Organization $organization)
     {
-        if ( $organization )
-        {
-            $newRole = Role::create( 
-                                    $request->validated() + 
-                                    ['organization_id' => $organization->id] 
-                                    );
-        }
-        else
-        {
+        if ( ! $organization->exists() ) 
+        { 
             return response(['errors' => 'Invalid Organization'], 422);
         }
-        
 
-        if ( !$newRole )
-        {
-            return response(['errors' => 'Role Creation failed'], 422);
-        }
-        
-        return response( $newRole );
+        $role = Role::create(['name' => $request->input('name'), 'organization_id' => $organization->id]);
+        $role->syncPermissions($request->input('permissions'));
+
+        return response([ 'role' => $role ]);
     }
-
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function show( Organization $organization, Role $role )
     {
-        if ( $organization->id == $role->organization_id ) 
-        { 
-            $role->permissions;
-            return response( ['role' => $role] );
+        if ( $organization->id != $role->organization_id ) 
+        {
+            return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
-        return response( [] );
-    }
+        $role->permissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
+            ->where("role_has_permissions.role_id", $role->id)
+            ->get();
 
-    public function update(RoleRequest $request, Organization $organization, Role $role )
+        return response($role);
+    }
+    
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(RoleRequest $request, Organization $organization, Role $role)
     {
-        if ( ! ( $organization->id == $role->organization_id ) ) 
+        if ( $organization->id != $role->organization_id ) 
         { 
-            return response(['errors' => 'No Role Found'], 404);
+            return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
-        $role->update( $request->validated() );
+        // return $request->validated();
 
-        return response( $role );
+        $role->name = $request->input('name');
+        $role->save();
+
+        $role->syncPermissions($request->input('permissions'));
+    
+        return response([ 'role' => $role ]);
     }
-
-    public function destroy( Organization $organization, Role $role )
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Organization $organization, Role $role)
     {
-        if ( ! ( $organization->id == $role->organization_id ) ) 
-        { 
-            return response(['errors' => 'No Role Found'], 404);
+        if ( $organization->id != $role->organization_id )
+        {
+            return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
         $role->delete();
-
         return response( ['deleted' => true] );
     }
-
-    
-    public function userRoleIndex( Organization $organization, User $user )
-    {
-        if ( ! ( $organization->id == $user->organization_id ) ) 
-        { 
-            return response(['errors' => 'Invalid'], 404);
-        }
-        
-        $user->roles->map->permissions->flatten()->pluck('name')->unique();
-
-        return response( $user->roles );
-    }
-
-    public function assign( Organization $organization, User $user, Role $role )
-    {
-        if ( ! ( $organization->id == $role->organization_id && $organization->id == $user->organization_id ) ) 
-        { 
-            return response(['errors' => 'Invalid Assignment'], 404);
-        }
-
-        
-        if (! $user->roleNames()->contains( $role->name ))
-        {
-            $user->assignRole($role);
-        }
-        
-        $user->refresh();
-        $user->roles;
-
-        return response( $user );
-    }
-
-    public function revoke( Organization $organization, User $user, Role $role )
-    {
-        if ( ! ( $organization->id == $role->organization_id && $organization->id == $user->organization_id ) ) 
-        { 
-            return response(['errors' => 'Invalid Revoke'], 404);
-        }
-
-        $user->revokeRole($role);
-        
-        $user->roles;
-        
-        return response( $user );
-    }
-
 }

@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class RoleRequest extends FormRequest
+class PermissionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,8 +25,8 @@ class RoleRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-            'permissions' => 'required|array',
-            'permissions.*' => 'required|integer', // check each item in the array
+            'roles' => 'nullable|array',
+            'roles.*' => 'integer', // check each item in the array
         ];
         
     }
@@ -34,7 +34,8 @@ class RoleRequest extends FormRequest
     public function messages()
     {
         return [
-            'permissions.*' => 'Please select permissions',
+            'roles' => 'Invalid roles format',
+            'roles.*' => 'Invalid roles format',
         ];
     }
 }
