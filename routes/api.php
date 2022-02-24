@@ -112,14 +112,16 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/user/{user}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'revoke'])->name('api.v1.organization.user.role.revoke')->middleware('can:update,role');
 
     Route::get('/v1/organization/{organization}/role', [App\Http\Controllers\API\RoleController::class, 'index'])->name('api.v1.organization.role.index')->middleware('can:viewAny,App\Role');
-    Route::get('/v1/organization/{organization}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'show'])->name('api.v1.organization.role.show')->middleware('can:viewAny,role');
+    Route::get('/v1/organization/{organization}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'show'])->name('api.v1.organization.role.show')->middleware('can:view,role');
     Route::post('/v1/organization/{organization}/role', [App\Http\Controllers\API\RoleController::class, 'store'])->name('api.v1.organization.role.store')->middleware('can:create,App\Role');
     Route::put('/v1/organization/{organization}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'update'])->name('api.v1.organization.role.update')->middleware('can:update,role');
     Route::delete('/v1/organization/{organization}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'destroy'])->name('api.v1.organization.role.destroy')->middleware('can:delete,role');
 
-    Route::get('/v1/organization/{organization}/permission', [App\Http\Controllers\API\PermissionController::class, 'index'])->name('api.v1.organization.permission.index')->middleware('can:viewAny,App\Role');
-    Route::put('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'assign'])->name('api.v1.organization.permission.assign')->middleware('can:update,role');
-    Route::delete('/v1/organization/{organization}/role/{role}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'revoke'])->name('api.v1.organization.permission.revoke')->middleware('can:update,role');
+    Route::get('/v1/organization/{organization}/permission', [App\Http\Controllers\API\PermissionController::class, 'index'])->name('api.v1.organization.permission.index')->middleware('can:viewAny,App\Permission');
+    Route::get('/v1/organization/{organization}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'show'])->name('api.v1.organization.permission.view')->middleware('can:view,permission');
+    Route::post('/v1/organization/{organization}/permission', [App\Http\Controllers\API\PermissionController::class, 'store'])->name('api.v1.organization.permission.store')->middleware('can:create');
+    Route::put('/v1/organization/{organization}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'update'])->name('api.v1.organization.permission.update')->middleware('can:update,permission');
+    Route::delete('/v1/organization/{organization}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'destroy'])->name('api.v1.organization.permission.delete')->middleware('can:delete,permission');
 
     //Domain Routes
     Route::get('/v1/organization/{organization}/domain', 
