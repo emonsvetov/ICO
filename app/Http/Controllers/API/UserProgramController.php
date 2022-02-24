@@ -32,7 +32,7 @@ class UserProgramController extends Controller
             $programIds[] = $program->id;
         }
 
-        if( $sortby == "name" ) 
+        if( $sortby == "name" )
         {
             $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
             $orderByRaw = "{$sortby} {$collation} {$direction}";
@@ -43,7 +43,7 @@ class UserProgramController extends Controller
         }
 
         $query = Program::whereIn('id', $programIds)
-                    ->where($where);
+        ->where($where);
 
         if( $keyword )
         {
@@ -57,20 +57,16 @@ class UserProgramController extends Controller
         
         if ( request()->has('minimal') )
         {
-            $users = $query->select('id', 'name')
-            ->with(['children' => function($query){
-                return $query->select('id','name','parent_id');
-            }])
-            ->get();
+            $programs = $query->select('id', 'name')->get();
         }
-        else {
-            $users = $query->with('children')
-            ->paginate(request()->get('limit', 10));
+        else 
+        {
+            $programs = $query->get();
         }
 
-        if ( $users->isNotEmpty() ) 
+        if ( $programs->isNotEmpty() ) 
         { 
-            return response( $users );
+            return response( $programs );
         }
 
         return response( [] );

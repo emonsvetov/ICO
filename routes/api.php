@@ -170,4 +170,15 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/program/{program}/merchant/{merchant}', 
     [App\Http\Controllers\API\ProgramMerchantController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:removeMerchant,program,merchant');
 
+    //UserProgram routes
+
+    Route::get('/v1/organization/{organization}/user/{user}/program', 
+    [App\Http\Controllers\API\UserProgramController::class, 'index'])->middleware('can:viewAnyProgram,user');
+
+    // Route::post('/v1/organization/{organization}/user/{user}/program', 
+    // [App\Http\Controllers\API\UserProgramController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:addMerchant,program');
+
+    // Route::delete('/v1/organization/{organization}/program/{program}/merchant/{merchant}', 
+    // [App\Http\Controllers\API\UserProgramController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:removeMerchant,program,merchant');
+
 });

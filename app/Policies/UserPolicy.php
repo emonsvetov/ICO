@@ -17,8 +17,7 @@ class UserPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-user');
-        //
+        return $user->can('user-list');
     }
 
     /**
@@ -30,7 +29,7 @@ class UserPolicy
      */
     public function view(User $authenticatedUser, User $user)
     {
-        return $authenticatedUser->id === $user->id ||  $authenticatedUser->permissions()->contains('view-user');
+        return $authenticatedUser->id === $user->id ||  $authenticatedUser->can('user-view');
     }
 
     /**
@@ -41,7 +40,7 @@ class UserPolicy
      */
     public function create(User $user)
     {
-        //return $user->permissions()->contains('create-user');
+        return $user->can('user-create');
     }
 
     /**
@@ -53,7 +52,7 @@ class UserPolicy
      */
     public function update(User $authenticatedUser, User $user)
     {
-        return $authenticatedUser->id === $user->id || $authenticatedUser->permissions()->contains('update-user');
+        return $authenticatedUser->id === $user->id || $authenticatedUser->can('user-update');
     }
 
     /**
@@ -65,32 +64,11 @@ class UserPolicy
      */
     public function delete(User $user, User $model)
     {
-        return $user->permissions()->contains('delete-user');
+        return $user->can('user-delete');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\User  $model
-     * @return mixed
-     */
-    /*
-    public function restore(User $user, User $model)
+    public function viewAnyProgram(User $user)
     {
-        //
-    }*/
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\User  $model
-     * @return mixed
-     */
-    /*
-    public function forceDelete(User $user, User $model)
-    {
-        //
-    }*/
+        return $user->can('user-program-list');
+    }
 }

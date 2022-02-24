@@ -88,7 +88,7 @@ class ProgramUserController extends Controller
         $columns = [];
         
         try{
-            $program->users()->sync( [ $validated['user_id'] => $columns ], false);
+            $program->users()->sync( [ $validated['user_id' ] => $columns ], false);
         }   catch( Exception $e) {
             return response(['errors' => 'User adding failed', 'e' => $e->getMessage()], 422);
         }
