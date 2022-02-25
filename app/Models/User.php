@@ -92,7 +92,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $this->notify(new ResetPasswordNotification($url));
     }
-<<<<<<< HEAD
 
     public function programs()
     {
@@ -100,6 +99,4 @@ class User extends Authenticatable implements MustVerifyEmail
         // ->withPivot('featured', 'cost_to_program')
         ->withTimestamps();
     }
-=======
->>>>>>> Development
 }

@@ -42,16 +42,15 @@ class AuthController extends Controller
 
     public function login(UserLoginRequest $request)
     {
-       
-        if (!auth()->attempt( $request->validated() )) {
+        if (!auth()->guard('web')->attempt( $request->validated() )) {
             return response(['message' => 'Invalid Credentials'], 422);
         }
 
-        $accessToken = auth()->user()->createToken('authToken')->accessToken;
+        $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
 
-        auth()->user()->roles->map->permissions->flatten()->pluck('name')->unique();
+        auth()->guard('web')->user()->roles->map->permissions->flatten()->pluck('name')->unique();
 
-        return response(['user' => auth()->user(), 'access_token' => $accessToken]);
+        return response(['user' => auth()->guard('web')->user(), 'access_token' => $accessToken]);
 
     }
 
