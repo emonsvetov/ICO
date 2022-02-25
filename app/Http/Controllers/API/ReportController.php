@@ -28,21 +28,22 @@ class ReportController extends Controller
                 }
 
                 return response( [$merchant_id, $end_date]);
-
                 break;
             case 3:
                 $program_ids = explode(',', $request->get( 'program_id' ));
                 $year = $request->get( 'year' );
 
-                $query = ProgramBudget::select('budget','program_id')->whereIn('program_id', $program_ids)
-                                    ->where('year', '=', $year)
-                                    ->get()->groupBy('program_id');
+                $result = ProgramBudget::join("months", "program_budget.month_id", "=", "months.id")
+                    ->select("budget", "program_id", "months.name AS month")
+                    ->whereIn('program_id', $program_ids)
+                    ->where('is_notified', "=", 1)
+                    ->get()
+                    ->groupBy('program_id');
 
-                return response($query);
+                return response($result);
                 break;
 
         }
-
 
     }
 }
