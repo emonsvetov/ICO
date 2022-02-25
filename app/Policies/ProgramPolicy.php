@@ -67,4 +67,20 @@ class ProgramPolicy
         // !!Program $program... !!Merchant $merchant
         return $user->permissions()->contains('remove-program-merchant');
     }
+
+    public function viewAnyUser(Program $program)
+    {
+        return $user->can('program-user-list');
+    }
+
+    public function addUser(Program $program)
+    {
+        return $user->can('program-user-add');
+    }
+
+    public function removeUser(Program $program, User $user)
+    {
+        if( $user->organization_id != $prgram->organization_id) return false;
+        return $user->can('program-user-remove');
+    }
 }

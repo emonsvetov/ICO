@@ -8,7 +8,7 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Models\Program;
 Use Exception;
-// use DB;
+use DB;
 
 class ProgramUserController extends Controller
 {
@@ -32,24 +32,23 @@ class ProgramUserController extends Controller
             $userIds[] = $user->id;
         }
 
-        if( $sortby == "name" ) 
+        $query = User::whereIn('id', $userIds)
+                    ->where($where);
+
+        if( $sortby == 'name' )
         {
-            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-            $orderByRaw = "{$sortby} {$collation} {$direction}";
+            $orderByRaw = "first_name $direction, last_name $direction";
         }
         else
         {
-            $orderByRaw = "{$sortby} {$direction}";
+            $orderByRaw = "$sortby $direction";
         }
-
-        $query = User::whereIn('id', $userIds)
-                    ->where($where);
 
         if( $keyword )
         {
             $query = $query->where(function($query1) use($keyword) {
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                ->orWhere('name', 'LIKE', "%{$keyword}%");
+                ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%");
             });
         }
 
@@ -57,15 +56,10 @@ class ProgramUserController extends Controller
         
         if ( request()->has('minimal') )
         {
-            $users = $query->select('id', 'name')
-            ->with(['children' => function($query){
-                return $query->select('id','name','parent_id');
-            }])
-            ->get();
+            $users = $query->select('id', 'name')->get();
         }
         else {
-            $users = $query->with('children')
-            ->paginate(request()->get('limit', 10));
+            $users = $query->paginate(request()->get('limit', 20));
         }
 
         if ( $users->isNotEmpty() ) 

@@ -72,37 +72,37 @@ class UserProgramController extends Controller
         return response( [] );
     }
 
-    public function store( UserProgramRequest $request, Organization $organization, Program $program )
+    public function store( UserProgramRequest $request, Organization $organization, User $user )
     {
-        if ( $organization->id != $program->organization_id )
+        if ( $organization->id != $user->organization_id )
         {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
+            return response(['errors' => 'Invalid Organization or User'], 422);
         }
 
         $validated = $request->validated();
 
-        $columns = [];
+        $columns = []; //any additional columns set here
         
-        try{
-            $program->users()->sync( [ $validated['user_id'] => $columns ], false);
-        }   catch( Exception $e) {
-            return response(['errors' => 'User adding failed', 'e' => $e->getMessage()], 422);
+        try {
+            $user->programs()->sync( [ $validated['program_id'] => $columns ], false);
+        } catch( Exception $e) {
+            return response(['errors' => 'Program adding failed', 'e' => $e->getMessage()], 422);
         }
 
         return response([ 'success' => true ]);
     }
 
-    public function delete(Organization $organization, Program $program, User $user )
+    public function delete(Organization $organization, User $user, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
+        if ( $organization->id != $user->organization_id || $user->organization_id != $program->organization_id )
         {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
+            return response(['errors' => 'Invalid Organization or User or Program'], 422);
         }
 
         try{
-            $program->users()->detach( $user );
+            $user->programs()->detach( $program );
         }   catch( Exception $e) {
-            return response(['errors' => 'User removal failed', 'e' => $e->getMessage()], 422);
+            return response(['errors' => 'Program removal failed', 'e' => $e->getMessage()], 422);
         }
 
         return response([ 'success' => true ]);
