@@ -6,12 +6,10 @@ use App\Http\Traits\MerchantMediaUploadTrait;
 use App\Http\Requests\MerchantStatusRequest;
 use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use App\Models\Merchant;
 use App\Models\MerchantNode;
 use App\Models\Node;
-use DB;
 
 class MerchantController extends Controller
 {
