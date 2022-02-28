@@ -5,7 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Organization;
 use App\Models\ProgramBudget;
-
+use App\Http\Requests\ReportRequest;
 class ReportController extends Controller
 {
     public function index(Request $request, Organization $organization, $type )

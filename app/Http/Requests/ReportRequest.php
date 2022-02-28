@@ -24,7 +24,13 @@ class ReportRequest extends FormRequest
     public function rules()
     {
         return [
-            //
+            // 'type' => 'required|integer',
+        ];
+    }
+    public function messages()
+    {
+        return [
+            // 'type.required' => 'Type is required'
         ];
     }
 }

@@ -106,7 +106,7 @@ class ProgramController extends Controller
 
     public function show( Organization $organization, Program $program )
     {
-        return response($organization);
+
         if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
