@@ -190,4 +190,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/user/{user}/program/{program}', 
     [App\Http\Controllers\API\UserProgramController::class, 'delete'])->middleware('can:removeProgram,user,program');
 
+    Route::get('/v1/organization/{organization}/user/{user}/program/{program}/permission', 
+    [App\Http\Controllers\API\UserProgramController::class, 'getPermission'])->middleware('can:getProgramPermission,user,program');
+    
 });

@@ -24,7 +24,9 @@ class UserProgramRequest extends FormRequest
     public function rules()
     {
         return [
-            'program_id' => 'required|integer'
+            'program_id' => 'required|integer',
+            'roles' => 'required|array',
+            'roles.*' => 'required|integer',
         ];
     }
 

@@ -9,6 +9,7 @@ use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\Organization;
 use App\Models\User;
+use App\Incentco;
 
 use DB;
     
@@ -32,13 +33,13 @@ class RoleController extends Controller
 
         // Permission::create(['name'=>'view-role-permission']);
 
-        // $user = auth()->user();
-
         // $user->givePermissionTo('view-role-permission');
 
-        // $role = Role::find(1);
+        // $role = Role::where('name', Incentco::ROLE_NAME_SUPER_ADMIN);
+        // return $role;
         // $user = User::find(1);
-        // $user->assignRole(1);
+        // $user = request()->user();
+        // $user->assignRole($role);
         // return $user->getAllPermissions();
 
         $where = ['organization_id' => $organization->id];

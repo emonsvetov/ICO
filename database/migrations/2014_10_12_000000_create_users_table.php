@@ -21,11 +21,8 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-
-			//$table->unsignedBigInteger('role_id'); //dropdown pending
 			$table->string('first_name');
 			$table->string('last_name');
-			//$table->string('email',320)->nullable();
 			$table->string('phone',50)->nullable();
 			$table->string('award_level')->nullable();
 			$table->date('work_anniversary')->nullable();
@@ -44,6 +41,8 @@ class CreateUsersTable extends Migration
             $table->datetime('state_updated')->nullable();
             $table->string('last_location')->nullable();
             $table->integer('update_id')->nullable();
+
+            $table->softDeletes();
 
             $table->rememberToken();
             $table->timestamps();

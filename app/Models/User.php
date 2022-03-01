@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Spatie\Permission\Models\Permission;
 
 use App\Notifications\ResetPasswordNotification;
 
@@ -98,5 +99,41 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Program::class, 'program_user')
         // ->withPivot('featured', 'cost_to_program')
         ->withTimestamps();
+    }
+
+    public function syncPermissionsByProgram($programId, array $permissions)
+    {
+        print_r($permissions);
+        $permissionIds = Permission::where('name', 'LIKE', "program.{$programId}.role.%")->get()->pluck('id'); //filter by program to narrow down 
+        // $this is the User model for example
+        $current = $this->permissions->filter(function($permission) use ($permissionIds) {
+            return in_array($permission->pivot->permission_id, $permissionIds->toArray());
+        })->pluck('id');
+
+        print_r($current);
+    
+        $detach = $current->diff($permissions)->all();
+        // print_r($detach);
+        $attach_ids = collect($permissions)->diff($current)->all();
+        // $attach_ids = array_diff($permissions, $current->toArray());
+        // $attach_ids = $permissions;
+        print_r($attach_ids);
+        // return;
+        // $atach_pivot = array_fill(0, count($attach_ids), ['permission_id' => 52]);
+
+        $atach_pivot = [];
+
+        foreach( $attach_ids as $permission_id )  {
+            $atach_pivot[] = ['permission_id' => $permission_id];
+        }
+        // return $atach_pivot;
+        $attach = array_combine($attach_ids, $atach_pivot);
+        // print_r($attach);
+        // return;
+    
+        $this->permissions()->detach($detach);
+        $this->permissions()->attach($attach);
+    
+        return $this;
     }
 }

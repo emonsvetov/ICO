@@ -82,5 +82,11 @@ class UserPolicy
     {
         if( $user->organization_id != $prgram->organization_id) return false;
         return $user->can('user-program-remove');
+    }    
+    
+    public function getProgramPermission(User $user, Program $program)
+    {
+        if( $user->organization_id != $prgram->organization_id) return false;
+        return $user->can('user-program-permission');
     }
 }

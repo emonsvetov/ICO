@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Requests\UserProgramRequest;
+use Spatie\Permission\Models\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\User;
@@ -80,11 +81,34 @@ class UserProgramController extends Controller
         }
 
         $validated = $request->validated();
+        $program_id = $validated['program_id'];
 
         $columns = []; //any additional columns set here
         
         try {
             $user->programs()->sync( [ $validated['program_id'] => $columns ], false);
+
+            //Add program specific permissions to user
+            $roles = $validated['roles'];
+            $permissions = [];
+            foreach( $roles as $roleId)    {
+                $permisssionName = "program.{$program_id}.role.{$roleId}";
+                $permission = Permission::firstOrCreate(['name' => $permisssionName, 'organization_id' => $organization->id]);
+                if( $permission )   {
+                    array_push($permissions, $permission->id);
+                }
+            }
+
+            // $existingPermissions = Permission::where('name', 'LIKE', "program.{$program_id}.role.%")->get()->pluck('id');
+
+            // return $existingPermissions;
+            // return $permissions;
+
+            if( $permissions )  {
+                return $user->syncPermissionsByProgram($program_id, $permissions);
+                // $user->syncPermissions($permissions);
+            }
+
         } catch( Exception $e) {
             return response(['errors' => 'Program adding failed', 'e' => $e->getMessage()], 422);
         }
@@ -101,10 +125,28 @@ class UserProgramController extends Controller
 
         try{
             $user->programs()->detach( $program );
+            $permissions = Permission::where('name', 'LIKE', "program.{$program->id}.role.%")->get()->pluck('name');
+            foreach( $permissions as $permission )  {
+                $user->revokePermissionTo( $permission );
+            }
         }   catch( Exception $e) {
             return response(['errors' => 'Program removal failed', 'e' => $e->getMessage()], 422);
         }
 
         return response([ 'success' => true ]);
+    }
+
+    public function getPermission(Organization $organization, User $user, Program $program )
+    {
+        if ( $organization->id != $user->organization_id || $user->organization_id != $program->organization_id )
+        {
+            return response(['errors' => 'Invalid Organization or User or Program'], 422);
+        }
+        return Permission::select('permissions.*')
+        ->join('model_has_permissions', 'permissions.id', '=', 'model_has_permissions.permission_id')
+        ->where('name', 'LIKE', "program.{$program->id}.role.%")
+        ->where('model_has_permissions.model_type', '=', 'App\\Models\\User')
+        ->where('model_has_permissions.model_id', '=', $user->id)
+        ->get()->pluck('name');
     }
 }
