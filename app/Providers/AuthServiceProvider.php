@@ -21,6 +21,7 @@ class AuthServiceProvider extends ServiceProvider
         'App\Role' => 'App\Policies\RolePolicy',
         'App\Domain' => 'App\Policies\DomainPolicy',
         'App\DomainProgram' => 'App\Policies\DomainProgramPolicy',
+        'App\Report' => 'App\Policies\ReportPolicy',
         //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
@@ -40,7 +41,7 @@ class AuthServiceProvider extends ServiceProvider
             Passport::routes();
         }
 
-        VerifyEmail::toMailUsing(function ($notifiable, $url) 
+        VerifyEmail::toMailUsing(function ($notifiable, $url)
         {
             $verifyUrl = env('APP_URL', 'http://localhost') . substr( $url, strpos($url, "/email/verify/"));
 

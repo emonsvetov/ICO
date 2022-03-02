@@ -21,10 +21,12 @@ class MerchantController extends Controller
      */
     public function index()
     {
-        
+
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
+
+        // DB::enableQueryLog();
 
         $where = [];
 
@@ -49,16 +51,25 @@ class MerchantController extends Controller
         }
 
         $query = $query->orderByRaw($orderByRaw);
-        
+
         if ( request()->has('minimal') )
         {
-            $merchants = $query->select('id', 'name')->get();
+            $merchants = $query->select('id', 'name')
+            ->with(['children' => function($query){
+                return $query->select('id','name','parent_id')
+                ->with(['children' => function($query){
+                    return $query->select('id','name','parent_id');
+                }]);
+            }])
+            ->get();
         } else {
-            $merchants = $query->paginate(request()->get('limit', 10));
+            $merchants = $query->with('children')->paginate(request()->get('limit', 50));
         }
 
-        if ( $merchants->isNotEmpty() ) 
-        { 
+        // Log::debug("Query:", DB::getQueryLog());
+
+        if ( $merchants->isNotEmpty() )
+        {
             return response( $merchants );
         }
 
@@ -95,8 +106,8 @@ class MerchantController extends Controller
      */
     public function show( Merchant $merchant )
     {
-        if ( ! $merchant->exists ) 
-        { 
+        if ( ! $merchant->exists )
+        {
             return response(['errors' => 'Merchant Not Found'], 404);
         }
         $merchant->children;
@@ -112,9 +123,9 @@ class MerchantController extends Controller
      */
     public function update(MerchantRequest $request, Merchant $merchant)
     {
-        
-        if ( ! $merchant->exists ) 
-        { 
+
+        if ( ! $merchant->exists )
+        {
             return response(['errors' => 'No Merchant Found'], 404);
         }
 
@@ -141,12 +152,12 @@ class MerchantController extends Controller
         $merchant->delete();
         return response( ['deleted' => true] );
     }
-    
+
     public function changeStatus(MerchantStatusRequest $request, Merchant $merchant)
     {
 
-        if ( ! $merchant->exists ) 
-        { 
+        if ( ! $merchant->exists )
+        {
             return response(['errors' => 'No Merchant Found'], 404);
         }
 
