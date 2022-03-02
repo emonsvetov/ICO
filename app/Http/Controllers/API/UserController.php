@@ -52,12 +52,11 @@ class UserController extends Controller
         }
 
         $query = $query->orderByRaw($orderByRaw);
-        
+
         if ( request()->has('minimal') )
         {
             $users = $query->select('id', 'first_name', 'last_name')->get();
-        }
-        else {
+        } else {
             $users = $query->paginate(request()->get('limit', 10));
         }
 
@@ -88,17 +87,18 @@ class UserController extends Controller
             return response(['errors' => 'No User Found'], 404);
         }
 
-        $user->update( $request->validated() );
-
+        $validated = $request->validated();
+        $user->update( $validated );
+        $user->syncRoles( $validated['role_id'] );
         return response([ 'user' => $user ]);
     }
 
-    public function store(UserRequest $request, User $user)
+    public function store(UserRequest $request, Organization $organization, User $user)
     {
         try {
-            $fields = $request->except('role');
-            $fields['password'] = bcrypt('123');
-            $id = $user->insertGetId( $fields );
+            $validated = $request->validated();
+            $validated['organization_id'] = $organization->id;
+            $id = $user->insertGetId( $validated );
             return response([ 'id' => $id ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);

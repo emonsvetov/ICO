@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Requests\UserProgramRequest;
-use Spatie\Permission\Models\Permission;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
-use App\Models\User;
+use App\Models\Permission;
 use App\Models\Program;
+use App\Models\User;
 Use Exception;
 // use DB;
 
@@ -99,14 +99,8 @@ class UserProgramController extends Controller
                 }
             }
 
-            // $existingPermissions = Permission::where('name', 'LIKE', "program.{$program_id}.role.%")->get()->pluck('id');
-
-            // return $existingPermissions;
-            // return $permissions;
-
             if( $permissions )  {
                 return $user->syncPermissionsByProgram($program_id, $permissions);
-                // $user->syncPermissions($permissions);
             }
 
         } catch( Exception $e) {

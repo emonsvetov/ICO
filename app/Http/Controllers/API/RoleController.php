@@ -2,12 +2,12 @@
     
 namespace App\Http\Controllers\API;
 
-use Spatie\Permission\Models\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RoleRequest;
-use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\Organization;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use App\Incentco;
 

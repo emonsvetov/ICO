@@ -2,11 +2,12 @@
     
 namespace App\Http\Controllers\API;
 
-use Spatie\Permission\Models\Permission;
 use App\Http\Requests\PermissionRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use Illuminate\Http\Request;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 
 use DB;

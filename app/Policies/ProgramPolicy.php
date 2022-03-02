@@ -13,7 +13,7 @@ class ProgramPolicy
 
     public function before(User $user, $ability)
     {
-        return true; //allowed until we have roles + permissions
+        // return true; //allowed until we have roles + permissions
     }
 
     /**
@@ -24,48 +24,48 @@ class ProgramPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-programs');
+        return $user->can('view-programs');
     }
 
     public function view(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->permissions()->contains('view-program');
+        return $user->can('view-program');
     }
 
     public function create(User $user)
     {
-        return $user->permissions()->contains('create-program');
+        return $user->can('create-program');
     }
 
     public function update(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->permissions()->contains('update-program');
+        return $user->can('update-program');
     }
 
     public function delete(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->permissions()->contains('delete-program');
+        return $user->can('delete-program');
     }
 
     public function viewAnyMerchant(User $user, Program $program)
     {
         // !!Program $program ; Probably more checks to determine whether a user can use a merchant's submerchants?
-        return $user->permissions()->contains('view-program-merchants');
+        return $user->can('view-program-merchants');
     }
   
     public function addMerchant(User $user, Program $program)
     {
         // !!Program $program...
-        return $user->permissions()->contains('add-program-merchant');
+        return $user->can('add-program-merchant');
     }
 
     public function removeMerchant(User $user, Program $program, Merchant $merchant)
     {
         // !!Program $program... !!Merchant $merchant
-        return $user->permissions()->contains('remove-program-merchant');
+        return $user->can('remove-program-merchant');
     }
 
     public function viewAnyUser(Program $program)

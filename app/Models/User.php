@@ -2,20 +2,24 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Passport\HasApiTokens;
-use Illuminate\Database\Eloquent\Casts\Attribute;
-use Spatie\Permission\Models\Permission;
+use App\Models\Permission;
+use App\Models\Role;
+
 
 use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
+
+    public $timestamps = true;
 
     /**
      * The attributes that are mass assignable.
@@ -47,7 +51,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'state_updated',
         'last_location',
         'update_id',
-        'role'
+        'role_id',
+        'created_at',
+        'updated_at'
     ];
     
     /**
@@ -61,8 +67,10 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     protected $visible = [
-        // '*',
-        // 'programs'
+    ];
+
+    protected $with = [
+        'role'
     ];
 
     /**
@@ -86,6 +94,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(ParticipantGroup::class);
     }
 
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
     public function sendPasswordResetNotification($token)
     {
         
@@ -103,34 +116,21 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function syncPermissionsByProgram($programId, array $permissions)
     {
-        print_r($permissions);
-        $permissionIds = Permission::where('name', 'LIKE', "program.{$programId}.role.%")->get()->pluck('id'); //filter by program to narrow down 
-        // $this is the User model for example
+        $permissionIds = Permission::where('name', 'LIKE', "program.{$programId}.role.%")->get()->pluck('id'); //filter by program to narrow down the change
         $current = $this->permissions->filter(function($permission) use ($permissionIds) {
             return in_array($permission->pivot->permission_id, $permissionIds->toArray());
         })->pluck('id');
-
-        print_r($current);
     
         $detach = $current->diff($permissions)->all();
-        // print_r($detach);
         $attach_ids = collect($permissions)->diff($current)->all();
-        // $attach_ids = array_diff($permissions, $current->toArray());
-        // $attach_ids = $permissions;
-        print_r($attach_ids);
-        // return;
-        // $atach_pivot = array_fill(0, count($attach_ids), ['permission_id' => 52]);
 
-        $atach_pivot = [];
+        $attach_pivot = [];
 
         foreach( $attach_ids as $permission_id )  {
-            $atach_pivot[] = ['permission_id' => $permission_id];
+            $attach_pivot[] = ['permission_id' => $permission_id];
         }
-        // return $atach_pivot;
-        $attach = array_combine($attach_ids, $atach_pivot);
-        // print_r($attach);
-        // return;
-    
+        $attach = array_combine($attach_ids, $attach_pivot);
+
         $this->permissions()->detach($detach);
         $this->permissions()->attach($attach);
     

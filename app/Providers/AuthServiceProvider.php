@@ -54,7 +54,7 @@ class AuthServiceProvider extends ServiceProvider
         // This works in the app by using gate-related functions like $user->can()
         Gate::before(function ($user, $ability) {
             return $user->hasRole( Incentco::ROLE_NAME_SUPER_ADMIN ) ? true : null;
-            // return true;
+            // return true; //remove when permissions + roles are all set
         });
     }
 }
