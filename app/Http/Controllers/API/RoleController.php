@@ -9,9 +9,6 @@ use App\Models\Organization;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-use App\Incentco;
-
-use DB;
     
 class RoleController extends Controller
 {

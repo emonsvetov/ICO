@@ -61,7 +61,7 @@ class DomainPolicy
     public function update(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->can('domain-udpate');
+        return $user->can('domain-edit');
     }
 
     /**

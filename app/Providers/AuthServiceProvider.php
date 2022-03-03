@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Gate;
 use Laravel\Passport\Passport;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
-use App\Incentco;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -21,9 +20,7 @@ class AuthServiceProvider extends ServiceProvider
         'App\Role' => 'App\Policies\RolePolicy',
         'App\Domain' => 'App\Policies\DomainPolicy',
         'App\DomainProgram' => 'App\Policies\DomainProgramPolicy',
-        'App\Report' => 'App\Policies\ReportPolicy',
-        //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
-        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        'App\Report' => 'App\Policies\ReportPolicy'
     ];
 
     /**

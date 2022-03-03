@@ -17,16 +17,6 @@ class UserRequest extends FormRequest
         return true;
     }
 
-    protected function prepareForValidation()
-    {
-        $request = $this->all(); 
-        if( isset($request['password']) )    {
-            $this->merge([
-                'password' => bcrypt( $request['password'] ),
-            ]);
-        }
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -45,7 +35,7 @@ class UserRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($this->user)
             ],
             'email_verified_at'=>'nullable',
-            'password'=>'sometimes|string',
+            'password'=>'sometimes|confirmed|string',
             'organization_id'=> 'sometimes|integer',
 			'phone'=> 'nullable|string|max:50',
 			'award_level'=> 'nullable|string',
