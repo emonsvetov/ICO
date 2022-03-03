@@ -18,7 +18,6 @@ class SubmerchantPolicy
 
     public function viewAny(User $user, Merchant $merchant)
     {
-        return true;
         return $user->can('submerchant-list');
     }
   
@@ -29,6 +28,6 @@ class SubmerchantPolicy
 
     public function remove(User $user, Merchant $merchant)
     {
-        return $user->can('merchant-remove');
+        return $user->can('submerchant-remove');
     }
 }
