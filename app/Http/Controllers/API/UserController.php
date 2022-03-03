@@ -69,6 +69,18 @@ class UserController extends Controller
 
         return response( [] );
     }
+    
+    public function store(UserRequest $request, Organization $organization)
+    {
+        try {
+            $validated = $request->validated();
+            $validated['organization_id'] = $organization->id;
+            $user = User::create( $validated );
+            return response([ 'user' => $user ]);
+        } catch (\Exception $e )    {
+            return response(['errors' => $e->getMessage()], 422);
+        }
+    }
 
     public function show( Organization $organization, User $user )
     {
@@ -91,17 +103,5 @@ class UserController extends Controller
         $user->update( $validated );
         $user->syncRoles( $validated['role_id'] );
         return response([ 'user' => $user ]);
-    }
-
-    public function store(UserRequest $request, Organization $organization, User $user)
-    {
-        try {
-            $validated = $request->validated();
-            $validated['organization_id'] = $organization->id;
-            $id = $user->insertGetId( $validated );
-            return response([ 'id' => $id ]);
-        } catch (\Exception $e )    {
-            return response(['errors' => $e->getMessage()], 422);
-        }
     }
 }

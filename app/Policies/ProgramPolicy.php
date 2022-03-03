@@ -24,48 +24,54 @@ class ProgramPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->can('view-programs');
+        return $user->can('program-list');
     }
 
     public function view(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->can('view-program');
+        return $user->can('program-view');
     }
 
     public function create(User $user)
     {
-        return $user->can('create-program');
+        return $user->can('program-create');
     }
 
     public function update(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->can('update-program');
+        return $user->can('program-update');
     }
 
     public function delete(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->can('delete-program');
+        return $user->can('program-delete');
+    }
+
+    public function move(User $user, Program $program)
+    {
+        if( $user->organization_id !== $program->organization_id ) return false;
+        return $user->can('program-move');
     }
 
     public function viewAnyMerchant(User $user, Program $program)
     {
         // !!Program $program ; Probably more checks to determine whether a user can use a merchant's submerchants?
-        return $user->can('view-program-merchants');
+        return $user->can('program-merchant-list');
     }
   
     public function addMerchant(User $user, Program $program)
     {
         // !!Program $program...
-        return $user->can('add-program-merchant');
+        return $user->can('program-merchant-add');
     }
 
     public function removeMerchant(User $user, Program $program, Merchant $merchant)
     {
         // !!Program $program... !!Merchant $merchant
-        return $user->can('remove-program-merchant');
+        return $user->can('program-merchant-remove');
     }
 
     public function viewAnyUser(Program $program)

@@ -17,13 +17,6 @@ use Illuminate\Support\Facades\Route;
 WARNING WARNING WARNING
 NEED TO CREATE MIDDLEWARE THAT CONFIRMS THE CURRENT USER BELONGS TO THE REQUESTED ORGANIZATION
 */
-// Route::get('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'index'])->name('api.v1.organization.program.index');
-Route::get('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'show'])->name('api.v1.organization.program.show');
-Route::post('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'store'])->name('api.v1.organization.program.store');
-//Route::post('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'store'])->name('api.v1.organization.subprogram.store');
-Route::put('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'update'])->name('api.v1.organization.program.update');
-Route::patch('/v1/organization/{organization}/program/{program}/move', [App\Http\Controllers\API\ProgramController::class, 'move']);
-//Route::delete('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'destroy'])->name('api.v1.organization.program.destroy');
 
 Route::get('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'index'])->name('api.v1.event_icons.index');
 Route::post('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'store'])->name('api.v1.event_icons.store');
@@ -91,7 +84,7 @@ Route::middleware(['auth:api', 'json.response'])->group(function () {
 //ALL USERS WHO HAS VERIFIED THEIR EMAIL ACCOUNTS
 Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () {
 
-    Route::get('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'index'])->middleware('can:viewAny,App\Program');;
+    //User routes
 
     Route::get('/v1/organization/{organization}/user', [App\Http\Controllers\API\UserController::class, 'index'])->middleware('can:viewAny,App\User');
     Route::get('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'show'])->middleware('can:view,user');
@@ -117,6 +110,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'update'])->name('api.v1.organization.role.update')->middleware('can:update,role');
     Route::delete('/v1/organization/{organization}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'destroy'])->name('api.v1.organization.role.destroy')->middleware('can:delete,role');
 
+    //Permission routes
+
     Route::get('/v1/organization/{organization}/permission', [App\Http\Controllers\API\PermissionController::class, 'index'])->name('api.v1.organization.permission.index')->middleware('can:viewAny,App\Permission');
     Route::get('/v1/organization/{organization}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'show'])->name('api.v1.organization.permission.view')->middleware('can:view,permission');
     Route::post('/v1/organization/{organization}/permission', [App\Http\Controllers\API\PermissionController::class, 'store'])->name('api.v1.organization.permission.store')->middleware('can:create');
@@ -141,6 +136,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}', 
     [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.store')->middleware('can:deleteIp,domain');
 
+    //DomainProgram routes
+
     Route::get('/v1/organization/{organization}/domain/{domain}/program', 
     [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,domain');
     Route::post('/v1/organization/{organization}/domain/{domain}/program', 
@@ -160,6 +157,14 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'index'])->middleware('can:viewAnySubmerchant,merchant');
     Route::post('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'store'])->middleware('can:createSubmerchant,merchant');
     Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:deleteSubmerchant,merchant');
+
+    // Program routes
+    Route::get('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'index'])->middleware('can:viewAny,App\Program');
+    Route::post('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'store'])->middleware('can:create,App\Program');
+    Route::get('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'show'])->middleware('can:view,program');
+    Route::put('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'update'])->middleware('can:update,program');
+    Route::patch('/v1/organization/{organization}/program/{program}/move', [App\Http\Controllers\API\ProgramController::class, 'move'])->middleware('can:move,program');
+    Route::delete('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'delete'])->middleware('can:delete,program');
 
     //ProgramMerchant routes
 
