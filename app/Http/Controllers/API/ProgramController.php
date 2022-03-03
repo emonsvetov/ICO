@@ -64,7 +64,6 @@ class ProgramController extends Controller
                 $programs = $query->with('children')
                 ->paginate(request()->get('limit', 10));
             }
-
         }
         else
         {
@@ -143,5 +142,17 @@ class ProgramController extends Controller
         $program->update( $request->validated() );
 
         return response([ 'program' => $program ]);
+    }
+
+    public function delete(ProgramMoveRequest $request, Organization $organization, Program $program )
+    {
+        if ( $organization->id != $program->organization_id )
+        {
+            return response(['errors' => 'Invalid Organization or Program'], 422);
+        }
+
+        $program->delete();
+
+        return response([ 'delete' => true ]);
     }
 }

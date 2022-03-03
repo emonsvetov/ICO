@@ -11,11 +11,6 @@ class ProgramPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, $ability)
-    {
-        return true; //allowed until we have roles + permissions
-    }
-
     /**
      * Determine whether the user can view any models.
      *
@@ -24,47 +19,35 @@ class ProgramPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-programs');
+        return $user->can('program-list');
     }
 
     public function view(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->permissions()->contains('view-program');
+        return $user->can('program-view');
     }
 
     public function create(User $user)
     {
-        return $user->permissions()->contains('create-program');
+        return $user->can('program-create');
     }
 
     public function update(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->permissions()->contains('update-program');
+        return $user->can('program-update');
     }
 
     public function delete(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
-        return $user->permissions()->contains('delete-program');
+        return $user->can('program-delete');
     }
 
-    public function viewAnyMerchant(User $user, Program $program)
+    public function move(User $user, Program $program)
     {
-        // !!Program $program ; Probably more checks to determine whether a user can use a merchant's submerchants?
-        return $user->permissions()->contains('view-program-merchants');
-    }
-  
-    public function addMerchant(User $user, Program $program)
-    {
-        // !!Program $program...
-        return $user->permissions()->contains('add-program-merchant');
-    }
-
-    public function removeMerchant(User $user, Program $program, Merchant $merchant)
-    {
-        // !!Program $program... !!Merchant $merchant
-        return $user->permissions()->contains('remove-program-merchant');
+        if( $user->organization_id !== $program->organization_id ) return false;
+        return $user->can('program-move');
     }
 }

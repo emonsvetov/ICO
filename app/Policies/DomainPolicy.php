@@ -13,7 +13,7 @@ class DomainPolicy
 
     public function before(User $user, $ability)
     {
-        return true; //allowed until we have roles + permissions
+        // return true; //allowed until we have roles + permissions
     }
 
     /**
@@ -24,7 +24,7 @@ class DomainPolicy
      */
     public function viewAny(User $user)
     {
-        return $user->permissions()->contains('view-domains');
+        return $user->can('domain-list');
     }
 
     /**
@@ -37,7 +37,7 @@ class DomainPolicy
     public function view(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('view-domain');
+        return $user->can('domain-view');
     }
 
     /**
@@ -48,7 +48,7 @@ class DomainPolicy
      */
     public function create(User $user)
     {
-        return $user->permissions()->contains('create-domain');
+        return $user->can('domain-create');
     }
 
     /**
@@ -61,7 +61,7 @@ class DomainPolicy
     public function update(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('update-domain');
+        return $user->can('domain-edit');
     }
 
     /**
@@ -74,7 +74,7 @@ class DomainPolicy
     public function delete(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('delete-domain');
+        return $user->can('domain-delete');
     }
 
     /**
@@ -87,31 +87,31 @@ class DomainPolicy
     public function generateSecretKey(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('generate-secretkey');
+        return $user->can('domain-generate-secretkey');
     }
 
     public function addIp(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('add-ip');
+        return $user->can('domain-add-ip');
     }
 
     public function deleteIp(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('delete-ip');
+        return $user->can('domain-delete-ip');
     }
 
     public function addProgram(User $user, Domain $domain)
     {
         return true;
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('add-domain-program');
+        return $user->can('domain-add-program');
     }
 
     public function deleteProgram(User $user, Domain $domain)
     {
         if( $user->organization_id !== $domain->organization_id ) return false;
-        return $user->permissions()->contains('delete-domain-program');
+        return $user->can('domain-delete-program');
     }
 }

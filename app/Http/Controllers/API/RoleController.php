@@ -2,15 +2,13 @@
     
 namespace App\Http\Controllers\API;
 
-use Spatie\Permission\Models\Permission;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RoleRequest;
-use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
 use App\Models\Organization;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
-
-use DB;
     
 class RoleController extends Controller
 {
@@ -32,13 +30,13 @@ class RoleController extends Controller
 
         // Permission::create(['name'=>'view-role-permission']);
 
-        // $user = auth()->user();
-
         // $user->givePermissionTo('view-role-permission');
 
-        // $role = Role::find(1);
+        // $role = Role::where('name', config('global.super_admin_role_name'));
+        // return $role;
         // $user = User::find(1);
-        // $user->assignRole(1);
+        // $user = request()->user();
+        // $user->assignRole($role);
         // return $user->getAllPermissions();
 
         $where = ['organization_id' => $organization->id];

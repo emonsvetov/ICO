@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\Domain;
+use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Support\Facades\Gate;
@@ -11,26 +11,28 @@ class MerchantPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, $ability)
+    public function viewAny(User $user)
     {
-        return true; //allowed until we have roles + permissions
-    }
-
-    public function viewAnySubmerchant(User $user, Merchant $merchant)
-    {
-        // !!Merchant $merchant ; Probably more checks to determine whether a user can use a merchant's submerchants?
-        return $user->permissions()->contains('view-submerchants');
+        return $user->can('merchant-list');
     }
   
-    public function createSubmerchant(User $user, Merchant $merchant)
+    public function create(User $user)
     {
-        // !!Merchant $merchant...
-        return $user->permissions()->contains('create-submerchants');
+        return $user->can('merchant-create');
     }
 
-    public function deleteSubmerchant(User $user, Merchant $merchant)
+    public function view(User $user, Merchant $merchant)
     {
-        // !!Merchant $merchant...
-        return $user->permissions()->contains('delete-submerchants');
+        return $user->can('merchant-view');
+    }
+
+    public function update(User $user, Merchant $merchant)
+    {
+        return $user->can('merchant-edit');
+    }
+
+    public function delete(User $user, Merchant $merchant)
+    {
+        return $user->can('merchant-delete');
     }
 }

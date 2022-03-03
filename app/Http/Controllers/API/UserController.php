@@ -14,43 +14,53 @@ class UserController extends Controller
 {
     public function index( Organization $organization )
     {
-        
-        if ( $organization )
-        {
-            $sortby = request()->get('sortby', 'id');
-            $keyword = request()->get('keyword');
-            $direction = request()->get('direction', 'asc');
-            $limit = request()->get('limit', 10);
-
-            $where[] = ['organization_id', $organization->id];
-
-            if( $keyword)
-            {
-                $where[] = [ DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%" ];
-               
-                //more search criteria here
-            }
-
-            if( $sortby == 'name' )
-            {
-                $orderByRaw = "first_name $direction, last_name $direction";
-            }
-            else
-            {
-                $orderByRaw = "$sortby $direction";
-            }
-
-            // DB::enableQueryLog();
-            $users = User::where($where)
-            ->orderByRaw($orderByRaw)
-            ->paginate( $limit );
-
-            // return (DB::getQueryLog());             
-        }
-        else
+        if ( !$organization )
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
+        
+        $sortby = request()->get('sortby', 'id');
+        $keyword = request()->get('keyword');
+        $direction = request()->get('direction', 'asc');
+        $limit = request()->get('limit', 10);
+
+        $where[] = ['organization_id', $organization->id];
+
+        // if( $keyword)
+        // {
+        //     $where[] = [ DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%" ];
+            
+        //     //more search criteria here
+        // }
+        $query = User::where($where);
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        if( $sortby == 'name' )
+        {
+            $orderByRaw = "first_name $direction, last_name $direction";
+        }
+        else
+        {
+            $orderByRaw = "$sortby $direction";
+        }
+
+        $query = $query->orderByRaw($orderByRaw);
+
+        if ( request()->has('minimal') )
+        {
+            $users = $query->select('id', 'first_name', 'last_name')->get();
+        } else {
+            $users = $query->paginate(request()->get('limit', 10));
+        }
+
+        // return (DB::getQueryLog());
        
         if ( $users->isNotEmpty() ) 
         { 
@@ -58,6 +68,18 @@ class UserController extends Controller
         }
 
         return response( [] );
+    }
+    
+    public function store(UserRequest $request, Organization $organization)
+    {
+        try {
+            $validated = $request->validated();
+            $validated['organization_id'] = $organization->id;
+            $user = User::create( $validated );
+            return response([ 'user' => $user ]);
+        } catch (\Exception $e )    {
+            return response(['errors' => $e->getMessage()], 422);
+        }
     }
 
     public function show( Organization $organization, User $user )
@@ -77,20 +99,9 @@ class UserController extends Controller
             return response(['errors' => 'No User Found'], 404);
         }
 
-        $user->update( $request->validated() );
-
+        $validated = $request->validated();
+        $user->update( $validated );
+        $user->syncRoles( $validated['role_id'] );
         return response([ 'user' => $user ]);
-    }
-
-    public function store(UserRequest $request, User $user)
-    {
-        try {
-            $fields = $request->except('role');
-            $fields['password'] = bcrypt('123');
-            $id = $user->insertGetId( $fields );
-            return response([ 'id' => $id ]);
-        } catch (\Exception $e )    {
-            return response(['errors' => $e->getMessage()], 422);
-        }
     }
 }

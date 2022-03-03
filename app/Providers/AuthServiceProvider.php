@@ -21,8 +21,11 @@ class AuthServiceProvider extends ServiceProvider
         'App\Domain' => 'App\Policies\DomainPolicy',
         'App\DomainProgram' => 'App\Policies\DomainProgramPolicy',
         'App\Report' => 'App\Policies\ReportPolicy',
-        //'App\Permission' => 'App\Policies\RoleAndPermissionPolicy',
-        // 'App\Models\Model' => 'App\Policies\ModelPolicy',
+        'App\Merchant' => 'App\Policies\Merchant',
+        'App\Submerchant' => 'App\Policies\SubmerchantPolicy',
+        'App\ProgramMerchant' => 'App\Policies\ProgramMerchantPolicy',
+        'App\ProgramUser' => 'App\Policies\ProgramUserPolicy',
+        'App\UserProgram' => 'App\Policies\UserProgramPolicy',
     ];
 
     /**
@@ -51,10 +54,10 @@ class AuthServiceProvider extends ServiceProvider
         });
 
         // Implicitly grant "Super Admin" role all permissions
-        // This works in the app by using gate-related functions like auth()->user->can() and @can()
+        // This works in the app by using gate-related functions like $user->can()
         Gate::before(function ($user, $ability) {
-            // return $user->hasRole('Super Admin') ? true : null;
-            return true;
+            return $user->hasRole( config('global.super_admin_role_name') ) ? true : null;
+            // return true; //remove when permissions + roles are all set
         });
     }
 }
