@@ -35,7 +35,7 @@ class RoleController extends Controller
 
         // $user->givePermissionTo('view-role-permission');
 
-        // $role = Role::where('name', Incentco::ROLE_NAME_SUPER_ADMIN);
+        // $role = Role::where('name', config('global.super_admin_role_name'));
         // return $role;
         // $user = User::find(1);
         // $user = request()->user();
