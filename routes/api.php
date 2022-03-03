@@ -169,34 +169,34 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //ProgramMerchant routes
 
     Route::get('/v1/organization/{organization}/program/{program}/merchant',
-    [App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAnyMerchant,program');
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAny,App\ProgramMerchant,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/merchant',
-    [App\Http\Controllers\API\ProgramMerchantController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:addMerchant,program');
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:add,App\ProgramMerchant,program');
 
     Route::delete('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
-    [App\Http\Controllers\API\ProgramMerchantController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:removeMerchant,program,merchant');
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'delete'])->name('api.v1.program.merchant.delete')->middleware('can:remove,App\ProgramMerchant,program,merchant');
 
     //ProgramUser routes
 
-    Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAnyUser,program');
+    Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,program');
 
-    Route::post('/v1/organization/{organization}/program/{program}/user',[App\Http\Controllers\API\ProgramUserController::class, 'store'])->middleware('can:addProgram,user');
+    Route::post('/v1/organization/{organization}/program/{program}/user',[App\Http\Controllers\API\ProgramUserController::class, 'store'])->middleware('can:add,App\ProgramUser,user');
 
     Route::delete('/v1/organization/{organization}/program/{program}/user/{user}', 
-    [App\Http\Controllers\API\ProgramUserController::class, 'delete'])->middleware('can:removeProgram,user,program');
+    [App\Http\Controllers\API\ProgramUserController::class, 'delete'])->middleware('can:remove,App\ProgramUser,program,user');
 
     //UserProgram routes
 
-    Route::get('/v1/organization/{organization}/user/{user}/program', [App\Http\Controllers\API\UserProgramController::class, 'index'])->middleware('can:viewAnyProgram,user');
+    Route::get('/v1/organization/{organization}/user/{user}/program', [App\Http\Controllers\API\UserProgramController::class, 'index'])->middleware('can:viewAny,App\UserProgram,user');
 
-    Route::post('/v1/organization/{organization}/user/{user}/program',[App\Http\Controllers\API\UserProgramController::class, 'store'])->middleware('can:addProgram,user');
+    Route::post('/v1/organization/{organization}/user/{user}/program',[App\Http\Controllers\API\UserProgramController::class, 'store'])->middleware('can:add,App\UserProgram,user');
 
     Route::delete('/v1/organization/{organization}/user/{user}/program/{program}', 
-    [App\Http\Controllers\API\UserProgramController::class, 'delete'])->middleware('can:removeProgram,user,program');
+    [App\Http\Controllers\API\UserProgramController::class, 'delete'])->middleware('can:remove,App\UserProgram,user,program');
 
     Route::get('/v1/organization/{organization}/user/{user}/program/{program}/permission', 
-    [App\Http\Controllers\API\UserProgramController::class, 'getPermission'])->middleware('can:getProgramPermission,user,program');
+    [App\Http\Controllers\API\UserProgramController::class, 'getPermission'])->middleware('can:getPermissions,App\UserProgram,user,program');
     
     //Reports routes
     Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');

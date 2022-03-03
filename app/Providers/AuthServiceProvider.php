@@ -20,7 +20,12 @@ class AuthServiceProvider extends ServiceProvider
         'App\Role' => 'App\Policies\RolePolicy',
         'App\Domain' => 'App\Policies\DomainPolicy',
         'App\DomainProgram' => 'App\Policies\DomainProgramPolicy',
-        'App\Report' => 'App\Policies\ReportPolicy'
+        'App\Report' => 'App\Policies\ReportPolicy',
+        'App\Merchant' => 'App\Policies\Merchant',
+        'App\Submerchant' => 'App\Policies\SubmerchantPolicy',
+        'App\ProgramMerchant' => 'App\Policies\ProgramMerchantPolicy',
+        'App\ProgramUser' => 'App\Policies\ProgramUserPolicy',
+        'App\UserProgram' => 'App\Policies\UserProgramPolicy',
     ];
 
     /**

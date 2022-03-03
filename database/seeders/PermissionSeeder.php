@@ -78,6 +78,7 @@ class PermissionSeeder extends Seeder
             'user-program-list',
             'user-program-add',
             'user-program-remove',
+            'user-program-permissions',
         ];
      
         foreach ($permissions as $permission) {

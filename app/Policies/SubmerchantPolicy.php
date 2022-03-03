@@ -18,6 +18,7 @@ class SubmerchantPolicy
 
     public function viewAny(User $user, Merchant $merchant)
     {
+        return true;
         return $user->can('submerchant-list');
     }
   

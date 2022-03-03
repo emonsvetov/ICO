@@ -67,26 +67,4 @@ class UserPolicy
     {
         return $user->can('user-delete');
     }
-
-    public function viewAnyProgram(User $user)
-    {
-        return $user->can('user-program-list');
-    }
-
-    public function addProgram(User $user)
-    {
-        return $user->can('user-program-add');
-    }
-
-    public function removeProgram(User $user, Program $program)
-    {
-        if( $user->organization_id != $prgram->organization_id) return false;
-        return $user->can('user-program-remove');
-    }    
-    
-    public function getProgramPermission(User $user, Program $program)
-    {
-        if( $user->organization_id != $prgram->organization_id) return false;
-        return $user->can('user-program-permission');
-    }
 }
