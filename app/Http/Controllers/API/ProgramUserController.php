@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Requests\ProgramUserRequest;
+use App\Http\Requests\UserRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\User;
@@ -70,7 +70,7 @@ class ProgramUserController extends Controller
         return response( [] );
     }
 
-    public function store( ProgramUserRequest $request, Organization $organization, Program $program )
+    public function store( UserRequest $request, Organization $organization, Program $program )
     {
         if ( $organization->id != $program->organization_id )
         {
@@ -79,15 +79,37 @@ class ProgramUserController extends Controller
 
         $validated = $request->validated();
 
-        $columns = [];
-        
-        try{
-            $program->users()->sync( [ $validated['user_id' ] => $columns ], false);
-        }   catch( Exception $e) {
-            return response(['errors' => 'User adding failed', 'e' => $e->getMessage()], 422);
+        $validated['organization_id'] = $organization->id;
+        $user = User::create( $validated );
+
+        if( $user ) {
+            $program->users()->sync( [ $user->id ], false );
+            if( isset($validated['roles']) ) {
+                $user->syncRolesByProgram($program->id, $validated['roles']);
+            }
         }
 
-        return response([ 'success' => true ]);
+        return response([ 'user' => $user ]);
+    }
+
+    public function update( UserRequest $request, Organization $organization, Program $program )
+    {
+        if ( $organization->id != $program->organization_id )
+        {
+            return response(['errors' => 'Invalid Organization or Program'], 422);
+        }
+
+        $validated = $request->validated();
+        $user->update( $validated );
+
+        if( $user ) {
+            // $program->users()->sync( [ $user->id ], false );
+            if( isset($validated['roles']) ) {
+                $user->syncRolesByProgram($program->id, $validated['roles']);
+            }
+        }
+
+        return response([ 'user' => $user ]);
     }
 
     public function delete(Organization $organization, Program $program, User $user )

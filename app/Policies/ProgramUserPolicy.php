@@ -28,6 +28,11 @@ class ProgramUserPolicy
         return $user->can('program-user-add');
     }
 
+    public function update(User $user, Program $program)
+    {
+        return $user->can('program-user-update');
+    }
+
     public function remove(User $authUser, Program $program, User $user)
     {
         return $authUser->can('program-user-remove');
