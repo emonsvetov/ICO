@@ -53,7 +53,7 @@ class ProgramUserController extends Controller
         }
 
         $query = $query->orderByRaw($orderByRaw);
-        
+
         if ( request()->has('minimal') )
         {
             $users = $query->select('id', 'name')->get();
@@ -62,8 +62,8 @@ class ProgramUserController extends Controller
             $users = $query->paginate(request()->get('limit', 20));
         }
 
-        if ( $users->isNotEmpty() ) 
-        { 
+        if ( $users->isNotEmpty() )
+        {
             return response( $users );
         }
 
@@ -92,7 +92,7 @@ class ProgramUserController extends Controller
         return response([ 'user' => $user ]);
     }
 
-    public function update( UserRequest $request, Organization $organization, Program $program )
+    public function update( UserRequest $request, Organization $organization, Program $program, User $user)
     {
         if ( $organization->id != $program->organization_id )
         {
