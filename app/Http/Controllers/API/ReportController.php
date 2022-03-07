@@ -18,7 +18,7 @@ class ReportController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Request'], 422);
         }
-        switch ($type) {
+        switch ( $type ) {
             case 0:
                 $merchant_id = explode(',', $request->get( 'merchant_id' ));
                 $end_date = $request->get( 'end_date' );
