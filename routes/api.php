@@ -169,7 +169,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //ProgramMerchant routes
 
     Route::get('/v1/organization/{organization}/program/{program}/merchant',
-    [App\Http\Controllers\API\ProgramMerchantController::class, 'getMerchants'])->name('api.v1.program.merchant.index')->middleware('can:viewAny,App\ProgramMerchant,program');
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAny,App\ProgramMerchant,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/merchant',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:add,App\ProgramMerchant,program');
