@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\ProgramMerchantRequest;
 use App\Http\Controllers\Controller;
+use App\Models\ProgramMerchant;
 use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\Program;
@@ -42,8 +43,7 @@ class ProgramMerchantController extends Controller
             $orderByRaw = "{$sortby} {$direction}";
         }
 
-        $query = Merchant::whereIn('id', $merchantIds)
-                    ->where($where);
+        $query = Merchant::whereIn('id', $merchantIds)->where($where);
 
         if( $keyword )
         {
@@ -58,19 +58,39 @@ class ProgramMerchantController extends Controller
         if ( request()->has('minimal') )
         {
             $merchants = $query->select('id', 'name')
-            ->with(['children' => function($query){
-                return $query->select('id','name','parent_id');
+            ->with(['programs' => function($query){
+                return $query->select('id','name');
             }])
             ->get();
         }
         else {
-            $merchants = $query->with('children')
+            $merchants = $query->with(['programs' => function($query){
+                return $query->select('id','name');
+            }])
             ->paginate(request()->get('limit', 10));
         }
 
         if ( $merchants->isNotEmpty() ) 
         { 
             return response( $merchants );
+        }
+
+        return response( [] );
+    }
+
+    public function getMerchants( Organization $organization, Program $program )
+    {
+        if ( !$organization || !$program )
+        {
+            return response(['errors' => 'Invalid Organization or Program'], 422);
+        }
+
+        $program_merchants = ProgramMerchant::where('program_id', $program->id)
+        ->get();
+
+        if ( $program_merchants->isNotEmpty() ) 
+        { 
+            return response( $program_merchants );
         }
 
         return response( [] );
