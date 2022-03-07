@@ -15,7 +15,7 @@ class ProgramMerchantController extends Controller
 {
     public function index( Organization $organization, Program $program )
     {
-        if ( !$organization || !$program )
+        if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
