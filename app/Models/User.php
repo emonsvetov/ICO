@@ -119,6 +119,21 @@ class User extends Authenticatable implements MustVerifyEmail
         ->withTimestamps();
     }
 
+    public function syncRolesByProgram($programId, array $roles ) {
+        $permissions = [];
+        foreach( $roles as $roleId)    {
+            $permisssionName = "program.{$programId}.role.{$roleId}";
+            $permission = Permission::firstOrCreate(['name' => $permisssionName, 'organization_id' => $this->organization_id]);
+            if( $permission )   {
+                array_push($permissions, $permission->id);
+            }
+        }
+        if( $permissions )  {
+            $this->syncPermissionsByProgram($programId, $permissions);
+        }
+        return $this;
+    }
+
     public function syncPermissionsByProgram($programId, array $permissions)
     {
         $permissionIds = Permission::where('name', 'LIKE', "program.{$programId}.role.%")->get()->pluck('id'); //filter by program to narrow down the change
