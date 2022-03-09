@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Giftcode extends Model
 {
@@ -11,6 +12,11 @@ class Giftcode extends Model
 
     protected $guarded = [];
     protected $table = 'medium_info';
+
+    public function setPurchaseDateAttribute($purchaseDate)
+    {   
+        $this->attributes['purchase_date'] = Carbon::createFromFormat('d/m/Y', $purchaseDate)->format('Y-m-d');
+    }
 
     public function merchant()
     {
