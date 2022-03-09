@@ -17,18 +17,13 @@ class MerchantGiftcodePolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Merchant $merchant)
     {
         return $user->can('merchant-giftcode-list');
     }
   
-    public function add(User $authUser, User $user)
+    public function add(User $user, Merchant $merchant)
     {
-        return $authUser->can('merchant-giftcode-add');
-    }
-
-    public function remove(User $authUser, Program $program, User $user)
-    {
-        return $authUser->can('merchant-giftcode-remove');
+        return $user->can('merchant-giftcode-add');
     }
 }
