@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Validation\Factory as ValidationFactory;
+use \Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\CsvContent;
 
@@ -55,4 +57,14 @@ class MerchantGiftcodeRequest extends FormRequest
             ]
         ];
     }
+    
+    // protected function failedValidation( $validator)
+    // {
+    //     $response = response([
+    //         'errors' => $validator->errors()
+    //     ]);
+    //     throw (new ValidationException($validator, $response))
+    //     ->errorBag($this->errorBag)
+    //     ->redirectTo($this->getRedirectUrl());
+    // }
 }
