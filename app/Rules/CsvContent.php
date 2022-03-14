@@ -62,6 +62,7 @@ class CsvContent implements Rule
             $errors = [];
             try{
                 foreach ($newCsvData as $rowIndex => $csvValues) {
+                    $errors[$rowIndex] = null;
                     $validator = Validator::make($csvValues, $this->rules);
                     // if (!empty($this->headingRow)) {
                     //     $validator->setAttributeNames($this->headingRow);

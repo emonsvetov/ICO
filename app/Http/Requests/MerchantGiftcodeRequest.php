@@ -13,14 +13,34 @@ class MerchantGiftcodeRequest extends FormRequest
     public function __construct(ValidationFactory $validationFactory)
     {
         $validationFactory->extend(
-            'csv_match_merchant_code',
+            'match_merchant_code',
             function ($attribute, $value, $parameters) {
                 return $value == $this->merchant->merchant_code;
             },
             ':attribute does not match'
         );
-    }
 
+        $validationFactory->extend(
+            'giftcode_requires_pin',
+            function ($attribute, $value, $parameters) {
+                if ($this->merchant->giftcodes_require_pin && (! is_string ( $value ) || strlen ( trim ( $value ) ) < 1) ) {
+                    return false;
+                }
+                return true;
+            },
+            ':attribute requires pin'
+        );
+
+        $validationFactory->extend(
+            'is_valid_code',
+            function ($attribute, $value, $parameters) {
+                //TODO: check for implementation ; check is_valid_code($merchant_id, $code = '') in api/application/models/gift_codes_model.php
+                // Current implementation requires binding of postings, accounts, account_types, with medium_info. Need to revisit when these relations are clear
+                return true;
+            },
+            ':attribute is not valid'
+        );
+    }
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -45,26 +65,16 @@ class MerchantGiftcodeRequest extends FormRequest
                 'mimes:csv,txt,xls,xlsx',
                 new CsvContent( [
                     'purchase_date' => 'required|date',
-                    'supplier_code' => ['required', 'csv_match_merchant_code'],
+                    'supplier_code' => ['required', 'match_merchant_code'],
                     'redemption_value' => 'required|integer',
                     'cost_basis' => 'required|integer',
                     'discount' => 'required|integer',
                     'sku_value' => 'required|integer',
-                    'code' => 'required|string',
-                    'pin' => 'required|string',
+                    'code' => ['required', 'is_valid_code'],
+                    'pin' => ['required', 'giftcode_requires_pin'],
                     'redemption_url' => ' required|string',
                 ])
             ]
         ];
     }
-    
-    // protected function failedValidation( $validator)
-    // {
-    //     $response = response([
-    //         'errors' => $validator->errors()
-    //     ]);
-    //     throw (new ValidationException($validator, $response))
-    //     ->errorBag($this->errorBag)
-    //     ->redirectTo($this->getRedirectUrl());
-    // }
 }
