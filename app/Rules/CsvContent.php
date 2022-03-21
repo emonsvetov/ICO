@@ -61,17 +61,19 @@ class CsvContent implements Rule
             $this->csvData = $newCsvData;
             $errors = [];
             try{
+                $hasError = false;
                 foreach ($newCsvData as $rowIndex => $csvValues) {
-                    $errors[$rowIndex] = null;
+                    $errors[$rowIndex] = null; //need to keep every index intact
                     $validator = Validator::make($csvValues, $this->rules);
                     // if (!empty($this->headingRow)) {
                     //     $validator->setAttributeNames($this->headingRow);
                     // }
                     if (!$validator->errors()->isEmpty()) {
                         $errors[$rowIndex] = $validator->messages()->toArray();
+                        $hasError = true;
                     }
                 }
-                if( $errors )   {
+                if( $errors && $hasError  )   {  //check if it is a fail and hence set errors
                     $this->errors = $errors;
                     return false;
                 }
