@@ -208,5 +208,15 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'index'])->middleware('can:viewAny,App\MerchantGiftcode,merchant');
 
     Route::post('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'store'])->middleware('can:add,App\MerchantGiftcode,merchant');
+
+    //MerchantOptimalValues
+
+    Route::get('/v1/merchant/{merchant}/optimalvalue', [App\Http\Controllers\API\MerchantOptimalValueController::class, 'index'])->middleware('can:viewAny,App\MerchantOptimalValue,merchant');
+
+    Route::post('/v1/merchant/{merchant}/optimalvalue', [App\Http\Controllers\API\MerchantOptimalValueController::class, 'store'])->middleware('can:add,App\MerchantOptimalValue,merchant');
+
+    Route::put('/v1/merchant/{merchant}/optimalvalue/{optimalValue}',[App\Http\Controllers\API\MerchantOptimalValueController::class, 'update'])->middleware('can:update,App\MerchantOptimalValue,merchant,optimalValue');
+
+    Route::delete('/v1/merchant/{merchant}/optimalvalue/{optimalValue}',[App\Http\Controllers\API\MerchantOptimalValueController::class, 'destroy'])->middleware('can:delete,App\MerchantOptimalValue,merchant,optimalValue');
     
 });

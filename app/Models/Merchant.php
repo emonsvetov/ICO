@@ -37,6 +37,11 @@ class Merchant extends Model
         return $this->hasMany(Merchant::class, 'parent_id')->with('children');
     }
 
+    public function optimal_values()
+    {
+        return $this->hasMany(OptimalValue::class);
+    }
+
     public function programs()
     {
         return $this->belongsToMany(Program::class, 'program_merchant');

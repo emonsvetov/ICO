@@ -22,6 +22,7 @@ class AuthServiceProvider extends ServiceProvider
         'App\DomainProgram' => 'App\Policies\DomainProgramPolicy',
         'App\Report' => 'App\Policies\ReportPolicy',
         'App\Merchant' => 'App\Policies\Merchant',
+        'App\MerchantOptimalValue' => 'App\Policies\MerchantOptimalValue',
         'App\Submerchant' => 'App\Policies\SubmerchantPolicy',
         'App\ProgramMerchant' => 'App\Policies\ProgramMerchantPolicy',
         'App\ProgramUser' => 'App\Policies\ProgramUserPolicy',
