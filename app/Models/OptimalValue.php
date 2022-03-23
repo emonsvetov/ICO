@@ -11,7 +11,6 @@ class OptimalValue extends Model
 
     protected $guarded = [];
     protected $table = 'merchant_optimal_values';
-    public $timestamps = false;
 
     public function merchant()
     {

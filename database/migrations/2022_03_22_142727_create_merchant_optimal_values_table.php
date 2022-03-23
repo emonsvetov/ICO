@@ -18,6 +18,7 @@ class CreateMerchantOptimalValuesTable extends Migration
             $table->integer('merchant_id');
             $table->double('denomination');
             $table->integer('optimal_value');
+            $table->timestamps();
 
             $table->index('merchant_id');
         });
