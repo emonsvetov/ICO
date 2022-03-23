@@ -11,6 +11,7 @@ class CsvContent implements Rule
     use CsvParser;
 
     protected $errors = ['Value is not valid'];
+    protected $csvData = [];
     protected $rules = [];
     /**
      * Create a new rule instance.
@@ -57,19 +58,23 @@ class CsvContent implements Rule
                     $newCsvData[$rowIndex][$ruleKeyIndex] = $csvValues[$ruleKeyIndex];
                 }
             }
+            $this->csvData = $newCsvData;
             $errors = [];
             try{
+                $hasError = false;
                 foreach ($newCsvData as $rowIndex => $csvValues) {
+                    $errors[$rowIndex] = null; //need to keep every index intact
                     $validator = Validator::make($csvValues, $this->rules);
                     // if (!empty($this->headingRow)) {
                     //     $validator->setAttributeNames($this->headingRow);
                     // }
                     if (!$validator->errors()->isEmpty()) {
                         $errors[$rowIndex] = $validator->messages()->toArray();
+                        $hasError = true;
                     }
                 }
-                if( $errors )   {
-                    $this->errors = json_encode($errors);
+                if( $errors && $hasError  )   {  //check if it is a fail and hence set errors
+                    $this->errors = $errors;
                     return false;
                 }
             }
@@ -87,6 +92,6 @@ class CsvContent implements Rule
      */
     public function message()
     {
-        return  $this->errors;
+        return  json_encode(['errors'=>$this->errors, 'rows'=>$this->csvData]);
     }
 }

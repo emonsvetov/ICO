@@ -67,8 +67,11 @@ class MerchantGiftcodeController extends Controller
         $fileContents = request()->file('file_medium_info')->get();
         $csvData = $this->CsvToArray($fileContents);
         $imported = [];
+        $removable = ['supplier_code', 'someurl']; //handling 'unwanted' keys
         foreach( $csvData as $row ) {
-            unset( $row['supplier_code'] );
+            foreach($removable as $key) {
+                if( isset($row[$key]) ) unset( $row[$key] );
+            }
             $imported[] = Giftcode::create(
                 $row + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
             );

@@ -18,7 +18,7 @@ class CreateMediumInfoTable extends Migration
             $table->date('purchase_date');
             $table->date('redemption_date')->nullable();
             $table->date('expiration_date')->nullable();
-            $table->timestamp('hold_until');
+            $table->timestamp('hold_until')->nullable()->default(null);
             $table->decimal('redemption_value', 18, 4);
             $table->decimal('cost_basis', 18, 4);
             $table->decimal('discount', 9, 4);
