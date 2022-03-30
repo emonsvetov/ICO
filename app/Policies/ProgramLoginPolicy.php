@@ -7,7 +7,7 @@ use App\Models\Program;
 use App\Models\Organization;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
-class LoginPolicy
+class ProgramLoginPolicy
 {
     use HandlesAuthorization;
 

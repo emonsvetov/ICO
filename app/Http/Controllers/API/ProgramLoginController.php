@@ -4,14 +4,13 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Registered;
-use App\Http\Requests\LoginRequest;
+use App\Http\Requests\ProgramLoginRequest;
 use App\Models\Organization;
 use App\Models\Program;
-use App\Models\User;
 
-class LoginController extends Controller
+class ProgramLoginController extends Controller
 {
-    public function login(LoginRequest $request, Organization $organization, Program $program, User $user)
+    public function login(ProgramLoginRequest $request, Organization $organization, Program $program)
     {
         $requestRole = $request->get( 'role' );
         $user = auth()->user();

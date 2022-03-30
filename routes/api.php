@@ -221,6 +221,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //ProgramLogin
 
-    Route::post('/v1/organization/{organization}/program/{program}/login',[App\Http\Controllers\API\LoginController::class, 'login'])->middleware('can:login,App\Login,organization,program');
+    Route::post('/v1/organization/{organization}/program/{program}/login',[App\Http\Controllers\API\ProgramLoginController::class, 'login'])->middleware('can:login,App\ProgramLogin,organization,program');
     
 });
