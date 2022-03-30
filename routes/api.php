@@ -218,5 +218,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/merchant/{merchant}/optimalvalue/{optimalValue}',[App\Http\Controllers\API\MerchantOptimalValueController::class, 'update'])->middleware('can:update,App\MerchantOptimalValue,merchant,optimalValue');
 
     Route::delete('/v1/merchant/{merchant}/optimalvalue/{optimalValue}',[App\Http\Controllers\API\MerchantOptimalValueController::class, 'destroy'])->middleware('can:delete,App\MerchantOptimalValue,merchant,optimalValue');
+
+    //ProgramLogin
+
+    Route::post('/v1/organization/{organization}/program/{program}/login',[App\Http\Controllers\API\LoginController::class, 'login'])->middleware('can:login,App\Login,organization,program');
     
 });
