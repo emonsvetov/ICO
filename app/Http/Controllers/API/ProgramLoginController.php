@@ -12,7 +12,7 @@ class ProgramLoginController extends Controller
 {
     public function login(ProgramLoginRequest $request, Organization $organization, Program $program)
     {
-        $requestRole = $request->get( 'role' );
+        $requestRole = $request->validated()['role'];
         $user = auth()->user();
 
         if( $requestRole == 'program_manager' )    {
