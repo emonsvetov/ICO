@@ -18,8 +18,8 @@ class ProgramLoginController extends Controller
         if( $requestRole == 'program_manager' )    {
             if( $user->isManagerToProgram($program->id) ) {
                 return response([
-                    'manager'=>true,
-                    'program_id' => $program->id
+                    'roleName'=>config('global.program_manager_role_name'),
+                    'programId' => $program->id
                 ]);
             }
         }
@@ -27,8 +27,8 @@ class ProgramLoginController extends Controller
         if( $requestRole == 'participant' )    {
             if( $user->isParticipantToProgram($program->id) ) {
                 return response([
-                    'participant'=>true,
-                    'program_id' => $program->id
+                    'roleName'=>config('global.participant_role_name'),
+                    'programId' => $program->id
                 ]);
             }
         }
