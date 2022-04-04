@@ -12,7 +12,6 @@ use Laravel\Passport\HasApiTokens;
 use App\Models\Permission;
 use App\Models\Role;
 
-
 use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -82,13 +81,38 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['name'];
+    public $allRoles = [];
+    public $programRoles = [];
+    public $isProgramManager = false;
+    public $isParticipant = false;
+    public $isAdmin = false;
 
+    protected $appends = ['name', 'allRoles', 'programRoles', 'isProgramManager', 'isParticipant', 'isAdmin'];
+
+    public function getIsProgramManagerAttribute()
+    {
+        return $this->isProgramManager;
+    }
+    public function getIsParticipantAttribute()
+    {
+        return $this->isParticipant;
+    }
+    public function getIsAdminAttribute()
+    {
+        return $this->isAdmin;
+    }
     public function getNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
     }
-
+    public function getAllRolesAttribute()
+    {
+        return $this->allRoles;
+    }
+    public function getProgramRolesAttribute()
+    {
+        return $this->programRoles;
+    }
     public function setPasswordAttribute($password)
     {   
         $this->attributes['password'] = bcrypt($password);
@@ -155,5 +179,112 @@ class User extends Authenticatable implements MustVerifyEmail
         $this->permissions()->attach($attach);
     
         return $this;
+    }
+
+    public function getRoles() 
+    {
+        $this->allRoles = $this->getRoleNames()->toArray();
+        $this->programRoles = $this->getProgramRoles();
+        return ['roles' => $this->allRoles, 'program_roles' => $this->programRoles];
+    }
+
+    public function getProgramRoles()
+    {
+        $permissions = $this->getPermissionNames();
+        if( $permissions )  {
+            $programs = [];
+            $roles = [];
+            foreach( $permissions as $permission )  {
+                preg_match('/program.(\d)\.role\.(\d)/', $permission, $matches, PREG_UNMATCHED_AS_NULL);
+                if( $matches )    {
+                    $programId = $matches[1];
+                    $roleId = $matches[2];
+                    if( !isset( $programs[$programId] ) )   {
+                        $program = Program::where( 'id', $programId )->select('id', 'name')->first();
+                        $programs[$programId] = $program;
+                    }
+                    else 
+                    {
+                        $program = $programs[$programId];
+                    }
+                    if( !isset( $roles[$roleId] ) )   {
+                        $role = Role::where( 'id', $roleId )->select('id', 'name')->first();
+                        $roles[$roleId] = $role;
+                        if( !in_array( $role->name, $this->allRoles ))    {
+                            array_push( $this->allRoles, $role->name );
+                        }
+                        if( config('global.program_manager_role_name') == $role->name ) {
+                            $this->isProgramManager = true;
+                        }
+                        if( config('global.participant_role_name') == $role->name ) {
+                            $this->isParticipant = true;
+                        }
+                        if( config('global.admin_role_name') == $role->name ) {
+                            $this->isAdmin = true;
+                        }
+                    }
+                    else 
+                    {
+                        $role = $roles[$roleId];
+                    }
+
+                    if( !isset( $this->programRoles[$program->id] ) ) {
+                        $this->programRoles[$program->id] = $program->toArray();
+                    }
+                    $this->programRoles[$program->id]['roles'][$role->id] = $role->toArray();
+                }
+            }
+        }
+        return $this->programRoles;
+    }
+
+    public function isManagerToProgram( $program_id ) {
+
+        if( !$this->programs->pluck('id')->contains($program_id) )  {
+            return false;
+        }
+
+        if( !$this->programRoles )  {
+            $this->programRoles = $this->getProgramRoles();
+        }
+
+        if( !$this->programRoles ) return false;
+
+        foreach( $this->programRoles as $programId => $programRoles)  {
+            $programRoles = (object) $programRoles;
+            if( $programId == $program_id)    {
+                foreach($programRoles->roles as $programRole)   {
+                    $programRole = (object) $programRole;
+                    if( $programRole->name == config('global.program_manager_role_name'))    {
+                       return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public function isParticipantToProgram( $program_id ) {
+        if( !$this->programs->pluck('id')->contains($program_id) )  {
+            return false;
+        }
+        if( !$this->programRoles )  {
+            $this->programRoles = $this->getProgramRoles();
+        }
+
+        if( !$this->programRoles ) return false;
+
+        foreach( $this->programRoles as $programId => $programRoles)  {
+            $programRoles = (object) $programRoles;
+            if( $programId == $program_id)    {
+                foreach($programRoles->roles as $programRole)   {
+                    $programRole = (object) $programRole;
+                    if( $programRole->name == config('global.participant_role_name'))    {
+                       return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
