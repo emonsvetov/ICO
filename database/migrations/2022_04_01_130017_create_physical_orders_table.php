@@ -15,6 +15,18 @@ class CreatePhysicalOrdersTable extends Migration
     {
         Schema::create('physical_orders', function (Blueprint $table) {
             $table->id();
+            $table->string('ship_to_name', 128);
+            $table->string('line_1', 512);
+            $table->string('line_2', 512);
+            $table->string('zip', 16);
+            $table->string('city', 128);
+            $table->integer('user_id');
+            $table->integer('country_id');
+            $table->integer('state_id');
+            $table->integer('state_type_id');
+            $table->integer('program_id');
+            $table->integer('modified_by');
+            $table->mediumText('notes');
             $table->timestamps();
         });
     }
