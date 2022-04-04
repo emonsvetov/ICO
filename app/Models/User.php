@@ -185,7 +185,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $this->allRoles = $this->getRoleNames()->toArray();
         $this->programRoles = $this->getProgramRoles();
-        // return ['roles' => $this->allRoles, 'program_roles' => $this->programRoles];
+        return ['roles' => $this->allRoles, 'programRoles' => $this->programRoles];
     }
 
     public function getProgramRoles()
