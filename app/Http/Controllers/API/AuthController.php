@@ -46,11 +46,11 @@ class AuthController extends Controller
         }
 
         $user = auth()->guard('web')->user();
-        $roles = $user->getRoles();
+        $user->getRoles();
 
         $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
 
-        return response(['user' => array_merge($user->toArray(),  $roles), 'access_token' => $accessToken]);
+        return response(['user' => $user, 'access_token' => $accessToken]);
 
     }
 
