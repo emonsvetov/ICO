@@ -28,6 +28,7 @@ class AuthServiceProvider extends ServiceProvider
         'App\ProgramMerchant' => 'App\Policies\ProgramMerchantPolicy',
         'App\ProgramUser' => 'App\Policies\ProgramUserPolicy',
         'App\UserProgram' => 'App\Policies\UserProgramPolicy',
+        'App\EventType' => 'App\Policies\EventTypePolicy',
     ];
 
     /**

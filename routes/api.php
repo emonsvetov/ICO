@@ -222,5 +222,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //ProgramLogin
 
     Route::post('/v1/organization/{organization}/program/{program}/login',[App\Http\Controllers\API\ProgramLoginController::class, 'login'])->middleware('can:login,App\ProgramLogin,organization,program');
+
+    //EventType
+
+    Route::get('/v1/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType');
     
 });

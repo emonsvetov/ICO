@@ -25,6 +25,13 @@ class ProgramPolicy
     public function view(User $user, Program $program)
     {
         if( $user->organization_id !== $program->organization_id ) return false;
+        // if( $user->hasRole( config('global.program_manager_role_name') ))   {
+        //     return true; //is global "Program Manager" role possible ?? If it is this check can be useful!
+        // }
+        if( $user->isManagerToProgram( $program->id ) )
+        {
+            return true;
+        }
         return $user->can('program-view');
     }
 

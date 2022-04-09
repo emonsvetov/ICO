@@ -32,6 +32,7 @@ class PermissionSeeder extends Seeder
             'event-create',
             'event-edit',
             'event-delete',
+            'eventtype-list',
             'merchant-list',
             'merchant-view',
             'merchant-create',

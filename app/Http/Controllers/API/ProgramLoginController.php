@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\Registered;
 use App\Http\Requests\ProgramLoginRequest;
 use App\Models\Organization;
 use App\Models\Program;
+use App\Models\Role;
 
 class ProgramLoginController extends Controller
 {
@@ -18,8 +19,8 @@ class ProgramLoginController extends Controller
         if( $requestRole == 'program_manager' )    {
             if( $user->isManagerToProgram($program->id) ) {
                 return response([
-                    'roleName'=>config('global.program_manager_role_name'),
-                    'programId' => $program->id
+                    'role'=>Role::where('name', config('global.program_manager_role_name'))->first(),
+                    'program' => $program,
                 ]);
             }
         }
@@ -27,8 +28,8 @@ class ProgramLoginController extends Controller
         if( $requestRole == 'participant' )    {
             if( $user->isParticipantToProgram($program->id) ) {
                 return response([
-                    'roleName'=>config('global.participant_role_name'),
-                    'programId' => $program->id
+                    'role'=>Role::where('name', config('global.participant_role_name'))->first(),
+                    'program' => $program
                 ]);
             }
         }
