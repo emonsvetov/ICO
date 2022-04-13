@@ -18,9 +18,9 @@ class ProgramUserPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Program $program)
     {
-        return $user->can('program-user-list');
+        return $user->isManagerToProgram( $program ) || $user->can('program-user-list');
     }
   
     public function add(User $user, Program $program)

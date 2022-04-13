@@ -243,7 +243,19 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->programRoles;
     }
 
-    public function isManagerToProgram( $program_id ) {
+    public function hasRoleInProgram( $roleName, $program) {
+
+        if( trim($roleName) == "" || !$program ) return false;
+
+        if( gettype($program)=='object' ) {
+            $program_id = isset($program->id) ? $program->id : null;
+        } else if( gettype($program)=='array' ) {
+            $program_id = isset($program['id']) ? $program['id'] : null;
+        } else {
+            $program_id = (int) $program;
+        }
+
+        if( !isset($program_id) || !$program_id )   return false;
 
         if( !$this->programs->pluck('id')->contains($program_id) )  {
             return false;
@@ -260,7 +272,7 @@ class User extends Authenticatable implements MustVerifyEmail
             if( $programId == $program_id)    {
                 foreach($programRoles->roles as $programRole)   {
                     $programRole = (object) $programRole;
-                    if( $programRole->name == config('global.program_manager_role_name'))    {
+                    if( $programRole->name == $roleName )    {
                        return true;
                     }
                 }
@@ -269,27 +281,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return false;
     }
 
-    public function isParticipantToProgram( $program_id ) {
-        if( !$this->programs->pluck('id')->contains($program_id) )  {
-            return false;
-        }
-        if( !$this->programRoles )  {
-            $this->programRoles = $this->getProgramRoles();
-        }
+    public function isManagerToProgram( $program ) {
+        return $this->hasRoleInProgram( config('global.program_manager_role_name'), $program);
+    }
 
-        if( !$this->programRoles ) return false;
-
-        foreach( $this->programRoles as $programId => $programRoles)  {
-            $programRoles = (object) $programRoles;
-            if( $programId == $program_id)    {
-                foreach($programRoles->roles as $programRole)   {
-                    $programRole = (object) $programRole;
-                    if( $programRole->name == config('global.participant_role_name'))    {
-                       return true;
-                    }
-                }
-            }
-        }
-        return false;
+    public function isParticipantToProgram( $program ) {
+        return $this->hasRoleInProgram( config('global.participant_role_name'), $program);
     }
 }

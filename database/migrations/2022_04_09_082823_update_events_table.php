@@ -18,6 +18,7 @@ class UpdateEventsTable extends Migration
             $table->dropColumn('allow_amount_overriding');
             $table->dropColumn('email_template_id');
             $table->double('max_awardable_amount', 8, 2)->after('type_id');
+            $table->integer('event_icon_id')->nullable()->change();
         });
     }
 
