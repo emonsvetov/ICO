@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use App\Http\Requests\EventRequest;
 use App\Models\ParticipantGroup;
 use App\Models\Organization;
+use App\Models\JournalEventType;
+use App\Models\JournalEvent;
 use App\Models\Program;
 use App\Models\Event;
 use DB;
@@ -16,6 +18,16 @@ class EventController extends Controller
 {
     public function index( Organization $organization, Program $program )
     {
+
+        $journalEvents = JournalEventType::get();
+
+        $types = [];
+
+        foreach( $journalEvents as $journalEventType)   {
+            $types[] = $journalEventType;
+        }
+
+        return $types;
         
         if ( $organization->id != $program->organization_id )
         {
