@@ -85,6 +85,7 @@ To update db run
 
 Also some new seeders were also added
 
+`php artisan db:seed --class=EventTypeSeeder`
 `php artisan db:seed --class=JournalEventTypeSeeder`
 `php artisan db:seed --class=FinanceTypeSeeder`
 
