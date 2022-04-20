@@ -226,5 +226,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //EventType
 
     Route::get('/v1/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType');
+
+    //Award
+
+    Route::post('/v1/organization/{organization}/program/{program}/award',[App\Http\Controllers\API\AwardController::class, 'store'])->middleware('can:create,App\Award,organization,program');
     
 });

@@ -31,7 +31,7 @@ class ProgramRequest extends FormRequest
             'setup_fee'             => 'required|numeric',
             'factor_valuation'=>'required|integer',
             'is_pay_in_advance'     => 'required|boolean',
-            'is_invoice_for_rewards'=> 'required|boolean',
+            'invoice_for_awards'=> 'required|boolean',
             'is_add_default_merchants'=> 'required|boolean',
 			//new
             'public_contact_email'=>'nullable|string|email',
@@ -84,7 +84,7 @@ class ProgramRequest extends FormRequest
             'deactivate_account'=>'nullable|boolean',
             //Billing  Information
             'is_pay_in_advance'=>'nullable|boolean',
-            'is_invoice_for_rewards'=>'nullable|boolean',
+            'invoice_for_awards'=>'nullable|boolean',
             'create_invoices'=>'nullable|boolean',
             'allow_creditcard_deposits'=>'nullable|boolean',
 			//Transaction Fees - This is many to one with a add tier amount button that adds new fields (Pending) Tier amount : text, Transaction fee: text
