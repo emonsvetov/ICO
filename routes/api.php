@@ -138,7 +138,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //DomainProgram routes
 
-    Route::get('/v1/organization/{organization}/domain/{domain}/program', 
+    Route::get('/v1/organization/{organization}/domain/{domain}/program',
     [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,domain');
     Route::post('/v1/organization/{organization}/domain/{domain}/program',
     [App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add')->middleware('can:create,domain');
@@ -185,7 +185,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::put('/v1/organization/{organization}/program/{program}/user/{user}',[App\Http\Controllers\API\ProgramUserController::class, 'update'])->middleware('can:update,App\ProgramUser,user');
 
-    Route::delete('/v1/organization/{organization}/program/{program}/user/{user}', 
+    Route::delete('/v1/organization/{organization}/program/{program}/user/{user}',
     [App\Http\Controllers\API\ProgramUserController::class, 'delete'])->middleware('can:remove,App\ProgramUser,program,user');
 
     //UserProgram routes
@@ -194,12 +194,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/user/{user}/program',[App\Http\Controllers\API\UserProgramController::class, 'store'])->middleware('can:add,App\UserProgram,user');
 
-    Route::delete('/v1/organization/{organization}/user/{user}/program/{program}', 
+    Route::delete('/v1/organization/{organization}/user/{user}/program/{program}',
     [App\Http\Controllers\API\UserProgramController::class, 'delete'])->middleware('can:remove,App\UserProgram,user,program');
 
-    Route::get('/v1/organization/{organization}/user/{user}/program/{program}/permission', 
+    Route::get('/v1/organization/{organization}/user/{user}/program/{program}/permission',
     [App\Http\Controllers\API\UserProgramController::class, 'getPermission'])->middleware('can:getPermissions,App\UserProgram,user,program');
-    
+
     //Reports routes
     Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
 
@@ -226,5 +226,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //EventType
 
     Route::get('/v1/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType');
-    
+
+    //EmailTemplate
+
+    Route::get('/v1/emailtemplate',[App\Http\Controllers\API\EmailTemplateController::class, 'index'])->middleware('can:viewAny,App\EmailTemplate');
 });
