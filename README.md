@@ -75,7 +75,20 @@ Add common file uploads to .gitignore file. For example:
 
 ## Update Log 
 
-** Feb 22, 2022 - START
+** Apr 20, 2022
+
+Various new db table and changes were added. 
+
+To update db run
+
+`php artisan migrate`
+
+Also some new seeders were also added
+
+`php artisan db:seed --class=JournalEventTypeSeeder`
+`php artisan db:seed --class=FinanceTypeSeeder`
+
+** Feb 22, 2022
 
 ### Permission updates
 
@@ -97,5 +110,3 @@ Seed:
 `php artisan db:seed --class=PermissionSeeder`
 
 Visit https://spatie.be/docs/laravel-permission/v5/introduction for more info about the package
-
--- Feb 22, 2022 - END
