@@ -58,10 +58,9 @@ class EventController extends Controller
         }
 
         $validated = $request->validated();
-        $custom_email_template  = request()->get('custom_email_template');
-        if($custom_email_template){
-            $template['name']  = request()->get('template_name');
-            $template['content']= request()->get('email_template');
+        if(isset($validated['custom_email_template'])){
+            $template['name']  = $validated['template_name'];
+            $template['content']= $validated['email_template'];
             $template['type']= 'program_event';
             $newTemplate = EmailTemplate::create( $template);
             if ( !$newTemplate )
@@ -70,6 +69,10 @@ class EventController extends Controller
             }
             $validated['email_template_id'] = $newTemplate->id;
         }
+
+        unset($validated['custom_email_template']);
+        unset($validated['template_name']);
+        unset($validated['email_template']);
 
         $newEvent = Event::create(
                                     $validated +
@@ -117,11 +120,11 @@ class EventController extends Controller
         {
             return response(['errors' => 'No Program Found'], 404);
         }
+
         $validated = $request->validated();
-        $custom_email_template  = request()->get('custom_email_template');
-        if($custom_email_template){
-            $template['name']  = request()->get('template_name');
-            $template['content']= request()->get('email_template');
+        if(isset($validated['custom_email_template'])){
+            $template['name']  = $validated['template_name'];
+            $template['content']= $validated['email_template'];
             $template['type']= 'program_event';
             $newTemplate = EmailTemplate::create( $template);
             if ( !$newTemplate )
@@ -131,6 +134,9 @@ class EventController extends Controller
             $validated['email_template_id'] = $newTemplate->id;
         }
 
+        unset($validated['custom_email_template']);
+        unset($validated['template_name']);
+        unset($validated['email_template']);
         $event->update( $validated );
 
         return response([ 'event' => $event ]);
