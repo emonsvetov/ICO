@@ -230,5 +230,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Award
 
     Route::post('/v1/organization/{organization}/program/{program}/award',[App\Http\Controllers\API\AwardController::class, 'store'])->middleware('can:create,App\Award,organization,program');
+
+    //ProgramParticipants
+
+    Route::get('/v1/organization/{organization}/program/{program}/participant',[App\Http\Controllers\API\ProgramParticipantController::class, 'index'])->middleware('can:viewAny,App\ProgramParticipant,organization,program');
     
 });

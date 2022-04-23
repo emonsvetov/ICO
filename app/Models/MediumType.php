@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class FinanceType extends Model
+class MediumType extends Model
 {
 
     protected $guarded = [];

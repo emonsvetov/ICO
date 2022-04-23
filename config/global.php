@@ -7,4 +7,7 @@ return [
     'admin_role_name' => 'Admin',
     'paginate_limit' => 50,
     'factor_valuation' => 40,
+    'event_type_peer2peer' => 'peer2peer',
+    'account_type_peer2peer_points' => 'Peer to Peer Points',
+    'default_currency' => 'USD',
 ];

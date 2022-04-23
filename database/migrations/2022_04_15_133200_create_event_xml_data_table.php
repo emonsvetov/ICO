@@ -14,25 +14,27 @@ class CreateEventXmlDataTable extends Migration
     public function up()
     {
         Schema::create('event_xml_data', function (Blueprint $table) {
-            $table->id();
+            $table->bigIncrements('id');
             $table->unsignedBigInteger('awarder_id');
             $table->string('name', 45);
-            $table->integer('award_level_id');
-            $table->integer('amount_override');
+            $table->string('award_level_name', 45);
+            $table->integer('amount_override')->default(0);
             $table->mediumText('notification_body')->nullable();
             $table->mediumText('notes')->nullable();
             $table->mediumText('referrer')->nullable();
             $table->integer('email_template_id')->nullable();
-            $table->integer('event_id')->nullable();
+            $table->integer('event_type_id')->default(0);
+            $table->integer('event_template_id')->default(0);
             $table->string('icon', 64)->nullable();
-            $table->integer('award_transaction_id')->nullable();
-            $table->integer('lease_number')->nullable();
-            $table->integer('token');
+            $table->binary('xml')->nullable();
+            $table->string('award_transaction_id', 100)->nullable();
+            $table->string('lease_number')->nullable();
+            $table->string('token', 120);
 
             $table->timestamps();
 
             $table->index( ['awarder_id']);
-            $table->index( ['event_id']);
+            $table->index( ['event_template_id']);
         });
     }
 

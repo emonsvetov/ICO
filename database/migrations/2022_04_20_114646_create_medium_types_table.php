@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class RenameJournalEventsAwarderColumn extends Migration
+class CreateMediumTypesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,12 @@ class RenameJournalEventsAwarderColumn extends Migration
      */
     public function up()
     {
-        Schema::table('journal_events', function (Blueprint $table) {
-            $table->renameColumn('user_id', 'awarder_id');
+        Schema::create('medium_types', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 45);
+            $table->string('code', 45)->nullable();
+
+            $table->index('name');
         });
     }
 
@@ -25,8 +29,6 @@ class RenameJournalEventsAwarderColumn extends Migration
      */
     public function down()
     {
-        Schema::table('journal_events', function (Blueprint $table) {
-            $table->renameColumn('awarder_id', 'user_id');
-        });
+        Schema::dropIfExists('medium_types');
     }
 }

@@ -10,6 +10,9 @@ use Database\Seeders\RoleSeeder;
 use Database\Seeders\EventTypeSeeder;
 use Database\Seeders\JournalEventTypeSeeder;
 use Database\Seeders\FinanceTypeSeeder;
+use Database\Seeders\MediumTypeSeeder;
+use Database\Seeders\AccountTypeSeeder;
+use Database\Seeders\CurrencySeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,11 +24,14 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([
+            PermissionSeeder::class,
+            RoleSeeder::class,
             EventTypeSeeder::class,
             JournalEventTypeSeeder::class,
             FinanceTypeSeeder::class,
-            PermissionSeeder::class,
-            RoleSeeder::class
+            MediumTypeSeeder::class,
+            AccountTypeSeeder::class,
+            CurrencySeeder::class,
         ]);
     }
 }

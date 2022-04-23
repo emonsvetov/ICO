@@ -88,6 +88,7 @@ Also some new seeders were also added
 `php artisan db:seed --class=EventTypeSeeder`
 `php artisan db:seed --class=JournalEventTypeSeeder`
 `php artisan db:seed --class=FinanceTypeSeeder`
+`php artisan db:seed --class=MediumTypeSeeder`
 
 ** Feb 22, 2022
 

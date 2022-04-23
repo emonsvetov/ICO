@@ -63,6 +63,7 @@ class PermissionSeeder extends Seeder
             'program-merchant-list',
             'program-merchant-add',
             'program-merchant-remove',
+            'program-participant-list',
             'program-user-list',
             'program-user-add',
             'program-user-update',

@@ -29,7 +29,7 @@ class AwardRequest extends FormRequest
             'message' => 'required|string',
             'notes' => 'nullable|string',
             'override_cash_value' => 'nullable|numeric',
-            'referer' => 'nullable|string',
+            'referrer' => 'nullable|string',
             'documentationFile' => [
                 'nullable',
                 'file',

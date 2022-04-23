@@ -17,7 +17,7 @@ class CreatePostingsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('journal_event_id');
             $table->unsignedBigInteger('medium_info_id')->nullable();
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('account_id');
             $table->decimal('posting_amount', 11, 4);
             $table->decimal('qty', 9, 4)->default(1);
             $table->boolean('is_credit')->default(0);

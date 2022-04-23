@@ -4,18 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class FinanceType extends Model
+class AccountType extends Model
 {
-
     protected $guarded = [];
 
     public function getIdByName( $name, $insert = false ) {
-        $id = self::where('name', $name)->first()->id;
-        if( !$id && $insert)    {
-            $id = self::insertGetId([
+        $first = self::where('name', $name)->first();
+        if( $first) return $first->id;
+        if( $insert )    {
+            return self::insertGetId([
                 'name'=>$name
             ]);
         }
-        return $id;
     }
 }

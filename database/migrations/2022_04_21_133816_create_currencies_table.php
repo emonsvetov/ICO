@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateFinanceTypesTable extends Migration
+class CreateCurrenciesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,11 +13,9 @@ class CreateFinanceTypesTable extends Migration
      */
     public function up()
     {
-        Schema::create('finance_types', function (Blueprint $table) {
+        Schema::create('currencies', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 45);
-
-            $table->index('name');
+            $table->string('type', 45);
         });
     }
 
@@ -28,6 +26,6 @@ class CreateFinanceTypesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('finance_types');
+        Schema::dropIfExists('currencies');
     }
 }

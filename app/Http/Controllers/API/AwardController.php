@@ -23,6 +23,8 @@ class AwardController extends Controller
             auth()->user()
         );
 
+        return $newAward;
+
         if ( !$newAward )
         {
             return response(['errors' => 'Award creation failed'], 422);
