@@ -15,7 +15,7 @@ class CreateJournalEventsTable extends Migration
     {
         Schema::create('journal_events', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('awarder_id');
             $table->integer('journal_event_type_id');
             $table->mediumText('notes')->nullable();
             $table->unsignedBigInteger('event_xml_data_id')->nullable();

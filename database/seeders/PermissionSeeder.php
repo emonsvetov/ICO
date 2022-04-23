@@ -17,6 +17,7 @@ class PermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
+            'award-create',
             'domain-list',
             'domain-view',
             'domain-create',
@@ -63,6 +64,7 @@ class PermissionSeeder extends Seeder
             'program-merchant-list',
             'program-merchant-add',
             'program-merchant-remove',
+            'program-participant-list',
             'program-user-list',
             'program-user-add',
             'program-user-update',

@@ -28,13 +28,13 @@ class MerchantOptimalValuePolicy
         return $user->can('merchant-optimalvalue-add');
     }
 
-    public function update(User $user, Merchant $merchant, OptimalValue $optimalValue, )
+    public function update(User $user, Merchant $merchant, OptimalValue $optimalValue)
     {
         if( $merchant->id != $optimalValue->merchant_id) return false;
         return $user->can('merchant-optimalvalue-edit');
     }
 
-    public function delete(User $user, Merchant $merchant, OptimalValue $optimalValue, )
+    public function delete(User $user, Merchant $merchant, OptimalValue $optimalValue)
     {
         if( $merchant->id != $optimalValue->merchant_id) return false;
         return $user->can('merchant-optimalvalue-delete');
