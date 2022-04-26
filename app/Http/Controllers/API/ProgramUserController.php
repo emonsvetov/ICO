@@ -64,6 +64,9 @@ class ProgramUserController extends Controller
 
         if ( $users->isNotEmpty() )
         {
+            foreach( $users as $user)   {
+                $user->getRoles( $program );
+            }
             return response( $users );
         }
 

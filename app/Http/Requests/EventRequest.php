@@ -27,7 +27,7 @@ class EventRequest extends FormRequest
         return [
             'name' => 'required|string',
 			'enable'=> 'sometimes|boolean|nullable',
-			'type_id'=> 'required|numeric',
+			'event_type_id'=> 'required|numeric',
 			'event_icon_id'=> 'sometimes|integer',
 			'max_awardable_amount'=> ['required', new Decimal82()],
 			'email_template'=> 'sometimes|string',

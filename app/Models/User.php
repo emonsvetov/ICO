@@ -188,15 +188,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this;
     }
 
-    public function getRoles() 
+    public function getRoles( $byProgram = null) 
     {
         $this->allRoles = $this->getRoleNames()->toArray();
-        $this->programRoles = $this->getProgramRoles();
+        $this->programRoles = $this->getProgramRoles( $byProgram );
         return ['roles' => $this->allRoles, 'programRoles' => $this->programRoles];
     }
 
-    public function getProgramRoles()
+    public function getProgramRoles( $byProgram = null )
     {
+        if( $byProgram ) {
+            $byProgram = self::extractId($byProgram);
+        }
         $permissions = $this->getPermissionNames();
         if( $permissions )  {
             $programs = [];
@@ -205,6 +208,10 @@ class User extends Authenticatable implements MustVerifyEmail
                 preg_match('/program.(\d)\.role\.(\d)/', $permission, $matches, PREG_UNMATCHED_AS_NULL);
                 if( $matches )    {
                     $programId = $matches[1];
+                    if( $byProgram && $byProgram != $programId)
+                    {
+                        continue;
+                    }
                     $roleId = $matches[2];
                     if( !isset( $programs[$programId] ) )   {
                         $program = Program::where( 'id', $programId )->select('id', 'name')->first();
