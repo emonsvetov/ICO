@@ -20,7 +20,7 @@ class CreateEventsTable extends Migration
 			$table->boolean('enable')->default(1);
             $table->string('name');
 			$table->integer('type_id'); //dropdown pending
-			$table->integer('event_icon_id');
+			$table->integer('event_icon_id')->nullable();
 			$table->float('amount');
 			$table->boolean('allow_amount_overriding')->default(0);
 			$table->integer('email_template_id'); //dropdown pending

@@ -26,12 +26,11 @@ class EventRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-			'enable'=> 'boolean|nullable',
-			'type_id'=> 'required|numeric', //dropdown pending
-			'event_icon_id'=> 'required|integer',
-			'amount'=> ['required', new Decimal82()],
-			'allow_amount_overriding'=> 'nullable|boolean',
-			'email_template_id'=> 'required|integer', //dropdown pending
+			'enable'=> 'sometimes|boolean|nullable',
+			'event_type_id'=> 'required|numeric',
+			'event_icon_id'=> 'sometimes|integer',
+			'max_awardable_amount'=> ['required', new Decimal82()],
+			'email_template'=> 'sometimes|string',
 			'post_to_social_wall'=> 'nullable|boolean',
 			'message'=> 'required|string',
 			'include_in_budget'=> 'boolean|nullable',

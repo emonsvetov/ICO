@@ -14,7 +14,6 @@ use DB;
 
 class EventController extends Controller
 {
-    
     public function index( Organization $organization, Program $program )
     {
         
@@ -26,7 +25,7 @@ class EventController extends Controller
         $events = Event::where('organization_id', $organization->id)
                         ->where('program_id', $program->id)
                         ->orderBy('name')
-                        ->with('icon')
+                        ->with(['icon', 'eventType'])
                         ->get();
 
         if ( $events->isNotEmpty() ) 
@@ -70,7 +69,7 @@ class EventController extends Controller
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
-        $event->icon = $event->icon->toArray();
+        $event->icon;
 
         if ( $event ) 
         { 

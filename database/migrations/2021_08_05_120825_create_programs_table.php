@@ -99,7 +99,7 @@ class CreateProgramsTable extends Migration
             $table->float('fixed_fee')->nullable(); 
             $table->float('convenience_fee')->nullable();
             $table->float('monthly_usage_fee')->nullable();  
-            $table->integer('factor_valuation')->nullable(); 
+            $table->integer('factor_valuation');
 
             $table->mediumText('accounts_receivable_email',165)->nullable();
             $table->mediumText('bcc_email_list')->nullable();
