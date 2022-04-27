@@ -25,3 +25,9 @@ if(!function_exists('pre'))  {
         echo '</pre>';
     }
 }
+
+function generate_unique_id($char = 12)
+{
+    $rand = strtoupper(substr(uniqid(sha1(time())),0,$char));
+    return date("ymds") .'-'. $rand;
+}

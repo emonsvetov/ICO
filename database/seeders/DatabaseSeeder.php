@@ -13,6 +13,7 @@ use Database\Seeders\FinanceTypeSeeder;
 use Database\Seeders\MediumTypeSeeder;
 use Database\Seeders\AccountTypeSeeder;
 use Database\Seeders\CurrencySeeder;
+use Database\Seeders\StatusSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -32,6 +33,7 @@ class DatabaseSeeder extends Seeder
             MediumTypeSeeder::class,
             AccountTypeSeeder::class,
             CurrencySeeder::class,
+            StatusSeeder::class,
         ]);
     }
 }
