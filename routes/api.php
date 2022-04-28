@@ -239,6 +239,14 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //ProgramParticipants
 
     Route::get('/v1/organization/{organization}/program/{program}/participant',[App\Http\Controllers\API\ProgramParticipantController::class, 'index'])->middleware('can:viewAny,App\ProgramParticipant,organization,program');
+
+    //Get User Point Balance
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/balance',[App\Http\Controllers\API\ProgramUserController::class, 'readBalance'])->middleware('can:readBalance,App\ProgramUser,organization,program,user');
+
+    //Statuses
+
+    Route::get('/v1/status',[App\Http\Controllers\API\StatusController::class, 'index'])->middleware('can:viewAny,App\Status');
     
 >>>>>>> ICO-86
 });

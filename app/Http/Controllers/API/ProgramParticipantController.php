@@ -5,16 +5,18 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\UserRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
-use App\Models\User;
 use App\Models\Program;
-Use Exception;
+use App\Models\User;
 use DB;
 
 class ProgramParticipantController extends Controller
 {
     public function index( Organization $organization, Program $program )
     {
-        return $program;
+        $users = User::getParticipants($program, true);
+        if($users  )    {
+            return response( $users );
+        }
         return response( [] );
     }
 }

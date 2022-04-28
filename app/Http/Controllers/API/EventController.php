@@ -26,7 +26,7 @@ class EventController extends Controller
         $events = Event::where('organization_id', $organization->id)
                         ->where('program_id', $program->id)
                         ->orderBy('name')
-                        ->with('icon')
+                        ->with(['icon', 'eventType'])
                         ->get();
 
         if ( $events->isNotEmpty() )

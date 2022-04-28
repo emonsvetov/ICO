@@ -13,12 +13,6 @@ use App\Models\EventType;
 use App\Models\Event;
 use DB;
 
-function generate_unique_id($char = 12)
-{
-    $rand = strtoupper(substr(uniqid(sha1(time())),0,$char));
-    return date("ymds") .'-'. $rand;
-}
-
 class Award extends Model
 {
     use HasFactory;
