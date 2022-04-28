@@ -64,6 +64,9 @@ class ProgramUserController extends Controller
 
         if ( $users->isNotEmpty() )
         {
+            foreach( $users as $user)   {
+                $user->getRoles( $program );
+            }
             return response( $users );
         }
 
@@ -126,5 +129,18 @@ class ProgramUserController extends Controller
         }
 
         return response([ 'success' => true ]);
+    }
+
+
+    public function readBalance(Organization $organization, Program $program, User $user )
+    {
+        $amount_balance = $user->readAvailableBalance( $program, $user);
+        $factor_valuation = $program->factor_valuation;
+        $points_balance = $amount_balance * $program->factor_valuation;
+        return response([
+            'points' => $points_balance,
+            'amount' => $amount_balance,
+            'factor' => $factor_valuation
+        ]);
     }
 }

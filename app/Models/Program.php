@@ -40,4 +40,14 @@ class Program extends Model
         // ->withPivot('featured', 'cost_to_program')
         ->withTimestamps();
     }
+
+    public function program_is_invoice_for_awards() {
+		if ($this->invoice_for_awards == 1) {
+			return true;
+		}
+        if ( $this->factor_valuation != 1 ) {
+            return true;
+        }
+		return false;
+	}
 }

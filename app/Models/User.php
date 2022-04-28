@@ -8,15 +8,17 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Traits\IdExtractor;
 use Laravel\Passport\HasApiTokens;
 use App\Models\Permission;
+use App\Models\Program;
 use App\Models\Role;
 
 use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor;
 
     public $timestamps = true;
 
@@ -128,6 +130,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Role::class);
     }
 
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
     public function sendPasswordResetNotification($token)
     {
         
@@ -181,15 +188,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this;
     }
 
-    public function getRoles() 
+    public function getRoles( $byProgram = null) 
     {
         $this->allRoles = $this->getRoleNames()->toArray();
-        $this->programRoles = $this->getProgramRoles();
-        return ['roles' => $this->allRoles, 'program_roles' => $this->programRoles];
+        $this->programRoles = $this->getProgramRoles( $byProgram );
+        return ['roles' => $this->allRoles, 'programRoles' => $this->programRoles];
     }
 
-    public function getProgramRoles()
+    public function getProgramRoles( $byProgram = null )
     {
+        if( $byProgram ) {
+            $byProgram = self::extractId($byProgram);
+        }
         $permissions = $this->getPermissionNames();
         if( $permissions )  {
             $programs = [];
@@ -198,6 +208,10 @@ class User extends Authenticatable implements MustVerifyEmail
                 preg_match('/program.(\d)\.role\.(\d)/', $permission, $matches, PREG_UNMATCHED_AS_NULL);
                 if( $matches )    {
                     $programId = $matches[1];
+                    if( $byProgram && $byProgram != $programId)
+                    {
+                        continue;
+                    }
                     $roleId = $matches[2];
                     if( !isset( $programs[$programId] ) )   {
                         $program = Program::where( 'id', $programId )->select('id', 'name')->first();
@@ -238,7 +252,13 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->programRoles;
     }
 
-    public function isManagerToProgram( $program_id ) {
+    public function hasRoleInProgram( $roleName, $program) {
+
+        if( trim($roleName) == "" || !$program ) return false;
+
+        $program_id = self::extractId($program);
+
+        if( !isset($program_id) || !$program_id )   return false;
 
         if( !$this->programs->pluck('id')->contains($program_id) )  {
             return false;
@@ -255,7 +275,7 @@ class User extends Authenticatable implements MustVerifyEmail
             if( $programId == $program_id)    {
                 foreach($programRoles->roles as $programRole)   {
                     $programRole = (object) $programRole;
-                    if( $programRole->name == config('global.program_manager_role_name'))    {
+                    if( $programRole->name == $roleName )    {
                        return true;
                     }
                 }
@@ -264,27 +284,63 @@ class User extends Authenticatable implements MustVerifyEmail
         return false;
     }
 
-    public function isParticipantToProgram( $program_id ) {
-        if( !$this->programs->pluck('id')->contains($program_id) )  {
-            return false;
-        }
-        if( !$this->programRoles )  {
-            $this->programRoles = $this->getProgramRoles();
-        }
-
-        if( !$this->programRoles ) return false;
-
-        foreach( $this->programRoles as $programId => $programRoles)  {
-            $programRoles = (object) $programRoles;
-            if( $programId == $program_id)    {
-                foreach($programRoles->roles as $programRole)   {
-                    $programRole = (object) $programRole;
-                    if( $programRole->name == config('global.participant_role_name'))    {
-                       return true;
-                    }
-                }
-            }
-        }
-        return false;
+    public function isManagerToProgram( $program ) {
+        return $this->hasRoleInProgram( config('global.program_manager_role_name'), $program);
     }
+
+    public function isParticipantToProgram( $program ) {
+        return $this->hasRoleInProgram( config('global.participant_role_name'), $program);
+    }
+
+    public function getParticipants($program, $paginate = false)   {
+        $program_id = self::extractId($program);
+        if( !$program_id ) return;
+        $role = Role::where('name', config('global.participant_role_name'))->first();
+        if( !$role ) return response(['errors' => 'Invalid Role'], 422);
+        $permissionName = "program.{$program_id}.role.{$role->id}";
+        $query = User::join('program_user AS pu', 'pu.user_id', '=', 'users.id')
+        ->join('model_has_permissions AS mhp', 'mhp.model_id', '=', 'users.id')
+        ->join('permissions AS perm', 'perm.id', '=', 'mhp.permission_id')
+        ->where([
+            'pu.program_id' => $program_id,
+            'mhp.model_type' => 'App\Models\User',
+            'perm.name' => $permissionName,
+        ])
+        ->select(['users.id', 'users.first_name', 'users.last_name', 'users.email']);
+        if( $paginate ) {
+            return $query->paginate();
+        }   else    {
+            return $query->get();
+        }
+    }
+
+    public function readAvailableBalance( $program, $user )  {
+        $program_id = self::extractId($program);
+        $user_id = self::extractId($user);
+        if( !$program_id || !$user_id ) return;
+        $journal_event_types = array (); // leave $journal_event_types empty to get all  - original comment 
+        if( gettype($program)!='object' ) {
+            $program = Program::where('id', $program_id)->select(['id'])->first();
+        }
+        if( gettype($user)!='object' ) {
+            $user = self::where('id', $user_id)->select(['id'])->first();
+        }
+        if ($program->program_is_invoice_for_awards ()) {
+			// use points
+			$account_type = config('global.account_type_points_awarded');
+		} else {
+			// use monies
+            $account_type = config('global.account_type_monies_awarded');
+		}
+        return self::_read_balance( $user_id, $account_type, $journal_event_types );
+        // _read_balance
+        // return [$program, $user, $account_type, $journal_event_types];
+    }
+
+	private function _read_balance($account_holder_id, $account_type, $journal_event_types = []) {
+		$credits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 1 );
+		$debits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 0 );
+		$bal = ( float ) (number_format ( ($credits->total - $debits->total), 2, '.', '' ));
+		return $bal;
+	}
 }
