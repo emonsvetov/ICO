@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\Organization;
+use App\Models\Merchant;
 use App\Models\Program;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -25,6 +26,16 @@ class ProgramMerchantPolicy
             return false;
         }
         return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-list');
+    }
+
+    public function view(User $user, Organization $organization, Program $program, Merchant $merchant)
+    {
+        return true;
+        // if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        // {
+        //     return false;
+        // }
+        // return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-view');
     }
   
     public function add(User $user, Organization $organization, Program $program)

@@ -24,6 +24,19 @@ class ProgramMerchantController extends Controller
         return response( [] );
     }
 
+    public function view( Organization $organization, Program $program, Merchant $merchant )
+    {
+
+        $programMerchant = $program->merchants->find($merchant->id);
+
+        if ( $programMerchant ) 
+        { 
+            return response( $programMerchant );
+        }
+
+        return response( [] );
+    }
+
     public function store( ProgramMerchantRequest $request, Organization $organization, Program $program )
     {
         $validated = $request->validated();
