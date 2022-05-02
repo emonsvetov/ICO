@@ -20,11 +20,9 @@ class ProgramMerchantController extends Controller
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
         
-        $program_merchants = $program->merchants;
-
-        if ( $program_merchants->isNotEmpty() ) 
+        if ( $program->merchants->isNotEmpty() ) 
         { 
-            return response( $program_merchants );
+            return response( $program->merchants );
         }
 
         return response( [] );
@@ -32,11 +30,6 @@ class ProgramMerchantController extends Controller
 
     public function store( ProgramMerchantRequest $request, Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
         $validated = $request->validated();
 
         $columns = [];
@@ -62,11 +55,6 @@ class ProgramMerchantController extends Controller
 
     public function delete(Organization $organization, Program $program, Merchant $merchant )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
         try{
             $program->merchants()->detach( $merchant );
         }   catch( Exception $e) {

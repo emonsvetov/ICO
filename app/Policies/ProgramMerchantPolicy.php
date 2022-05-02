@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -17,20 +18,30 @@ class ProgramMerchantPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Organization $organization, Program $program)
     {
-        return $user->can('program-merchant-list');
+        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        {
+            return false;
+        }
+        return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-list');
     }
   
-    public function add(User $user, Program $program)
+    public function add(User $user, Organization $organization, Program $program)
     {
-        // !!Program $program...
-        return $user->can('program-merchant-add');
+        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        {
+            return false;
+        }
+        return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-add');
     }
 
-    public function remove(User $user, Program $program, Merchant $merchant)
+    public function remove(User $user, Organization $organization, Program $program, Merchant $merchant)
     {
-        // !!Program $program... !!Merchant $merchant
-        return $user->can('program-merchant-remove');
+        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        {
+            return false;
+        }
+        return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-remove');
     }
 }
