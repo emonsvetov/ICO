@@ -30,12 +30,20 @@ class ProgramMerchantPolicy
 
     public function view(User $user, Organization $organization, Program $program, Merchant $merchant)
     {
-        return true;
-        // if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
-        // {
-        //     return false;
-        // }
-        // return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-view');
+        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        {
+            return false;
+        }
+        return $user->canReadProgram($program, 'program-merchant-view');
+    }
+
+    public function viewGiftcodes(User $user, Organization $organization, Program $program, Merchant $merchant)
+    {
+        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        {
+            return false;
+        }
+        return $user->canReadProgram($program, 'program-merchant-view-giftcodes');
     }
   
     public function add(User $user, Organization $organization, Program $program)

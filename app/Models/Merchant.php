@@ -27,4 +27,12 @@ class Merchant extends Model
     {
         return $this->belongsToMany(Program::class, 'program_merchant');
     }
+
+    public function getGiftcodes( $merchant ) {
+        if( is_int($merchant) ) {
+            $merchant = self::find($merchant);
+        }
+        if(gettype($merchant) != 'object') return;
+        return Giftcode::ReadListRedeemableDenominationsByMerchant( $merchant );
+    }
 }

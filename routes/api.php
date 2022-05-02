@@ -174,6 +174,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
 
+    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/giftcode',
+    [App\Http\Controllers\API\ProgramMerchantController::class, 'giftcodes'])->name('api.v1.program.merchant.giftcodes')->middleware('can:viewGiftcodes,App\ProgramMerchant,organization,program,merchant');
+
     Route::post('/v1/organization/{organization}/program/{program}/merchant',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'store'])->name('api.v1.program.merchant.add')->middleware('can:add,App\ProgramMerchant,organization,program');
 
