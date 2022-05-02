@@ -12,6 +12,6 @@ class EmailTemplatePolicy
 
     public function viewAny(User $user)
     {
-        return true || $user->can('emailtemplate-list');
+        return $user->can('emailtemplate-list');
     }
 }

@@ -19,9 +19,8 @@ class ProgramMerchantController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
-
-        $program_merchants = ProgramMerchant::where('program_id', $program->id)
-        ->get();
+        
+        $program_merchants = $program->merchants;
 
         if ( $program_merchants->isNotEmpty() ) 
         { 
