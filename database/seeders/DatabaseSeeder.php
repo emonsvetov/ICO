@@ -14,6 +14,8 @@ use Database\Seeders\MediumTypeSeeder;
 use Database\Seeders\AccountTypeSeeder;
 use Database\Seeders\CurrencySeeder;
 use Database\Seeders\StatusSeeder;
+use Database\Seeders\UserSeeder;
+use Database\Seeders\OrganizationSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -34,6 +36,8 @@ class DatabaseSeeder extends Seeder
             AccountTypeSeeder::class,
             CurrencySeeder::class,
             StatusSeeder::class,
+            UserSeeder::class,
+            OrganizationSeeder::class,
         ]);
     }
 }
