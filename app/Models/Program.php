@@ -37,7 +37,6 @@ class Program extends Model
     public function users()
     {
         return $this->belongsToMany(User::class, 'program_user')
-        // ->withPivot('featured', 'cost_to_program')
         ->withTimestamps();
     }
 

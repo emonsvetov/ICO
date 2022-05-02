@@ -1,5 +1,5 @@
 <?php
-    
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -9,7 +9,7 @@ use App\Models\Organization;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
-    
+
 class RoleController extends Controller
 {
     /**
@@ -19,8 +19,8 @@ class RoleController extends Controller
      */
     public function index(Request $request, Organization $organization)
     {
-        if ( ! $organization->exists() ) 
-        { 
+        if ( ! $organization->exists() )
+        {
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
@@ -51,7 +51,7 @@ class RoleController extends Controller
             });
         }
 
-        if( $sortby == "name" ) 
+        if( $sortby == "name" )
         {
             $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
             $orderByRaw = "{$sortby} {$collation} {$direction}";
@@ -62,7 +62,7 @@ class RoleController extends Controller
         }
 
         $query = $query->orderByRaw($orderByRaw);
-        
+
         if ( request()->has('minimal') )
         {
             $roles = $query->select('id', 'name')->get();
@@ -70,14 +70,14 @@ class RoleController extends Controller
             $roles = $query->paginate(request()->get('limit', 20));
         }
 
-        if ( $roles->isNotEmpty() ) 
+        if ( $roles->isNotEmpty() )
         {
             return response( $roles );
         }
 
         return response( [] );
     }
-    
+
     /**
      * Store a newly created resource in storage.
      *
@@ -86,8 +86,8 @@ class RoleController extends Controller
      */
     public function store(RoleRequest $request, Organization $organization)
     {
-        if ( ! $organization->exists() ) 
-        { 
+        if ( ! $organization->exists() )
+        {
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
@@ -104,7 +104,7 @@ class RoleController extends Controller
      */
     public function show( Organization $organization, Role $role )
     {
-        if ( $organization->id != $role->organization_id ) 
+        if ( $organization->id != $role->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
@@ -115,7 +115,7 @@ class RoleController extends Controller
 
         return response($role);
     }
-    
+
     /**
      * Update the specified resource in storage.
      *
@@ -125,8 +125,8 @@ class RoleController extends Controller
      */
     public function update(RoleRequest $request, Organization $organization, Role $role)
     {
-        if ( $organization->id != $role->organization_id ) 
-        { 
+        if ( $organization->id != $role->organization_id )
+        {
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
@@ -136,7 +136,7 @@ class RoleController extends Controller
         $role->save();
 
         $role->syncPermissions($request->input('permissions'));
-    
+
         return response([ 'role' => $role ]);
     }
     /**

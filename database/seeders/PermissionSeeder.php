@@ -1,10 +1,10 @@
 <?php
-  
+
 namespace Database\Seeders;
-  
+
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-  
+
 class PermissionSeeder extends Seeder
 {
     /**
@@ -28,6 +28,7 @@ class PermissionSeeder extends Seeder
             'domain-delete-ip',
             'domain-add-program',
             'domain-delete-program',
+            'emailtemplate-list',
             'event-list',
             'event-view',
             'event-create',
@@ -89,7 +90,7 @@ class PermissionSeeder extends Seeder
             'user-program-remove',
             'user-program-permissions',
         ];
-     
+
         foreach ($permissions as $permission) {
              Permission::create(['name' => $permission, 'organization_id' => 1]);
         }
