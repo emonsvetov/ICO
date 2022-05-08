@@ -3,105 +3,43 @@ namespace App\Models\Traits;
 
 use App\Models\Program;
 use App\Models\Role;
+use App\Models\User;
 
 trait HasProgramRoles
 {
-    public $allRoles = null;
-    public $programRoles = null;
-    public $isProgramManager = null;
-    public $isParticipant = null;
-    public $isProgramAdmin = null;
+    private $programRoles = null;
+    private $isProgramManager = false;
+    private $isParticipant = false;
     protected function getArrayableAppends()
     {
-        $this->appends = array_unique(array_merge($this->appends, ['allRoles', 'programRoles', 'isProgramManager', 'isParticipant', 'isProgramAdmin']));
+        $this->appends = array_unique(array_merge($this->appends, ['isProgramManager', 'isParticipant']));
         return parent::getArrayableAppends();
-    }
-    protected function getAllRolesAttribute()
-    {
-        return $this->allRoles;
     }
     protected function getIsProgramManagerAttribute()
     {
-        return $this->isProgramManager;
+        $programRoles = $this->getProgramRoles();
+        if( $programRoles ) {
+            foreach( $programRoles as $programRole )    {
+                if( $programRole->name == config('roles.program_manager') ) return true;
+            }
+        }
     }
     protected function getIsParticipantAttribute()
     {
-        return $this->isParticipant;
-    }
-    protected function getIsProgramAdminAttribute()
-    {
-        return $this->isProgramAdmin;
-    }
-    protected function getProgramRolesAttribute()
-    {
-        return $this->programRoles;
-    }
-    public function getRoles( $byProgram = null) 
-    {
-        return [
-            'roles' => $this->getRoleNames()->toArray(), 
-            'programRoles' => $this->getProgramRoles( $byProgram )
-        ];
+        $programRoles = $this->getProgramRoles();
+        if( $programRoles ) {
+            foreach( $programRoles as $programRole )    {
+                if( $programRole->name == config('roles.participant') ) return true;
+            }
+        }
     }
     public function getProgramRoles( $byProgram = null )
     {
-        if( $byProgram ) {
-            $byProgram = self::extractId($byProgram);
+        if( !$byProgram ) {
+            return $this->roles()->wherePivot( 'program_id', '!=', 0)->get();
         }
-        $permissions = $this->getPermissionNames();
-        if( $permissions )  {
-            $programs = [];
-            $roles = [];
-            $allRoles = [];
-            foreach( $permissions as $permission )  {
-                preg_match('/program.(\d)\.role\.(\d)/', $permission, $matches, PREG_UNMATCHED_AS_NULL);
-                if( $matches )    {
-                    $programId = $matches[1];
-                    if( $byProgram && $byProgram != $programId)
-                    {
-                        continue;
-                    }
-                    $roleId = $matches[2];
-                    if( !isset( $programs[$programId] ) )   {
-                        $program = Program::where( 'id', $programId )->select('id', 'name')->first();
-                        $programs[$programId] = $program;
-                    }
-                    else 
-                    {
-                        $program = $programs[$programId];
-                    }
-                    if( !isset( $roles[$roleId] ) )   {
-                        $role = Role::where( 'id', $roleId )->select('id', 'name')->first();
-                        $roles[$roleId] = $role;
-                        if( !in_array( $role->name, $allRoles ))    {
-                            array_push( $allRoles, $role->name );
-                        }
-                        if( config('global.program_manager_role_name') == $role->name ) {
-                            $this->isProgramManager = true;
-                        }
-                        if( config('global.participant_role_name') == $role->name ) {
-                            $this->isParticipant = true;
-                        }
-                        if( config('global.admin_role_name') == $role->name ) {
-                            $this->isAdmin = true;
-                        }
-                    }
-                    else 
-                    {
-                        $role = $roles[$roleId];
-                    }
-
-                    if( !isset( $this->programRoles[$program->id] ) ) {
-                        $this->programRoles[$program->id] = $program->toArray();
-                    }
-                    $this->programRoles[$program->id]['roles'][$role->id] = $role->toArray();
-                }
-            }
-        }
-        if( $allRoles )   {
-            $this->allRoles = $allRoles;
-        }
-        return $this->programRoles;
+        $programId = self::extractId($byProgram);
+        return $this->roles()->wherePivot( 'program_id', '=', $programId)->get();
     }
     public function hasRolesInProgram( $roles = [], $program) {
         if( !$roles ) return false;
@@ -122,7 +60,8 @@ trait HasProgramRoles
         }
         return false;
     }
-    public function hasRoleInProgram( $roleName, $program) {
+    public function hasRoleInProgram( $roleName, $program): bool 
+    {
 
         if( trim($roleName) == "" || !$program ) return false;
 
@@ -134,44 +73,35 @@ trait HasProgramRoles
             return false;
         }
 
-        if( !$this->programRoles )  {
-            $this->programRoles = $this->getProgramRoles();
-        }
-
-        if( !$this->programRoles ) return false;
-
-        foreach( $this->programRoles as $programId => $programRoles)  {
-            $programRoles = (object) $programRoles;
-            if( $programId == $program_id)    {
-                foreach($programRoles->roles as $programRole)   {
-                    $programRole = (object) $programRole;
-                    if( $programRole->name == $roleName )    {
-                       return true;
-                    }
-                }
-            }
+        $programRoles = $this->getProgramRoles( $program_id );
+        // pr($programRoles->toArray());
+        if( !$programRoles ) return false;
+        foreach($programRoles as $programRole)  {
+           if( $programRole->name == $roleName )    {
+               return true;
+           }
         }
         return false;
     }
-    //Deprecated method, use "isManagerInProgram" instead
+    //Deprecated method, use "isProgramManager" instead
     public function isManagerToProgram( $program ) {
-        return $this->isManagerInProgram( $program );
+        return $this->isProgramManager( $program );
     }
-    //Deprecated method, use "isParticipantInProgram" instead
+    //Deprecated method, use "isProgramParticipant" instead
     public function isParticipantToProgram( $program ) {
-        return $this->isParticipantInProgram( $program );
+        return $this->isProgramParticipant( $program );
     }
-    public function isManagerInProgram( $program ) {
-        return $this->hasRoleInProgram( config('global.program_manager_role_name'), $program);
+    public function isProgramManager( $program ) {
+        return $this->hasRoleInProgram( config('roles.program_manager'), $program);
     }
-    public function isParticipantInProgram( $program ) {
-        return $this->hasRoleInProgram( config('global.participant_role_name'), $program);
+    public function isProgramParticipant( $program ) {
+        return $this->hasRoleInProgram( config('roles.participant'), $program);
     }
     public function canReadProgram( $program, $withPermission = '' )    {
         if($this->hasAnyRoleInProgram([
-            config('global.participant_role_name'),
-            config('global.program_manager_role_name'),
-            config('global.program_admin_role_name')
+            config('roles.participant'),
+            config('roles.program_manager'),
+            config('roles.program_admin')
         ], $program ))   {
             return true;
         }
@@ -180,69 +110,22 @@ trait HasProgramRoles
     }
     public function canWriteProgram( $program, $withPermission = '' )    {
         if($this->hasAnyRoleInProgram([
-            config('global.program_manager_role_name'),
-            config('global.program_admin_role_name')
+            config('roles.program_manager'),
+            config('roles.program_admin')
         ], $program ))   {
             return true;
         }
         if( $withPermission ) return $this->can( $withPermission );
         return false;
     }
-    public function getParticipants($program, $paginate = false)   {
-        $program_id = self::extractId($program);
-        if( !$program_id ) return;
-        $role = Role::where('name', config('global.participant_role_name'))->first();
-        if( !$role ) return response(['errors' => 'Invalid Role'], 422);
-        $permissionName = "program.{$program_id}.role.{$role->id}";
-        $query = User::join('program_user AS pu', 'pu.user_id', '=', 'users.id')
-        ->join('model_has_permissions AS mhp', 'mhp.model_id', '=', 'users.id')
-        ->join('permissions AS perm', 'perm.id', '=', 'mhp.permission_id')
-        ->where([
-            'pu.program_id' => $program_id,
-            'mhp.model_type' => 'App\Models\User',
-            'perm.name' => $permissionName,
-        ])
-        ->select(['users.id', 'users.first_name', 'users.last_name', 'users.email']);
-        if( $paginate ) {
-            return $query->paginate();
-        }   else    {
-            return $query->get();
+    public function syncProgramRoles($programId, array $roles ) {
+        if( !$programId || !$roles ) return;
+        $newRoles = [];
+        $columns = ['program_id' => $programId];
+        $this->roles()->wherePivot('program_id','=',$programId)->detach();
+        foreach($roles as $role_id)    {
+            $newRoles[$role_id] = $columns;
         }
-    }
-    public function syncRolesByProgram($programId, array $roles ) {
-        $permissions = [];
-        foreach( $roles as $roleId)    {
-            $permisssionName = "program.{$programId}.role.{$roleId}";
-            $permission = Permission::firstOrCreate(['name' => $permisssionName, 'organization_id' => $this->organization_id]);
-            if( $permission )   {
-                array_push($permissions, $permission->id);
-            }
-        }
-        if( $permissions )  {
-            $this->syncPermissionsByProgram($programId, $permissions);
-        }
-        return $this;
-    }
-    public function syncPermissionsByProgram($programId, array $permissions)
-    {
-        $permissionIds = Permission::where('name', 'LIKE', "program.{$programId}.role.%")->get()->pluck('id'); //filter by program to narrow down the change
-        $current = $this->permissions->filter(function($permission) use ($permissionIds) {
-            return in_array($permission->pivot->permission_id, $permissionIds->toArray());
-        })->pluck('id');
-    
-        $detach = $current->diff($permissions)->all();
-        $attach_ids = collect($permissions)->diff($current)->all();
-
-        $attach_pivot = [];
-
-        foreach( $attach_ids as $permission_id )  {
-            $attach_pivot[] = ['permission_id' => $permission_id];
-        }
-        $attach = array_combine($attach_ids, $attach_pivot);
-
-        $this->permissions()->detach($detach);
-        $this->permissions()->attach($attach);
-    
-        return $this;
+        $this->roles()->attach( $newRoles );
     }
 }

@@ -88,19 +88,10 @@ class UserProgramController extends Controller
         try {
             $user->programs()->sync( [ $validated['program_id'] => $columns ], false);
 
-            //Add program specific permissions to user
             $roles = $validated['roles'];
-            $permissions = [];
-            foreach( $roles as $roleId)    {
-                $permisssionName = "program.{$program_id}.role.{$roleId}";
-                $permission = Permission::firstOrCreate(['name' => $permisssionName, 'organization_id' => $organization->id]);
-                if( $permission )   {
-                    array_push($permissions, $permission->id);
-                }
-            }
 
-            if( $permissions )  {
-                return $user->syncPermissionsByProgram($program_id, $permissions);
+            if( !empty($roles) ) {
+                $user->syncProgramRoles($program_id, $roles);
             }
 
         } catch( Exception $e) {
@@ -130,17 +121,20 @@ class UserProgramController extends Controller
         return response([ 'success' => true ]);
     }
 
-    public function getPermission(Organization $organization, User $user, Program $program )
+    public function getRole(Organization $organization, User $user, Program $program )
     {
         if ( $organization->id != $user->organization_id || $user->organization_id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or User or Program'], 422);
         }
-        return Permission::select('permissions.*')
-        ->join('model_has_permissions', 'permissions.id', '=', 'model_has_permissions.permission_id')
-        ->where('name', 'LIKE', "program.{$program->id}.role.%")
-        ->where('model_has_permissions.model_type', '=', 'App\\Models\\User')
-        ->where('model_has_permissions.model_id', '=', $user->id)
-        ->get()->pluck('name');
+
+        $roles = $user->roles()->wherePivot( 'program_id', '=', $program->id )->get();
+
+        if ( $roles->isNotEmpty() ) 
+        { 
+            return response( $roles );
+        }
+
+        return response( [] );
     }
 }

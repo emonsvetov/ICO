@@ -10,6 +10,7 @@ use App\Models\JournalEvent;
 use App\Models\FinanceType;
 use App\Models\MediumType;
 use App\Models\EventType;
+use App\Models\Currency;
 use App\Models\Event;
 use DB;
 

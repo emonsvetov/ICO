@@ -109,10 +109,7 @@ class RoleController extends Controller
             return response(['errors' => 'Invalid Organization or Role'], 422);
         }
 
-        $role->permissions = Permission::join("role_has_permissions","role_has_permissions.permission_id","=","permissions.id")
-            ->where("role_has_permissions.role_id", $role->id)
-            ->get();
-
+        $role->permissions;
         return response($role);
     }
 

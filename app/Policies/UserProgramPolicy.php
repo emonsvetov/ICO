@@ -32,8 +32,8 @@ class UserProgramPolicy
         return $authUser->can('user-program-remove');
     }
 
-    public function getPermissions(User $authUser, User $user,  Program $program)
+    public function getRoles(User $authUser, User $user,  Program $program)
     {
-        return $authUser->can('user-program-permissions');
+        return $authUser->can('user-program-roles');
     }
 }

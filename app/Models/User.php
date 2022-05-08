@@ -11,6 +11,7 @@ use Spatie\Permission\Traits\HasRoles;
 use App\Models\Traits\HasProgramRoles;
 use App\Models\Traits\IdExtractor;
 use Laravel\Passport\HasApiTokens;
+use App\Models\AccountHolder;
 use App\Models\Permission;
 use App\Models\Program;
 use App\Models\Role;
@@ -30,6 +31,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'organization_id',
+        'account_holder_id',
         'first_name',
         'last_name',
         'email',
@@ -72,7 +74,7 @@ class User extends Authenticatable implements MustVerifyEmail
     ];
 
     protected $with = [
-        'role'
+        'roles'
     ];
 
     /**
@@ -97,10 +99,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);
-    }
-    public function role()
-    {
-        return $this->belongsTo(Role::class);
     }
     public function organization()
     {
@@ -150,4 +148,9 @@ class User extends Authenticatable implements MustVerifyEmail
 		$bal = ( float ) (number_format ( ($credits->total - $debits->total), 2, '.', '' ));
 		return $bal;
 	}
+
+    public function createAccount( $data )    {
+        $account_holder_id = AccountHolder::insertGetId(['context'=>'User', 'created_at' => now()]);
+        return parent::create($data + ['account_holder_id' => $account_holder_id]);
+    }
 }

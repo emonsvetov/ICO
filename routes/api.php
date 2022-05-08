@@ -203,8 +203,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/user/{user}/program/{program}',
     [App\Http\Controllers\API\UserProgramController::class, 'delete'])->middleware('can:remove,App\UserProgram,user,program');
 
-    Route::get('/v1/organization/{organization}/user/{user}/program/{program}/permission',
-    [App\Http\Controllers\API\UserProgramController::class, 'getPermission'])->middleware('can:getPermissions,App\UserProgram,user,program');
+    Route::get('/v1/organization/{organization}/user/{user}/program/{program}/role',
+    [App\Http\Controllers\API\UserProgramController::class, 'getRole'])->middleware('can:getRoles,App\UserProgram,user,program');
 
     //Reports routes
     Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');

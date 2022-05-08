@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Http\Requests\UserRequest;
+use App\Models\AccountHolder;
 use App\Models\Organization;
 use App\Models\User;
 use DB;
@@ -75,7 +76,7 @@ class UserController extends Controller
         try {
             $validated = $request->validated();
             $validated['organization_id'] = $organization->id;
-            $user = User::create( $validated );
+            $user = User::createAccount( $validated );
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\AccountHolder;
 
 class Merchant extends Model
 {
@@ -34,5 +35,10 @@ class Merchant extends Model
         }
         if(gettype($merchant) != 'object') return;
         return Giftcode::ReadListRedeemableDenominationsByMerchant( $merchant );
+    }
+
+    public function createAccount( $data )    {
+        $account_holder_id = AccountHolder::insertGetId(['context'=>'Merchant', 'created_at' => now()]);
+        return parent::create($data + ['account_holder_id' => $account_holder_id]);
     }
 }

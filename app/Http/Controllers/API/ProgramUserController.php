@@ -59,14 +59,13 @@ class ProgramUserController extends Controller
             $users = $query->select('id', 'name')->get();
         }
         else {
-            $users = $query->paginate(request()->get('limit', 20));
+            $users = $query->with(['roles' => function ($query) use($program) {
+                $query->wherePivot('program_id', '=', $program->id);
+            }])->paginate(request()->get('limit', 20));
         }
 
         if ( $users->isNotEmpty() )
         {
-            foreach( $users as $user)   {
-                $user->getRoles( $program );
-            }
             return response( $users );
         }
 
@@ -83,12 +82,12 @@ class ProgramUserController extends Controller
         $validated = $request->validated();
 
         $validated['organization_id'] = $organization->id;
-        $user = User::create( $validated );
+        $user = User::createAccount( $validated );
 
         if( $user ) {
             $program->users()->sync( [ $user->id ], false );
             if( isset($validated['roles']) ) {
-                $user->syncRolesByProgram($program->id, $validated['roles']);
+                $user->syncProgramRoles($program->id, $validated['roles']);
             }
         }
 
@@ -105,11 +104,8 @@ class ProgramUserController extends Controller
         $validated = $request->validated();
         $user->update( $validated );
 
-        if( $user ) {
-            // $program->users()->sync( [ $user->id ], false );
-            if( isset($validated['roles']) ) {
-                $user->syncRolesByProgram($program->id, $validated['roles']);
-            }
+        if( !empty($validated['roles']) )   {
+            $user->syncProgramRoles($program->id, $validated['roles']);
         }
 
         return response([ 'user' => $user ]);
