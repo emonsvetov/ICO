@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\AccountHolder;
 use App\Models\FinanceType;
 use App\Models\MediumType;
+use App\Models\Account;
 
 class Program extends Model
 {
@@ -101,7 +102,7 @@ class Program extends Model
         //TODO ??
         // $this->tie_sub_program ( $program_account_holder_id, $program_account_holder_id );
 
-        $default_participant_role_id = Role::getIdByNameAndOrg("Participant", $program->organization_id);
+        // $default_participant_role_id = Role::getIdByNameAndOrg("Participant", $program->organization_id);
 
         return $program;
     }

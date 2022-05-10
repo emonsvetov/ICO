@@ -4,7 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
+use App\Http\Resources\UserResource;
 use App\Http\Requests\UserRequest;
 use App\Models\AccountHolder;
 use App\Models\Organization;
@@ -56,9 +56,9 @@ class UserController extends Controller
 
         if ( request()->has('minimal') )
         {
-            $users = $query->select('id', 'first_name', 'last_name')->get();
+            $users = $query->select('id', 'first_name', 'last_name')->with(['roles'])->get();
         } else {
-            $users = $query->paginate(request()->get('limit', 10));
+            $users = $query->with(['roles'])->paginate(request()->get('limit', 10));
         }
 
         // return (DB::getQueryLog());
@@ -83,14 +83,9 @@ class UserController extends Controller
         }
     }
 
-    public function show( Organization $organization, User $user )
+    public function show( Organization $organization, User $user ): UserResource
     {
-        if ( $organization->id == $user->organization_id ) 
-        { 
-            return response( $user );
-        }
-
-        return response( [] );
+        return $this->UserResponse($user);
     }
 
     public function update(UserRequest $request, Organization $organization, User $user )
@@ -102,7 +97,14 @@ class UserController extends Controller
 
         $validated = $request->validated();
         $user->update( $validated );
-        $user->syncRoles( $validated['role_id'] );
+        if( !empty($validated['roles']))   {
+            $user->syncRoles( [$validated['roles']] );
+        }
         return response([ 'user' => $user ]);
+    }
+
+    protected function userResponse(User $user): UserResource
+    {
+        return new UserResource($user->load('roles'));
     }
 }

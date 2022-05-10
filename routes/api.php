@@ -87,7 +87,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //User routes
 
     Route::get('/v1/organization/{organization}/user', [App\Http\Controllers\API\UserController::class, 'index'])->middleware('can:viewAny,App\User');
-    Route::get('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'show'])->middleware('can:view,user');
+    Route::get('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'show'])->middleware('can:view,organization,user');
     Route::post('/v1/organization/{organization}/user', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User');
     Route::put('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'update'])->middleware('can:update,user');
     Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User');
@@ -214,6 +214,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'index'])->middleware('can:viewAny,App\MerchantGiftcode,merchant');
 
     Route::post('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'store'])->middleware('can:add,App\MerchantGiftcode,merchant');
+
+    Route::get('/v1/merchant/{merchant}/redeemable', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'redeemable'])->middleware('can:viewRedeemable,App\MerchantGiftcode,merchant');
 
     //MerchantOptimalValues
 

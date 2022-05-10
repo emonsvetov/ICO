@@ -73,9 +73,9 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $visible = [
     ];
 
-    protected $with = [
-        'roles'
-    ];
+    // protected $with = [
+    //     'roles'
+    // ];
 
     /**
      * The attributes that should be cast to native types.

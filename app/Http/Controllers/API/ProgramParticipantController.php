@@ -20,7 +20,7 @@ class ProgramParticipantController extends Controller
     public function index( Organization $organization, Program $program )
     {
         $users = $this->programService->getParticipants($program, true);
-        if($users  )    {
+        if( $users  )    {
             return response( $users );
         }
         return response( [] );

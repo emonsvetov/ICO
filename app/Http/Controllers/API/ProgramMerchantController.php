@@ -39,17 +39,6 @@ class ProgramMerchantController extends Controller
     public function view( Organization $organization, Program $program, Merchant $merchant )
     {
         $user = auth()->user();
-        $user->getRoles();
-        return $user;
-
-        // $isManager = $user->isManagerToProgram($program);
-        // $isParticipant = $user->isParticipantToProgram($program);
-
-        // return [
-        //     'isManager'=> $isManager,
-        //     'isParticipant'=> $isParticipant,
-        // ];
-
         $programMerchant = $program->merchants->find($merchant->id);
 
         if ( $programMerchant ) 

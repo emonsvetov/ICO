@@ -36,10 +36,34 @@ trait HasProgramRoles
     public function getProgramRoles( $byProgram = null )
     {
         if( !$byProgram ) {
-            return $this->roles()->wherePivot( 'program_id', '!=', 0)->get();
+            return $this->roles()->wherePivot( 'program_id', '!=', 0)->withPivot('program_id')->get();
         }
         $programId = self::extractId($byProgram);
-        return $this->roles()->wherePivot( 'program_id', '=', $programId)->get();
+        return $this->roles()->wherePivot( 'program_id', '=', $programId)->withPivot('program_id')->get();
+    }
+    public function getProgramsRoles( $byProgram = null )
+    {
+        $_roles = $this->getProgramRoles( $byProgram );
+        $programs = [];
+        $roles = [];
+        $programRoles = [];
+        foreach( $_roles as $_role )  {
+            $roleId = $_role->id;
+            $programId = $_role->pivot->program_id;
+            if( !isset( $programs[$programId] ) )   {
+                $program = Program::where( 'id', $programId )->select('id', 'name')->first();
+                $programs[$programId] = $program;
+            }
+            else 
+            {
+                $program = $programs[$programId];
+            }
+            if( !isset( $programRoles[$program->id] ) ) {
+                $programRoles[$program->id] = $program->toArray();
+            }
+            $programRoles[$program->id]['roles'][$roleId] = $_role;
+        }
+        return $programRoles;
     }
     public function hasRolesInProgram( $roles = [], $program) {
         if( !$roles ) return false;

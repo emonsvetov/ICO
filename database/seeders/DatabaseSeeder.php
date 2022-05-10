@@ -16,6 +16,8 @@ use Database\Seeders\CurrencySeeder;
 use Database\Seeders\StatusSeeder;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\OrganizationSeeder;
+use Database\Seeders\OwnerSeeder;
+use Database\Seeders\AccountHolderPatcher;
 
 class DatabaseSeeder extends Seeder
 {
@@ -38,6 +40,8 @@ class DatabaseSeeder extends Seeder
             StatusSeeder::class,
             UserSeeder::class,
             OrganizationSeeder::class,
+            OwnerSeeder::class,
+            // AccountHolderPatcher::class,
         ]);
     }
 }
