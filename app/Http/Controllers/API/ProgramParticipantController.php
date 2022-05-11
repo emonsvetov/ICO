@@ -12,14 +12,10 @@ use DB;
 
 class ProgramParticipantController extends Controller
 {
-    public function __construct(ProgramService $programService)
-    {
-        $this->programService = $programService;
-    }
 
-    public function index( Organization $organization, Program $program )
+    public function index(ProgramService $programService, Organization $organization, Program $program )
     {
-        $users = $this->programService->getParticipants($program, true);
+        $users = $programService->getParticipants($program, true);
         if( $users  )    {
             return response( $users );
         }
