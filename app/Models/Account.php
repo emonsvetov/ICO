@@ -55,8 +55,7 @@ class Account extends Model
         $journal_event_id,
         $amount,
         $quantity,
-        $medium_fields,
-        $medium_values,
+        $medium_info,
         $medium_info_id,
         $currency_id
     ) {
@@ -99,14 +98,13 @@ class Account extends Model
         // pr("credit_account_id");
         // pr($credit_account_id);
 
-        $result['posting'] = Posting::create([
+        $result['postings'] = Posting::createPostings([
             'journal_event_id' => $journal_event_id,
             'debit_account_id' => $debit_account_id,
             'credit_account_id' => $credit_account_id,
             'amount' => $amount,
             'quantity' => $quantity,
-            'medium_fields' => $medium_fields,
-            'medium_values' => $medium_values,
+            'medium_info' => $medium_info,
             'medium_info_id' => $medium_info_id,
             'debit_medium_type_id' => $debit_medium_type_id,
         ]);

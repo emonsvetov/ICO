@@ -112,7 +112,7 @@ class Award extends Model
                     'icon' => 'Award', //TODO
                     'event_template_id' => $event_id, //Event > id
                     'award_transaction_id' => $awardUniqId,
-                    'created_at' => \Carbon\Carbon::now()
+                    'created_at' => now()
                 ]);
 
                 $journal_event_id = JournalEvent::insertGetId([
@@ -120,8 +120,8 @@ class Award extends Model
                     'event_xml_data_id' => $event_xml_data_id,
                     'notes' => $notes,
                     'prime_account_holder_id' => $awarder_account_holder_id,
-                    'created_at' => \Carbon\Carbon::now()
-                ]);
+                    'created_at' => now()
+                ]);//9816692516
 
                 if( $escrow_account != "")    {
 
@@ -139,8 +139,7 @@ class Award extends Model
                         $journal_event_id,
                         $award_amount,
                         1, //qty
-                        '', // medium_fields
-                        '', // medium_values
+                        null, // medium_info
                         null, // medium_info_id
                         $currency_id
                     );
@@ -166,8 +165,7 @@ class Award extends Model
                     $journal_event_id,
                     $award_amount,
                     1, //qty
-                    '', // medium_fields
-                    '', // medium_values
+                    null, // medium_info
                     null, // medium_info_id
                     $currency_id
                 );
@@ -193,8 +191,7 @@ class Award extends Model
                     $journal_event_id,
                     $award_amount,
                     1, //qty
-                    '', // medium_fields
-                    '', // medium_values
+                    null, // medium_info
                     null, // medium_info_id
                     $currency_id
                 );
