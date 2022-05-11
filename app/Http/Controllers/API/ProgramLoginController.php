@@ -19,7 +19,7 @@ class ProgramLoginController extends Controller
         if( $requestRole == 'program_manager' )    {
             if( $user->isManagerToProgram($program->id) ) {
                 return response([
-                    'role'=>Role::where('name', config('global.program_manager_role_name'))->first(),
+                    'role'=>Role::where('name', config('roles.program_manager'))->first(),
                     'program' => $program,
                 ]);
             }
@@ -28,7 +28,7 @@ class ProgramLoginController extends Controller
         if( $requestRole == 'participant' )    {
             if( $user->isParticipantToProgram($program->id) ) {
                 return response([
-                    'role'=>Role::where('name', config('global.participant_role_name'))->first(),
+                    'role'=>Role::where('name', config('roles.participant'))->first(),
                     'program' => $program
                 ]);
             }

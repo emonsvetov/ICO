@@ -28,9 +28,11 @@ class UserPolicy
      * @param  \App\Models\User  $model
      * @return mixed
      */
-    public function view(User $authenticatedUser, User $user)
+    public function view(User $authUser, Organization $organization, User $user)
     {
-        return $authenticatedUser->id === $user->id ||  $authenticatedUser->can('user-view');
+        if( $authUser->organization_id != $organization->id ) return false;
+        if( $organization->id != $user->organization_id ) return false;
+        return $authUser->can('user-view');
     }
 
     /**

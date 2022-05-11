@@ -84,7 +84,7 @@ class MerchantController extends Controller
      */
     public function store(MerchantRequest $request)
     {
-        $newMerchant = Merchant::create( $request->validated() );
+        $newMerchant = Merchant::createAccount( $request->validated() );
 
         if ( !$newMerchant )
         {
@@ -123,7 +123,6 @@ class MerchantController extends Controller
      */
     public function update(MerchantRequest $request, Merchant $merchant)
     {
-
         if ( ! $merchant->exists )
         {
             return response(['errors' => 'No Merchant Found'], 404);

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Requests\ProgramMerchantRequest;
+use App\Http\Resources\GiftcodeCollection;
 use App\Http\Controllers\Controller;
 use App\Models\ProgramMerchant;
 use App\Models\Organization;
@@ -13,6 +14,13 @@ Use Exception;
 
 class ProgramMerchantController extends Controller
 {
+
+    function __construct(Organization $organization, Program $program, Merchant $merchant)  {
+        $this->organization = $organization;
+        $this->program = $program;
+        $this->merchant = $merchant;
+    }
+
     public function index( Organization $organization, Program $program )
     {
         if ( $organization->id != $program->organization_id )
@@ -23,6 +31,19 @@ class ProgramMerchantController extends Controller
         if ( $program->merchants->isNotEmpty() ) 
         { 
             return response( $program->merchants );
+        }
+
+        return response( [] );
+    }
+
+    public function view( Organization $organization, Program $program, Merchant $merchant )
+    {
+        $user = auth()->user();
+        $programMerchant = $program->merchants->find($merchant->id);
+
+        if ( $programMerchant ) 
+        { 
+            return response( $programMerchant );
         }
 
         return response( [] );
@@ -62,6 +83,11 @@ class ProgramMerchantController extends Controller
         }
 
         return response([ 'success' => true ]);
+    }
+
+    public function giftcodes( Organization $organization, Program $program, Merchant $merchant )
+    {
+        return $this->merchant->getGiftcodes( $merchant );
     }
 
     // Do not remove, we may need it later on!

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\MerchantGiftcodeRequest;
 use App\Http\Controllers\Controller;
+use App\Services\GiftcodeService;
 use App\Http\Traits\CsvParser;
 use Illuminate\Http\Request;
 use App\Models\Organization;
@@ -62,20 +63,23 @@ class MerchantGiftcodeController extends Controller
         return response( [] );
     }
 
-    public function store( MerchantGiftcodeRequest $request, Merchant $merchant )
+    public function store( MerchantGiftcodeRequest $request, GiftcodeService $giftcodeService, Merchant $merchant )
     {
         $fileContents = request()->file('file_medium_info')->get();
         $csvData = $this->CsvToArray($fileContents);
         $imported = [];
-        $removable = ['supplier_code', 'someurl']; //handling 'unwanted' keys
+
+        $defaultValues = [
+            'medium_info_is_test' => 0
+        ];
         foreach( $csvData as $row ) {
-            foreach($removable as $key) {
-                if( isset($row[$key]) ) unset( $row[$key] );
-            }
-            $imported[] = Giftcode::create(
-                $row + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
-            );
+            $imported[] = $giftcodeService->createGiftcode($merchant, $row );
         }
         return response( $imported );
+    }
+
+    public function redeemable(GiftcodeService $giftcodeService, Merchant $merchant )
+    {
+        return $giftcodeService->getRedeemable( $merchant );
     }
 }

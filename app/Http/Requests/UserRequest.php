@@ -54,7 +54,6 @@ class UserRequest extends FormRequest
             'state_updated'=> 'nullable|date_format:Y-m-d H:i:s',
             'last_location'=> 'nullable|string',
             'update_id'=> 'nullable|integer',
-            'role_id'=> 'sometimes|required|integer', // default role `users.role_id`
             'roles' => 'sometimes|required|array', // program specific roles
             'roles.*' => 'sometimes|required|integer',
         ];

@@ -64,6 +64,8 @@ class PermissionSeeder extends Seeder
             'program-merchant-list',
             'program-merchant-add',
             'program-merchant-remove',
+            'program-merchant-view',
+            'program-merchant-view-giftcodes',
             'program-participant-list',
             'program-user-list',
             'program-user-add',
@@ -88,7 +90,7 @@ class PermissionSeeder extends Seeder
             'user-program-list',
             'user-program-add',
             'user-program-remove',
-            'user-program-permissions',
+            'user-program-roles',
         ];
 
         foreach ($permissions as $permission) {

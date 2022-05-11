@@ -47,7 +47,8 @@ class AuthController extends Controller
 
         $user = auth()->guard('web')->user();
         $user->organization;
-        $user->getRoles();
+        $user->roles;
+        $user->programRoles = $user->getProgramsRoles();
 
         $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
 
