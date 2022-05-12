@@ -11,6 +11,7 @@ use App\Models\Organization;
 use App\Rules\CsvValidator;
 use App\Models\Merchant;
 use App\Models\Giftcode;
+use App\Models\Program;
 Use Exception;
 
 class MerchantGiftcodeController extends Controller
@@ -63,7 +64,7 @@ class MerchantGiftcodeController extends Controller
         return response( [] );
     }
 
-    public function store( MerchantGiftcodeRequest $request, GiftcodeService $giftcodeService, Merchant $merchant )
+    public function store( MerchantGiftcodeRequest $request, GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )
     {
         $fileContents = request()->file('file_medium_info')->get();
         $csvData = $this->CsvToArray($fileContents);
@@ -78,7 +79,7 @@ class MerchantGiftcodeController extends Controller
         return response( $imported );
     }
 
-    public function redeemable(GiftcodeService $giftcodeService, Merchant $merchant )
+    public function redeemable(GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )
     {
         return $giftcodeService->getRedeemable( $merchant );
     }

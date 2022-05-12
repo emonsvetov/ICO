@@ -215,7 +215,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'store'])->middleware('can:add,App\MerchantGiftcode,merchant');
 
-    Route::get('/v1/merchant/{merchant}/redeemable', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'redeemable'])->middleware('can:viewRedeemable,App\MerchantGiftcode,merchant');
+    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/redeemable', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'redeemable'])->middleware('can:viewRedeemable,App\MerchantGiftcode,organization,program,merchant');
 
     //MerchantOptimalValues
 

@@ -22,8 +22,11 @@ class MerchantGiftcodePolicy
         return $user->can('merchant-giftcode-list');
     }
   
-    public function add(User $user, Merchant $merchant)
+    public function add(User $user, Organization $organization, Program $program, Merchant $merchant)
     {
+        if( $user->organization_id !== $organization->id ) return false;
+        if( $program->organization_id !== $organization->id ) return false;
+        if( !$program->merchants->contains($merchant) ) return false;
         return $user->can('merchant-giftcode-add');
     }
 }
