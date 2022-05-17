@@ -18,6 +18,7 @@ class PermissionSeeder extends Seeder
 
         $permissions = [
             'award-create',
+            'checkout',
             'domain-list',
             'domain-view',
             'domain-create',
@@ -66,6 +67,7 @@ class PermissionSeeder extends Seeder
             'program-merchant-remove',
             'program-merchant-view',
             'program-merchant-view-giftcodes',
+            'program-merchant-view-redeemable',
             'program-participant-list',
             'program-user-list',
             'program-user-add',

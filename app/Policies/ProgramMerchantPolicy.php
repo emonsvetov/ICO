@@ -13,6 +13,14 @@ class ProgramMerchantPolicy
 {
     use HandlesAuthorization;
 
+    private function __preAuthCheck($user, $organization, $program = null, $merchant = null): bool
+    {
+        if( $organization->id != $user->organization_id ) return false;
+        if( $organization->id != $program->organization_id) return false;
+        if( !$program->merchants->contains( $merchant )) return false;
+        return true;
+    }
+
     /**
      * Determine whether the user can view any models.
      *
@@ -44,6 +52,14 @@ class ProgramMerchantPolicy
             return false;
         }
         return $user->canReadProgram($program, 'program-merchant-view-giftcodes');
+    }
+    public function viewRedeemable(User $user, Organization $organization, Program $program, Merchant $merchant)
+    {
+        if ( !$this->__preAuthCheck($user, $organization, $program, $merchant) )
+        {
+            return false;
+        }
+        return $user->canReadProgram($program, 'program-merchant-view-redeemable');
     }
   
     public function add(User $user, Organization $organization, Program $program)
