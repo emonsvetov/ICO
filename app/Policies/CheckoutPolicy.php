@@ -21,11 +21,10 @@ class CheckoutPolicy
     
     public function checkout(User $user, Organization $organization, Program $program)
     {
-        return true;
-        // if ( !$this->__preAuthCheck($user, $organization, $program, $merchant) )
-        // {
-        //     return false;
-        // }
-        // return $user->isParticipantToProgram($program) || $user->can('checkout');
+        if ( !$this->__preAuthCheck($user, $organization, $program) )
+        {
+            return false;
+        }
+        return $user->isParticipantToProgram($program) || $user->can('checkout');
     }
 }

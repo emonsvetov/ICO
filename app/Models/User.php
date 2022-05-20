@@ -138,8 +138,6 @@ class User extends Authenticatable implements MustVerifyEmail
             $account_type = config('global.account_type_monies_awarded');
 		}
         return self::_read_balance( $user->account_holder_id, $account_type, $journal_event_types );
-        // _read_balance
-        // return [$program, $user, $account_type, $journal_event_types];
     }
 
 	private function _read_balance($account_holder_id, $account_type, $journal_event_types = []) {

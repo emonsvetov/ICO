@@ -24,25 +24,5 @@ class ExternalCallback extends Model
 		->where('external_callbacks.account_holder_id', $account_holder_id)
 		->where('t.type', '=', $callback_type)
 		->get();
-
-
-		// $sql = "SELECT c.*, t.type as callback_type
-        //     from " . Incentco::TBL_EXTERNAL_CALLBACKS . " c
-        //         JOIN " . Incentco::TBL_CALLBACKS_TYPES . " t on (c.callback_type_id = t.id)
-        //     where
-        //         account_holder_id = :account_holder_id
-        //     and
-        //         t.type = :type
-        // ";
-		// try {
-		// 	$results = DB::select( DB::raw($sql), array(
-		// 		'account_holder_id' => $account_holder_id,
-		// 		'type' => $callback_type,
-
-		// 	));
-		// } catch (Exception $e) {
-		// 	throw new Exception ( 'Could not "read_list_by_type" in ExternalCallback:read_list_by_type. DB query failed.', 400 );
-		// }
-		// return $results;
 	}
 }
