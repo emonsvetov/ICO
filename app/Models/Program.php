@@ -45,6 +45,7 @@ class Program extends Model
     }
 
     public function program_is_invoice_for_awards() {
+        // $static = !(isset($this) && $this instanceof self);
 		if ($this->invoice_for_awards == 1) {
 			return true;
 		}

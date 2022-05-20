@@ -12,7 +12,7 @@ use App\Models\Giftcode;
 use App\Models\Merchant;
 use App\Models\Account;
 use App\Models\Owner;
-// use DB;
+use DB;
 
 class GiftcodeService 
 {
@@ -32,19 +32,28 @@ class GiftcodeService
 
     public function createGiftcode( $merchant, $giftcode )    {
         $response = [];
+        DB::beginTransaction();
         try{
             $removable = ['supplier_code', 'someurl']; //handling 'unwanted' keys
             foreach($removable as $key) {
                 if( isset($giftcode[$key]) ) unset( $giftcode[$key] );
             }
-            return Giftcode::create(
+            $result = Giftcode::createGiftcode(
                 auth()->user(), 
                 $merchant,
                 $giftcode
             );
+            if( !empty($result['success']))   {
+                DB::commit();
+            }   else    {
+                $response['errors'] = "Could not create giftcode";
+                DB::rollback();
+            }
+            $response['result'] = $result;
         }   catch (Exception $e)    {
+            DB::rollback();
             $response['errors'] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
         }
-        $response;
+        return $response;
     }
 }

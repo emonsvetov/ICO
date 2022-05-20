@@ -27,7 +27,7 @@ class Posting extends Model
         // pr($debit_medium_type_name);
 
         if( $debit_medium_type_name == "Gift Codes")  {
-            if( sizeof($data['medium_info']) > 0 )  {
+            if( is_object($data['medium_info']) && !empty($data['medium_info']) )  {
                 $giftcodeCreated = Giftcode::create( $data['medium_info']  );
                 if( $giftcodeCreated )   {
                     $medium_info_id = $giftcodeCreated->id;

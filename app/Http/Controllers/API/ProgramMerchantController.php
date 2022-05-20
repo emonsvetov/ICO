@@ -94,6 +94,5 @@ class ProgramMerchantController extends Controller
     public function redeemable(GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )
     {
         return $giftcodeService->getRedeemable( $merchant );
-        // return DB::getQueryLog();
     }
 }

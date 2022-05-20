@@ -12,6 +12,7 @@ use App\Models\Currency;
 use App\Models\Giftcode;
 use App\Models\Merchant;
 use App\Models\Account;
+use App\Models\Program;
 use App\Models\Owner;
 use DB;
 
@@ -20,6 +21,14 @@ class CheckoutService
     use IdExtractor;
 
     public function processOrder( $cart, $program )   {
+
+		// Note: There is some work TODO in this function. The order creation, external callbacks, and email alerts to be precise - Arvind
+
+		// DB::statement("UNLOCK TABLES;");
+		// return;
+
+		// return $program->id;
+		// return $program->program_is_invoice_for_awards ();
 
 		$Logger = Log::channel('redemption');
 
@@ -50,11 +59,12 @@ class CheckoutService
 		// The total amount of points the user is attempting to redeem
 		$redemption_value_total = 0;
 		$all_external_callbacks = [];
-		$gift_code_provider_id = [];
+		$gift_code_provider_account_holder_id = [];
 		$all_merchants = [];
 		// Verify that the merchant and gift code denominations are valid
 		// Also, total up the transaction
 		// pr($gift_codes);
+		// return;
 		$merchant_ids = [];
 
 		foreach($gift_codes as $gift_code) {
@@ -103,21 +113,21 @@ class CheckoutService
 
             $merchants_info[$merchant->id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
-				// $gift_code->gift_code_provider_id = Merchant::get_top_level_merchant_id ( $gift_code->merchant_id );
+				$gift_code->gift_code_provider_account_holder_id = Merchant::get_top_level_merchant ( $gift_code->merchant_id )->account_holder_id ;
                 // TODO
 			} else {
-				$gift_code->gift_code_provider_id = $gift_code->merchant_id;
+				$gift_code->gift_code_provider_account_holder_id = $gift_code->merchant_account_holder_id;
 			}
 
-			$gift_code_provider_ids[$gift_code->merchant_id] = $gift_code->gift_code_provider_id;
-			//pr($gift_code->gift_code_provider_id);exit;
+			$gift_code_provider_account_holder_ids[$gift_code->merchant_account_holder_id] = $gift_code->gift_code_provider_account_holder_id;
+			//pr($gift_code->gift_code_provider_account_holder_id);exit;
 			// If the option for "website is redemption url" store this merchant's website on the shopping cart item for later use
 			if ($merchant->website_is_redemption_url) {
 				// update the gift code record
 				$gift_code->redemption_url = $merchant->website;
 			}
-			// run this check against the gift_code_provider_id
-			$external_callbacks = ExternalCallback::read_list_by_type ( ( int ) $gift_code->gift_code_provider_id, 'B2B Gift Code' );
+			// run this check against the gift_code_provider_account_holder_id
+			$external_callbacks = ExternalCallback::read_list_by_type ( ( int ) $gift_code->gift_code_provider_account_holder_id, 'B2B Gift Code' );
 			// pr($external_callbacks->toArray());
 			// pr(count ( $external_callbacks ));
 			// // pr(DB::getQueryLog());
@@ -126,20 +136,21 @@ class CheckoutService
 				//$debug['$external_callbacks'] = $external_callbacks;
 				// Do not check this merchant's inventory level they use a callback to get giftcodes on the fly
 				//Lets save for later use, 
-				$all_external_callbacks[$gift_code->gift_code_provider_id] = $external_callbacks;
+				$all_external_callbacks[$gift_code->gift_code_provider_account_holder_id] = $external_callbacks;
 			} else {
 				//$debug['no_external_callback'] = $external_callbacks;
 				// Verify that there is enough inventory for this redemption value to complete this portion of the transaction
 				// Billy added for cost to propgram
 				// pr($merchant->account_holder_id);
 				// pr($merchantsCostToProgram);
-				// pr($gift_code->gift_code_provider_id);
+				// pr($gift_code->gift_code_provider_account_holder_id);
 				// pr( in_array ( $merchant->account_holder_id, $merchantsCostToProgram ) );
 				if (in_array ( $merchant->id, $merchantsCostToProgram )) {
-					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->gift_code_provider_id, $redemptionValue );
+					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $redemptionValue );
 					if (! isset ( $denomination_list ) || count ( $denomination_list ) < 1) {
 						// throw new RuntimeException ( 'Out of inventory' );
 						$response['errors'][] = 'Out of inventory';
+						return $response;
 					}
 					// Flag to indicate whether or not the redemption value was found in the denomination list
 					$found_denomination = false;
@@ -149,6 +160,7 @@ class CheckoutService
 							if ($denomination_info->count < $gift_code->qty) {
 								// throw new RuntimeException ( 'Insufficient inventory to complete the transaction' );
 								$response['errors'][] = 'Insufficient inventory to complete the transaction';
+								return $response;
 							}
 							break;
 						}
@@ -156,15 +168,17 @@ class CheckoutService
 					if (! $found_denomination) {
 						// throw new RuntimeException ( 'Out of inventory' );
 						$response['errors'][] = 'Out of inventory';
+						return $response;
 					}
 				} else {
-					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->gift_code_provider_id, $gift_code->redemption_value );
+					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $gift_code->redemption_value );
 					// pr($denomination_list);
 					// pr(DB::getQueryLog());
 					// exit;
 					if (! isset ( $denomination_list ) || count ( $denomination_list ) < 1) {
 						// throw new RuntimeException ( 'Out of inventory' );
 						$response['errors'][] = 'Out of inventory';
+						return $response;
 					}
 					// Flag to indicate whether or not the redemption value was found in the denomination list
 					$found_denomination = false;
@@ -174,6 +188,7 @@ class CheckoutService
 							if ($denomination_info->count < $gift_code->qty) {
 								// throw new RuntimeException ( 'Insufficient inventory to complete the transaction' );
 								$response['errors'][] = 'Insufficient inventory to complete the transaction';
+								return $response;
 							}
 							break;
 						}
@@ -181,6 +196,7 @@ class CheckoutService
 					if (! $found_denomination) {
 						// throw new RuntimeException ( 'Out of inventory' );
 						$response['errors'][] = 'Out of inventory';
+						return $response;
 					}
 				}
 			}
@@ -190,99 +206,108 @@ class CheckoutService
 
 		if ($current_balance < $redemption_value_total) {
 			$response['errors'][] = 'Current ending balance of the user is insufficient to redeem for the gift code';
+			return $response;
 		}
 
 		$order_id = 0;
 		if ( $order_address ) {
 			// NOT TESTED YET, FOR NOW ASSUMING THAT IT IS NOT A PhysicalOrder
-			$order_id = PhysicalOrder::create ( $user->account_holder_id, $program_id, $order_address );
+			$order_id = PhysicalOrder::create ( $user->account_holder_id, $program->id, $order_address );
 		}
 
-		$currency_type = Currency::getIdByType(config('global.default_currency'), true);
+		// return $merchantsCostToProgram;
+
+		$currency_id = Currency::getIdByType(config('global.default_currency'), true);
 
 		$reserved_codes = array ();
 		$redeem_merchant_info = array ();
+		// pr($gift_code_provider_account_holder_ids);
+		// pr($all_external_callbacks);
 		foreach ( $gift_codes as $gift_code2_array ) {
 			$gift_code2 = (object) $gift_code2_array;
 
-			$gift_code2->gift_code_provider_id = $gift_code_provider_ids[$gift_code2->merchant_id];
+			// pr($gift_code2);
+			// exit;
+
+			$gift_code2->gift_code_provider_account_holder_id = $gift_code_provider_account_holder_ids[$gift_code2->merchant_account_holder_id];
 
 			for($i = 0; $i < $gift_code2->qty; ++ $i) {
 				// NOT IMPLEMENTED YET
 				// Need some work on Giftcode::_run_gift_code_callback
 				// Check to see if the merchant uses a b2b redemption callback, if it does make the callback now and acquire the giftcode
-				//$external_callbacks = $this->external_callbacks_model->read_list_by_type ( ( int ) $gift_code2->gift_code_provider_id, 'B2B Gift Code' );
-				$external_callbacks = isset($all_external_callbacks[$gift_code2->gift_code_provider_id]) ? $all_external_callbacks[$gift_code2->gift_code_provider_id] : null ;
-				//TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+				//$external_callbacks = $this->external_callbacks_model->read_list_by_type ( ( int ) $gift_code2->gift_code_provider_account_holder_id, 'B2B Gift Code' );
+				$external_callbacks = isset($all_external_callbacks[$gift_code2->gift_code_provider_account_holder_id]) ? $all_external_callbacks[$gift_code2->gift_code_provider_account_holder_id] : null ;
+				//TODO!!! To run callback and create the gift code in case of external callback is pending: Arvind, 19th May 2022
 				// This section is TODO
 				if ( $external_callbacks && count ( $external_callbacks ) > 0) {
 					$debug['$external_callbacks'] = $external_callbacks;
 					$data = array ();
 					$data ['amount'] = ( float ) $gift_code2->redemption_value;
-					$cb_response = Giftcode::_run_gift_code_callback ( $external_callbacks [0], $program_id, $user->account_holder_id, ( int ) $gift_code2->gift_code_provider_id, $data );
+					$cb_response = Giftcode::_run_gift_code_callback ( $external_callbacks [0], $program->id, $user->account_holder_id, ( int ) $gift_code2->gift_code_provider_account_holder_id, $data );
 					if ($cb_response->response_code != '200') {
 						$response['errors'][] = 'Error encountered when calling B2B Gift Code callback. ' . $cb_response->response_data;
+						return $response;
 					}
 					$code = $cb_response->data;
 					// Add the giftcode to the merchant's inventory
-					$gift_code_id = ( int ) $this->create ( ( int ) $user->account_holder_id, ( int ) $gift_code2->gift_code_provider_id, $code );
+					$gift_code_id = ( int ) $this->create ( ( int ) $user->account_holder_id, ( int ) $gift_code2->gift_code_provider_account_holder_id, $code );
 					// Read the rest of the information about the code that was reserved
-					$reserved_code = self::_read_by_merchant_and_medium_info_id ( ( int ) $gift_code2->gift_code_provider_id, $gift_code_id );
+					$reserved_code = self::_read_by_merchant_and_medium_info_id ( ( int ) $gift_code2->gift_code_provider_account_holder_id, $gift_code_id );
 				} else {
 					$debug['no_external_callbacks'] = $external_callbacks;
 					// merchant hasn't external callback so store all values
 					// store all values to redeem $redeem_merchant_info[merchant_id][code_value]
 					$redeem_merchant_info [$gift_code2->merchant_id] [number_format ( $gift_code2->sku_value, 2 )] = array ();
 
-					//pr($redeem_merchant_info);
-					// BCM:HERE
-					// Run this against the gift_code_provider_id
-					//$debug['$user->account_holder_id'] = $user->account_holder_id;
-					//$debug['$program_id'] = $program_id;
-					//$debug['$gift_code_item2'] = $gift_code2;
-					//$debug['$merchants_info'] = $merchants_info;
-
 					$reserved_code = Giftcode::holdGiftcode ([
 						'user_account_holder_id' => $user->account_holder_id,
 						// 'program' => $program,
-						// 'merchant_account_holder_id' => $gift_code2->gift_code_provider_id, 
+						// 'merchant_account_holder_id' => $gift_code2->gift_code_provider_account_holder_id, 
 						'merchant_account_holder_id' => $gift_code2->merchant_account_holder_id, 
 						'redemption_value' => $gift_code2->redemption_value, 
 						'sku_value' => $gift_code2->sku_value,
-						'merchants' => $merchants->toArray()
+						'merchants' => $merchants->toArray(),
+						'merchant_id' => $gift_code2->merchant_id,
 					]);
-
-					pr($reserved_code);
-					exit;
-					$debug['reserved_code'] = $reserved_code;
-
 				}
+
 				if (! isset ( $reserved_code )) {
-					throw new RuntimeException ( "Unable to reserve GiftCode. {$gift_code->merchant_id}", 500 );
+					$response['errors'][] = "Unable to reserve GiftCode. {$gift_code2->merchant_id}";
+					return $response;
 				}
-				$reserved_code->gift_code_provider_id = ( int ) $gift_code2->gift_code_provider_id;
+
+				if( isset($reserved_code['errors']) )	{
+					$response['errors'][] = $reserved_code['errors'];
+					return $response;
+				}
+
+				$reserved_code->gift_code_provider_account_holder_id = ( int ) $gift_code2->gift_code_provider_account_holder_id;
 				if (! isset ( $reserved_code->merchant )) {
-					$reserved_code->merchant = new stdClass ();
+					$reserved_code->merchant = isset( $all_merchants[$gift_code2->merchant_id] ) ? $all_merchants[$gift_code2->merchant_id] : $all_merchants[$gift_code2->merchant_id] = Merchant::find($gift_code2->merchant_id); //Beware, inline assignment!
 				}
-				$reserved_code->merchant->account_holder_id = $gift_code2->merchant_id;
+				// pr($reserved_code->toArray());
+				// exit;
+				// $reserved_code->merchant->account_holder_id = $gift_code2->merchant_id;
 				// If the shopping cart item has a redemption url set, it means that the merchant that this code will be redeemed from
 				// has the "website is redemption url" option turned on.
-				if (isset ( $gift_code2->redemption_url ) && $gift_code2->redemption_url != '') {
-					$reserved_code->redemption_url = $gift_code2->redemption_url;
-				}
+				// if (isset ( $gift_code2->redemption_url ) && $gift_code2->redemption_url != '') {
+					// $reserved_code->redemption_url = $gift_code2->redemption_url;
+				// }
 				$reserved_codes [] = $reserved_code;
-				$merch = $merchants_info [$reserved_code->merchant->account_holder_id];
+				// return $reserved_code;
+				$merch = $merchants_info [$reserved_code->merchant->id];
 				// pr($merch);
 				// exit;
 				if ($merch->requires_shipping) {
 					if ($order_id == 0) {
-						throw new InvalidArgumentException ( "Shipping address must be provided, selected merchant requires shipping." );
+						// throw new InvalidArgumentException ( "Shipping address must be provided, selected merchant requires shipping." );
+						$response['errors'][] = sprintf("Shipping address must be provided, selected merchant requires shipping. Merchant:%s", $merch->name);
+						return $response;
 					}
 					// add the code as a line item to the order
 					PhysicalOrder::add_line_item ( ( int ) $reserved_code->id, $order_id );
 				} elseif ($merch->physical_order) {
-					$userData = User::read_by_id ( $user->account_holder_id );
-					$shipToName = $userData->first_name . ' ' . $userData->last_name . ' ' . '(' . $merch->name . ')';
+					$shipToName = $user->first_name . ' ' . $user->last_name . ' ' . '(' . $merch->name . ')';
 					$address = new stdClass ();
 					$address->ship_to_name = $shipToName;
 					$address->line_1 = 'N/A';
@@ -292,12 +317,14 @@ class CheckoutService
 					$address->user_id = $user->account_holder_id;
 					$address->country_id = 232;
 					$address->state_id = 1;
-					$userData->sku_value = $reserved_code->sku_value;
-					$userData->gift_code = $reserved_code->code;
-					$note = json_encode ( $userData, JSON_HEX_APOS );
-					$order_id = PhysicalOrder::create ( $user->account_holder_id, $program_id, $address, $note );
+					$user->sku_value = $reserved_code->sku_value;
+					$user->gift_code = $reserved_code->code;
+					$note = json_encode ( $user, JSON_HEX_APOS );
+					$order_id = PhysicalOrder::create ( $user->id, $program_id, $address, $note );
 					PhysicalOrder::add_line_item ( ( int ) $reserved_code->id, $order_id );
 				}
+
+				// TODO ; TangoOrder setup is pending in rebuild
 
 				if($merch->use_tango_api){
                     $tango_order = new stdClass ();
@@ -313,7 +340,7 @@ class CheckoutService
 		}
 		// pr($debug);
 		// exit;
-		$gift_codes_redeemed_for = array ();
+		$gift_codes_redeemed_for = [];
 		if (isset ( $redeem_merchant_info ) && count ( $redeem_merchant_info )) {
 			foreach ( $redeem_merchant_info as $merchant_id => &$details ) {
 				if (count ( $details )) {
@@ -321,7 +348,7 @@ class CheckoutService
 						// check and save how many codes is before redeem and store in table:
 						$code_count_before = 0;
 						// send alert if low inventory - save count before, use it later for check
-						$redeemable_denominations = self::read_list_redeemable_denominations_by_merchant_and_sku_value ( ( int ) $merchant_id, ( float ) $code_value );
+						$redeemable_denominations = Giftcode::getRedeemableListByMerchantAndSkuValue ( ( int ) $merchant_id, ( float ) $code_value );
 						if (is_array ( $redeemable_denominations ) && count ( $redeemable_denominations ) > 0) {
 							foreach ( $redeemable_denominations as $redeemable_denomination ) {
 								$code_count_before += $redeemable_denomination->count;
@@ -334,14 +361,206 @@ class CheckoutService
 			}
 		}
 
-		return $denomination_list;
+		try {
+			// I am not sure why some of the database transactions above are exempted from the rollback. Probably we need to move the DB::beginTransaction(); to the very top of this function ; Arvind
+			// DB::statement("LOCK TABLES postings WRITE, medium_info WRITE, journal_events WRITE;");
+			DB::beginTransaction();
+			$commit = true;
+			// $currency_type = self::$currency_type;
+			//pr($debug);
+			foreach ( $reserved_codes as $code ) {
+				// return $code;
+				$gift_code_id = ( int ) $code->id;
+				// format the gift code details
+				$gift_code_details = "\'{$code->redemption_value}\', \'{$code->cost_basis}\', \'{$code->discount}\', \'{$code->sku_value}\',
+                                            \'{$code->purchase_date}\', \'{$code->pin}\', \'{$code->redemption_url}\', \'{$code->code}\'";
+				if (! isset ( $code->expiration_date ) || $code->expiration_date == '') {
+					$gift_code_details .= ", NULL";
+				} else {
+					$gift_code_details .= ", \'{$code->expiration_date}\'";
+				}
+				$debug['gift_code_details']=$gift_code_details;
+				// If gift_code_provider_account_holder_id != merchant_id, perform a gift code transfer before redeeming
+				if ($code->merchant->account_holder_id != $code->gift_code_provider_account_holder_id) {
+					$this->_transferGiftcodesToMerchantNoTransaction([
+						'user' => $user,
+						'code' => $code,
+						'currency_id' => $currency_id
+					]);
+				}
+				// Added by Jay to add Premium cost to Program
+				if (in_array ( $code->merchant->id, $merchantsCostToProgram )) {
+                    $points_to_redeem = number_format ( ( float ) $code->sku_value, 4, '.', '' );
+                } else {
+                    $points_to_redeem = number_format ( ( float ) $code->redemption_value, 4, '.', '' );
+                }
 
+				// construct SQL statement to redeem gift codes
+				if ($program->program_is_invoice_for_awards ()) {
+					$result = $this->_redeemPointsForGiftcodesNoTransaction([
+						'points_to_redeem' => $points_to_redeem,
+						'code' => $code,
+						'user' => $user,
+						'program' => $program,
+						'owner_id' => $owner_id,
+						'currency_id' => $currency_id,
+					]);
+				} else {
+					$result = $this->_redeemMoniesForGiftcodesNoTransaction([
+						'points_to_redeem' => $points_to_redeem,
+						'code' => $code,
+						'user' => $user,
+						'program' => $program,
+						'owner_id' => $owner_id,
+						'currency_id' => $currency_id,
+					]);
+				}
+
+				$response['redeem_result'] = $result;
+				
+				if( !empty($result['success']) )	{
+					$journalId = $result['journal_event_id'];
+				}	else	{
+					DB::rollaback();
+					DB::statement("UNLOCK TABLES;");
+					$response['errors'][] = "Could not redeem";
+					return $response;
+				}
+
+				// BIlly added to add Premium cost to Program
+				if (in_array ( $code->merchant->id, $merchantsCostToProgram )) {
+					Giftcode::handlePremiumDiff( [
+						'code' => $code,
+						'journal_event_id' => $journalId,
+					]);
+				}
+				// --End billy added -------------------
+
+				if (! isset ( $redeem_merchant_info [$code->merchant->id] )) {
+					$redeem_merchant_info[$code->merchant->id][number_format ( $code->sku_value, 2 )]['used'] = 0;
+				}
+				$redeem_merchant_info[$code->merchant->id][number_format ( $code->sku_value, 2 )]['used']++;
+				$gift_codes_redeemed_for [] = $code;
+			}
+		} catch ( Exception $e ) {
+			DB::rollback();
+			DB::statement("UNLOCK TABLES;");
+			$commit = false;
+			$response['errors'][] = 'An error occurred while processing this transaction';
+			return $response;
+		}
+
+		if ( $commit ) {
+			$response['success'] = true;
+			$response['gift_codes_redeemed_for'] = $gift_codes_redeemed_for;
+			DB::commit();
+			DB::statement("UNLOCK TABLES;");
+		}
+		
+/* 		if (isset ( $order_address ) && is_object ( $order_address )) {
+			$user_info = User::read_by_id ( ( int ) $account_holder_id );
+			$mail_to = "support@incentco.com";
+			switch ( \App::environment() ) {
+				case "production" :
+					$mail_to = "support@incentco.com";
+					// $mail_to = "arvind@inimisttech.com";
+					break;
+				case "staging" :
+					$mail_to = "bmorse@incentco.com";
+					// $mail_to = "arvind@inimisttech.com";
+					break;
+				default :
+					$mail_to = "bmorse@incentco.com";
+					// $mail_to = "arvind@inimisttech.com";
+			}
+			$ship_to_state = State::read ( ( int ) $order_address->state_id );
+			$ship_to_country = State::read_country ( ( int ) $order_address->country_id );
+
+			$data = [
+				'order_id' => $order_id,
+				'order_address' => $order_address,
+				'user_info' => $user_info,
+				'ship_to_state' => $ship_to_state,
+				'ship_to_country' => $ship_to_country,
+			];
+			
+			try {
+				Mail::to( $mail_to )
+				->send(new TangoOrderAlert($data));
+			}   catch(Exception $e) {
+				throw new Exception('Error sending TangoOrder email in with error:' . $e->getMessage() . ' in line ' . $e->getLine());
+			}
+		} */
+		// all saved so check code count now
+		/* if (isset ( $redeem_merchant_info ) && count ( $redeem_merchant_info )) {
+			$percentage_alerts = array (
+					0,
+					25,
+					50 
+			);
+			$alerts_to_send = array ();
+			foreach ( $redeem_merchant_info as $merchant_id => &$details ) {
+				foreach ( $details as $code_value => $values ) { // check every sku_value redeemed
+				  // find all optimal values for code value
+					$optimal_values = OptimalValue::read_list_by_merchant_id_and_denomination ( ( int ) $merchant_id, ( float ) $code_value );
+					if (count ( $optimal_values ) > 0) {
+						$alert_counts = array ();
+						$count_after = $values ['count_before'] - $values ['used'];
+						foreach ( $optimal_values as $optimal_value ) {
+							foreach ( $percentage_alerts as $percent ) {
+								// find amount that fits percentage value
+								$alert_count = ($optimal_value->optimal_amount / 100) * $percent;
+								if ($values ['count_before'] > $alert_count && $count_after <= $alert_count) { // value was greater before but now is below or equal so send alert to merchant
+									$alerts_to_send [] = array (
+											'merchant_id' => $merchant_id,
+											'percentage_alert_value' => $percent,
+											'code_count' => $count_after,
+											'code_value' => $code_value 
+									);
+								}
+							}
+						}
+					}
+				}
+			}
+			if (count ( $alerts_to_send ) > 0) {
+				foreach ( $alerts_to_send as $alert ) {
+					// send all alerts collected before
+					$merchant = ($_merchant = get_merchant_by_id($merchants, $alert['merchant_id'])) ? $_merchant : Merchant::read($alert['merchant_id']);
+					self::merchant_denomination_alert ( Incentco::DEFAULT_EMAIL, $merchant, $alert['code_count'], $alert['percentage_alert_value'], $alert['code_value'] );
+				}
+			}
+		} */
 		return $response;
-
-
-
-        return $all_merchants;
-        return $merchantsCostToProgram;
-        return $gift_codes;
     }
+
+	private function _redeemPointsForGiftcodesNoTransaction( array $data )	{
+		if( empty($data['points_to_redeem']) || empty($data['code']) || empty($data['user']) || empty($data['program']) || empty($data['owner_id'] ) )	{
+			return ['errors' => sprintf('Invalid data passed to CheckoutService::_redeemPointsForGiftcodesNoTransaction')];
+		}
+		if( empty($data['currency_id']))	{
+			$data['currency_id'] = Currency::getIdByType(config('global.default_currency'), true);
+		}
+		return Giftcode::redeemPointsForGiftcodesNoTransaction( $data );
+	}
+
+	private function _redeemMoniesForGiftcodesNoTransaction( array $data )	{
+		if( empty($data['points_to_redeem']) || empty($data['code']) || empty($data['user']) || empty($data['program']) || empty($data['owner_id'] ) )	{
+			return ['errors' => sprintf('Invalid data passed to CheckoutService::_redeemMoniesForGiftcodesNoTransaction')];
+		}
+		if( empty($data['currency_id']))	{
+			$data['currency_id'] = Currency::getIdByType(config('global.default_currency'), true);
+		}
+		return Giftcode::redeemMoniesForGiftcodesNoTransaction( $data );
+	}
+
+	private function _transferGiftcodesToMerchantNoTransaction( array $data )	{
+		if( empty($data['code']) || empty($data['user']) )	{
+			return ['errors' => sprintf('Invalid data passed to CheckoutService::_transferGiftcodesToMerchantNoTransaction')];
+		}
+		if( empty($data['currency_id']))	{
+			$data['currency_id'] = Currency::getIdByType(config('global.default_currency'), true);
+		}
+		return Giftcode::transferGiftcodesToMerchantNoTransaction( $data );
+	}
 }

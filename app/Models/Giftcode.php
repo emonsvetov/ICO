@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\IdExtractor;
+use App\Models\Traits\Redeemable;
 use Carbon\Carbon;
 use DB;
 
 class Giftcode extends Model
 {
-    use HasFactory, IdExtractor;
+    use HasFactory, IdExtractor, Redeemable;
 
     protected $guarded = [];
     protected $table = 'medium_info';
@@ -25,15 +26,28 @@ class Giftcode extends Model
         return $this->belongsTo(Merchant::class);
     }
 
-	public function create($user, $merchant, $giftcode)	{
+	public function createGiftcode($user, $merchant, $giftcode)	{
+
 		if( !$user || !$merchant || !$giftcode ) return;
 		$response = [];
+
 		if( !is_object( $user ) && is_numeric( $user ))	{
-			$user = Merchant::find($user);
+			$user = User::find($user);
 		}
 		if( !is_object( $merchant ) && is_numeric( $merchant ))	{
 			$merchant = Merchant::find($merchant);
 		}
+		if( !empty($giftcode['purchase_date']))	{
+			$giftcode['purchase_date'] = Carbon::createFromFormat('d/m/Y', $giftcode['purchase_date'])->format('Y-m-d');
+		}
+
+		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
+		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
+
+		$gift_code_id = self::insertGetId(
+			$giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
+		);
+		$response['gift_code_id'] = $gift_code_id;
 		$user_account_holder_id = $user->account_holder_id;
 		$merchant_account_holder_id = $merchant->account_holder_id;
         $owner_account_holder_id = Owner::find(1)->id;
@@ -60,11 +74,10 @@ class Giftcode extends Model
 			$journal_event_id,
 			$giftcode['sku_value'],
 			1, //qty
-			$giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')], //medium_info
-			null, // medium_info_id
+			null, //medium_info
+			$gift_code_id, // medium_info_id
 			$currency_id
 		);
-
 		if( isset($result['postings']) && sizeof($result['postings']) == 2 )  {
 			$response['success'] = true;
 			$response['postings'] = $result['postings'];
@@ -89,53 +102,22 @@ class Giftcode extends Model
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
 	}
 
-	private function _read_redeemable_list_by_merchant( $merchant, $filters = [] )	{
+	public function getRedeemableListByMerchantAndSkuValue($merchant = 0, $sku_value = 0, $end_date = '2022-10-01') {
 
-		if( !is_object($merchant) && is_numeric($merchant) )	{
-			$merchant = Merchant::find($merchant);
+		$filters = [];
+		if( (float) $sku_value > 0 )	{
+			$filters['sku_value'] = (float) $sku_value;
 		}
-
-		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
-		DB::enableQueryLog();
-		$query = self::selectRaw(
-			"'{$merchant->id}' as merchant_id,
-			'{$merchant->account_holder_id}' as merchant_account_holder_id,
-			a.`account_holder_id` as top_level_merchant_id,
-			`redemption_value`,
-			`sku_value`,
-			`redemption_value` - `sku_value` as `redemption_fee`,
-			COUNT(DISTINCT medium_info.`id`) as count"
-		)
-		->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
-		->join('accounts AS a', 'postings.account_id', '=', 'a.id')
-		->groupBy('sku_value')
-		->groupBy('redemption_value')
-		->orderBy('sku_value')
-		->orderBy('redemption_value')
-		->where('a.account_holder_id', $merchant->account_holder_id)
-		->where('medium_info.hold_until', '<=', now());
-
-		if( !empty($filters['redemption_value']) )	{
-			$query = $query->where('redemption_value', '=', $filters['redemption_value']);
+		if( isValidDate($end_date) )	{
+			$filters['end_date'] = $end_date;
 		}
-
-		if( !empty($filters['sku_value']) )	{
-			$query = $query->where('sku_value', '=', $filters['sku_value']);
-		}
-
-		if( !empty($filters['end_date']) && isValidDate($filters['end_date']) )	{
-			$query = $query->where('purchase_date', '<=', $filters['end_date']);
-			$query = $query->where(function($query1) use($filters) {
-                $query1->orWhere('redemption_date', null)
-                ->orWhere('redemption_date', '>', $filters['end_date']);
-            });
-		}
-
-		return $query->get();
+		
+		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
+	
 	}
 
 	public function holdGiftcode( $params = [] ) {
-		if( empty($params['user_account_holder_id']) || empty($params['merchant_account_holder_id']) || empty($params['sku_value']) || empty($params['redemption_value']) )
+		if( empty($params['merchant_id']) || empty($params['merchant_account_holder_id']) || empty($params['sku_value']) || empty($params['redemption_value']) )
 		{
 			return ['errors' => ['Invalid data passed']];
 		}
@@ -147,72 +129,102 @@ class Giftcode extends Model
 		return self::_hold_giftcode($params);
 	}
 
+	public function redeemPointsForGiftcodesNoTransaction( array $data)	{
+		return self::_redeem_points_for_giftcodes_no_transaction( $data );
+	}
+
+	public function redeemMoniesForGiftcodesNoTransaction( array $data)	{
+		return self::_redeem_monies_for_giftcodes_no_transaction($data);
+	}	
+	
+	public function transferGiftcodesToMerchantNoTransaction( array $data)	{
+		return self::_transfer_giftcodes_to_merchant_no_transaction($data);
+	}
+
+	public function handlePremiumDiff( array $params )	{
+		if( empty($params['code']) || empty($params['journal_event_id']) )	{
+			return ['errors' => sprintf('Invalid data passed to Giftcode::handlePremiumDiff')];
+		}
+		self::_handle_premium_diff( $params );
+	}
+
+	private function _get_next_available_giftcode($merchant_account_holder_id, $sku_value, $redemption_value
+	)	
+	{
+		$query = self::select([
+			'medium_info.code',
+			'medium_info.id',
+			'medium_info.sku_value',
+			'medium_info.hold_until',
+			'medium_info.pin',
+			'posts.account_id',
+			'm.name',
+		])
+		->join('postings AS posts', 'posts.medium_info_id', '=', 'medium_info.id')
+		->join('accounts AS a', 'posts.account_id', '=', 'a.id')
+		->join('merchants AS m', 'm.account_holder_id', '=', 'a.account_holder_id')
+		->join('medium_types AS mt', 'mt.id', '=', 'a.medium_type_id')
+		->where('mt.name', 'Gift Codes')
+		->where('m.account_holder_id', $merchant_account_holder_id)
+		->where('medium_info.redemption_value', $redemption_value)
+		->where('medium_info.sku_value', $sku_value)
+		->where('medium_info.hold_until', '<=', now())
+		->orderBy('medium_info.id')
+		->limit(1)
+		;
+		return $query->first();
+	}
+
 	private function _hold_giftcode( $params ) {
 		
 		extract($params);
 
-		return $params;
+		$giftcode = self::_get_next_available_giftcode(
+			$merchant_account_holder_id, 
+			$sku_value, 
+			$redemption_value
+		);
 
-		$sql = "CALL sp_journal_hold_gift_code(
-            {$merchant_id},
-            {$sku_value},
-            {$redemption_value},
-            {$currency_id},
-            @result,@code,@gift_code_id);";
-
-        //$debug['sql'] = $sql;
-
-		try {
-			$result = DB::statement ( DB::raw($sql) );
-		} catch (Exception $e) {
-			throw new RuntimeException ( 'SQL statement to query CALL sp_journal_hold_gift_code', 500 );
+		if( !$giftcode )	{
+			return ['errors' => sprintf('No available GiftCodes for merchant#:%d, sku_value:%s, redemption_value:%s', $merchant_id, $sku_value, $redemption_value)];
 		}
 
-		$sql = "SELECT @result as result, @code as code, @gift_code_id as gift_code_id";
-		try {
-			$result = DB::select ( DB::raw($sql) );
-			//$debug['$result'] = $result;
-		} catch (Exception $e) {
-			throw new RuntimeException ( 'SQL statement to query GiftCode:_hold_giftcode failed', 500 );
+		//Reserve Giftcode
+
+		$reserved = $giftcode->update([
+			'hold_until' => date('Y-m-d H:i:s', strtotime('+5 minutes'))
+		]);
+
+		if( !$reserved )	{
+			return ['errors' => sprintf('Could not reserve code for merchant#:%d, sku_value:%s, redemption_value:%s', $merchant_id, $sku_value, $redemption_value)];
 		}
 
-		$row = $result && count($result) ? current($result) : null;
+		$code = self::_read_by_merchant_and_medium_info_id ( $merchant_account_holder_id, $giftcode->id);
 
-		//pr($row);
-
-		//$debug['$row'] = $row;
-
-		if (!$row OR strtolower ( $row->result ) != 'success') {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		if( !$code )	{
+			return ['errors' => sprintf('Could not read code for merchant#:%d, sku_value:%s, redemption_value:%s', $merchant_d, $sku_value, $redemption_value)];
 		}
 
-		$code = self::_read_by_merchant_and_medium_info_id ( $merchant_id, ( int ) $row->gift_code_id, $debug);
-
-		$debug['$code_1'][] = $code;
-
-		// query merchant information based on the returned merchant_account_holder_id
-		// put into merchant object
-		if( count($merchants) > 0 && isset($merchants[$merchant_id]))	{
-			$merchant = $merchants[$merchant_id];
-		}	else {
-			$merchant = Merchant::read ( ( int ) $merchant_id );
-		}
-
-		$debug['$merchant'][] = $merchant;
-
-		// add merchant information to the object
-		foreach ( $merchant as $key => $value ) {
-			if($key=='id') continue; //skip so it is not overwritten by merchant id
-			$code->$key = $value;
-		}
-		// format the code object with merchant information
-		$code = self::_format_result ( array (
-				$code 
-		) );
-		$code = reset ( $code );
-		$debug['$code_2'][] = $code;
-		// return the gift code information
 		return $code;
+	}
+
+	private function _read_by_merchant_and_medium_info_id($merchant_account_holder_id = 0, $medium_info_id = 0) {
+		$query = Posting::select([
+			'medium_info.*',
+			'postings.created_at'
+		])
+		->join('medium_info', 'medium_info.id', '=', 'postings.medium_info_id')
+		->join('accounts', 'accounts.id', '=', 'postings.account_id')
+		->join('merchants', 'merchants.account_holder_id', '=', 'accounts.account_holder_id')
+		->join('medium_types', 'medium_types.id', '=', 'accounts.medium_type_id')
+		->where('medium_info.id', $medium_info_id)
+		->where('medium_types.id', 1)
+		->where('merchants.account_holder_id', $merchant_account_holder_id)
+		->orderBy('medium_info.purchase_date')
+		->orderBy('medium_info.id')
+		->groupBy('medium_info.id')
+		;
+		return $query->first();
 	}
 
 	private static function _run_gift_code_callback($callback = ExternalCallbackObject, $program_id, $user_id, $merchant_id, $data = array()) {
