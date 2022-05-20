@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\PermissionRegistrar;
-use DB;
+use Illuminate\Support\Facades\DB;
 
 class UpdatePrimaryIndexInModelHasRolesTable extends Migration
 {
