@@ -31,3 +31,18 @@ function generate_unique_id($char = 12)
     $rand = strtoupper(substr(uniqid(sha1(time())),0,$char));
     return date("ymds") .'-'. $rand;
 }
+
+if(!function_exists('get_merchant_by_id'))  {
+    function get_merchant_by_id($merchants, $merchant_id)   {
+        foreach($merchants as $merchant)   {
+            if($merchant->id == $merchant_id) return $merchant;
+        }
+    }
+}
+if(!function_exists('isValidDate'))  {
+    function isValidDate($date, $format = 'Y-m-d')
+    {
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) === $date;
+    }
+}

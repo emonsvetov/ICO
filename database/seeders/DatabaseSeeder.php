@@ -18,6 +18,7 @@ use Database\Seeders\UserSeeder;
 use Database\Seeders\OrganizationSeeder;
 use Database\Seeders\OwnerSeeder;
 use Database\Seeders\AccountHolderPatcher;
+use Database\Seeders\CallbackTypeSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -42,6 +43,7 @@ class DatabaseSeeder extends Seeder
             OrganizationSeeder::class,
             OwnerSeeder::class,
             // AccountHolderPatcher::class,
+            CallbackTypeSeeder::class,
         ]);
     }
 }
