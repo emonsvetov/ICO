@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\Treeable;
 use App\Models\AccountHolder;
 use App\Models\FinanceType;
 use App\Models\MediumType;
@@ -14,6 +15,7 @@ class Merchant extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use Treeable;
   
     protected $guarded = [];
 
@@ -79,5 +81,9 @@ class Merchant extends Model
         // }
 
         return [];
+    }
+
+    public function get_top_level_merchant( $merchant )    {
+        return self::getRoot( $merchant );
     }
 }

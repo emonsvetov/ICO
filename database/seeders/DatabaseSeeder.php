@@ -19,6 +19,8 @@ use Database\Seeders\OrganizationSeeder;
 use Database\Seeders\OwnerSeeder;
 use Database\Seeders\AccountHolderPatcher;
 use Database\Seeders\CallbackTypeSeeder;
+use Database\Seeders\CountrySeeder;
+use Database\Seeders\StateSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -44,6 +46,8 @@ class DatabaseSeeder extends Seeder
             OwnerSeeder::class,
             // AccountHolderPatcher::class,
             CallbackTypeSeeder::class,
+            CountrySeeder::class,
+            StateSeeder::class,
         ]);
     }
 }

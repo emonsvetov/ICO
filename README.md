@@ -79,6 +79,7 @@ Add common file uploads to .gitignore file. For example:
 
 `php artisan migrate`
 
+`php artisan db:seed --class=OwnerSeeder`
 `php artisan db:seed --class=AccountHolderPatcher`
 `php artisan db:seed --class=CallbackTypeSeeder`
 
