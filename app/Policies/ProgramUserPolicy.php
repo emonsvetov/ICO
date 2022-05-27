@@ -12,38 +12,73 @@ class ProgramUserPolicy
 {
     use HandlesAuthorization;
 
-
+    private function __authCheck($authUser, $organization, $program, $user = null): bool
+    {
+        if( $organization->id != $authUser->organization_id ) return false;
+        if( $organization->id != $program->organization_id) return false;
+        if( $user && $program->organization_id != $user->organization_id) return false;
+        return true;
+    }
     /**
      * Determine whether the user can view any models.
      *
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user, Program $program)
+    public function viewAny(User $user, Organization $organization, Program $program)
     {
+        if ( !$this->__authCheck($user, $organization, $program ) )
+        {
+            return false;
+        }
+
         return $user->isManagerToProgram( $program ) || $user->can('program-user-list');
     }
-  
-    public function add(User $user, Program $program)
+
+    public function view(User $authUser, Organization $organization, Program $program, User $user)
     {
-        return $user->can('program-user-add');
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+        return $authUser->isManagerToProgram($program) || $authUser->isParticipantToProgram($program) || $authUser->can('program-user-view');
     }
 
-    public function update(User $user, Program $program)
+    public function add(User $user, Organization $organization, Program $program)
     {
-        return $user->can('program-user-update');
+        if ( !$this->__authCheck($user, $organization, $program ) )
+        {
+            return false;
+        }
+        return $user->isManagerToProgram($program) || $user->can('program-user-add');
     }
 
-    public function remove(User $authUser, Program $program, User $user)
+    public function update(User $authUser, Organization $organization, Program $program, User $user)
     {
-        return $authUser->can('program-user-remove');
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+        return $authUser->isManagerToProgram($program) || $authUser->id == $user->id || $authUser->can('program-user-update');
+    }
+
+    public function remove(User $authUser, Program $program)
+    {
+        if ( !$this->__authCheck($user, $organization, $program ) )
+        {
+            return false;
+        }
+
+        return $authUser->isManagerToProgram($program) || $authUser->can('program-user-remove');
     }
 
     public function readBalance(User $authUser, Organization $organization, Program $program, User $user)
     {
-        if( $authUser->organization_id !== $organization->id ) return false;
-        if( $program->organization_id !== $organization->id ) return false;
-        if( $authUser->organization_id !== $user->organization_id ) return false;
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+
         if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;
         return $user->can('program-user-readbalance');
     }

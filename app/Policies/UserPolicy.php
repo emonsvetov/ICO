@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Program;
+use App\Models\Organization;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class UserPolicy
