@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Traits\WithOrganizationScope;
 use App\Models\AccountHolder;
 use App\Models\FinanceType;
 use App\Models\MediumType;
@@ -14,6 +15,7 @@ class Program extends Model
 {
     use HasFactory;
     use SoftDeletes;
+    use WithOrganizationScope;
 
     protected $guarded = [];
 

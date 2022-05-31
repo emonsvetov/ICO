@@ -58,10 +58,11 @@ class ProgramController extends Controller
                                   ->with(['children' => function($query){
                                       return $query->select('id','name','program_id');
                                   }])
+                                  ->withOrganization($organization)
                                   ->get();
             }
             else {
-                $programs = $query->with('children')
+                $programs = $query->with('children')->withOrganization($organization)
                 ->paginate(request()->get('limit', 10));
             }
         }
