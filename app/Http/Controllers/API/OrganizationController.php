@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Events\OrganizationCreated;
 
 use App\Http\Requests\OrganizationRequest;
 use App\Models\Organization;
@@ -34,6 +35,8 @@ class OrganizationController extends Controller
         {
             return response(['errors' => 'Organization Creation failed'], 422);
         }
+
+        event( new OrganizationCreated($organization) );
         
         return response([ 'organization' => $organization ]);
     }

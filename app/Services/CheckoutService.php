@@ -542,6 +542,7 @@ class CheckoutService
 				foreach ( $alerts_to_send as $alert ) {
 					// send all alerts collected before
 					$merchant = ($_merchant = get_merchant_by_id($merchants, $alert['merchant_id'])) ? $_merchant : Merchant::find($alert['merchant_id']);
+					
 					self::_merchant_denomination_alert ( config('global.default_email'), $merchant, $alert['code_count'], $alert['percentage_alert_value'], $alert['code_value'] );
 				}
 			}

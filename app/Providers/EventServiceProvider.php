@@ -18,6 +18,24 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        'App\Events\OrganizationCreated' => [
+            'App\Listeners\NewOrganizationNotification',
+        ],
+        'App\Events\UserCreated' => [
+            'App\Listeners\NewUserNotification',
+        ],
+        'App\Events\TangoOrderCreated' => [
+            'App\Listeners\NewTangoOrderNotification',
+        ],
+        'App\Events\SingleGiftcodeRedeemed' => [
+            'App\Listeners\SingleGiftcodeRedeemedNotification',
+        ],
+        'App\Events\MultipleGiftcodesRedeemed' => [
+            'App\Listeners\MultipleGiftcodesRedeemedNotification',
+        ],
+        'App\Events\MerchantDenominationAlert' => [
+            'App\Listeners\MerchantDenominationAlertNotification',
+        ],
     ];
 
     /**
