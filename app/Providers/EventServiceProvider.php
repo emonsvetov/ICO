@@ -18,24 +18,27 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+        'App\Events\ProgramCreated' => [
+            'App\Listeners\NewOrganizationListner',
+        ],
         'App\Events\OrganizationCreated' => [
-            'App\Listeners\NewOrganizationNotification',
+            'App\Listeners\NewOrganizationListner',
         ],
-        'App\Events\UserCreated' => [
-            'App\Listeners\NewUserNotification',
-        ],
-        'App\Events\TangoOrderCreated' => [
-            'App\Listeners\NewTangoOrderNotification',
-        ],
-        'App\Events\SingleGiftcodeRedeemed' => [
-            'App\Listeners\SingleGiftcodeRedeemedNotification',
-        ],
-        'App\Events\MultipleGiftcodesRedeemed' => [
-            'App\Listeners\MultipleGiftcodesRedeemedNotification',
-        ],
-        'App\Events\MerchantDenominationAlert' => [
-            'App\Listeners\MerchantDenominationAlertNotification',
-        ],
+        // 'App\Events\UserCreated' => [
+        //     'App\Listeners\NewUserListner',
+        // ],
+        // 'App\Events\TangoOrderCreated' => [
+        //     'App\Listeners\NewTangoOrderListner',
+        // ],
+        // 'App\Events\SingleGiftcodeRedeemed' => [
+        //     'App\Listeners\SingleGiftcodeRedeemedListner',
+        // ],
+        // 'App\Events\MultipleGiftcodesRedeemed' => [
+        //     'App\Listeners\MultipleGiftcodesRedeemedListner',
+        // ],
+        // 'App\Events\MerchantDenominationAlert' => [
+        //     'App\Listeners\MerchantDenominationAlertListner',
+        // ],
     ];
 
     /**
@@ -48,9 +51,8 @@ class EventServiceProvider extends ServiceProvider
         //
     }
 
-
     public function shouldDiscoverEvents()
     {
-        return true;
+        return false;
     }
 }
