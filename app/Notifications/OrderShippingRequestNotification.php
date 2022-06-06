@@ -7,19 +7,19 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewOrganizationNotification extends Notification
+class OrderShippingRequestNotification extends Notification
 {
     // use Queueable;
-    private $organization;
+    private $shippingRequest;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($organization)
+    public function __construct($shippingRequest)
     {
-        $this->organization = $organization;
+        $this->shippingRequest = $shippingRequest;
     }
 
     /**
@@ -30,7 +30,7 @@ class NewOrganizationNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['mail'];
+        return ['database', 'mail'];
     }
 
     /**
@@ -42,7 +42,7 @@ class NewOrganizationNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-                    ->line(sprintf('A new organization "%s" was added to your system', $this->organization->name))
+                    ->line(sprintf('A new order shipping request for order "#%s" was created', $this->physicalOrder->id))
                     ->action('Go to App', url('/'))
                     ->line('Thank you for using our application!');
     }
@@ -55,6 +55,6 @@ class NewOrganizationNotification extends Notification
      */
     public function toArray($notifiable)
     {
-        return $this->organization->toArray();
+        return $this->shippingRequest->toArray();
     }
 }

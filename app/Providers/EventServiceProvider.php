@@ -17,28 +17,7 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
-        ],
-        'App\Events\ProgramCreated' => [
-            'App\Listeners\NewOrganizationListner',
-        ],
-        'App\Events\OrganizationCreated' => [
-            'App\Listeners\NewOrganizationListner',
-        ],
-        // 'App\Events\UserCreated' => [
-        //     'App\Listeners\NewUserListner',
-        // ],
-        // 'App\Events\TangoOrderCreated' => [
-        //     'App\Listeners\NewTangoOrderListner',
-        // ],
-        // 'App\Events\SingleGiftcodeRedeemed' => [
-        //     'App\Listeners\SingleGiftcodeRedeemedListner',
-        // ],
-        // 'App\Events\MultipleGiftcodesRedeemed' => [
-        //     'App\Listeners\MultipleGiftcodesRedeemedListner',
-        // ],
-        // 'App\Events\MerchantDenominationAlert' => [
-        //     'App\Listeners\MerchantDenominationAlertListner',
-        // ],
+        ]
     ];
 
     /**
@@ -53,6 +32,6 @@ class EventServiceProvider extends ServiceProvider
 
     public function shouldDiscoverEvents()
     {
-        return false;
+        return true;
     }
 }

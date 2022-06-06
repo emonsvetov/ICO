@@ -8,6 +8,7 @@ use App\Events\OrganizationCreated;
 
 use App\Http\Requests\OrganizationRequest;
 use App\Models\Organization;
+use App\Models\User;
 
 class OrganizationController extends Controller
 {
@@ -28,7 +29,7 @@ class OrganizationController extends Controller
 
     public function store(OrganizationRequest $request)
     {
-        
+
         $organization = Organization::create( $request->validated() );
 
         if ( !$organization )

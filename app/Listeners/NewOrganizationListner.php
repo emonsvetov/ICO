@@ -2,8 +2,9 @@
 
 namespace App\Listeners;
 
-use App\Mail\FunnyEmail;
 use App\Events\OrganizationCreated;
+use App\Services\UserService;
+
 use App\Notifications\NewOrganizationNotification;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -29,6 +30,7 @@ class NewOrganizationListner
      */
     public function handle(OrganizationCreated $event)
     {
-        Notification::send($event->organization, new NewOrganizationNotification( $event->organization ));
+        $superAdmins = (new UserService)->getSuperAdmins();
+        Notification::send($superAdmins, new NewOrganizationNotification( $event->organization ));
     }
 }

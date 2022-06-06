@@ -7,19 +7,19 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewOrganizationNotification extends Notification
+class MerchantDenominationAlertNotification extends Notification
 {
     // use Queueable;
-    private $organization;
+    public $data;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($organization)
+    public function __construct($data)
     {
-        $this->organization = $organization;
+        $this->data = $data;
     }
 
     /**
@@ -30,7 +30,7 @@ class NewOrganizationNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['mail'];
+        return ['database', 'mail'];
     }
 
     /**
@@ -42,9 +42,13 @@ class NewOrganizationNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-                    ->line(sprintf('A new organization "%s" was added to your system', $this->organization->name))
-                    ->action('Go to App', url('/'))
-                    ->line('Thank you for using our application!');
+            ->line(sprintf('A new denomination alert was sent', $this->data->id))
+            ->line(sprintf('Merchant: %s', $this->data->merchant->name))
+            ->line(sprintf('Code count: %d', $this->data->code_count))
+            ->line(sprintf('code percentage: %d', $this->data->code_percentage))
+            ->line(sprintf('redemption_value: %f', $this->data->redemption_value))
+            ->action('Go to the App', url('/'))
+            ->line('Thank you!');
     }
 
     /**
@@ -55,6 +59,6 @@ class NewOrganizationNotification extends Notification
      */
     public function toArray($notifiable)
     {
-        return $this->organization->toArray();
+        return $this->data->toArray();
     }
 }

@@ -1,9 +1,10 @@
 <?php
 namespace App\Services;
 
+use App\Events\MerchantDenominationAlert;
+use App\Events\OrderShippingRequest;
+use App\Events\TangoOrderCreated;
 
-use App\Mail\TangoOrder as TangoOrderAlert;
-use App\Mail\MerchantDenominationAlert;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Models\Traits\IdExtractor;
@@ -356,7 +357,8 @@ class CheckoutService
 					$tango_order->user_id = $user->id;
 					$tango_order->merchant_id = 9;
 					$tango_order->external_id = null;
-					TangoOrder::create ((array)$tango_order);
+					$tangoOrderId = TangoOrder::create ((array)$tango_order);
+					event( new TangoOrderCreated( $tangoOrderId ) );
                 }
 			}
 		}
@@ -499,10 +501,9 @@ class CheckoutService
 			];
 			
 			try {
-				Mail::to( $mail_to )
-				->send(new TangoOrderAlert($data));
+				event( new OrderShippingRequest($data, $order_id) );
 			}   catch(Exception $e) {
-				$response['errors'][] = 'Error sending TangoOrder email in with error:' . $e->getMessage() . ' in line ' . $e->getLine();
+				$response['errors'][] = 'Error sending OrderShippingRequest notification with error:' . $e->getMessage() . ' in line ' . $e->getLine();
 				return $response;
 			}
 		}
@@ -590,10 +591,10 @@ class CheckoutService
 		];
 		
 		try {
-            return Mail::to( $email )
-            ->send(new MerchantDenominationAlert($data));
+			event( new MerchantDenominationAlert($data) );
+			return true;
         }   catch(Exception $e) {
-            return ['errors' => 'Error sending referral email in with error:' . $e->getMessage() . ' in line ' . $e->getLine()];
+            return ['errors' => 'Error sending MerchantDenominationAlert with error:' . $e->getMessage() . ' in line ' . $e->getLine()];
         }
 	}
 }

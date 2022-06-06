@@ -2,9 +2,11 @@
 
 namespace App\Listeners;
 
-use App\Events\TangoOrderCreated;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+
+use App\Events\TangoOrderCreated;
+use App\Notifications\NewTangoOrderNotification;
 
 class NewTangoOrderListner
 {
@@ -26,6 +28,6 @@ class NewTangoOrderListner
      */
     public function handle(TangoOrderCreated $event)
     {
-        //
+        Notification::send($event->tangoOrder, new NewTangoOrderNotification( $event->tangoOrder ));
     }
 }
