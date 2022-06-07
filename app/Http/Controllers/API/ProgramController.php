@@ -15,60 +15,53 @@ class ProgramController extends Controller
 {
     public function index( Organization $organization )
     {
-        if ( $organization )
+        $status = request()->get('status');
+        $keyword = request()->get('keyword');
+        $sortby = request()->get('sortby', 'id');
+        $direction = request()->get('direction', 'asc');
+
+        $where = [];
+
+        if( $status )
         {
-            $status = request()->get('status');
-            $keyword = request()->get('keyword');
-            $sortby = request()->get('sortby', 'id');
-            $direction = request()->get('direction', 'asc');
+            $where[] = ['status', $status];
+        }
 
-            $where[] = ['organization_id', $organization->id];
-
-            if( $status )
-            {
-                $where[] = ['status', $status];
-            }
-
-            if( $sortby == "name" )
-            {
-                $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-                $orderByRaw = "{$sortby} {$collation} {$direction}";
-            }
-            else
-            {
-                $orderByRaw = "{$sortby} {$direction}";
-            }
-
-            $query = Program::whereNull('program_id')
-                        ->where($where);
-
-            if( $keyword )
-            {
-                $query = $query->where(function($query1) use($keyword) {
-                    $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                    ->orWhere('name', 'LIKE', "%{$keyword}%");
-                });
-            }
-
-            $query = $query->orderByRaw($orderByRaw);
-
-            if ( request()->has('minimal') )
-            {
-                $programs = $query->select('id', 'name')
-                                  ->with(['children' => function($query){
-                                      return $query->select('id','name','program_id');
-                                  }])
-                                  ->withOrganization($organization)
-                                  ->get();
-            }
-            else {
-                $programs = $query->with('children')->withOrganization($organization)
-                ->paginate(request()->get('limit', 10));
-            }
+        if( $sortby == "name" )
+        {
+            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
+            $orderByRaw = "{$sortby} {$collation} {$direction}";
         }
         else
         {
-            return response(['errors' => 'Invalid Organization'], 422);
+            $orderByRaw = "{$sortby} {$direction}";
+        }
+
+        $query = Program::whereNull('program_id')
+                    ->where($where);
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('name', 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        $query = $query->orderByRaw($orderByRaw);
+
+        if ( request()->has('minimal') )
+        {
+            $programs = $query->select('id', 'name')
+                                ->with(['children' => function($query){
+                                    return $query->select('id','name','program_id');
+                                }])
+                                ->withOrganization($organization)
+                                ->get();
+        }
+        else {
+            $programs = $query->with('children')->withOrganization($organization)
+            ->paginate(request()->get('limit', 10));
         }
 
 

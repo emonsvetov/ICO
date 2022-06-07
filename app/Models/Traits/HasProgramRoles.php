@@ -8,19 +8,19 @@ use App\Models\User;
 trait HasProgramRoles
 {
     private $programRoles = null;
-    private $isProgramManager = false;
+    private $isManager = false;
     private $isParticipant = false;
     protected function getArrayableAppends()
     {
-        $this->appends = array_unique(array_merge($this->appends, ['isProgramManager', 'isParticipant']));
+        $this->appends = array_unique(array_merge($this->appends, ['isManager', 'isParticipant']));
         return parent::getArrayableAppends();
     }
-    protected function getIsProgramManagerAttribute()
+    protected function getIsManagerAttribute()
     {
         $programRoles = $this->getProgramRoles();
         if( $programRoles ) {
             foreach( $programRoles as $programRole )    {
-                if( $programRole->name == config('roles.program_manager') ) return true;
+                if( $programRole->name == config('roles.manager') ) return true;
             }
         }
     }
@@ -107,16 +107,16 @@ trait HasProgramRoles
         }
         return false;
     }
-    //Deprecated method, use "isProgramManager" instead
+    //Deprecated method, use "isManager" instead
     public function isManagerToProgram( $program ) {
-        return $this->isProgramManager( $program );
+        return $this->isManager( $program );
     }
     //Deprecated method, use "isProgramParticipant" instead
     public function isParticipantToProgram( $program ) {
         return $this->isProgramParticipant( $program );
     }
-    public function isProgramManager( $program ) {
-        return $this->hasRoleInProgram( config('roles.program_manager'), $program);
+    public function isManager( $program ) {
+        return $this->hasRoleInProgram( config('roles.manager'), $program);
     }
     public function isProgramParticipant( $program ) {
         return $this->hasRoleInProgram( config('roles.participant'), $program);
@@ -124,8 +124,8 @@ trait HasProgramRoles
     public function canReadProgram( $program, $withPermission = '' )    {
         if($this->hasAnyRoleInProgram([
             config('roles.participant'),
-            config('roles.program_manager'),
-            config('roles.program_admin')
+            config('roles.manager'),
+            config('roles.admin')
         ], $program ))   {
             return true;
         }
@@ -134,8 +134,8 @@ trait HasProgramRoles
     }
     public function canWriteProgram( $program, $withPermission = '' )    {
         if($this->hasAnyRoleInProgram([
-            config('roles.program_manager'),
-            config('roles.program_admin')
+            config('roles.manager'),
+            config('roles.admin')
         ], $program ))   {
             return true;
         }

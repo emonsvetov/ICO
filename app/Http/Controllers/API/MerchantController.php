@@ -7,6 +7,7 @@ use App\Http\Requests\MerchantStatusRequest;
 use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\MerchantNode;
 use App\Models\Node;
@@ -19,7 +20,7 @@ class MerchantController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Organization $organization)
     {
 
         $keyword = request()->get('keyword');

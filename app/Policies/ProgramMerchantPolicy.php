@@ -16,8 +16,8 @@ class ProgramMerchantPolicy
     private function __preAuthCheck($user, $organization, $program = null, $merchant = null): bool
     {
         if( $organization->id != $user->organization_id ) return false;
-        if( $organization->id != $program->organization_id) return false;
-        if( !$program->merchants->contains( $merchant )) return false;
+        if( $program && $organization->id != $program->organization_id) return false;
+        if( $program && $merchant && !$program->merchants->contains( $merchant )) return false;
         return true;
     }
 
@@ -29,10 +29,11 @@ class ProgramMerchantPolicy
      */
     public function viewAny(User $user, Organization $organization, Program $program)
     {
-        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        if ( !$this->__preAuthCheck($user, $organization, $program) )
         {
             return false;
         }
+        if( $user->isAdmin() ) return true;
         return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-list');
     }
 
@@ -64,19 +65,21 @@ class ProgramMerchantPolicy
   
     public function add(User $user, Organization $organization, Program $program)
     {
-        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        if ( !$this->__preAuthCheck($user, $organization, $program) )
         {
             return false;
         }
+        if( $user->isAdmin() ) return true;
         return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-add');
     }
 
     public function remove(User $user, Organization $organization, Program $program, Merchant $merchant)
     {
-        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        if ( !$this->__preAuthCheck($user, $organization, $program, $merchant) )
         {
             return false;
         }
+        if( $user->isAdmin() ) return true;
         return $user->isManagerToProgram($program) || $user->isParticipantToProgram($program) || $user->can('program-merchant-remove');
     }
 }

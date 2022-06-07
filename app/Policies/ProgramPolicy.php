@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -11,50 +12,78 @@ class ProgramPolicy
 {
     use HandlesAuthorization;
 
+    private function __preAuthCheck($authUser, $organization, $program = null)   {
+        if( $authUser->organization_id != $organization->id) return false;
+        if( $program && $program->organization_id != $organization->id) return false;
+        return true;
+    }
+
     /**
      * Determine whether the user can view any models.
      *
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Organization $organization)
     {
+        if( !$this->__preAuthCheck($user,$organization) ) return false;
+        if( $user->isAdmin() )
+        {
+            return true;
+        }
         return $user->can('program-list');
     }
 
-    public function view(User $user, Program $program)
+    public function view(User $user, Organization $organization, Program $program)
     {
-        if( $user->organization_id !== $program->organization_id ) return false;
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         // if( $user->hasRole( config('global.program_manager_role_name') ))   {
         //     return true; //is global "Program Manager" role possible ?? If it is this check can be useful!
         // }
-        if( $user->isManagerToProgram( $program->id ) )
+        if( $user->isManagerToProgram( $program->id ) || $user->isAdmin() )
         {
             return true;
         }
         return $user->can('program-view');
     }
 
-    public function create(User $user)
+    public function create(User $user, Organization $organization)
     {
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
+        if( $user->isAdmin() )
+        {
+            return true;
+        }
         return $user->can('program-create');
     }
 
-    public function update(User $user, Program $program)
+    public function update(User $user, Organization $organization, Program $program)
     {
-        if( $user->organization_id !== $program->organization_id ) return false;
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() )
+        {
+            return true;
+        }
         return $user->can('program-update');
     }
 
-    public function delete(User $user, Program $program)
+    public function delete(User $user, Organization $organization, Program $program)
     {
-        if( $user->organization_id !== $program->organization_id ) return false;
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() )
+        {
+            return true;
+        }
         return $user->can('program-delete');
     }
 
-    public function move(User $user, Program $program)
+    public function move(User $user, Organization $organization, Program $program)
     {
-        if( $user->organization_id !== $program->organization_id ) return false;
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() )
+        {
+            return true;
+        }
         return $user->can('program-move');
     }
 }
