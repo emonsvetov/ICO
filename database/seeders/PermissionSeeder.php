@@ -71,6 +71,7 @@ class PermissionSeeder extends Seeder
             'program-participant-list',
             'program-user-list',
             'program-user-add',
+            'program-user-view',
             'program-user-update',
             'program-user-remove',
             'program-user-readbalance',

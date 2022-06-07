@@ -13,7 +13,7 @@ class MediumType extends Model
         $id = self::where('name', $name)->first()->id;
         if( !$id && $insert)    {
             $id = self::insertGetId([
-                'name'=>$name
+                'name'=>$namerg
             ]);
         }
         return $id;

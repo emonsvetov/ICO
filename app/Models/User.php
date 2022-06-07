@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\Traits\WithOrganizationScope;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Traits\HasProgramRoles;
@@ -20,9 +21,11 @@ use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope;
 
     public $timestamps = true;
+
+    private $isAdministrator = false; //user is system administrator
 
     /**
      * The attributes that are mass assignable.
@@ -86,10 +89,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['name'];
+    protected $appends = ['name', 'isAdministrator'];
     protected function getNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
+    }
+    protected function getIsAdministratorAttribute()
+    {
+        return $this->hasRole(config('roles.super_admin'));
     }
     protected function setPasswordAttribute($password)
     {   

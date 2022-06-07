@@ -9,4 +9,8 @@ return [
     'account_type_points_awarded' => 'Points Awarded',
     'account_type_monies_awarded' => 'Monies Awarded',
     'medium_type_gift_codes' => 1,
+    'state_context_orders' => 'Orders',
+    'state_orders_pending' => 'Pending',
+    'email_noreply' => 'noreply@incentco.com',
+    'default_email' => 'noreply@incentco.com',
 ];

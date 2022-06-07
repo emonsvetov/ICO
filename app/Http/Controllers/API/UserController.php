@@ -25,7 +25,7 @@ class UserController extends Controller
         $direction = request()->get('direction', 'asc');
         $limit = request()->get('limit', 10);
 
-        $where[] = ['organization_id', $organization->id];
+        $where = [];
 
         // if( $keyword)
         // {
@@ -33,7 +33,8 @@ class UserController extends Controller
             
         //     //more search criteria here
         // }
-        $query = User::where($where);
+        // return $organization;
+        $query = User::where($where)->withOrganization($organization);
 
         if( $keyword )
         {
@@ -77,6 +78,9 @@ class UserController extends Controller
             $validated = $request->validated();
             $validated['organization_id'] = $organization->id;
             $user = User::createAccount( $validated );
+            if( !empty($validated['roles']))   {
+                $user->syncRoles( [$validated['roles']] );
+            }
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\UserRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\Program;
@@ -94,6 +95,11 @@ class ProgramUserController extends Controller
         return response([ 'user' => $user ]);
     }
 
+    public function show( Organization $organization, Program $program, User $user ): UserResource
+    {
+        return $this->UserResponse($user);
+    }
+
     public function update( UserRequest $request, Organization $organization, Program $program, User $user)
     {
         if ( $organization->id != $program->organization_id )
@@ -138,5 +144,10 @@ class ProgramUserController extends Controller
             'amount' => $amount_balance,
             'factor' => $factor_valuation
         ]);
+    }
+
+    protected function userResponse(User $user): UserResource
+    {
+        return new UserResource($user->load('roles'));
     }
 }

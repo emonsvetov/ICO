@@ -40,7 +40,7 @@ class MerchantController extends Controller
             $orderByRaw = "{$sortby} {$direction}";
         }
 
-        $query = Merchant::whereNull('parent_id')->where( $where );
+        $query = Merchant::where( $where );
 
         if( $keyword )
         {
