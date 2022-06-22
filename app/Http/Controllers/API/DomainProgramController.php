@@ -52,7 +52,7 @@ class DomainProgramController extends Controller
         }
 
         $query = Program::whereIn('id', $programIds)
-                    ->whereNull('program_id')
+                    ->whereNull('parent_id')
                     ->where($where);
 
         if( $keyword )

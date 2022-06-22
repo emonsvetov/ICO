@@ -12,10 +12,12 @@ class UserProgramPolicy
 {
     use HandlesAuthorization;
 
-    private function __preAuthCheck($user, $organization, $model = null): bool
+    private function __preAuthCheck($authUser, $organization, $user = null, $program = null): bool
     {
-        if( $organization->id != $user->organization_id ) return false;
-        if( $model && $organization->id != $model->organization_id) return false;
+        if( $organization->id != $authUser->organization_id ) return false;
+        if( $user && $organization->id != $user->organization_id) return false;
+        if( $program && $organization->id != $program->organization_id) return false;
+        if( $user && $program && $user->organization_id != $program->organization_id) return false;
         return true;
     }
 
@@ -25,28 +27,31 @@ class UserProgramPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user, Organization $organization)
+    public function viewAny(User $authUser, Organization $organization)
     {
-        if ( !$this->__preAuthCheck($user, $organization) )
-        {
-            return false;
-        }
-        if( $user->isAdmin() ) return true;
+        if(!$this->__preAuthCheck($authUser, $organization)) return false;
+        if($authUser->isAdmin()) return true;
         return $user->can('user-program-list');
     }
   
-    public function add(User $authUser, User $user)
+    public function add(User $authUser, Organization $organization, User $user)
     {
+        if(!$this->__preAuthCheck($authUser, $organization, $user)) return false;
+        if($authUser->isAdmin()) return true;
         return $authUser->can('user-program-add');
     }
 
-    public function remove(User $authUser, Program $program, User $user)
+    public function remove(User $authUser, Organization $organization, User $user, Program $program)
     {
+        if(!$this->__preAuthCheck($authUser, $organization, $user, $program)) return false;
+        if($authUser->isAdmin()) return true;
         return $authUser->can('user-program-remove');
     }
 
-    public function getRoles(User $authUser, User $user,  Program $program)
+    public function getRoles(User $authUser, Organization $organization, User $user,  Program $program)
     {
+        if(!$this->__preAuthCheck($authUser, $organization, $user, $program)) return false;
+        if($authUser->isAdmin()) return true;
         return $authUser->can('user-program-roles');
     }
 }

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\ProgramMoveRequest;
 use App\Http\Requests\ProgramRequest;
 use App\Http\Controllers\Controller;
+use App\Services\ProgramService;
 use App\Events\ProgramCreated;
 use App\Models\Organization;
 use Illuminate\Http\Request;
@@ -13,57 +14,9 @@ use App\Models\Program;
 
 class ProgramController extends Controller
 {
-    public function index( Organization $organization )
+    public function index( Organization $organization, ProgramService $programService)
     {
-        $status = request()->get('status');
-        $keyword = request()->get('keyword');
-        $sortby = request()->get('sortby', 'id');
-        $direction = request()->get('direction', 'asc');
-
-        $where = [];
-
-        if( $status )
-        {
-            $where[] = ['status', $status];
-        }
-
-        if( $sortby == "name" )
-        {
-            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-            $orderByRaw = "{$sortby} {$collation} {$direction}";
-        }
-        else
-        {
-            $orderByRaw = "{$sortby} {$direction}";
-        }
-
-        $query = Program::whereNull('program_id')
-                    ->where($where);
-
-        if( $keyword )
-        {
-            $query = $query->where(function($query1) use($keyword) {
-                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                ->orWhere('name', 'LIKE', "%{$keyword}%");
-            });
-        }
-
-        $query = $query->orderByRaw($orderByRaw);
-
-        if ( request()->has('minimal') )
-        {
-            $programs = $query->select('id', 'name')
-                                ->with(['children' => function($query){
-                                    return $query->select('id','name','program_id');
-                                }])
-                                ->withOrganization($organization)
-                                ->get();
-        }
-        else {
-            $programs = $query->with('children')->withOrganization($organization)
-            ->paginate(request()->get('limit', 10));
-        }
-
+        $programs = $programService->index( $organization );
 
         if ( $programs->isNotEmpty() )
         {
@@ -78,9 +31,9 @@ class ProgramController extends Controller
         if ( $organization )
         {
             $newProgram = Program::createAccount(
-                                        $request->validated() +
-                                        ['organization_id' => $organization->id]
-                                        );
+                $request->validated() +
+                ['organization_id' => $organization->id]
+                );
         }
         else
         {
@@ -99,12 +52,6 @@ class ProgramController extends Controller
 
     public function show( Organization $organization, Program $program )
     {
-
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
         if ( $program )
         {
             $program->merchants;
@@ -116,10 +63,6 @@ class ProgramController extends Controller
 
     public function update(ProgramRequest $request, Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         $program->update( $request->validated() );
 
@@ -128,25 +71,15 @@ class ProgramController extends Controller
 
     public function move(ProgramMoveRequest $request, Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
+        // return $request->all();
+        // return $request->validated();
         $program->update( $request->validated() );
-
         return response([ 'program' => $program ]);
     }
 
-    public function delete(ProgramMoveRequest $request, Organization $organization, Program $program )
+    public function delete(Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
         $program->delete();
-
         return response([ 'delete' => true ]);
     }
 }

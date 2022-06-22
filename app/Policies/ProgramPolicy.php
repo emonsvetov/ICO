@@ -37,23 +37,15 @@ class ProgramPolicy
     public function view(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        // if( $user->hasRole( config('global.program_manager_role_name') ))   {
-        //     return true; //is global "Program Manager" role possible ?? If it is this check can be useful!
-        // }
-        if( $user->isManagerToProgram( $program->id ) || $user->isAdmin() )
-        {
-            return true;
-        }
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program->id )) return true;
         return $user->can('program-view');
     }
 
     public function create(User $user, Organization $organization)
     {
         if( !$this->__preAuthCheck($user, $organization) ) return false;
-        if( $user->isAdmin() )
-        {
-            return true;
-        }
+        if( $user->isAdmin() ) return true;
         return $user->can('program-create');
     }
 
@@ -70,20 +62,14 @@ class ProgramPolicy
     public function delete(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() )
-        {
-            return true;
-        }
+        if( $user->isAdmin() ) return true;
         return $user->can('program-delete');
     }
 
     public function move(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() )
-        {
-            return true;
-        }
+        if( $user->isAdmin() ) return true;
         return $user->can('program-move');
     }
 }

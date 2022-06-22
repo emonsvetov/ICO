@@ -85,6 +85,8 @@ class PermissionSeeder extends Seeder
             'submerchant-list',
             'submerchant-add',
             'submerchant-remove',
+            'subprogram-list',
+            'subprogram-unlink',
             'user-list',
             'user-view',
             'user-create',

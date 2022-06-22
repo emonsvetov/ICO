@@ -84,6 +84,9 @@ class Merchant extends Model
     }
 
     public function get_top_level_merchant( $merchant )    {
-        return self::getRoot( $merchant );
+        if(is_numeric($merchant))   {
+            $merchant = self::find($merchant);
+        }
+        return $merchant->getRoot();
     }
 }

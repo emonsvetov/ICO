@@ -15,12 +15,8 @@ class UserProgramController extends Controller
 {
     public function index( Organization $organization, User $user )
     {
-        if ( $organization->id != $user->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or User'], 422);
-        }
 
-        if( !$user->programs->isNotEmpty() ) return response( [] );
+        if( $user->programs->isEmpty() ) return response( [] );
 
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
@@ -75,10 +71,6 @@ class UserProgramController extends Controller
 
     public function store( UserProgramRequest $request, Organization $organization, User $user )
     {
-        if ( $organization->id != $user->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or User'], 422);
-        }
 
         $validated = $request->validated();
         $program_id = $validated['program_id'];
@@ -103,11 +95,6 @@ class UserProgramController extends Controller
 
     public function delete(Organization $organization, User $user, Program $program )
     {
-        if ( $organization->id != $user->organization_id || $user->organization_id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or User or Program'], 422);
-        }
-
         try{
             $user->programs()->detach( $program );
             $permissions = Permission::where('name', 'LIKE', "program.{$program->id}.role.%")->get()->pluck('name');
@@ -123,11 +110,6 @@ class UserProgramController extends Controller
 
     public function getRole(Organization $organization, User $user, Program $program )
     {
-        if ( $organization->id != $user->organization_id || $user->organization_id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or User or Program'], 422);
-        }
-
         $roles = $user->roles()->wherePivot( 'program_id', '=', $program->id )->get();
 
         if ( $roles->isNotEmpty() ) 

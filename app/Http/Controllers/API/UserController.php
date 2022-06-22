@@ -102,7 +102,15 @@ class UserController extends Controller
         $validated = $request->validated();
         $user->update( $validated );
         if( !empty($validated['roles']))   {
-            $user->syncRoles( [$validated['roles']] );
+            //only a Super admin or a Admin can be assigned here. so we need to keep existing program roles intact
+            $newRoles = [];
+            $columns = ['program_id' => 0]; //a hack!
+            $user->roles()->wherePivot('program_id','=',0)->detach();
+            foreach($validated['roles'] as $role_id)    {
+                $newRoles[$role_id] = $columns;
+            }
+            $user->roles()->attach( $newRoles );
+            // $user->syncRoles( [$validated['roles']] );
         }
         return response([ 'user' => $user ]);
     }

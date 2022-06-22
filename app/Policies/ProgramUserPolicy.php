@@ -31,6 +31,7 @@ class ProgramUserPolicy
         {
             return false;
         }
+        if($user->isAdmin()) return true;
 
         return $user->isManagerToProgram( $program ) || $user->can('program-user-list');
     }
@@ -50,6 +51,7 @@ class ProgramUserPolicy
         {
             return false;
         }
+        if($user->isAdmin()) return true;
         return $user->isManagerToProgram($program) || $user->can('program-user-add');
     }
 
@@ -59,12 +61,13 @@ class ProgramUserPolicy
         {
             return false;
         }
+        if($authUser->isAdmin()) return true;
         return $authUser->isManagerToProgram($program) || $authUser->id == $user->id || $authUser->can('program-user-update');
     }
 
     public function remove(User $authUser, Program $program)
     {
-        if ( !$this->__authCheck($user, $organization, $program ) )
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
         }
