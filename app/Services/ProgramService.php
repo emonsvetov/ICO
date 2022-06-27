@@ -212,15 +212,20 @@ class ProgramService
     public function getAvailableToMoveSubprogram($organization, $program) {
 
         $parent = $program->parent()->select('id')->first();
-        $children = $program->children->pluck('id');
+        // pr($program->toArray());
+        $children = $program->children;
+        // pr($children->toArray());
+        // exit;
         $topLevelProgram = $program->getRoot(['id', 'name']);
         $exclude[] = $program->id; // exclude self
         $exclude[] = $parent->id; // exlude parent
 
         if( $children ) {
-            $exclude = array_merge($exclude, $children->toArray()); 
+            collectIdsInATree($children->toArray(), $exclude);
         }
+
         // pr($exclude);
+        // exit;
         // $subprograms = $this->getSubprograms( $organization, Program::find($topLevelProgram, [
         //     'except' => $exclude,
         //     'minimal'=>true, 
@@ -259,5 +264,17 @@ class ProgramService
             
         }
         return $diff;
+    }
+
+    public function unlinkWithSubtree($organization, $program) {
+
+    }    
+    
+    public function unlinkWithoutSubtree($organization, $program) {
+        // pr($program->parent->toArray());
+        $parent_id = $program->parent->id;
+        foreach($program->children as $children)    {
+            pr($children->toArray()); 
+        }
     }
 }

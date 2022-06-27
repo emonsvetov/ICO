@@ -64,3 +64,17 @@ if(!function_exists('_flatten'))  {
         }
     }
 }
+if(!function_exists('collectIdsInATree'))  {
+    function collectIdsInATree($treeNodes, &$ids)
+    {
+        foreach( $treeNodes as $node)   {
+            array_push($ids, $node['id']);
+            if($node['children'])  {
+                $collectedIds = collectIdsInATree($node['children'], $ids);
+                if( $collectedIds ) {
+                    $ids = array_merge($ids, $collectedIds);
+                }
+            }
+        }
+    }
+}

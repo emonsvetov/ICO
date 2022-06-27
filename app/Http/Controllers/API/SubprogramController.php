@@ -42,9 +42,13 @@ class SubprogramController extends Controller
         return response($available);
     }
 
-    public function unlink(Organization $organization, Program $program )
+    public function unlink(Organization $organization, Program $program, ProgramService $programService)
     {
-        $unlinkTree = request()->get('tree');
+        $unlinkSubtree = request()->get('subtree');
+        if( $unlinkSubtree )    {
+            $programService->unlinkWithSubtree($organization, $program);
+        }
+        $programService->unlinkWithoutSubtree($organization, $program);
         return response([ 'delete' => true ]);
     }
 }
