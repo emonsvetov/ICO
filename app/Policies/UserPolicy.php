@@ -11,14 +11,26 @@ class UserPolicy
 {
     use HandlesAuthorization;
 
+    private function __preAuthCheck($authUser, $organization, $user = null): bool
+    {
+        if( $organization->id != $authUser->organization_id ) return false;
+        if( $user && $organization->id != $user->organization_id) return false;
+        return true;
+    }
+
     /**
      * Determine whether the user can view any models.
      *
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Organization $organization)
     {
+        if ( !$this->__preAuthCheck($user, $organization) )
+        {
+            return false;
+        }
+        if( $user->isAdmin() ) return true;
         return $user->can('user-list');
     }
 
@@ -31,8 +43,11 @@ class UserPolicy
      */
     public function view(User $authUser, Organization $organization, User $user)
     {
-        if( $authUser->organization_id != $organization->id ) return false;
-        if( $organization->id != $user->organization_id ) return false;
+        if ( !$this->__preAuthCheck($authUser, $organization, $user) )
+        {
+            return false;
+        }
+        if( $authUser->isAdmin() ) return true;
         return $authUser->can('user-view');
     }
 
@@ -42,8 +57,13 @@ class UserPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function create(User $user)
+    public function create(User $user, Organization $organization)
     {
+        if ( !$this->__preAuthCheck($user, $organization) )
+        {
+            return false;
+        }
+        if( $user->isAdmin() ) return true;
         return $user->can('user-create');
     }
 
@@ -54,9 +74,14 @@ class UserPolicy
      * @param  \App\Models\User  $model
      * @return mixed
      */
-    public function update(User $authenticatedUser, User $user)
+    public function update(User $user, Organization $organization, User $model)
     {
-        return $authenticatedUser->id === $user->id || $authenticatedUser->can('user-update');
+        if ( !$this->__preAuthCheck($user, $organization, $model) )
+        {
+            return false;
+        }
+        if( $user->isAdmin() ) return true;
+        return $user->id === $model->id || $user->can('user-update');
     }
 
     /**
@@ -66,8 +91,13 @@ class UserPolicy
      * @param  \App\Models\User  $model
      * @return mixed
      */
-    public function delete(User $user, User $model)
+    public function delete(User $user, Organization $organization, User $model)
     {
+        if ( !$this->__preAuthCheck($user, $organization, $model) )
+        {
+            return false;
+        }
+        if( $user->isAdmin() ) return true;
         return $user->can('user-delete');
     }
 }

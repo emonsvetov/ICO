@@ -13,19 +13,12 @@ class DomainController extends Controller
 {
     public function index( Organization $organization )
     {
-        if ( !( $organization->id ) )
-        {
-            return response(['errors' => 'Invalid Organization'], 422);
-        }
-
         $status = request()->get('status');
         $keyword = request()->get( 'keyword' );
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
         $where = [];
-
-        $where = ['organization_id'=>$organization->id];
 
         if( $status )
         {
@@ -56,11 +49,11 @@ class DomainController extends Controller
         
         if ( request()->has('minimal') )
         {
-            $domains = $query->select('id', 'name')->get();
+            $domains = $query->select('id', 'name')->withOrganization($organization)->get();
         }
         else 
         {
-            $domains = $query->paginate(request()->get('limit', 10));
+            $domains = $query->withOrganization($organization)->paginate(request()->get('limit', 10));
         }
 
         if ( $domains->isNotEmpty() ) 
@@ -73,12 +66,6 @@ class DomainController extends Controller
 
     public function store(DomainRequest $request, Organization $organization )
     {
-                 
-        if ( !( $organization->id ) )
-        {
-            return response(['errors' => 'Invalid Organization'], 422);
-        }
-        
         $newDomain = Domain::create( 
             $request->validated() + 
             [
@@ -96,11 +83,6 @@ class DomainController extends Controller
 
     public function show( Organization $organization, Domain $domain )
     {
-        if ( !$organization->id )        
-        {
-            return response(['errors' => 'Invalid Organization'], 422);
-        }
-
         $domain->domain_ips; //trigger association
 
         if ( $domain ) 
@@ -113,27 +95,12 @@ class DomainController extends Controller
 
     public function update(DomainRequest $request, Organization $organization, Domain $domain )
     {
-        if ( !$organization->id || !$domain->id )
-        {
-            return response(['errors' => 'Invalid Organization or Domain'], 422);
-        }
-        
-        if ( $domain->organization_id != $organization->id ) 
-        { 
-            return response(['errors' => 'Invalid Organization or Domain'], 404);
-        }
-
         $domain->update( $request->validated() );
-
         return response([ 'domain' => $domain ]);
     }
 
     public function delete(Organization $organization, Domain $domain )
     {
-        if ( !$organization || !$domain )
-        {
-            return response(['errors' => 'Invalid Organization or Domain'], 422);
-        }
         $deleted = ['deleted' => 1];
         $domain->update( $deleted );
         return response()->json( $deleted );
@@ -141,13 +108,7 @@ class DomainController extends Controller
 
     public function generateSecretKey(Organization $organization, Domain $domain )
     {
-        if ( !$organization OR !$domain )
-        {
-            return response(['errors' => 'Invalid Organization or Domain'], 422);
-        }
-
         $secret_key = sha1 ( Str::random(10) );
-
         return response([ 'secret_key' => $secret_key ]);
     }
 }

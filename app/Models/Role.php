@@ -1,9 +1,12 @@
 <?php
 namespace App\Models;
 use Spatie\Permission\Models\Role as SpatieRole;
+// use App\Models\Traits\WithOrganizationScope;
 
 class Role extends SpatieRole
 {
+    // use WithOrganizationScope;
+
     protected $withPivot = [
         'program_id'
     ];

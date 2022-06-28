@@ -15,10 +15,6 @@ class ProgramUserController extends Controller
 {
     public function index( Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         if( !$program->users->isNotEmpty() ) return response( [] );
 
@@ -75,10 +71,6 @@ class ProgramUserController extends Controller
 
     public function store( UserRequest $request, Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         $validated = $request->validated();
 
@@ -102,10 +94,6 @@ class ProgramUserController extends Controller
 
     public function update( UserRequest $request, Organization $organization, Program $program, User $user)
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         $validated = $request->validated();
         $user->update( $validated );
@@ -119,10 +107,6 @@ class ProgramUserController extends Controller
 
     public function delete(Organization $organization, Program $program, User $user )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         try{
             $program->users()->detach( $user );

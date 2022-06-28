@@ -25,7 +25,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public $timestamps = true;
 
-    private $isAdministrator = false; //user is system administrator
+    private $isSuperAdmin = false; //user is super admin
+    private $isAdmin = false; //user is admin
 
     /**
      * The attributes that are mass assignable.
@@ -89,20 +90,31 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['name', 'isAdministrator'];
+    protected $appends = ['name', 'isSuperAdmin', 'isAdmin'];
     protected function getNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
     }
-    protected function getIsAdministratorAttribute()
+    protected function getIsSuperAdminAttribute()
     {
         return $this->hasRole(config('roles.super_admin'));
+    }
+    protected function getIsAdminAttribute()
+    {
+        return $this->hasRole(config('roles.admin'));
     }
     protected function setPasswordAttribute($password)
     {   
         $this->attributes['password'] = bcrypt($password);
     }
-    
+    public function isAdmin()
+    {   
+        return $this->hasRole(config('roles.admin'));
+    }
+    public function isSuperAdmin()
+    {   
+        return $this->hasRole(config('roles.super_admin'));
+    }
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);

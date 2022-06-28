@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Organization;
 use App\Models\Domain;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -16,14 +17,23 @@ class DomainPolicy
         // return true; //allowed until we have roles + permissions
     }
 
+    private function __preAuthCheck($authUser, $organization, $domain = null): bool
+    {
+        if( $organization->id != $authUser->organization_id ) return false;
+        if($domain && $organization->id != $domain->organization_id) return false;
+        return true;
+    }
+
     /**
      * Determine whether the user can view any models.
      *
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user, Organization $organization)
     {
+        if(!$this->__preAuthCheck($user, $organization)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-list');
     }
 
@@ -34,9 +44,10 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function view(User $user, Domain $domain)
+    public function view(User $user, Organization $organization, Domain $domain)
     {
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-view');
     }
 
@@ -46,8 +57,10 @@ class DomainPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function create(User $user)
+    public function create(User $user, Organization $organization)
     {
+        if(!$this->__preAuthCheck($user, $organization)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-create');
     }
 
@@ -58,9 +71,10 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function update(User $user, Domain $domain)
+    public function update(User $user, Organization $organization, Domain $domain)
     {
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-edit');
     }
 
@@ -71,9 +85,10 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function delete(User $user, Domain $domain)
+    public function delete(User $user, Organization $organization, Domain $domain)
     {
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-delete');
     }
 
@@ -84,34 +99,38 @@ class DomainPolicy
      * @param  \App\Models\Domain  $domain
      * @return mixed
      */
-    public function generateSecretKey(User $user, Domain $domain)
+    public function generateSecretKey(User $user, Organization $organization, Domain $domain)
     {
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-generate-secretkey');
     }
 
-    public function addIp(User $user, Domain $domain)
+    public function addIp(User $user, Organization $organization, Domain $domain)
     {
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-add-ip');
     }
 
-    public function deleteIp(User $user, Domain $domain)
+    public function deleteIp(User $user, Organization $organization, Domain $domain)
     {
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-delete-ip');
     }
 
-    public function addProgram(User $user, Domain $domain)
+    public function addProgram(User $user, Organization $organization, Domain $domain)
     {
-        return true;
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-add-program');
     }
 
-    public function deleteProgram(User $user, Domain $domain)
+    public function deleteProgram(User $user, Organization $organization, Domain $domain)
     {
-        if( $user->organization_id !== $domain->organization_id ) return false;
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
         return $user->can('domain-delete-program');
     }
 }

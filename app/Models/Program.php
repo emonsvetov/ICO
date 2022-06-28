@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
+use App\Models\Traits\Treeable;
 use App\Models\AccountHolder;
 use App\Models\FinanceType;
 use App\Models\MediumType;
@@ -16,6 +17,7 @@ class Program extends Model
     use HasFactory;
     use SoftDeletes;
     use WithOrganizationScope;
+    use Treeable;
 
     protected $guarded = [];
 
@@ -24,9 +26,14 @@ class Program extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    public function parent()
+    {
+        return $this->belongsTo(Program::class, 'parent_id');
+    }
+
     public function children()
     {
-        return $this->hasMany(Program::class, 'program_id')->with('children');
+        return $this->hasMany(Program::class, 'parent_id')->with('children');
     }
 
     public function events()
