@@ -47,6 +47,11 @@ class Program extends Model
         ->withPivot('featured', 'cost_to_program')->withTimestamps();
     }
 
+    public function domains()
+    {
+        return $this->belongsToMany(Domain::class, 'domain_program')->withTimestamps();
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'program_user')

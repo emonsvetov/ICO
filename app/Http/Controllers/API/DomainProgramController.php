@@ -120,4 +120,9 @@ class DomainProgramController extends Controller
 
         return response([ 'success' => true ]);
     }
+
+    public function listAvailableProgramsToAdd(Organization $organization, Domain $domain)
+    {
+       return response($domain->programs);
+    }
 }
