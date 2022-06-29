@@ -26,6 +26,10 @@ class UserLoginRequest extends FormRequest
         return [
             'email' => 'required|email',
             'password' => 'required',
+            'domain' => [
+                "required",
+                "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/"
+            ],
         ];
     }
 }

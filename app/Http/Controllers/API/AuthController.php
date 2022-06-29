@@ -50,7 +50,8 @@ class AuthController extends Controller
 
     public function login(UserLoginRequest $request)
     {
-        if (!auth()->guard('web')->attempt( $request->validated() )) {
+        $validated = $request->validated();
+        if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
             return response(['message' => 'Invalid Credentials'], 422);
         }
 

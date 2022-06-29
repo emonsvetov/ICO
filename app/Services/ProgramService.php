@@ -266,15 +266,27 @@ class ProgramService
         return $diff;
     }
 
-    public function unlinkWithSubtree($organization, $program) {
-
-    }    
-    
-    public function unlinkWithoutSubtree($organization, $program) {
-        // pr($program->parent->toArray());
-        $parent_id = $program->parent->id;
-        foreach($program->children as $children)    {
-            pr($children->toArray()); 
+    public function unlinkNodeWithSubtree($organization, $program) {
+        if( !$program->children->isEmpty() )  {
+            foreach($program->children as $children)  {
+                $children->parent_id = null;
+                $children->save();
+                $this->unlinkNodeWithSubtree($organization, $children);
+            }
         }
+        $program->parent_id = null;
+        $program->save();
+    }
+    
+    public function unlinkNode($organization, $program) {
+        $parent_id = $program->parent ? $program->parent->id : null;
+        if(!$program->children->isEmpty())  {
+            foreach($program->children as $children)    {
+                $children->parent_id = $parent_id;
+                $children->save();
+            }
+        }
+        $program->parent_id = null;
+        $program->save();
     }
 }

@@ -46,9 +46,10 @@ class SubprogramController extends Controller
     {
         $unlinkSubtree = request()->get('subtree');
         if( $unlinkSubtree )    {
-            $programService->unlinkWithSubtree($organization, $program);
+            $programService->unlinkNodeWithSubtree($organization, $program);
+        }   else {
+            $programService->unlinkNode($organization, $program);
         }
-        $programService->unlinkWithoutSubtree($organization, $program);
-        return response([ 'delete' => true ]);
+        return response([ 'unlinked' => true ]);
     }
 }
