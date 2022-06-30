@@ -265,4 +265,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/checkout',[App\Http\Controllers\API\CheckoutController::class, 'store'])->middleware('can:checkout,App\Checkout,organization,program');
     
+	//Manager invite participant
+	  Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
 });

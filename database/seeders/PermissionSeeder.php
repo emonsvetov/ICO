@@ -96,6 +96,7 @@ class PermissionSeeder extends Seeder
             'user-program-add',
             'user-program-remove',
             'user-program-roles',
+			'can-invite'
         ];
 
         foreach ($permissions as $permission) {
