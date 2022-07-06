@@ -12,6 +12,7 @@ class EmailTemplatePolicy
 
     public function viewAny(User $user)
     {
+        if($user->isAdmin()) return true;
         return $user->can('emailtemplate-list');
     }
 }

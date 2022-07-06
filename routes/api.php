@@ -169,6 +169,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/subprogram', [App\Http\Controllers\API\SubprogramController::class, 'index'])->middleware('can:viewAny,App\Subprogram,organization,program');
     Route::get('/v1/organization/{organization}/subprogram/{program}/available/{action}', [App\Http\Controllers\API\SubprogramController::class, 'available'])->middleware('can:viewAny,App\Subprogram,organization,program');
     Route::patch('/v1/organization/{organization}/subprogram/{program}/unlink', [App\Http\Controllers\API\SubprogramController::class, 'unlink'])->middleware('can:unlink,App\Subprogram,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/descendents', [App\Http\Controllers\API\SubprogramController::class, 'getDescendents'])->middleware('can:viewAny,App\Subprogram,organization,program');
 
     //ProgramMerchant routes
 

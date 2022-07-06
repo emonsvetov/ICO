@@ -120,7 +120,7 @@ class ProgramService
             }
         }
 
-        $query = $query->orderByRaw($orderByRaw);
+        $query = $query->withOrganization($organization, true)->orderByRaw($orderByRaw);
 
         return $query;
 
@@ -158,7 +158,8 @@ class ProgramService
         $params = array_merge($this->_buildParams(), $params);
         $query = $this->_buildQuery($organization, $params)
             ->where('parent_id', $program->id)
-            ->withOrganization($organization);
+            ->withOrganization($organization, true)
+            ;
 
         if( $params['minimal'] ) {
             $results = $query->get();
@@ -242,7 +243,7 @@ class ProgramService
             // }
             return $subquery;
         }])
-        ->withOrganization($organization);
+        ->withOrganization($organization, 1);
         
         return 
             [ 
@@ -288,5 +289,47 @@ class ProgramService
         }
         $program->parent_id = null;
         $program->save();
+    }
+
+    public function listAvailableProgramsToAdd( $organization, $domain)    {
+        $keyword = request()->get('keyword');
+        if( !$domain->programs->isEmpty() )   {
+            // return $domain->programs;
+            $existing = $domain->programs->pluck('id');
+            //The logic here depends upon an assumption that a domain can have programs/subprograms from within only one program tree.
+            $firstProgram = $domain->programs()->first();
+            if( is_null($firstProgram->parent_id) ) {
+                $rootAncestor = $firstProgram;
+            }   else {
+                $rootAncestor = $firstProgram->rootAncestor()->first();
+            }
+            $constraint = function ($query) use ($rootAncestor) {
+                $query->where('id', $rootAncestor->id);
+            };
+            $query = Program::treeOf($constraint)->whereNotIn('id', $existing);
+        }   else {
+            $constraint = function ($query) {
+                $query->whereNull('parent_id');
+            };
+            $query = Program::treeOf($constraint)->where('organization_id', $organization->id);
+        }
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('name', 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        $programs = $query->select('id', 'name')->get();
+        return $programs;
+    }
+
+    public function getDescendents( $program, $includeSelf = false ) {
+        if( $includeSelf )  {
+            return $program->descendantsAndSelf()->get()->toTree();
+        }
+        return $program->descendants()->get()->toTree();
     }
 }

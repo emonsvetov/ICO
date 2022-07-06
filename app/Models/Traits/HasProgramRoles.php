@@ -4,6 +4,7 @@ namespace App\Models\Traits;
 use App\Models\Program;
 use App\Models\Role;
 use App\Models\User;
+use DB;
 
 trait HasProgramRoles
 {
@@ -33,17 +34,47 @@ trait HasProgramRoles
             }
         }
     }
-    public function getProgramRoles( $byProgram = null )
+    public function getParentProgramRoles( $program, $byDomain = null )
+    {
+        $program = Program::getModelByMixed($program);
+        $parent = $program->parent()->get();
+        return $parent->getProgramRoles();
+    }
+
+    public function getProgramRoles( $byProgram = null, $byDomain = null )
     {
         if( !$byProgram ) {
-            return $this->roles()->wherePivot( 'program_id', '!=', 0)->withPivot('program_id')->get();
+            if( $byDomain ) {
+                return $this->roles()
+                // ->whereHas('domains', function ($query) use($byDomain) {
+                //     $query->where('name', $byDomain);
+                // })
+                ->join('programs', 'programs.id', '=', 'model_has_roles.program_id')
+                ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
+                ->join('domains', 'domains.id', '=', 'domain_program.domain_id')
+                ->where('domains.id', $byDomain)
+                // ->wherePivot( 'program_id', '!=', 0)
+                ->withPivot('program_id')
+                ->get();
+            }   else return $this->roles()->wherePivot( 'program_id', '!=', 0)->withPivot('program_id')->get();
         }
         $programId = self::extractId($byProgram);
-        return $this->roles()->wherePivot( 'program_id', '=', $programId)->withPivot('program_id')->get();
+        if( $byDomain ) {
+            return $this->roles()
+            ->join('domains', 'domains.name', '=', $byDomain)
+            ->join('domain_program', 'domain_program.domain_id', '=', 'domains.id')
+            ->wherePivot( 'program_id', '=', $programId)
+            ->withPivot('program_id')
+            ->get();
+        }
+        return $this->roles()
+        ->wherePivot( 'program_id', '=', $programId)
+        ->withPivot('program_id')
+        ->get();
     }
-    public function getProgramsRoles( $byProgram = null )
+    public function getProgramsRoles( $byProgram = null, $byDomain = null )
     {
-        $_roles = $this->getProgramRoles( $byProgram );
+        $_roles = $this->getProgramRoles( $byProgram, $byDomain );
         $programs = [];
         $roles = [];
         $programRoles = [];
@@ -84,26 +115,49 @@ trait HasProgramRoles
         }
         return false;
     }
+    public function hasRoleInAncestors($roleName, $program)   {
+        if( trim($roleName) == "" || !$program ) return false;
+        $program = Program::getModelByMixed($program);
+        // pr($program->toArray());
+        if( $program->parent_id )   {
+            $role = $this->hasRoleInAncestor($roleName, $program);
+            if( $role ) return $role;
+            else {
+                $parent = $program->parent()->first();
+                if( $parent )   {
+                    return $this->hasRoleInAncestors($roleName, $parent);
+                }
+            }
+        }
+    }
+    public function hasRoleInAncestor($roleName, $program)   {
+        if( trim($roleName) == "" || !$program || !$program->parent_id ) return false;
+        $program = Program::getModelByMixed($program);
+        $roles = $this->roles()
+        ->where('roles.name', 'LIKE', $roleName)
+        ->wherePivot( 'program_id', '=', $program->parent_id)
+        ->withPivot('program_id')
+        ->count();
+        return $roles;
+    }
+
     public function hasRoleInProgram( $roleName, $program): bool 
     {
-
         if( trim($roleName) == "" || !$program ) return false;
-
-        $program_id = self::extractId($program);
-
-        if( !isset($program_id) || !$program_id )   return false;
-
-        if( !$this->programs->pluck('id')->contains($program_id) )  {
-            return false;
-        }
-
-        $programRoles = $this->getProgramRoles( $program_id );
-        // pr($programRoles->toArray());
-        if( !$programRoles ) return false;
-        foreach($programRoles as $programRole)  {
-           if( $programRole->name == $roleName )    {
-               return true;
-           }
+        // $program_id = self::extractId($program);
+        $program = Program::getModelByMixed($program);
+        if( !$program )   return false;
+        if( !$this->programs->pluck('id')->contains($program->id) )  {
+            $hasRoleInAnscestors = $this->hasRoleInAncestors($roleName, $program );
+            // pr($hasRoleInAnscestors);
+            return $hasRoleInAnscestors;
+        }   else {
+            $roles = $this->roles()
+            ->where('roles.name', 'LIKE', $roleName)
+            ->wherePivot( 'program_id', '=', $program->id)
+            ->withPivot('program_id')
+            ->count();
+            return $roles > 0 ? true : false;
         }
         return false;
     }

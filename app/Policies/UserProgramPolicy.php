@@ -16,8 +16,8 @@ class UserProgramPolicy
     {
         if( $organization->id != $authUser->organization_id ) return false;
         if( $user && $organization->id != $user->organization_id) return false;
-        if( $program && $organization->id != $program->organization_id) return false;
-        if( $user && $program && $user->organization_id != $program->organization_id) return false;
+        // if( $program && $organization->id != $program->organization_id) return false;
+        // if( $user && $program && $user->organization_id != $program->organization_id) return false;
         return true;
     }
 
@@ -50,7 +50,9 @@ class UserProgramPolicy
 
     public function getRoles(User $authUser, Organization $organization, User $user,  Program $program)
     {
+        // return true;
         if(!$this->__preAuthCheck($authUser, $organization, $user, $program)) return false;
+        // pr($authUser);
         if($authUser->isAdmin()) return true;
         return $authUser->can('user-program-roles');
     }

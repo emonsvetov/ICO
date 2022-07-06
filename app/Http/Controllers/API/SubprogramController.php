@@ -52,4 +52,9 @@ class SubprogramController extends Controller
         }
         return response([ 'unlinked' => true ]);
     }
+
+    public function getDescendents(Organization $organization, Program $program, ProgramService $programService)    {
+        $includeSelf = request()->get('includeSelf') ? true : false;
+        return $programService->getDescendents( $program, $includeSelf );
+    }
 }

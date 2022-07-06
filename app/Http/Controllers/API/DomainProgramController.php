@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\DomainAddProgramRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
+use App\Services\ProgramService;
 use App\Models\Organization;
 use Illuminate\Support\Str;
 use App\Models\Program;
@@ -49,7 +50,6 @@ class DomainProgramController extends Controller
         }
 
         $query = Program::whereIn('id', $programIds)
-                    ->whereNull('parent_id')
                     ->where($where);
 
         if( $keyword )
@@ -121,8 +121,9 @@ class DomainProgramController extends Controller
         return response([ 'success' => true ]);
     }
 
-    public function listAvailableProgramsToAdd(Organization $organization, Domain $domain)
+    public function listAvailableProgramsToAdd(Organization $organization, Domain $domain, ProgramService $programService)
     {
-       return response($domain->programs);
+        $programs = $programService->listAvailableProgramsToAdd( $organization, $domain);
+        return response($programs);
     }
 }
