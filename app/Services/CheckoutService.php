@@ -151,7 +151,6 @@ class CheckoutService
 			$external_callbacks = ExternalCallback::read_list_by_type ( ( int ) $gift_code->gift_code_provider_account_holder_id, 'B2B Gift Code' );
 			// pr($external_callbacks->toArray());
 			// pr(count ( $external_callbacks ));
-			// // pr(DB::getQueryLog());
 			// exit;
 			if ( count ( $external_callbacks ) > 0 ) {
 				//$debug['$external_callbacks'] = $external_callbacks;
@@ -194,7 +193,6 @@ class CheckoutService
 				} else {
 					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $gift_code->redemption_value );
 					// pr($denomination_list);
-					// pr(DB::getQueryLog());
 					// exit;
 					if (! isset ( $denomination_list ) || count ( $denomination_list ) < 1) {
 						// throw new RuntimeException ( 'Out of inventory' );

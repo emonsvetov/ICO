@@ -27,8 +27,6 @@ class MerchantController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        // DB::enableQueryLog();
-
         $where = [];
 
         if( $sortby == "name" )
@@ -66,8 +64,6 @@ class MerchantController extends Controller
         } else {
             $merchants = $query->with('children')->paginate(request()->get('limit', 50));
         }
-
-        // Log::debug("Query:", DB::getQueryLog());
 
         if ( $merchants->isNotEmpty() )
         {

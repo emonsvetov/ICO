@@ -50,9 +50,7 @@ class UserProgramPolicy
 
     public function getRoles(User $authUser, Organization $organization, User $user,  Program $program)
     {
-        // return true;
         if(!$this->__preAuthCheck($authUser, $organization, $user, $program)) return false;
-        // pr($authUser);
         if($authUser->isAdmin()) return true;
         return $authUser->can('user-program-roles');
     }

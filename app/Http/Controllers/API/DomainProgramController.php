@@ -11,14 +11,11 @@ use Illuminate\Support\Str;
 use App\Models\Program;
 use App\Models\Domain;
 Use Exception;
-use DB;
 
 class DomainProgramController extends Controller
 {
     public function index( Organization $organization, Domain $domain )
     {
-        DB::enableQueryLog();
-
         if( $domain->programs->isEmpty() ) return response( [] );
 
         $status = request()->get('status');
@@ -76,8 +73,6 @@ class DomainProgramController extends Controller
             ->withOrganization($organization)
             ->paginate(request()->get('limit', 10));
         }
-
-        // pr(DB::getQueryLog());
 
         if ( $programs->isNotEmpty() ) 
         { 

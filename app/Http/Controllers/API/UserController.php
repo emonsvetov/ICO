@@ -61,8 +61,6 @@ class UserController extends Controller
         } else {
             $users = $query->with(['roles'])->paginate(request()->get('limit', 10));
         }
-
-        // return (DB::getQueryLog());
        
         if ( $users->isNotEmpty() ) 
         { 

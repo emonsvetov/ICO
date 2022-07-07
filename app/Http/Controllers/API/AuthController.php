@@ -54,8 +54,6 @@ class AuthController extends Controller
     {
         $validated = $request->validated();
 
-        // DB::enableQueryLog();
-
         $host = '';
         // $host = 'incentco.local';
         $referer = request()->headers->get('referer');
@@ -87,7 +85,6 @@ class AuthController extends Controller
         $user->organization;
         $user->roles;
         $user->programRoles = $user->getProgramsRoles(null, $domain->id);
-        // pr(DB::getQueryLog());
 
         if( !$user->programRoles )  {
             return response(['message' => 'Invalid domain or no program'], 422);

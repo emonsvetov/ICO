@@ -154,7 +154,6 @@ class ProgramService
     }
 
     public function getSubprograms( $organization, $program, $params = [] ) {
-        // DB::enableQueryLog();
         $params = array_merge($this->_buildParams(), $params);
         $query = $this->_buildQuery($organization, $params)
             ->where('parent_id', $program->id)
@@ -166,7 +165,6 @@ class ProgramService
             // return $results;
             if( $params['flatlist'] ) {
                 // exit;
-                // pr(DB::getQueryLog());
                 $newResults = collect([]);
                 _flatten($results, $newResults);
                 return $newResults;
@@ -178,8 +176,6 @@ class ProgramService
         // if( $params['paginate'] ) {
         //     return $query->paginate( $params['limit']);
         // }
-
-        // pr(DB::getQueryLog());
 
         $results = $query->paginate( $params['limit']);
         return $results;    
