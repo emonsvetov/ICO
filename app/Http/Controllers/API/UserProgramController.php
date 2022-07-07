@@ -110,6 +110,7 @@ class UserProgramController extends Controller
 
     public function getRole(Organization $organization, User $user, Program $program )
     {
+        
         $roles = $user->roles()->wherePivot( 'program_id', '=', $program->id )->get();
 
         if ( $roles->isNotEmpty() ) 

@@ -5,30 +5,25 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\DomainAddProgramRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
+use App\Services\ProgramService;
 use App\Models\Organization;
 use Illuminate\Support\Str;
 use App\Models\Program;
 use App\Models\Domain;
 Use Exception;
-// use DB;
 
 class DomainProgramController extends Controller
 {
     public function index( Organization $organization, Domain $domain )
     {
-        if ( !$organization || !$domain )
-        {
-            return response(['errors' => 'Invalid Organization or Domain'], 422);
-        }
-
-        if( !$domain->programs->isNotEmpty() ) return response( [] );
+        if( $domain->programs->isEmpty() ) return response( [] );
 
         $status = request()->get('status');
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        $where[] = ['organization_id', $organization->id];
+        $where = [];
 
         $programIds = [];
 
@@ -52,7 +47,6 @@ class DomainProgramController extends Controller
         }
 
         $query = Program::whereIn('id', $programIds)
-                    ->whereNull('parent_id')
                     ->where($where);
 
         if( $keyword )
@@ -68,13 +62,15 @@ class DomainProgramController extends Controller
         if ( request()->has('minimal') )
         {
             $programs = $query->select('id', 'name')
-                                ->with(['children' => function($query){
-                                    return $query->select('id','name','program_id');
-                                }])
-                                ->get();
-        }
-        else {
-            $programs = $query->with('children')
+                        ->withOrganization($organization)
+                        // ->with(['children' => function($query){
+                        //     return $query->select('id','name','program_id');
+                        // }])
+                        ->get();
+        } else {
+            $programs = $query
+            // ->with('children')
+            ->withOrganization($organization)
             ->paginate(request()->get('limit', 10));
         }
 
@@ -118,5 +114,11 @@ class DomainProgramController extends Controller
         }
 
         return response([ 'success' => true ]);
+    }
+
+    public function listAvailableProgramsToAdd(Organization $organization, Domain $domain, ProgramService $programService)
+    {
+        $programs = $programService->listAvailableProgramsToAdd( $organization, $domain);
+        return response($programs);
     }
 }

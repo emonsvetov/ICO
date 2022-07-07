@@ -3,11 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
+use App\Models\BaseModel;
 
-class Domain extends Model
+class Domain extends BaseModel
 {
     use HasFactory;
     use SoftDeletes;

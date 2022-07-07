@@ -16,8 +16,8 @@ class UserProgramPolicy
     {
         if( $organization->id != $authUser->organization_id ) return false;
         if( $user && $organization->id != $user->organization_id) return false;
-        if( $program && $organization->id != $program->organization_id) return false;
-        if( $user && $program && $user->organization_id != $program->organization_id) return false;
+        // if( $program && $organization->id != $program->organization_id) return false;
+        // if( $user && $program && $user->organization_id != $program->organization_id) return false;
         return true;
     }
 

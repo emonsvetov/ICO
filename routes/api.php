@@ -138,10 +138,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //DomainProgram routes
 
-    Route::get('/v1/organization/{organization}/domain/{domain}/program',
-    [App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,App\DomainProgram,organization,domain');
-    Route::post('/v1/organization/{organization}/domain/{domain}/program',
-    [App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add')->middleware('can:create,App\DomainProgram,organization,domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}/program',[App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,App\DomainProgram,organization,domain');    
+    Route::get('/v1/organization/{organization}/domain/{domain}/listAvailableProgramsToAdd',[App\Http\Controllers\API\DomainProgramController::class, 'listAvailableProgramsToAdd'])->name('api.v1.domainProgram.listAvailableProgramsToAdd')->middleware('can:listAvailableProgramsToAdd,App\DomainProgram,organization,domain');
+    Route::post('/v1/organization/{organization}/domain/{domain}/program',[App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add')->middleware('can:create,App\DomainProgram,organization,domain');
     Route::delete('/v1/organization/{organization}/domain/{domain}/program/{program}',
     [App\Http\Controllers\API\DomainProgramController::class, 'delete'])->name('api.v1.domain.domainProgram')->middleware('can:delete,App\DomainProgram,organization,domain,program');
 
@@ -170,6 +169,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/subprogram', [App\Http\Controllers\API\SubprogramController::class, 'index'])->middleware('can:viewAny,App\Subprogram,organization,program');
     Route::get('/v1/organization/{organization}/subprogram/{program}/available/{action}', [App\Http\Controllers\API\SubprogramController::class, 'available'])->middleware('can:viewAny,App\Subprogram,organization,program');
     Route::patch('/v1/organization/{organization}/subprogram/{program}/unlink', [App\Http\Controllers\API\SubprogramController::class, 'unlink'])->middleware('can:unlink,App\Subprogram,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/descendents', [App\Http\Controllers\API\SubprogramController::class, 'getDescendents'])->middleware('can:viewAny,App\Subprogram,organization,program');
 
     //ProgramMerchant routes
 
