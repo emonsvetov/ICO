@@ -19,7 +19,6 @@ trait Redeemable
 		}
 
 		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
-		DB::enableQueryLog();
 		$query = self::selectRaw(
 			"'{$merchant->id}' as merchant_id,
 			'{$merchant->account_holder_id}' as merchant_account_holder_id,

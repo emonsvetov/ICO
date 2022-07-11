@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UserLoginRequest extends FormRequest
+class ProgramTemplateRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,12 +24,10 @@ class UserLoginRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email',
-            'password' => 'required',
-            'domain' => [
-                "sometimes",
-                "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/"
-            ],
+            'small_logo' => 'sometimes|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
+            'big_logo' => 'sometimes|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
+            'welcome_message' => 'string|nullable',
+            'is_active' => 'boolean|nullable'
         ];
     }
 }

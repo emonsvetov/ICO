@@ -11,8 +11,10 @@ use App\Events\OrganizationCreated;
 use App\Http\Requests\UserRegisterRequest;
 use App\Http\Requests\UserLoginRequest;
 use App\Models\Organization;
+use App\Models\Domain;
 use App\Models\User;
 use App\Models\Role;
+use DB;
 
 class AuthController extends Controller
 {
@@ -50,18 +52,49 @@ class AuthController extends Controller
 
     public function login(UserLoginRequest $request)
     {
-        if (!auth()->guard('web')->attempt( $request->validated() )) {
+        $validated = $request->validated();
+
+        $host = '';
+        // $host = 'incentco.local';
+        $referer = request()->headers->get('referer');
+
+        if( $referer )   {
+            $urlVars = parse_url($referer);
+            if( !isset($urlVars['host']) )  {
+                return response(['errors' => 'Invalid Host'], 422);
+            }
+            $host = $urlVars['host'];
+        }
+
+        if( $host == 'localhost' || !$host)  {
+            // $host = null; //This needs to be revisted. More checks can be implemented here
+            return response(['errors' => 'Invalid host or host not allowed'], 422);
+        }
+
+        $domain = Domain::where('name', $host)->first();
+
+        if( !$domain )  {
+            return response(['message' => 'Domain not found for given host'], 422);
+        }
+
+        if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
             return response(['message' => 'Invalid Credentials'], 422);
         }
 
         $user = auth()->guard('web')->user();
         $user->organization;
         $user->roles;
-        $user->programRoles = $user->getProgramsRoles();
+        $user->programRoles = $user->getProgramsRoles(null, $domain->id);
+
+        if( !$user->programRoles )  {
+            return response(['message' => 'Invalid domain or no program'], 422);
+        }
+
+        // return $user->programRoles;
 
         $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
 
-        return response(['user' => $user, 'access_token' => $accessToken]);
+        return response(['user' => $user, 'access_token' => $accessToken, 'domain' => $domain]);
 
     }
 

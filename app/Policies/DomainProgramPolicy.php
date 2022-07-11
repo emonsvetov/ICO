@@ -72,4 +72,19 @@ class DomainProgramPolicy
         if($user->isAdmin()) return true;
         return $user->can('delete-domain-program');
     }
+
+    /**
+     * Determine whether the user can listAvailableProgramsToAdd.
+     *
+     * @param  \App\Models\User  $user
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Domain  $domain
+     * @return mixed
+     */
+    public function listAvailableProgramsToAdd(User $user, Organization $organization, Domain $domain)
+    {
+        if(!$this->__preAuthCheck($user, $organization, $domain)) return false;
+        if($user->isAdmin()) return true;
+        return $user->can('domain-listAvailableProgramsToAdd');
+    }
 }

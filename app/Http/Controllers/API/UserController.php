@@ -61,8 +61,6 @@ class UserController extends Controller
         } else {
             $users = $query->with(['roles'])->paginate(request()->get('limit', 10));
         }
-
-        // return (DB::getQueryLog());
        
         if ( $users->isNotEmpty() ) 
         { 
@@ -115,8 +113,10 @@ class UserController extends Controller
         return response([ 'user' => $user ]);
     }
 
-    protected function userResponse(User $user): UserResource
+    protected function UserResponse(User $user): UserResource
     {
-        return new UserResource($user->load('roles'));
+        $user->load('roles');
+        $user->programRoles = $user->getProgramsRoles();
+        return new UserResource($user);
     }
 }

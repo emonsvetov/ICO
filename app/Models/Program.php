@@ -2,22 +2,24 @@
 
 namespace App\Models;
 
+use \Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
 use App\Models\Traits\Treeable;
 use App\Models\AccountHolder;
 use App\Models\FinanceType;
 use App\Models\MediumType;
+use App\Models\BaseModel;
 use App\Models\Account;
 
-class Program extends Model
+class Program extends BaseModel
 {
     use HasFactory;
     use SoftDeletes;
     use WithOrganizationScope;
     use Treeable;
+    use HasRecursiveRelationships;
 
     protected $guarded = [];
 
@@ -47,10 +49,20 @@ class Program extends Model
         ->withPivot('featured', 'cost_to_program')->withTimestamps();
     }
 
+    public function domains()
+    {
+        return $this->belongsToMany(Domain::class, 'domain_program')->withTimestamps();
+    }
+
     public function users()
     {
         return $this->belongsToMany(User::class, 'program_user')
         ->withTimestamps();
+    }
+
+    public function template()
+    {
+        return $this->hasOne(ProgramTemplate::class);
     }
 
     public function program_is_invoice_for_awards() {

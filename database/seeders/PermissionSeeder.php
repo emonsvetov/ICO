@@ -29,6 +29,7 @@ class PermissionSeeder extends Seeder
             'domain-delete-ip',
             'domain-add-program',
             'domain-delete-program',
+            'domain-listAvailableProgramsToAdd',
             'emailtemplate-list',
             'event-list',
             'event-view',
