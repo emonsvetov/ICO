@@ -14,7 +14,6 @@ class ExternalCallback extends Model
 	public static function read_list_by_type($account_holder_id, $callback_type) {
 
 		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
-		DB::enableQueryLog();
 		return self::selectRaw(
 			"external_callbacks.*,
 			t.type as callback_type
