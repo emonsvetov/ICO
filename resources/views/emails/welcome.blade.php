@@ -1,9 +1,6 @@
-<!DOCTYPE html>
-<html lang="en-US">
-<head>
-    <meta charset="utf-8"/>
-</head>
-<body>
+@extends('layouts.email')
+
+@section('content')
 
 <table width="600" bgcolor="#ffffff" cellspacing="0" cellpadding="0" style="font-family:Arial, Helvetica, sans-serif;
 border-left:solid 1px;
@@ -61,5 +58,4 @@ border-left:solid 1px;
     </tr>
     </tbody>
 </table>
-</body>
-</html>
+@endsection
