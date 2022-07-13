@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class InvitationNotification extends Notification
+class UserInvitedNotifyUser extends Notification
 {
     // use Queueable;
     public $data;
@@ -30,7 +30,7 @@ class InvitationNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['database', 'mail'];
+        return ['mail'];
     }
 
     /**
@@ -42,11 +42,8 @@ class InvitationNotification extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->line(sprintf('You are invited as participant', $this->data->id))
-           // ->line(sprintf('Merchant: %s', $this->data->merchant->name))
-            //->line(sprintf('Code count: %d', $this->data->code_count))
-           // ->line(sprintf('code percentage: %d', $this->data->code_percentage))
-           // ->line(sprintf('redemption_value: %f', $this->data->redemption_value))
+            ->line(sprintf('Hi %s %s,', $this->data->first_name, $this->data->last_name))
+            ->line(sprintf('You have been as a %s', $this->data->roles()->first()->name))
             ->action('Go to the App', url('/'))
             ->line('Thank you!');
     }

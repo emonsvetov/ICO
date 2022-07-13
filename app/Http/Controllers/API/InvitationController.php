@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\InvitationRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Events\UserInvited;
 use App\Models\Program;
 use App\Models\User;
 use App\Models\Role;
@@ -21,23 +22,18 @@ class InvitationController extends Controller
 		try {
             $validated = $request->validated();
             $validated['organization_id'] = $organization->id;
-            $validated['password']=rand();
-            $user = User::createAccount( $validated );
-            $program_id=$program->id;
-            //file_put_contents("test.txt",json_encode($user));
-            //if( !empty($validated['roles']))   {
-            //$user->syncRoles( [$validated['roles']] );
-            //$user->syncProgramRoles($program->id, $validated['roles']); //here pass program id
-            //}
-            //$program_id = $validated['program_id'];
-            //$columns = []; //any additional columns set here
-            //$user->programs()->sync( [ $validated['program_id'] => $columns ], false); need to discuss this
+            $generatedPassword = rand();
+            $validated['password'] = $generatedPassword;
 
-            //$roles = $validated['roles'];
+            $user = User::createAccount( $validated );
+
             $roles[] = Role::getIdByName(config('roles.participant'));
-            if( !empty($roles) ) {
-                $user->syncProgramRoles($program_id, $roles);
+
+            if( !empty($roles) ) 
+            {
+                $user->syncProgramRoles($program->id, $roles);
             }
+            event( new UserInvited( $user ) );
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);

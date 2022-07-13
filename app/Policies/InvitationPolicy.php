@@ -25,6 +25,7 @@ class InvitationPolicy
         {
             return false;
         }
+        
         if($user->isAdmin()) return true;
 
         return $user->isManagerToProgram( $program ) || $user->can('can-invite');
