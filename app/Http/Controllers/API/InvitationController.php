@@ -33,7 +33,7 @@ class InvitationController extends Controller
             {
                 $user->syncProgramRoles($program->id, $roles);
             }
-            event( new UserInvited( $user ) );
+            event( new UserInvited( $user, $program ) );
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);
