@@ -25,7 +25,7 @@ class UserController extends Controller
         $direction = request()->get('direction', 'asc');
         $limit = request()->get('limit', 10);
 
-        $where[] = ['organization_id', $organization->id];
+        $where = [];
 
         // if( $keyword)
         // {
@@ -33,7 +33,8 @@ class UserController extends Controller
             
         //     //more search criteria here
         // }
-        $query = User::where($where);
+        // return $organization;
+        $query = User::where($where)->withOrganization($organization);
 
         if( $keyword )
         {
@@ -60,8 +61,6 @@ class UserController extends Controller
         } else {
             $users = $query->with(['roles'])->paginate(request()->get('limit', 10));
         }
-
-        // return (DB::getQueryLog());
        
         if ( $users->isNotEmpty() ) 
         { 
@@ -77,6 +76,9 @@ class UserController extends Controller
             $validated = $request->validated();
             $validated['organization_id'] = $organization->id;
             $user = User::createAccount( $validated );
+            if( !empty($validated['roles']))   {
+                $user->syncRoles( [$validated['roles']] );
+            }
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);
@@ -98,13 +100,23 @@ class UserController extends Controller
         $validated = $request->validated();
         $user->update( $validated );
         if( !empty($validated['roles']))   {
-            $user->syncRoles( [$validated['roles']] );
+            //only a Super admin or a Admin can be assigned here. so we need to keep existing program roles intact
+            $newRoles = [];
+            $columns = ['program_id' => 0]; //a hack!
+            $user->roles()->wherePivot('program_id','=',0)->detach();
+            foreach($validated['roles'] as $role_id)    {
+                $newRoles[$role_id] = $columns;
+            }
+            $user->roles()->attach( $newRoles );
+            // $user->syncRoles( [$validated['roles']] );
         }
         return response([ 'user' => $user ]);
     }
 
-    protected function userResponse(User $user): UserResource
+    protected function UserResponse(User $user): UserResource
     {
-        return new UserResource($user->load('roles'));
+        $user->load('roles');
+        $user->programRoles = $user->getProgramsRoles();
+        return new UserResource($user);
     }
 }

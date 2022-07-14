@@ -28,6 +28,7 @@ class CheckoutRequest extends FormRequest
             'items.*.merchant_id' => 'required|integer',
             'items.*.redemption_value' => 'required|numeric',
             'items.*.qty' => 'required|integer',
+            'order_address' => 'sometimes|array',
         ];
     }
 }

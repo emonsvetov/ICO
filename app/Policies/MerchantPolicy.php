@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -11,8 +12,15 @@ class MerchantPolicy
 {
     use HandlesAuthorization;
 
-    public function viewAny(User $user)
+    private function __preAuthCheck($authUser, $organization, $merchant = null)   {
+        if( $authUser->organization_id != $organization->id) return false;
+        return true;
+    }
+
+    public function viewAny(User $user, Organization $organization)
     {
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
+        if( $user->isAdmin() ) return true;
         return $user->can('merchant-list');
     }
   

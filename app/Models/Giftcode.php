@@ -228,29 +228,30 @@ class Giftcode extends Model
 	}
 
 	private static function _run_gift_code_callback($callback = ExternalCallbackObject, $program_id, $user_id, $merchant_id, $data = array()) {
-		$params = array ();
-		$user = $this->users_model->read_by_owner_id ( ( int ) $user_id, ( int ) $program_id );
-		$program = $this->programs_model->get_program_info ( ( int ) $program_id );
-		// Get the program's default contact user
-		$default_contact = $this->users_model->read_by_owner_id ( ( int ) $program->default_contact_account_holder_id, ( int ) $program_id );
-		// Add more information to the data to be passed to the callback
-		$data ['program_id'] = $program_id;
-		$data ['program_external_id'] = $program->external_id;
-		$data ['user_id'] = $user->account_holder_id;
-		$data ['user_external_id'] = $user->organization_uid;
-		$data ['user_email'] = $user->email;
-		$data ['user_first_name'] = $user->first_name;
-		$data ['user_last_name'] = $user->last_name;
-		$data ['from_first_name'] = $default_contact->first_name;
-		$data ['from_last_name'] = $default_contact->last_name;
-		$data ['from_email'] = $default_contact->email;
-		$program_custom_fields = $this->users_model->read_custom_fields_by_owner ( ( int ) $program_id, ( int ) $user_id );
-		if (count ( $program_custom_fields ) > 0) {
-			foreach ( $program_custom_fields as $program_custom_field ) {
-				$data [$program_custom_field->name] = $program_custom_field->value;
-			}
-		}
-		$response = $this->external_callback->call ( $callback, $data, ( int ) $user_id, ( int ) $merchant_id );
+		$response['errors'] = "External Callback feature is not implemented in rebuild yet";
+		// $params = array ();
+		// $user = $this->users_model->read_by_owner_id ( ( int ) $user_id, ( int ) $program_id );
+		// $program = $this->programs_model->get_program_info ( ( int ) $program_id );
+		// // Get the program's default contact user
+		// $default_contact = $this->users_model->read_by_owner_id ( ( int ) $program->default_contact_account_holder_id, ( int ) $program_id );
+		// // Add more information to the data to be passed to the callback
+		// $data ['program_id'] = $program_id;
+		// $data ['program_external_id'] = $program->external_id;
+		// $data ['user_id'] = $user->account_holder_id;
+		// $data ['user_external_id'] = $user->organization_uid;
+		// $data ['user_email'] = $user->email;
+		// $data ['user_first_name'] = $user->first_name;
+		// $data ['user_last_name'] = $user->last_name;
+		// $data ['from_first_name'] = $default_contact->first_name;
+		// $data ['from_last_name'] = $default_contact->last_name;
+		// $data ['from_email'] = $default_contact->email;
+		// $program_custom_fields = $this->users_model->read_custom_fields_by_owner ( ( int ) $program_id, ( int ) $user_id );
+		// if (count ( $program_custom_fields ) > 0) {
+		// 	foreach ( $program_custom_fields as $program_custom_field ) {
+		// 		$data [$program_custom_field->name] = $program_custom_field->value;
+		// 	}
+		// }
+		// $response = $this->external_callback->call ( $callback, $data, ( int ) $user_id, ( int ) $merchant_id );
 		return $response;
 	}
 }

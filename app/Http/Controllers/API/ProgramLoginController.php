@@ -16,10 +16,10 @@ class ProgramLoginController extends Controller
         $requestRole = $request->validated()['role'];
         $user = auth()->user();
 
-        if( $requestRole == 'program_manager' )    {
+        if( $requestRole == 'manager' )    {
             if( $user->isManagerToProgram($program->id) ) {
                 return response([
-                    'role'=>Role::where('name', config('roles.program_manager'))->first(),
+                    'role'=>Role::where('name', config('roles.manager'))->first(),
                     'program' => $program,
                 ]);
             }

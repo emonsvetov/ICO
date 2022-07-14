@@ -1,19 +1,29 @@
 <?php
 namespace App\Services;
 
+use App\Events\MerchantDenominationAlert;
+use App\Events\OrderShippingRequest;
+use App\Events\TangoOrderCreated;
+
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use App\Models\Traits\IdExtractor;
 use App\Models\JournalEventType;
 use App\Models\ExternalCallback;
+use App\Models\PhysicalOrder;
+use App\Models\OptimalValue;
 use App\Models\JournalEvent;
 use App\Models\FinanceType;
 use App\Models\MediumType;
+use App\Models\TangoOrder;
 use App\Models\Currency;
 use App\Models\Giftcode;
 use App\Models\Merchant;
 use App\Models\Account;
 use App\Models\Program;
+use App\Models\Country;
 use App\Models\Owner;
+use App\Models\State;
 use DB;
 
 class CheckoutService 
@@ -21,6 +31,10 @@ class CheckoutService
     use IdExtractor;
 
     public function processOrder( $cart, $program )   {
+
+		// return Merchant::getRoot( 6 );
+
+		// pr($cart);
 
 		// Note: There is some work TODO in this function. The order creation, external callbacks, and email alerts to be precise - Arvind
 
@@ -34,7 +48,7 @@ class CheckoutService
 
 		$response = [];
         $gift_codes = $cart['items'];
-		$order_address = [];
+		$order_address = !empty($cart['order_address']) ? (object) $cart['order_address'] : null;
 
 		if( !$gift_codes ) return ['errors' => "No cart items in CheckoutService:processOrder"];
 
@@ -67,6 +81,12 @@ class CheckoutService
 		// return;
 		$merchant_ids = [];
 
+		/****** Test code BOF */
+		// return OptimalValue::readByMerchanIdAndDenomination ( 1, (float) 23);
+		// $merchant = Merchant::find(1);
+		// self::_merchant_denomination_alert ( 'inimist@gmail.com', $merchant, 2, 40, 23 );
+		/****** Test code EOF */
+
 		foreach($gift_codes as $gift_code) {
 			$merchant_ids[] = $gift_code['merchant_id'];
 		}
@@ -87,6 +107,8 @@ class CheckoutService
             $redemptionValue = 0;
 			$redemptionFee = 0;
             $all_merchants[$gift_code->merchant_id] = $merchant = get_merchant_by_id($merchants, $gift_code->merchant_id);
+
+			// pr($merchant);
 
             if (in_array ( $merchant->id, $merchantsCostToProgram )) {
 				$gift_code_values_response = Giftcode::getRedeemableListByMerchant ( $merchant );
@@ -114,7 +136,6 @@ class CheckoutService
             $merchants_info[$merchant->id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
 				$gift_code->gift_code_provider_account_holder_id = Merchant::get_top_level_merchant ( $gift_code->merchant_id )->account_holder_id ;
-                // TODO
 			} else {
 				$gift_code->gift_code_provider_account_holder_id = $gift_code->merchant_account_holder_id;
 			}
@@ -130,7 +151,6 @@ class CheckoutService
 			$external_callbacks = ExternalCallback::read_list_by_type ( ( int ) $gift_code->gift_code_provider_account_holder_id, 'B2B Gift Code' );
 			// pr($external_callbacks->toArray());
 			// pr(count ( $external_callbacks ));
-			// // pr(DB::getQueryLog());
 			// exit;
 			if ( count ( $external_callbacks ) > 0 ) {
 				//$debug['$external_callbacks'] = $external_callbacks;
@@ -173,7 +193,6 @@ class CheckoutService
 				} else {
 					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $gift_code->redemption_value );
 					// pr($denomination_list);
-					// pr(DB::getQueryLog());
 					// exit;
 					if (! isset ( $denomination_list ) || count ( $denomination_list ) < 1) {
 						// throw new RuntimeException ( 'Out of inventory' );
@@ -240,21 +259,23 @@ class CheckoutService
 				//TODO!!! To run callback and create the gift code in case of external callback is pending: Arvind, 19th May 2022
 				// This section is TODO
 				if ( $external_callbacks && count ( $external_callbacks ) > 0) {
-					$debug['$external_callbacks'] = $external_callbacks;
 					$data = array ();
 					$data ['amount'] = ( float ) $gift_code2->redemption_value;
 					$cb_response = Giftcode::_run_gift_code_callback ( $external_callbacks [0], $program->id, $user->account_holder_id, ( int ) $gift_code2->gift_code_provider_account_holder_id, $data );
+					if( !empty($cb_response['errors']))	{
+						$response['errors'][] = $cb_response['errors'];
+						return $response;
+					}
 					if ($cb_response->response_code != '200') {
 						$response['errors'][] = 'Error encountered when calling B2B Gift Code callback. ' . $cb_response->response_data;
 						return $response;
 					}
 					$code = $cb_response->data;
 					// Add the giftcode to the merchant's inventory
-					$gift_code_id = ( int ) $this->create ( ( int ) $user->account_holder_id, ( int ) $gift_code2->gift_code_provider_account_holder_id, $code );
+					$gift_code_id = ( int ) Giftcode::createGiftcode ( ( int ) $user->id, ( int ) $gift_code2->merchant_id, $code );
 					// Read the rest of the information about the code that was reserved
 					$reserved_code = self::_read_by_merchant_and_medium_info_id ( ( int ) $gift_code2->gift_code_provider_account_holder_id, $gift_code_id );
 				} else {
-					$debug['no_external_callbacks'] = $external_callbacks;
 					// merchant hasn't external callback so store all values
 					// store all values to redeem $redeem_merchant_info[merchant_id][code_value]
 					$redeem_merchant_info [$gift_code2->merchant_id] [number_format ( $gift_code2->sku_value, 2 )] = array ();
@@ -308,7 +329,8 @@ class CheckoutService
 					PhysicalOrder::add_line_item ( ( int ) $reserved_code->id, $order_id );
 				} elseif ($merch->physical_order) {
 					$shipToName = $user->first_name . ' ' . $user->last_name . ' ' . '(' . $merch->name . ')';
-					$address = new stdClass ();
+					$address = new \stdClass ();
+					$userData = new \stdClass ();
 					$address->ship_to_name = $shipToName;
 					$address->line_1 = 'N/A';
 					$address->line_2 = 'N/A';
@@ -317,9 +339,9 @@ class CheckoutService
 					$address->user_id = $user->account_holder_id;
 					$address->country_id = 232;
 					$address->state_id = 1;
-					$user->sku_value = $reserved_code->sku_value;
-					$user->gift_code = $reserved_code->code;
-					$note = json_encode ( $user, JSON_HEX_APOS );
+					$userData->sku_value = $reserved_code->sku_value;
+					$userData->gift_code = $reserved_code->code;
+					$note = json_encode ( $userData, JSON_HEX_APOS );
 					$order_id = PhysicalOrder::create ( $user->id, $program_id, $address, $note );
 					PhysicalOrder::add_line_item ( ( int ) $reserved_code->id, $order_id );
 				}
@@ -327,14 +349,14 @@ class CheckoutService
 				// TODO ; TangoOrder setup is pending in rebuild
 
 				if($merch->use_tango_api){
-                    $tango_order = new stdClass ();
-                    $tango_order->physical_order_id = $order_id;
-                    $tango_order->program_id = $program_id;
-                    $tango_order->user_id = $user->account_holder_id;
-                    $tango_order->merchant_id = $merch->account_holder_id;
-                    $tango_order->tango_order_external_id = null;
-                    $tango_order->tango_order_created_at = null;
-                    TangoOrder::create ($tango_order);
+					$tango_order = new \stdClass ();
+					$tango_order->physical_order_id = $order_id;
+					$tango_order->program_id = $program->id;
+					$tango_order->user_id = $user->id;
+					$tango_order->merchant_id = 9;
+					$tango_order->external_id = null;
+					$tangoOrderId = TangoOrder::create ((array)$tango_order);
+					event( new TangoOrderCreated( $tangoOrderId ) );
                 }
 			}
 		}
@@ -372,14 +394,6 @@ class CheckoutService
 				// return $code;
 				$gift_code_id = ( int ) $code->id;
 				// format the gift code details
-				$gift_code_details = "\'{$code->redemption_value}\', \'{$code->cost_basis}\', \'{$code->discount}\', \'{$code->sku_value}\',
-                                            \'{$code->purchase_date}\', \'{$code->pin}\', \'{$code->redemption_url}\', \'{$code->code}\'";
-				if (! isset ( $code->expiration_date ) || $code->expiration_date == '') {
-					$gift_code_details .= ", NULL";
-				} else {
-					$gift_code_details .= ", \'{$code->expiration_date}\'";
-				}
-				$debug['gift_code_details']=$gift_code_details;
 				// If gift_code_provider_account_holder_id != merchant_id, perform a gift code transfer before redeeming
 				if ($code->merchant->account_holder_id != $code->gift_code_provider_account_holder_id) {
 					$this->_transferGiftcodesToMerchantNoTransaction([
@@ -457,8 +471,8 @@ class CheckoutService
 			DB::statement("UNLOCK TABLES;");
 		}
 		
-/* 		if (isset ( $order_address ) && is_object ( $order_address )) {
-			$user_info = User::read_by_id ( ( int ) $account_holder_id );
+		if (isset ( $order_address ) && is_object ( $order_address )) {
+			// $user_info = $user->toArray();
 			$mail_to = "support@incentco.com";
 			switch ( \App::environment() ) {
 				case "production" :
@@ -470,29 +484,29 @@ class CheckoutService
 					// $mail_to = "arvind@inimisttech.com";
 					break;
 				default :
-					$mail_to = "bmorse@incentco.com";
-					// $mail_to = "arvind@inimisttech.com";
+					// $mail_to = "bmorse@incentco.com";
+					$mail_to = "arvind@inimisttech.com";
 			}
-			$ship_to_state = State::read ( ( int ) $order_address->state_id );
-			$ship_to_country = State::read_country ( ( int ) $order_address->country_id );
+			$ship_to_state = State::find ( ( int ) $order_address->state_id );
+			$ship_to_country = Country::find ( ( int ) $order_address->country_id );
 
 			$data = [
 				'order_id' => $order_id,
 				'order_address' => $order_address,
-				'user_info' => $user_info,
+				'user_info' => $user,
 				'ship_to_state' => $ship_to_state,
 				'ship_to_country' => $ship_to_country,
 			];
 			
 			try {
-				Mail::to( $mail_to )
-				->send(new TangoOrderAlert($data));
+				event( new OrderShippingRequest($data, $order_id) );
 			}   catch(Exception $e) {
-				throw new Exception('Error sending TangoOrder email in with error:' . $e->getMessage() . ' in line ' . $e->getLine());
+				$response['errors'][] = 'Error sending OrderShippingRequest notification with error:' . $e->getMessage() . ' in line ' . $e->getLine();
+				return $response;
 			}
-		} */
+		}
 		// all saved so check code count now
-		/* if (isset ( $redeem_merchant_info ) && count ( $redeem_merchant_info )) {
+		if (isset ( $redeem_merchant_info ) && count ( $redeem_merchant_info )) {
 			$percentage_alerts = array (
 					0,
 					25,
@@ -502,7 +516,7 @@ class CheckoutService
 			foreach ( $redeem_merchant_info as $merchant_id => &$details ) {
 				foreach ( $details as $code_value => $values ) { // check every sku_value redeemed
 				  // find all optimal values for code value
-					$optimal_values = OptimalValue::read_list_by_merchant_id_and_denomination ( ( int ) $merchant_id, ( float ) $code_value );
+					$optimal_values = OptimalValue::readByMerchanIdAndDenomination ( ( int ) $merchant_id, ( float ) $code_value );
 					if (count ( $optimal_values ) > 0) {
 						$alert_counts = array ();
 						$count_after = $values ['count_before'] - $values ['used'];
@@ -526,11 +540,12 @@ class CheckoutService
 			if (count ( $alerts_to_send ) > 0) {
 				foreach ( $alerts_to_send as $alert ) {
 					// send all alerts collected before
-					$merchant = ($_merchant = get_merchant_by_id($merchants, $alert['merchant_id'])) ? $_merchant : Merchant::read($alert['merchant_id']);
-					self::merchant_denomination_alert ( Incentco::DEFAULT_EMAIL, $merchant, $alert['code_count'], $alert['percentage_alert_value'], $alert['code_value'] );
+					$merchant = ($_merchant = get_merchant_by_id($merchants, $alert['merchant_id'])) ? $_merchant : Merchant::find($alert['merchant_id']);
+					
+					self::_merchant_denomination_alert ( config('global.default_email'), $merchant, $alert['code_count'], $alert['percentage_alert_value'], $alert['code_value'] );
 				}
 			}
-		} */
+		}
 		return $response;
     }
 
@@ -562,5 +577,22 @@ class CheckoutService
 			$data['currency_id'] = Currency::getIdByType(config('global.default_currency'), true);
 		}
 		return Giftcode::transferGiftcodesToMerchantNoTransaction( $data );
+	}
+
+	private function _merchant_denomination_alert($email = '', $merchant, $code_count = 0, $code_percentage = 0, $redemption_value = 0.0) {
+		if( !$email ) $email = config('global.default_email');
+		$data = [
+			'merchant' => $merchant,
+			'code_count' => $code_count,
+			'code_percentage' => $code_percentage,
+			'redemption_value' => $redemption_value
+		];
+		
+		try {
+			event( new MerchantDenominationAlert($data) );
+			return true;
+        }   catch(Exception $e) {
+            return ['errors' => 'Error sending MerchantDenominationAlert with error:' . $e->getMessage() . ' in line ' . $e->getLine()];
+        }
 	}
 }

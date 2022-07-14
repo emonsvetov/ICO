@@ -27,21 +27,13 @@ class RoleController extends Controller
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
+        $is_program_role = request()->get('is_program_role');
+        $user = auth()->user();
 
-        // Permission::create(['name'=>'view-role-permission']);
+        $orWhere = ['organization_id' => $organization->id, 'organization_id' => null];
+        // $where = [];
 
-        // $user->givePermissionTo('view-role-permission');
-
-        // $role = Role::where('name', config('global.super_admin_role_name'));
-        // return $role;
-        // $user = User::find(1);
-        // $user = request()->user();
-        // $user->assignRole($role);
-        // return $user->getAllPermissions();
-
-        $where = ['organization_id' => $organization->id];
-
-        $query = Role::where( $where );
+        $query = Role::where( $orWhere );
 
         if( $keyword )
         {
@@ -49,6 +41,14 @@ class RoleController extends Controller
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
                 ->orWhere('name', 'LIKE', "%{$keyword}%");
             });
+        }
+
+        if( !is_null($is_program_role) )  {
+            $query->where('is_program_role', $is_program_role);
+        }
+
+        if( !$user->isSuperAdmin() ) {
+            $query->where('name', '!=', config('roles.super_admin'));
         }
 
         if( $sortby == "name" )

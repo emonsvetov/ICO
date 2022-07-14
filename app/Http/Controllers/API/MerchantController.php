@@ -7,6 +7,7 @@ use App\Http\Requests\MerchantStatusRequest;
 use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\MerchantNode;
 use App\Models\Node;
@@ -19,14 +20,12 @@ class MerchantController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Organization $organization)
     {
 
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
-
-        // DB::enableQueryLog();
 
         $where = [];
 
@@ -40,7 +39,7 @@ class MerchantController extends Controller
             $orderByRaw = "{$sortby} {$direction}";
         }
 
-        $query = Merchant::whereNull('parent_id')->where( $where );
+        $query = Merchant::where( $where );
 
         if( $keyword )
         {
@@ -65,8 +64,6 @@ class MerchantController extends Controller
         } else {
             $merchants = $query->with('children')->paginate(request()->get('limit', 50));
         }
-
-        // Log::debug("Query:", DB::getQueryLog());
 
         if ( $merchants->isNotEmpty() )
         {

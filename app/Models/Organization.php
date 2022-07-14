@@ -16,4 +16,14 @@ class Organization extends Model
     {
         return $this->hasMany(Program::class);
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
+    public function roles()
+    {
+        return $this->hasMany(User::class);
+    }
 }

@@ -46,3 +46,35 @@ if(!function_exists('isValidDate'))  {
         return $d && $d->format($format) === $date;
     }
 }
+
+if(!function_exists('_flatten'))  {
+    function _flatten($collection, &$newCollection)
+    {
+        foreach( $collection as $model ) {
+            $children = $model->children;
+            unset($model->children);
+            if( !$newCollection ) {
+                $newCollection = collect([$model]);
+            }   else {
+                $newCollection->push($model);
+            }
+            if (!$children->isEmpty()) {
+                $newCollection->merge(_flatten($children, $newCollection));
+            }
+        }
+    }
+}
+if(!function_exists('collectIdsInATree'))  {
+    function collectIdsInATree($treeNodes, &$ids)
+    {
+        foreach( $treeNodes as $node)   {
+            array_push($ids, $node['id']);
+            if($node['children'])  {
+                $collectedIds = collectIdsInATree($node['children'], $ids);
+                if( $collectedIds ) {
+                    $ids = array_merge($ids, $collectedIds);
+                }
+            }
+        }
+    }
+}

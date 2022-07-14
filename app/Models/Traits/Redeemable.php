@@ -19,11 +19,9 @@ trait Redeemable
 		}
 
 		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
-		DB::enableQueryLog();
 		$query = self::selectRaw(
 			"'{$merchant->id}' as merchant_id,
 			'{$merchant->account_holder_id}' as merchant_account_holder_id,
-			a.`account_holder_id` as top_level_merchant_id,
 			`redemption_value`,
 			`sku_value`,
 			`redemption_value` - `sku_value` as `redemption_fee`,

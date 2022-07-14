@@ -75,10 +75,20 @@ Add common file uploads to .gitignore file. For example:
 
 ## Update Log 
 
+** July 06 2020
+
+Install adjacency-list
+`composer install staudenmeir/laravel-adjacency-list`
+
+Run migrations
+
+`php artisan migrate`
+
 ** May 20, 2022
 
 `php artisan migrate`
 
+`php artisan db:seed --class=OwnerSeeder`
 `php artisan db:seed --class=AccountHolderPatcher`
 `php artisan db:seed --class=CallbackTypeSeeder`
 

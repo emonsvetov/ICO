@@ -26,7 +26,6 @@ class GiftcodeService
             'redemption_date' => null,
         ];
         $giftcodes = Giftcode::getRedeemableListByMerchant($merchant, $where );
-        // pr(DB::getQueryLog());
         return new GiftcodeCollection( $giftcodes );
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Organization;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -9,6 +10,12 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 class RolePolicy
 {
     use HandlesAuthorization;
+
+    private function __preAuthCheck($authUser, $organization): bool
+    {
+        if( $organization->id != $authUser->organization_id ) return false;
+        return true;
+    }
 
     public function before(User $user, $ability)
     {
@@ -20,9 +27,11 @@ class RolePolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user)
+    public function viewAny(User $authUser, Organization $organization)
     {
-        return $user->can('role-list');
+        if(!$this->__preAuthCheck($authUser, $organization)) return false;
+        if($authUser->isAdmin()) return true;
+        return $authUser->can('role-list');
     }
 
     /**
