@@ -27,7 +27,7 @@
                                 0; overflow: auto; padding: 0;
                                 text-align: center; white-space: normal;">
                                                 Having trouble viewing this email?
-                                                <a href="{{ 'Link-1809' }}" shape="rect" style="color:#000000;" class="inf-track-no">Click here</a>
+                                                <a href="{{ env('REACT_APP_BASE_URL') }}" shape="rect" style="color:#000000;" class="inf-track-no">Click here</a>
                                             </div>
                                         </div>
                                     </div>
@@ -53,22 +53,9 @@
                                 link
                                 below:
                                 <br clear="none">
-                                <a class="inf-track-no" href="{{ 'Link-4083' }}" shape="rect" style="font-size:11px; font-family: arial;
+                                <a class="inf-track-no" href="{{ env('REACT_APP_BASE_URL') }}" shape="rect" style="font-size:11px; font-family: arial;
                           color: #000000;">
                                     Unsubscribe</a>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="background:
-                        none; border: none; color: #000000;
-                        font-family:
-                        verdana; font-size:
-                        10px; line-height: normal; margin: 0;
-                        overflow:
-                        auto;
-                        padding: 0;
-                        white-space: normal;">
-                                {{ 'Company.HTMLCanSpamAddressBlock' }}
                             </div>
                         </div>
                     </td>
