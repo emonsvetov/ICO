@@ -4,17 +4,19 @@ namespace App\Policies;
 
 use App\Models\Organization;
 use App\Models\Program;
+use App\Models\Event;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Support\Facades\Gate;
 
-class ProgramPolicy
+class ProgramEventPolicy
 {
     use HandlesAuthorization;
 
-    private function __preAuthCheck($authUser, $organization, $program = null)   {
+    private function __preAuthCheck($authUser, $organization, $program = null, $event = null)   {
         if( $authUser->organization_id != $organization->id) return false;
         if( $program && $program->organization_id != $organization->id) return false;
+        if( $event && $event->organization_id != $organization->id) return false;
         return true;
     }
 
@@ -24,14 +26,12 @@ class ProgramPolicy
      * @param  \App\Models\User  $user
      * @return mixed
      */
-    public function viewAny(User $user, Organization $organization)
+    public function viewAny(User $user, Organization $organization, Program $program)
     {
-        if( !$this->__preAuthCheck($user,$organization) ) return false;
-        if( $user->isAdmin() )
-        {
-            return true;
-        }
-        return $user->can('program-list');
+        if( !$this->__preAuthCheck($user,$organization,$program) ) return false;
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('program-event-list');
     }
 
     public function view(User $user, Organization $organization, Program $program)
@@ -39,14 +39,15 @@ class ProgramPolicy
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
         if( $user->isManagerToProgram( $program )) return true;
-        return $user->can('program-view');
+        return $user->can('program-event-view');
     }
 
     public function create(User $user, Organization $organization)
     {
         if( !$this->__preAuthCheck($user, $organization) ) return false;
         if( $user->isAdmin() ) return true;
-        return $user->can('program-create');
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('program-event-create');
     }
 
     public function update(User $user, Organization $organization, Program $program)
@@ -56,20 +57,7 @@ class ProgramPolicy
         {
             return true;
         }
-        return $user->can('program-update');
-    }
-
-    public function delete(User $user, Organization $organization, Program $program)
-    {
-        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
-        return $user->can('program-delete');
-    }
-
-    public function move(User $user, Organization $organization, Program $program)
-    {
-        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
-        return $user->can('program-move');
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('program-event-update');
     }
 }

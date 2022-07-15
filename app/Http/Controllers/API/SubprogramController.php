@@ -17,7 +17,6 @@ class SubprogramController extends Controller
 {
     public function index( Organization $organization, Program $program, ProgramService $programService)
     {
-
         $programs = $programService->getSubprograms( $organization, $program );
 
         if ( $programs->isNotEmpty() )

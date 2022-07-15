@@ -196,11 +196,15 @@ class ProgramService
     }
 
     public function getAvailableToAddAsSubprogram($organization, $program) {
+        // return $program->ancestorsAndSelf()->get()->pluck('id');
+        $exclude = $program->ancestorsAndSelf()->get()->pluck('id');
+        // pr($exclude);
         $programs = $this->index($organization, [
-            'except' => $program->id, 
+            'except' => $exclude->toArray(), 
             'minimal'=>true, 
             'flatlist'=>true
         ]);
+        // return $programs;
         $subprograms = $this->getSubprograms( $organization, $program);
         $available = $this->getDifference( $programs, $subprograms );
         return $available;
