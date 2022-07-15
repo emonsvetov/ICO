@@ -3,6 +3,7 @@
 /public/storage
 /public/uploads
 /storage/*.key
+!/storage/app/public/logo
 /vendor
 .env
 .env.backup
