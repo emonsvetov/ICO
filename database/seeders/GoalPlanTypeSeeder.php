@@ -17,19 +17,23 @@ class GoalPlanTypeSeeder extends Seeder
         GoalPlanType::insert([
             [
                 'id' => 1,
-                'name' => 'Sales Goal'
+                'name' => 'Sales Goal',
+                'description' => 'Sales Goal',
             ],
             [
                 'id' => 2,
-                'name' => 'Personal Goal'
+                'name' => 'Personal Goal',
+                'description' => 'Personal Goal',
             ],
             [
                 'id' => 3,
-                'name' => 'Recognition Goal'
+                'name' => 'Recognition Goal',
+                'description' => 'Recognition Goal',
             ],
             [
                 'id' => 4,
-                'name' => 'Event Count Goal'
+                'name' => 'Event Count Goal',
+                'description' => 'Event Count Goal',
             ]
         ]);
     }

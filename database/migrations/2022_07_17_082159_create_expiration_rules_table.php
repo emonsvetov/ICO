@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateGoalPlanTypesTable extends Migration
+class CreateExpirationRulesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,12 @@ class CreateGoalPlanTypesTable extends Migration
      */
     public function up()
     {
-        Schema::create('goal_plan_types', function (Blueprint $table) {
+        Schema::create('expiration_rules', function (Blueprint $table) {
             $table->id();
             $table->string('name', 45);
-            $table->string('description', 100);
+            $table->string('expire_offset', 45);
+            $table->enum('expire_units',['day', 'month', 'year'])->nullable();
+            $table->string('description', 128);
             $table->timestamps();
         });
     }
@@ -28,6 +30,6 @@ class CreateGoalPlanTypesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('goal_plan_types');
+        Schema::dropIfExists('expiration_rules');
     }
 }
