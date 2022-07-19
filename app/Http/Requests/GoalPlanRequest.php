@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class GoalPlanRequest extends FormRequest
 {
@@ -26,6 +27,8 @@ class GoalPlanRequest extends FormRequest
         return [
             'name' => ['required|string', Rule::unique('goal_plans', 'name')->ignore($this->goal_plans)],
             'goal_plan_type_id'=>'required|integer',
+            'event_id'=>'required|integer',
+            'program_id'=>'required|integer',
             'automatic_progress'=> 'required|boolean',
             'automatic_frequency'=>'sometimes|string',
             'automatic_value'=>'sometimes|integer',

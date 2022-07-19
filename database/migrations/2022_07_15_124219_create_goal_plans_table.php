@@ -18,6 +18,8 @@ class CreateGoalPlansTable extends Migration
            // $table->bigIncrements('id');
             $table->string('name', 45);
             $table->integer('goal_plan_type_id');
+            $table->integer('event_id');
+            $table->unsignedBigInteger('program_id');
             $table->boolean('automatic_progress'); // If yes then show automatic_frequency and  automatic_value
             $table->string('automatic_frequency',8)->nullable(); // Daily,Weekly,Monthly,Annually //show if automatic_progress is true
             $table->integer('automatic_value')->nullable(); //show if automatic_progress is true
