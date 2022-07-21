@@ -276,7 +276,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 	//Manager invite participant
 	  Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
 
-      //Goal plans
+   //GoalType
+
+    Route::get('/v1/goalplantype',[App\Http\Controllers\API\GoalPlanTypeController::class, 'index'])->middleware('can:viewAny,App\GoalPlanType');
+   //Goal plans
       Route::post('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'store'])->middleware('can:create,App\GoalPlan,organization,program');
       //->name('api.v1.organization.program.goalplan.store')
 });
