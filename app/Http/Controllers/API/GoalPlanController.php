@@ -17,8 +17,6 @@ class GoalPlanController extends Controller
 {
     public function store(GoalPlanRequest $request, Organization $organization, Program $program)
     {
-        pr('in add func'); die;
-        //return auth()->user();
         if ( !( $organization->id == $program->organization_id ) )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
@@ -35,7 +33,7 @@ class GoalPlanController extends Controller
         return response(['errors' => 'Goal plan Creation failed'], 422);
         }
         // unset($validated['custom_email_template']);
-        return response([ 'new_goal_plan' => $goal_plan ]);
+        return response([ 'new_goal_plan' => $new_goal_plan ]);
        
 	}
 }
