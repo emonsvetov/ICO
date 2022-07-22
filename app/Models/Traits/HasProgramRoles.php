@@ -2,6 +2,7 @@
 namespace App\Models\Traits;
 
 use App\Models\Program;
+use App\Models\Domain;
 use App\Models\Role;
 use App\Models\User;
 use DB;
@@ -41,6 +42,36 @@ trait HasProgramRoles
         return $parent->getProgramRoles();
     }
 
+    public function getProgramRolesByDomain( $domain )   {
+        $allRoles = [];
+        $domain =  Domain::getModelByMixed($domain);
+        //Lets try to find it in associated programs aka parent programs
+        foreach( $domain->programs as $program)    {
+            $programRoles = $this->getProgramsRoles($program);
+            if( $programRoles ) {
+                $allRoles = array_merge($allRoles, $programRoles);
+                // return $programRoles;
+            }
+        }
+        // Not found in any of direct associated program
+        foreach( $domain->programs as $program)    {
+            $descendants = $program->descendants()->breadthFirst()->get();
+            // pr($descendants->toArray());
+            if( !$descendants->isEmpty() ) {
+                foreach( $descendants as $child)    {
+                    $programRoles = $this->getProgramsRoles($child);
+                    if( $programRoles ) {
+                        // pr($programRoles);
+                        $allRoles = array_merge($allRoles, $programRoles);
+                        // return $programRoles;
+                    }
+                }
+            }
+        }
+        return $allRoles;
+        // pr("Here");
+    }
+
     public function getProgramRoles( $byProgram = null, $byDomain = null )
     {
         if( !$byProgram ) {
@@ -75,6 +106,9 @@ trait HasProgramRoles
     public function getProgramsRoles( $byProgram = null, $byDomain = null )
     {
         $_roles = $this->getProgramRoles( $byProgram, $byDomain );
+
+        if( !$_roles ) return null;
+
         $programs = [];
         $roles = [];
         $programRoles = [];
@@ -144,22 +178,14 @@ trait HasProgramRoles
     public function hasRoleInProgram( $roleName, $program): bool 
     {
         if( trim($roleName) == "" || !$program ) return false;
-        // $program_id = self::extractId($program);
         $program = Program::getModelByMixed($program);
         if( !$program )   return false;
-        if( !$this->programs->pluck('id')->contains($program->id) )  {
-            $hasRoleInAnscestors = $this->hasRoleInAncestors($roleName, $program );
-            // pr($hasRoleInAnscestors);
-            return $hasRoleInAnscestors;
-        }   else {
-            $roles = $this->roles()
-            ->where('roles.name', 'LIKE', $roleName)
-            ->wherePivot( 'program_id', '=', $program->id)
-            ->withPivot('program_id')
-            ->count();
-            return $roles > 0 ? true : false;
-        }
-        return false;
+        $roles = $this->roles()
+        ->where('roles.name', 'LIKE', $roleName)
+        ->wherePivot( 'program_id', '=', $program->id)
+        ->withPivot('program_id')
+        ->count();
+        return $roles > 0 ? true : false;
     }
     //Deprecated method, use "isManager" instead
     public function isManagerToProgram( $program ) {
@@ -170,7 +196,15 @@ trait HasProgramRoles
         return $this->isProgramParticipant( $program );
     }
     public function isManager( $program ) {
-        return $this->hasRoleInProgram( config('roles.manager'), $program);
+        $program = Program::getModelByMixed($program);
+        $isManager = $this->hasRoleInProgram( config('roles.manager'), $program);
+        if( $isManager )  return true;
+        // Is not a manager in current program. Find manager role in anscestors!
+        foreach( $program->ancestors()->get() as $ancestor )  {
+            $isManager = $this->hasRoleInProgram( config('roles.manager'), $ancestor);
+            if( $isManager )  return true;
+        }
+        return false;
     }
     public function isProgramParticipant( $program ) {
         return $this->hasRoleInProgram( config('roles.participant'), $program);

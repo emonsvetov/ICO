@@ -22,6 +22,11 @@ class Status extends Model
         return $id;
     }
 
+    public function getByNameAndContext( $name, $context) {
+        if( !$context || !$name) return;
+        return self::where(['status' => $name, 'context' => $context])->first();
+    }
+
     public function get_order_pending_status()  {
         return self::getSetByContextAndName('Orders', 'Pending');
     }
