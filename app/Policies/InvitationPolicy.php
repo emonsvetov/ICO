@@ -18,16 +18,22 @@ class InvitationPolicy
         if( $organization->id != $program->organization_id) return false;
         return true;
     }
-	 public function invite(User $user, Organization $organization, Program $program)
+	public function invite(User $user, Organization $organization, Program $program)
     {
-       // return true;
         if ( !$this->__authCheck($user, $organization, $program ) )
         {
             return false;
         }
-        
         if($user->isAdmin()) return true;
-
         return $user->isManagerToProgram( $program ) || $user->can('can-invite');
+    }
+	public function resend(User $user, Organization $organization, Program $program)
+    {
+        if ( !$this->__authCheck($user, $organization, $program ) )
+        {
+            return false;
+        }
+        if($user->isAdmin()) return true;
+        return $user->isManagerToProgram( $program ) || $user->can('can-invite-resend');
     }
 }

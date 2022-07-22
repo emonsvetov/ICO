@@ -40,6 +40,7 @@ class UserController extends Controller
         {
             $query = $query->where(function($query1) use($keyword) {
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('email', 'LIKE', "%{$keyword}%")
                 ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%");
             });
         }
@@ -92,11 +93,6 @@ class UserController extends Controller
 
     public function update(UserRequest $request, Organization $organization, User $user )
     {
-        if ( ! ( $organization->id == $user->organization_id ) ) 
-        { 
-            return response(['errors' => 'No User Found'], 404);
-        }
-
         $validated = $request->validated();
         $user->update( $validated );
         if( !empty($validated['roles']))   {
