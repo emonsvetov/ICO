@@ -21,13 +21,18 @@ class GoalPlanController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
+       // $request->date_begin = date("Y-m-d");
+        // Default custom expire date to 1 year from today
+        //$request->request->add(['date_end'=>date('Y-m-d', strtotime('+1 year'))]);
+        //$request->goal_measurement_label = '$';
         $validated = $request->validated();
         $new_goal_plan = GoalPlan::create(  $validated +
         [
             'organization_id' => $organization->id,
-            'program_id' => $program->id
+            'program_id' => $program->id,
+            'date_end'=>date('Y-m-d', strtotime('+1 year'))
         ] );
-
+        
         if ( !$new_goal_plan )
         {
         return response(['errors' => 'Goal plan Creation failed'], 422);
