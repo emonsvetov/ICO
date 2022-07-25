@@ -112,6 +112,7 @@ class PermissionSeeder extends Seeder
             'program-event-update',
             'program-event-delete',
             'leaderboard-event-list',
+            'leaderboard-event-assign',
         ];
 
         foreach ($permissions as $permission) {

@@ -35,4 +35,21 @@ class LeaderboardEventPolicy
         if($authUser->isManagerToProgram($program)) return true;
         return $authUser->can('leaderboard-event-list');
     }
+
+    /**
+     * Determine whether the user can view any models.
+     *
+     * @param  \App\Models\User  $authuser
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Program  $program
+     * @param  \App\Models\Leaderboard  $leaderboard
+     * @return mixed
+     */
+    public function assign(User $authUser, Organization $organization, Program $program, Leaderboard $leaderboard)
+    {
+        if(!$this->__preAuthCheck($authUser, $organization, $program, $leaderboard)) return false;
+        if($authUser->isAdmin()) return true;
+        if($authUser->isManagerToProgram($program)) return true;
+        return $authUser->can('leaderboard-event-assign');
+    }
 }
