@@ -63,6 +63,12 @@ class PermissionSeeder extends Seeder
             'program-create',
             'program-edit',
             'program-delete',
+            'program-leaderboard-list',
+            'program-leaderboard-view',
+            'program-leaderboard-create',
+            'program-leaderboard-update',
+            'program-leaderboard-delete',
+            'program-leaderboardType-list',
             'program-merchant-list',
             'program-merchant-add',
             'program-merchant-remove',
@@ -105,6 +111,7 @@ class PermissionSeeder extends Seeder
             'program-event-create',
             'program-event-update',
             'program-event-delete',
+            'leaderboard-event-list',
         ];
 
         foreach ($permissions as $permission) {
