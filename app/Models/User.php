@@ -10,6 +10,7 @@ use App\Models\Traits\WithOrganizationScope;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Traits\HasProgramRoles;
+use App\Models\Traits\GetModelByMixed;
 use App\Models\Traits\IdExtractor;
 use Laravel\Passport\HasApiTokens;
 use App\Models\AccountHolder;
@@ -21,7 +22,7 @@ use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope, GetModelByMixed;
 
     public $timestamps = true;
 
@@ -124,6 +125,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Organization::class);
     }
 
+    public function status()
+    {
+        return $this->belongsTo(Status::class, 'user_status_id');
+    }
+
     public function sendPasswordResetNotification($token)
     {
         
@@ -168,6 +174,17 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function createAccount( $data )    {
         $account_holder_id = AccountHolder::insertGetId(['context'=>'User', 'created_at' => now()]);
+        if( !isset($data['user_status_id']) )   {
+            $user_status = self::getStatusByName( 'Pending Activation' );
+            if( $user_status )
+            {
+                $data['user_status_id'] = $user_status->id;
+            }
+        }
         return parent::create($data + ['account_holder_id' => $account_holder_id]);
+    }
+
+    public function getStatusByName( $status ) {
+        return Status::getByNameAndContext($status, 'Users');
     }
 }

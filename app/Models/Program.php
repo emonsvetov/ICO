@@ -60,6 +60,11 @@ class Program extends BaseModel
         ->withTimestamps();
     }
 
+    public function template()
+    {
+        return $this->hasOne(ProgramTemplate::class);
+    }
+
     public function program_is_invoice_for_awards() {
 		if ($this->invoice_for_awards == 1) {
 			return true;

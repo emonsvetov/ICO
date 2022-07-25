@@ -21,4 +21,8 @@ class Role extends SpatieRole
         }
         return $id;
     }
+    public function getIdByName( $name, $insert = false ) {
+        $first = self::where('name', $name)->first();
+        if( $first) return $first->id;
+    }
 }

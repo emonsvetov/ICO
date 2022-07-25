@@ -111,4 +111,36 @@ class DomainController extends Controller
         $secret_key = sha1 ( Str::random(10) );
         return response([ 'secret_key' => $secret_key ]);
     }
+
+    public function getProgram()    {
+        $domainName = request()->get('domainName');
+        if( !$domainName ) {
+            return response(['errors' => 'Invalid domain name'], 422);
+        }
+
+        $domain = Domain::where('name', 'LIKE', $domainName)->first();
+
+        if( !$domain )  {
+            return response(['errors' => 'Domain not found'], 422);
+        }
+
+        $program = $domain->programs()->first();
+
+        if( !$program ) {
+            return response(['errors' => 'No program found for the domain'], 422);
+        }
+
+        $program->load('template');
+
+        // return Domain::has('programs', 'programs.id', '=', 'model_has_roles.program_id')
+        // ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
+        // ->join('domains', 'domains.id', '=', 'domain_program.domain_id')
+        // ->where('domains.id', $byDomain)
+        // // ->wherePivot( 'program_id', '!=', 0)
+        // ->withPivot('program_id')
+        // ->get();
+
+        return response( ['domain' => $domain, 'program' => $program] );
+
+    }
 }

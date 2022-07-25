@@ -57,6 +57,7 @@ class AuthController extends Controller
         $host = '';
         // $host = 'incentco.local';
         $referer = request()->headers->get('referer');
+        $domain = request()->get('domain'); // For testing via postman
 
         if( $referer )   {
             $urlVars = parse_url($referer);
@@ -64,7 +65,11 @@ class AuthController extends Controller
                 return response(['errors' => 'Invalid Host'], 422);
             }
             $host = $urlVars['host'];
+        }   else if($domain)   {
+            $host = $domain;
         }
+
+        // return $host;
 
         if( $host == 'localhost' || !$host)  {
             // $host = null; //This needs to be revisted. More checks can be implemented here
@@ -82,15 +87,18 @@ class AuthController extends Controller
         }
 
         $user = auth()->guard('web')->user();
-        $user->organization;
-        $user->roles;
-        $user->programRoles = $user->getProgramsRoles(null, $domain->id);
-
+        $user->load(['organization', 'roles']);
+        // DB::enableQueryLog();
+        $user->programRoles = $user->getProgramRolesByDomain( $domain );
+        // return $programRoles;
+        // $user->programRoles = $user->getProgramsRoles(null, $domain->id);
+        // pr(DB::getQueryLog());
+        // return $programRoles;
         if( !$user->programRoles )  {
             return response(['message' => 'Invalid domain or no program'], 422);
         }
 
-        // return $user->programRoles;
+        // return $user;
 
         $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
 
