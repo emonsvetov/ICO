@@ -64,7 +64,7 @@ class LeaderboardController extends Controller
             }
             unset($data['enable']);
         }
-
+        // return $data;
         $leaderboard->update( $data );
         return response([ 'leaderboard' => $leaderboard ]);
     }
