@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class AddSoftDeleteToPrograms extends Migration
+class CreateOwnersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,12 @@ class AddSoftDeleteToPrograms extends Migration
      */
     public function up()
     {
-        Schema::table('programs', function (Blueprint $table) {
-            $table->softDeletes();
+        Schema::create('owners', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('account_holder_id');
+            $table->string('name', 45);
+            $table->timestamps();
+            $table->index('account_holder_id');
         });
     }
 
@@ -25,8 +29,6 @@ class AddSoftDeleteToPrograms extends Migration
      */
     public function down()
     {
-        Schema::table('programs', function (Blueprint $table) {
-            $table->dropSoftDeletes();
-        });
+        Schema::dropIfExists('owners');
     }
 }

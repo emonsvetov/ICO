@@ -1,10 +1,10 @@
 <?php
-  
+
 namespace Database\Seeders;
-  
+
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-  
+
 class PermissionSeeder extends Seeder
 {
     /**
@@ -18,6 +18,7 @@ class PermissionSeeder extends Seeder
 
         $permissions = [
             'award-create',
+            'checkout',
             'domain-list',
             'domain-view',
             'domain-create',
@@ -28,6 +29,8 @@ class PermissionSeeder extends Seeder
             'domain-delete-ip',
             'domain-add-program',
             'domain-delete-program',
+            'domain-listAvailableProgramsToAdd',
+            'emailtemplate-list',
             'event-list',
             'event-view',
             'event-create',
@@ -63,9 +66,14 @@ class PermissionSeeder extends Seeder
             'program-merchant-list',
             'program-merchant-add',
             'program-merchant-remove',
+            'program-merchant-view',
+            'program-merchant-view-giftcodes',
+            'program-merchant-view-redeemable',
             'program-participant-list',
+            'program-participant-change-status',
             'program-user-list',
             'program-user-add',
+            'program-user-view',
             'program-user-update',
             'program-user-remove',
             'program-user-readbalance',
@@ -79,6 +87,8 @@ class PermissionSeeder extends Seeder
             'submerchant-list',
             'submerchant-add',
             'submerchant-remove',
+            'subprogram-list',
+            'subprogram-unlink',
             'user-list',
             'user-view',
             'user-create',
@@ -87,9 +97,16 @@ class PermissionSeeder extends Seeder
             'user-program-list',
             'user-program-add',
             'user-program-remove',
-            'user-program-permissions',
+            'user-program-roles',
+			'can-invite',
+			'can-invite-resend',
+            'program-event-list',
+            'program-event-view',
+            'program-event-create',
+            'program-event-update',
+            'program-event-delete',
         ];
-     
+
         foreach ($permissions as $permission) {
              Permission::create(['name' => $permission, 'organization_id' => 1]);
         }

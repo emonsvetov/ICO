@@ -16,3 +16,4 @@ yarn-error.log
 /public/import
 /public/php_errors.log
 /public/adminrss.php
+php_errors.log

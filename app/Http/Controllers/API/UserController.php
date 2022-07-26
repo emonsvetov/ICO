@@ -4,8 +4,9 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
+use App\Http\Resources\UserResource;
 use App\Http\Requests\UserRequest;
+use App\Models\AccountHolder;
 use App\Models\Organization;
 use App\Models\User;
 use DB;
@@ -24,7 +25,7 @@ class UserController extends Controller
         $direction = request()->get('direction', 'asc');
         $limit = request()->get('limit', 10);
 
-        $where[] = ['organization_id', $organization->id];
+        $where = [];
 
         // if( $keyword)
         // {
@@ -32,12 +33,14 @@ class UserController extends Controller
             
         //     //more search criteria here
         // }
-        $query = User::where($where);
+        // return $organization;
+        $query = User::where($where)->withOrganization($organization);
 
         if( $keyword )
         {
             $query = $query->where(function($query1) use($keyword) {
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('email', 'LIKE', "%{$keyword}%")
                 ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%");
             });
         }
@@ -55,12 +58,10 @@ class UserController extends Controller
 
         if ( request()->has('minimal') )
         {
-            $users = $query->select('id', 'first_name', 'last_name')->get();
+            $users = $query->select('id', 'first_name', 'last_name')->with(['roles'])->get();
         } else {
-            $users = $query->paginate(request()->get('limit', 10));
+            $users = $query->with(['roles'])->paginate(request()->get('limit', 10));
         }
-
-        // return (DB::getQueryLog());
        
         if ( $users->isNotEmpty() ) 
         { 
@@ -75,33 +76,43 @@ class UserController extends Controller
         try {
             $validated = $request->validated();
             $validated['organization_id'] = $organization->id;
-            $user = User::create( $validated );
+            $user = User::createAccount( $validated );
+            if( !empty($validated['roles']))   {
+                $user->syncRoles( [$validated['roles']] );
+            }
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);
         }
     }
 
-    public function show( Organization $organization, User $user )
+    public function show( Organization $organization, User $user ): UserResource
     {
-        if ( $organization->id == $user->organization_id ) 
-        { 
-            return response( $user );
-        }
-
-        return response( [] );
+        return $this->UserResponse($user);
     }
 
     public function update(UserRequest $request, Organization $organization, User $user )
     {
-        if ( ! ( $organization->id == $user->organization_id ) ) 
-        { 
-            return response(['errors' => 'No User Found'], 404);
-        }
-
         $validated = $request->validated();
         $user->update( $validated );
-        $user->syncRoles( $validated['role_id'] );
+        if( !empty($validated['roles']))   {
+            //only a Super admin or a Admin can be assigned here. so we need to keep existing program roles intact
+            $newRoles = [];
+            $columns = ['program_id' => 0]; //a hack!
+            $user->roles()->wherePivot('program_id','=',0)->detach();
+            foreach($validated['roles'] as $role_id)    {
+                $newRoles[$role_id] = $columns;
+            }
+            $user->roles()->attach( $newRoles );
+            // $user->syncRoles( [$validated['roles']] );
+        }
         return response([ 'user' => $user ]);
+    }
+
+    protected function UserResponse(User $user): UserResource
+    {
+        $user->load('roles');
+        $user->programRoles = $user->getProgramsRoles();
+        return new UserResource($user);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\UserRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\Program;
@@ -14,10 +15,6 @@ class ProgramUserController extends Controller
 {
     public function index( Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         if( !$program->users->isNotEmpty() ) return response( [] );
 
@@ -59,14 +56,13 @@ class ProgramUserController extends Controller
             $users = $query->select('id', 'name')->get();
         }
         else {
-            $users = $query->paginate(request()->get('limit', 20));
+            $users = $query->with(['roles' => function ($query) use($program) {
+                $query->wherePivot('program_id', '=', $program->id);
+            }])->paginate(request()->get('limit', 20));
         }
 
         if ( $users->isNotEmpty() )
         {
-            foreach( $users as $user)   {
-                $user->getRoles( $program );
-            }
             return response( $users );
         }
 
@@ -75,41 +71,35 @@ class ProgramUserController extends Controller
 
     public function store( UserRequest $request, Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         $validated = $request->validated();
 
         $validated['organization_id'] = $organization->id;
-        $user = User::create( $validated );
+        $user = User::createAccount( $validated );
 
         if( $user ) {
             $program->users()->sync( [ $user->id ], false );
             if( isset($validated['roles']) ) {
-                $user->syncRolesByProgram($program->id, $validated['roles']);
+                $user->syncProgramRoles($program->id, $validated['roles']);
             }
         }
 
         return response([ 'user' => $user ]);
     }
 
+    public function show( Organization $organization, Program $program, User $user ): UserResource
+    {
+        return $this->UserResponse($user);
+    }
+
     public function update( UserRequest $request, Organization $organization, Program $program, User $user)
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         $validated = $request->validated();
         $user->update( $validated );
 
-        if( $user ) {
-            // $program->users()->sync( [ $user->id ], false );
-            if( isset($validated['roles']) ) {
-                $user->syncRolesByProgram($program->id, $validated['roles']);
-            }
+        if( !empty($validated['roles']) )   {
+            $user->syncProgramRoles($program->id, $validated['roles']);
         }
 
         return response([ 'user' => $user ]);
@@ -117,10 +107,6 @@ class ProgramUserController extends Controller
 
     public function delete(Organization $organization, Program $program, User $user )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
 
         try{
             $program->users()->detach( $user );
@@ -142,5 +128,10 @@ class ProgramUserController extends Controller
             'amount' => $amount_balance,
             'factor' => $factor_valuation
         ]);
+    }
+
+    protected function userResponse(User $user): UserResource
+    {
+        return new UserResource($user->load('roles'));
     }
 }

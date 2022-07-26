@@ -4,15 +4,23 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\AccountType;
+use App\Models\Currency;
 use App\Models\Posting;
 
 class Account extends Model
 {
     protected $guarded = [];
 
+	private static $account_type_fields = [
+        'finance_type',
+        'medium_type',
+        'account_type',
+        'currency_type'
+    ];
+
     public function getIdByColumns( $args = [], $insert = true)    {
         $fields = [];
-        $_fields = ['account_type_id', 'account_holder_id', 'finance_type_id', 'medium_type_id'];
+        $_fields = ['account_holder_id', 'account_type_id', 'finance_type_id', 'medium_type_id', 'currency_type_id'];
         foreach( $_fields as $field )    {
             if( isset($args[$field]) && (int) $args[$field] ) {
                 $fields[$field] = (int) $args[$field];
@@ -27,7 +35,7 @@ class Account extends Model
         }
         if( $insert )  {
             if( !isset( $fields['currency_type_id'] ))  {
-                $fields['currency_type_id'] = 1 ;
+                $fields['currency_type_id'] = Currency::getIdByType(config('global.default_currency'), true) ;
             }
             // pr("Inserting");
             // pr( $fields );
@@ -47,8 +55,7 @@ class Account extends Model
         $journal_event_id,
         $amount,
         $quantity,
-        $medium_fields,
-        $medium_values,
+        $medium_info,
         $medium_info_id,
         $currency_id
     ) {
@@ -91,18 +98,50 @@ class Account extends Model
         // pr("credit_account_id");
         // pr($credit_account_id);
 
-        $result['posting'] = Posting::create([
+        $result['postings'] = Posting::createPostings([
             'journal_event_id' => $journal_event_id,
             'debit_account_id' => $debit_account_id,
             'credit_account_id' => $credit_account_id,
             'amount' => $amount,
             'quantity' => $quantity,
-            'medium_fields' => $medium_fields,
-            'medium_values' => $medium_values,
+            'medium_info' => $medium_info,
             'medium_info_id' => $medium_info_id,
             'debit_medium_type_id' => $debit_medium_type_id,
         ]);
 
         return $result;
     }
+
+	public function create_multi_accounts($account_holder_id = 0, $accounts = array()) {
+		$result = false;
+		foreach ( $accounts as $i => $info ) {
+            if( blank($info) ) continue;
+			if (! isset ( $info ['currency_type'] ) || ( int ) $info ['currency_type'] < 1) {
+				$info ['currency_type'] = Currency::getIdByType(config('global.default_currency'), true);
+			} else {
+				$info ['currency_type'] = ( int ) $info ['currency_type'];
+			}
+			// iterate each account type fields to verify that each field is defined and has a valid value
+			foreach ( self::$account_type_fields as $key ) {
+				if( !isset( $info[$key] ) || blank($info[$key]) ) {
+                    return ['errors' => "Invalid key value for {$key}"];
+                    exit;
+                }
+			}
+
+            $account_type_id = AccountType::getIdByName($info['account_type'], true);
+
+            $attributes = [
+                'account_holder_id' => $account_holder_id,
+                'account_type_id' => $account_type_id, 
+                'finance_type_id' => $info['finance_type'],
+                'medium_type_id' => $info ['medium_type'],
+                'currency_type_id' => $info ['currency_type'],
+            ];
+
+			$result [] = self::getIdByColumns ( $attributes, true );
+		}
+		return $result;
+	
+	}
 }

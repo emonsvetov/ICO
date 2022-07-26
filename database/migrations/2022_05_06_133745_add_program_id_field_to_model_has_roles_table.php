@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class MerchantsColumnUpdate extends Migration
+class AddProgramIdFieldToModelHasRolesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,8 @@ class MerchantsColumnUpdate extends Migration
      */
     public function up()
     {
-        Schema::table('merchants', function (Blueprint $table) {
-            $table->integer('parent_id')->after('id')->nullable();
-            $table->dropColumn('deleted');
-            $table->softDeletes();
+        Schema::table('model_has_roles', function (Blueprint $table) {
+            $table->unsignedBigInteger('program_id')->default(0);
         });
     }
 
@@ -27,6 +25,8 @@ class MerchantsColumnUpdate extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('model_has_roles', function (Blueprint $table) {
+            $table->dropColumn('program_id');
+        });
     }
 }

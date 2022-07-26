@@ -3,29 +3,48 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Requests\ProgramMerchantRequest;
+use App\Http\Resources\GiftcodeCollection;
 use App\Http\Controllers\Controller;
+use App\Services\GiftcodeService;
 use App\Models\ProgramMerchant;
 use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\Program;
 Use Exception;
-// use DB;
+use DB;
 
 class ProgramMerchantController extends Controller
 {
+
+    function __construct(Organization $organization, Program $program, Merchant $merchant)  {
+        $this->organization = $organization;
+        $this->program = $program;
+        $this->merchant = $merchant;
+    }
+
     public function index( Organization $organization, Program $program )
     {
         if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
-
-        $program_merchants = ProgramMerchant::where('program_id', $program->id)
-        ->get();
-
-        if ( $program_merchants->isNotEmpty() ) 
+        
+        if ( $program->merchants->isNotEmpty() ) 
         { 
-            return response( $program_merchants );
+            return response( $program->merchants );
+        }
+
+        return response( [] );
+    }
+
+    public function view( Organization $organization, Program $program, Merchant $merchant )
+    {
+        $user = auth()->user();
+        $programMerchant = $program->merchants->find($merchant->id);
+
+        if ( $programMerchant ) 
+        { 
+            return response( $programMerchant );
         }
 
         return response( [] );
@@ -33,11 +52,6 @@ class ProgramMerchantController extends Controller
 
     public function store( ProgramMerchantRequest $request, Organization $organization, Program $program )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
         $validated = $request->validated();
 
         $columns = [];
@@ -63,11 +77,6 @@ class ProgramMerchantController extends Controller
 
     public function delete(Organization $organization, Program $program, Merchant $merchant )
     {
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
         try{
             $program->merchants()->detach( $merchant );
         }   catch( Exception $e) {
@@ -77,70 +86,13 @@ class ProgramMerchantController extends Controller
         return response([ 'success' => true ]);
     }
 
-    // Do not remove, we may need it later on!
+    public function giftcodes( Organization $organization, Program $program, Merchant $merchant )
+    {
+        return $this->merchant->getGiftcodes( $merchant );
+    }
 
-    // public function index( Organization $organization, Program $program )
-    // {
-    //     if ( !$organization || !$program )
-    //     {
-    //         return response(['errors' => 'Invalid Organization or Program'], 422);
-    //     }
-
-    //     if( !$program->merchants->isNotEmpty() ) return response( [] );
-
-    //     $keyword = request()->get('keyword');
-    //     $sortby = request()->get('sortby', 'id');
-    //     $direction = request()->get('direction', 'asc');
-
-    //     $merchantIds = [];
-    //     $where = [];
-
-    //     foreach($program->merchants as $merchant)    {
-    //         $merchantIds[] = $merchant->id;
-    //     }
-
-    //     if( $sortby == "name" ) 
-    //     {
-    //         $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-    //         $orderByRaw = "{$sortby} {$collation} {$direction}";
-    //     }
-    //     else
-    //     {
-    //         $orderByRaw = "{$sortby} {$direction}";
-    //     }
-
-    //     $query = Merchant::whereIn('id', $merchantIds)->where($where);
-
-    //     if( $keyword )
-    //     {
-    //         $query = $query->where(function($query1) use($keyword) {
-    //             $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-    //             ->orWhere('name', 'LIKE', "%{$keyword}%");
-    //         });
-    //     }
-
-    //     $query = $query->orderByRaw($orderByRaw);
-        
-    //     if ( request()->has('minimal') )
-    //     {
-    //         $merchants = $query->select('id', 'name')
-    //         ->with(['programs' => function($query){
-    //             return $query->select('id','name');
-    //         }])
-    //         ->get();
-    //     }
-    //     else {
-    //         $merchants = $query->with(['programs' => function($query){
-    //             return $query->select('id','name');
-    //         }])
-    //         ->paginate(request()->get('limit', 10));
-    //     }
-
-    //     if ( $merchants->isNotEmpty() ) 
-    //     { 
-    //         return response( $merchants );
-    //     }
-
-    //     return response( [] );
-    // }
+    public function redeemable(GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )
+    {
+        return $giftcodeService->getRedeemable( $merchant );
+    }
 }

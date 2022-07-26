@@ -11,4 +11,14 @@ class ProgramMerchant extends Model
     protected $guarded = [];
     protected $table = 'program_merchant';
     public $timestamps = true;
+
+    public function merchant()
+    {
+        return $this->belongsTo(Merchant::class);
+    }
+
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
+    }
 }

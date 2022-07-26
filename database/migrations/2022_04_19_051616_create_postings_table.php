@@ -24,7 +24,7 @@ class CreatePostingsTable extends Migration
             $table->timestamps();
 
             $table->index('journal_event_id');
-            $table->index('user_id');
+            $table->index('account_id');
             $table->index('medium_info_id');
 
         });

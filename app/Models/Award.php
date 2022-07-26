@@ -10,7 +10,9 @@ use App\Models\JournalEvent;
 use App\Models\FinanceType;
 use App\Models\MediumType;
 use App\Models\EventType;
+use App\Models\Currency;
 use App\Models\Event;
+use App\Models\User;
 use DB;
 
 class Award extends Model
@@ -35,7 +37,7 @@ class Award extends Model
         $event_id = $event->id;
         $event_type_id = $event->event_type_id;
         $eventName = $event->name;
-        $awarder_id = $awarder->id; //user_id
+        $awarder_account_holder_id = $awarder->account_holder_id; //user_id
         $notificationBody = $award->message; //TODO
         $notes = $award->notes;
         $quantity = 1;
@@ -88,11 +90,15 @@ class Award extends Model
 
         try {
 
-            foreach( $award->user_id as $userId)    {
+            $users = User::whereIn('id', $award->user_id)->select(['id', 'account_holder_id'])->get();
+
+            foreach( $users as $user)    {
                 // print_r( $userId );
+                $userId = $user->id;
+                $userAccountHolderId = $user->account_holder_id;
                 // continue;
                 $event_xml_data_id = EventXmlData::insertGetId([
-                    'awarder_id' => $awarder_id,
+                    'awarder_account_holder_id' => $awarder_account_holder_id,
                     'name' => $eventName,
                     'award_level_name' => 'default', //TODO
                     'amount_override' => $event_amount_override,
@@ -106,35 +112,34 @@ class Award extends Model
                     'icon' => 'Award', //TODO
                     'event_template_id' => $event_id, //Event > id
                     'award_transaction_id' => $awardUniqId,
-                    'created_at' => \Carbon\Carbon::now()
+                    'created_at' => now()
                 ]);
 
                 $journal_event_id = JournalEvent::insertGetId([
                     'journal_event_type_id' => $journal_event_type_id,
                     'event_xml_data_id' => $event_xml_data_id,
                     'notes' => $notes,
-                    'awarder_id' => $awarder_id,
-                    'created_at' => \Carbon\Carbon::now()
-                ]);
+                    'prime_account_holder_id' => $awarder_account_holder_id,
+                    'created_at' => now()
+                ]);//9816692516
 
                 if( $escrow_account != "")    {
 
                     // pr('Run > escrow_postings');
 
                     $result[$userId]['escrow_postings'] = Account::postings(
-                        $awarder_id,
+                        $awarder_account_holder_id,
                         $escrow_account,
                         $liability,
                         $points,
-                        $program->id,
+                        $program->account_holder_id,
                         $escrow_credit_account,
                         $liability,
                         $points,
                         $journal_event_id,
                         $award_amount,
                         1, //qty
-                        '', // medium_fields
-                        '', // medium_values
+                        null, // medium_info
                         null, // medium_info_id
                         $currency_id
                     );
@@ -149,19 +154,18 @@ class Award extends Model
                 // pr('Run > awarder_postings');
 
                 $result[$userId]['awarder_postings'] = Account::postings(
-                    $program->id,
+                    $program->account_holder_id,
                     'Monies Due to Owner',
                     $asset,
                     $monies,
-                    $program->id,
+                    $program->account_holder_id,
                     $credit_account_type_name,
                     $liability,
                     $points,
                     $journal_event_id,
                     $award_amount,
                     1, //qty
-                    '', // medium_fields
-                    '', // medium_values
+                    null, // medium_info
                     null, // medium_info_id
                     $currency_id
                 );
@@ -176,19 +180,18 @@ class Award extends Model
                 // pr('Run > recepient_postings');
 
                 $result[$userId]['recepient_postings'] = Account::postings(
-                    $program->id,
+                    $program->account_holder_id,
                     'Points Available',
                     $liability,
                     $points,
-                    $userId,
+                    $userAccountHolderId,
                     $credit_account_type_name,
                     $liability,
                     $points,
                     $journal_event_id,
                     $award_amount,
                     1, //qty
-                    '', // medium_fields
-                    '', // medium_values
+                    null, // medium_info
                     null, // medium_info_id
                     $currency_id
                 );
