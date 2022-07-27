@@ -99,7 +99,8 @@ class PermissionSeeder extends Seeder
             'user-program-roles',
 			'can-invite',
             'goal-plan-create',
-            'goal-plan-type-list'
+            'goal-plan-type-list',
+            'expiration-rule-list'
         ];
 
         foreach ($permissions as $permission) {

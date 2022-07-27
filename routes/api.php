@@ -282,4 +282,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
    //Goal plans
       Route::post('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'store'])->middleware('can:create,App\GoalPlan,organization,program');
       //->name('api.v1.organization.program.goalplan.store')
+
+    // Expiration rules
+    Route::get('/v1/expirationrule',[App\Http\Controllers\API\ExpirationRuleController::class, 'index'])->middleware('can:viewAny,App\ExpirationRule');
 });
