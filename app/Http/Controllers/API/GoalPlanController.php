@@ -17,6 +17,7 @@ class GoalPlanController extends Controller
 {
     public function store(GoalPlanRequest $request, Organization $organization, Program $program)
     {
+        //pr($request->all()); die;
         if ( !( $organization->id == $program->organization_id ) )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
@@ -29,7 +30,10 @@ class GoalPlanController extends Controller
         $new_goal_plan = GoalPlan::create(  $validated +
         [
             'organization_id' => $organization->id,
-            'program_id' => $program->id,
+            'state_type_id'=>1,
+            'program_id' => $program->id, 
+            'progress_notification_email_id'=>1, //pending
+            'created_by'=>1, //pending
             'date_end'=>date('Y-m-d', strtotime('+1 year'))
         ] );
         

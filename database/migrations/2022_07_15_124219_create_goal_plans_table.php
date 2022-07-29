@@ -47,7 +47,6 @@ class CreateGoalPlansTable extends Migration
             $table->boolean('award_email_per_progress')->default(0);
             $table->boolean('progress_requires_unique_ref_num')->default(0);
             $table->integer('progress_notification_email_id');
-           //$table->integer('progress_email_template_id')->nullable(); //not in old db
             $table->boolean('assign_goal_all_participants_default')->nullable()->default(0);
             $table->integer('created_by');
             $table->integer('modified_by')->nullable();

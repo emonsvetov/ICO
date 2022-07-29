@@ -23,9 +23,7 @@ class GoalPlanRequest extends FormRequest
      * @return array
      */
     public function rules()
-    { $table->mediumText('notification_body')->nullable();
-        $table->mediumText('achieved_callback_id')->nullable();
-        $table->mediumText('exceeded_callback_id')->nullable();
+    {
         return [
            // 'name' => ['required|string', Rule::unique('goal_plans', 'name')->ignore($this->goal_plans)],
             'next_goal_id'=>'integer',
@@ -49,8 +47,8 @@ class GoalPlanRequest extends FormRequest
             'expiration_rule_id'=>'required|integer',
             'custom_expire_offset'=>'sometimes|integer', //if expiration_rule_id is custom
             'custom_expire_units'=>'sometimes|string', //if expiration_rule_id is custom 
-            'annual_expire_month'=>'sometimes|integer', //if expiration_rule_id is annual
-            'annual_expire_day'=> 'sometimes|integer',  //if expiration_rule_id is annual
+            'annual_expire_month'=>'sometimes', //if expiration_rule_id is annual
+            'annual_expire_day'=> 'sometimes',  //if expiration_rule_id is annual integer
             'date_begin'=> 'required|date_format:Y-m-d',
             'date_end'=>'sometimes|date_format:Y-m-d',
             'factor_before'=>'sometimes|numeric',
