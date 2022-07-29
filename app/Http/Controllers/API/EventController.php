@@ -39,12 +39,6 @@ class EventController extends Controller
 
     public function store(EventRequest $request, Organization $organization, Program $program )
     {
-
-        if ( !( $organization->id == $program->organization_id ) )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
         $validated = $request->validated();
         if(isset($validated['custom_email_template'])){
             $template['name']  = $validated['template_name'];
