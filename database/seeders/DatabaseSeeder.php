@@ -50,6 +50,8 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             StateSeeder::class,
             LeaderboardTypeSeeder::class,
+            Database\Seeders\InvoiceTypeSeeder::class,
+            Database\Seeders\PaymentMethodSeeder::class,
         ]);
     }
 }
