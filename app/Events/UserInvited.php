@@ -1,6 +1,7 @@
 <?php
 namespace App\Events;
 
+use App\Models\Program;
 use App\Models\User;
 
 use Illuminate\Broadcasting\Channel;
@@ -15,15 +16,20 @@ class UserInvited
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $user;
+    public $sender;
+    public $recepient;
+    public $program;
+    
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct(User $user)
+    public function __construct(User $recepient, Program $program)
     {
-        $this->user = $user;
+        $this->sender = auth()->user();
+        $this->recepient = $recepient;
+        $this->program = $program;
     }
 }

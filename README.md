@@ -73,9 +73,17 @@ Every incoming form request must be validated using Laravel's Form Request Valid
 Add common file uploads to .gitignore file. For example:
 `/public/uploads`
 
-## Update Log 
+## Update Log
 
-** July 06 2020
+** July 22 2022
+Run `migrations`
+`php artisan migrate`
+    - Creates `leaderboards`, `leaderboard_types`, `leaderboard_event`, `leaderboard_goal_plan`, `leaderboard_journal_event` tables
+
+Run `seeders`
+    `php artisan db:seed --class=LeaderboardTypeSeeder`
+
+** July 06 2022
 
 Install adjacency-list
 `composer install staudenmeir/laravel-adjacency-list`

@@ -41,9 +41,8 @@ class CreateMerchants extends Migration
             $table->smallInteger('status')->default(0);
             $table->boolean('display_popup')->default(0);
 
-            $table->softDeletes();
-
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index('id');
             $table->index('name');

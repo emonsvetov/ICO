@@ -15,6 +15,7 @@ class UserProgramController extends Controller
 {
     public function index( Organization $organization, User $user )
     {
+        return $user->programs;
 
         if( $user->programs->isEmpty() ) return response( [] );
 
@@ -95,12 +96,14 @@ class UserProgramController extends Controller
 
     public function delete(Organization $organization, User $user, Program $program )
     {
+        // return $program;
         try{
+            $user->roles()->wherePivot('program_id','=',$program->id)->detach();
             $user->programs()->detach( $program );
-            $permissions = Permission::where('name', 'LIKE', "program.{$program->id}.role.%")->get()->pluck('name');
-            foreach( $permissions as $permission )  {
-                $user->revokePermissionTo( $permission );
-            }
+            // return $permissions = Permission::where('name', 'LIKE', "program.{$program->id}.role.%")->get()->pluck('name');
+            // foreach( $permissions as $permission )  {
+            //     $user->revokePermissionTo( $permission );
+            // }
         }   catch( Exception $e) {
             return response(['errors' => 'Program removal failed', 'e' => $e->getMessage()], 422);
         }

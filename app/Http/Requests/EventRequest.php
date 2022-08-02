@@ -39,9 +39,9 @@ class EventRequest extends FormRequest
 			'is_anniversary_award'=> 'boolean|nullable',
 			'award_message_editable'=> 'boolean|nullable',
 			'ledger_code'=> 'numeric|nullable',
-            'custom_email_template' =>'sometimes |boolean',
-            'template_name'=> 'required |string',
-            'email_template'=> 'required |string',
+            'custom_email_template' =>'sometimes|boolean',
+            // 'template_name'=> 'required |string',
+            // 'email_template'=> 'required |string',
         ];
     }
 }

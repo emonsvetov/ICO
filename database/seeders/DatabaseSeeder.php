@@ -21,6 +21,7 @@ use Database\Seeders\AccountHolderPatcher;
 use Database\Seeders\CallbackTypeSeeder;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\StateSeeder;
+use Database\Seeders\LeaderboardTypeSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -48,6 +49,7 @@ class DatabaseSeeder extends Seeder
             CallbackTypeSeeder::class,
             CountrySeeder::class,
             StateSeeder::class,
+            LeaderboardTypeSeeder::class,
         ]);
     }
 }

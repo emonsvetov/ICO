@@ -17,9 +17,11 @@ class UserInvitedNotifyUser extends Notification
      *
      * @return void
      */
-    public function __construct($data)
+    public function __construct($sender, $recepient, $program)
     {
-        $this->data = $data;
+        $this->sender = $sender;
+        $this->recepient = $recepient;
+        $this->program = $program;
     }
 
     /**
@@ -42,8 +44,12 @@ class UserInvitedNotifyUser extends Notification
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->line(sprintf('Hi %s %s,', $this->data->first_name, $this->data->last_name))
-            ->line(sprintf('You have been as a %s', $this->data->roles()->first()->name))
+            ->line(sprintf('Hi %s,', $this->recepient->name))
+            ->line(sprintf('You have been invited as a %s', $this->recepient->roles()->first()->name))
+            ->line(sprintf('to program %s(%d)', $this->program->name, $this->program->id))
+            ->line(sprintf('by %s', $this->sender->name))
+            ->line('')
+            ->line('In order to accept this invitation, click button ')
             ->action('Go to the App', url('/'))
             ->line('Thank you!');
     }
@@ -56,6 +62,10 @@ class UserInvitedNotifyUser extends Notification
      */
     public function toArray($notifiable)
     {
-        return $this->data->toArray();
+        return [
+            'sender' => $this->sender->toArray(),
+            'recepient' => $this->recepient->toArray(),
+            'program' => $this->program->toArray(),
+        ];
     }
 }

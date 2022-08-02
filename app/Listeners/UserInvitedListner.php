@@ -32,7 +32,7 @@ class UserInvitedListner
     public function handle(UserInvited $event)
     {
         $superAdmins = (new UserService)->getSuperAdmins();
-        Notification::send($superAdmins, new UserInvitedNotifyAdmin( $event->user ));
-        Notification::send($event->user, new UserInvitedNotifyUser( $event->user ));
+        Notification::send($superAdmins, new UserInvitedNotifyAdmin( $event->sender, $event->recepient, $event->program ));
+        Notification::send($event->recepient, new UserInvitedNotifyUser( $event->sender, $event->recepient, $event->program ));
     }
 }
