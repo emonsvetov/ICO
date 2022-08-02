@@ -19,7 +19,9 @@ class SocialWallPostService
 
     public function getIndexData(array $request): array
     {
-        $data = SocialWallPost::where('social_wall_post_type_id', SocialWallPostType::getEventTypeId())->get();
+        $data = SocialWallPost::where('social_wall_post_type_id', SocialWallPostType::getEventTypeId())
+            ->orderBy('created_at', 'DESC')
+            ->get();
 
         return [
             'data' => SocialWallPostResource::collection($data),
