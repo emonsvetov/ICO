@@ -8,4 +8,7 @@ class PaymentMethod extends BaseModel
 {
     protected $guarded = [];
     public $timestamps = true;
+
+    public function get_payment_method_ach() {
+    }
 }
