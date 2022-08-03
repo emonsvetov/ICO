@@ -115,6 +115,9 @@ class Award extends Model
                     'created_at' => now()
                 ]);
 
+                $result[$userId]['event_xml_data_id'] = $event_xml_data_id;
+                $result[$userId]['userAccountHolderId'] = $userAccountHolderId;
+
                 $journal_event_id = JournalEvent::insertGetId([
                     'journal_event_type_id' => $journal_event_type_id,
                     'event_xml_data_id' => $event_xml_data_id,
