@@ -46,7 +46,7 @@ class GoalPlanRequest extends FormRequest
             'automatic_value'=>'sometimes|integer',
             'expiration_rule_id'=>'required|integer',
             'custom_expire_offset'=>'sometimes|integer', //if expiration_rule_id is custom
-            'custom_expire_units'=>'sometimes|string', //if expiration_rule_id is custom 
+            'custom_expire_units'=>'nullable|string', //if expiration_rule_id is custom 
             'annual_expire_month'=>'sometimes', //if expiration_rule_id is annual
             'annual_expire_day'=> 'sometimes',  //if expiration_rule_id is annual integer
             'date_begin'=> 'required|date_format:Y-m-d',
