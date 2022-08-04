@@ -1,4 +1,7 @@
 <?php
+
+use App\Http\Controllers\API\SocialWallPostController;
+use App\Http\Controllers\API\SocialWallPostTypeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -68,7 +71,9 @@ Route::group(['middleware' => ['json.response']], function () {
 
     Route::post('/v1/password/forgot', [App\Http\Controllers\API\PasswordController::class, 'forgotPassword']);
     Route::post('/v1/password/reset', [App\Http\Controllers\API\PasswordController::class, 'reset']);
-    
+
+    Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
+
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
 });
@@ -140,7 +145,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //DomainProgram routes
 
-    Route::get('/v1/organization/{organization}/domain/{domain}/program',[App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,App\DomainProgram,organization,domain');    
+    Route::get('/v1/organization/{organization}/domain/{domain}/program',[App\Http\Controllers\API\DomainProgramController::class, 'index'])->name('api.v1.domainProgram.index')->middleware('can:viewAny,App\DomainProgram,organization,domain');
     Route::get('/v1/organization/{organization}/domain/{domain}/listAvailableProgramsToAdd',[App\Http\Controllers\API\DomainProgramController::class, 'listAvailableProgramsToAdd'])->name('api.v1.domainProgram.listAvailableProgramsToAdd')->middleware('can:listAvailableProgramsToAdd,App\DomainProgram,organization,domain');
     Route::post('/v1/organization/{organization}/domain/{domain}/program',[App\Http\Controllers\API\DomainProgramController::class, 'store'])->name('api.v1.domainProgram.add')->middleware('can:create,App\DomainProgram,organization,domain');
     Route::delete('/v1/organization/{organization}/domain/{domain}/program/{program}',
@@ -274,7 +279,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/template',[App\Http\Controllers\API\ProgramTemplateController::class, 'store'])->middleware('can:create,App\ProgramTemplate,organization,program');
 
     Route::put('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'update'])->middleware('can:update,App\ProgramTemplate,organization,program');
-    
+
 	//Manager invite participant
     Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/inviteResend', [App\Http\Controllers\API\InvitationController::class, 'resend'])->middleware('can:resend,App\Invitation,organization,program');
@@ -302,4 +307,28 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/assignableEvent',[App\Http\Controllers\API\LeaderboardEventController::class, 'assignable'])->middleware('can:viewAny,App\LeaderboardEvent,organization,program,leaderboard');
 
     Route::patch('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/event',[App\Http\Controllers\API\LeaderboardEventController::class, 'assign'])->middleware('can:assign,App\LeaderboardEvent,organization,program,leaderboard');
+
+    Route::group([
+        'prefix' => '/v1/organization/{organization}/program/{program}',
+    ], function ()
+    {
+        Route::group([
+            'prefix' => '/social-wall-post',
+        ], function ()
+        {
+            Route::get('', [SocialWallPostController::class, 'index']);
+            Route::post('create', [SocialWallPostController::class,'store']);
+            Route::delete('{socialWallPost}',[App\Http\Controllers\API\SocialWallPostController::class, 'delete'])
+                ->middleware('can:delete, App\SocialWallPost,organization,program,socialWallPost');
+        });
+
+        Route::group([
+            'prefix' => '/social-wall-post-type',
+        ], function ()
+        {
+            Route::get('event', [SocialWallPostTypeController::class, 'event']);
+            Route::get('message', [SocialWallPostTypeController::class, 'message']);
+            Route::get('comment', [SocialWallPostTypeController::class, 'comment']);
+        });
+    });
 });
