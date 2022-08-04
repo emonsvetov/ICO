@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Requests\SocialWallPostRequest;
+use App\Models\Organization;
+use App\Models\Program;
+use App\Models\SocialWallPost;
 use App\Services\SocialWallPostService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -30,6 +33,12 @@ class SocialWallPostController extends Controller
         }
 
         return response(['socialWallPost' => $newSocialWallPost]);
+    }
+
+    public function delete(Organization $organization, Program $program, SocialWallPost $socialWallPost)
+    {
+        $socialWallPost->delete();
+        return response(['success' => true]);
     }
 
 }
