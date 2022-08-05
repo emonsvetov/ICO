@@ -76,28 +76,6 @@ Route::group(['middleware' => ['json.response']], function () {
 
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
-    Route::group([
-        'prefix' => '/v1/organization/{organization}/program/{program}',
-    ], function ()
-    {
-        Route::group([
-            'prefix' => '/social-wall-post',
-        ], function ()
-        {
-            Route::get('', [SocialWallPostController::class, 'index']);
-            Route::post('create', [SocialWallPostController::class,'store']);
-        });
-
-        Route::group([
-            'prefix' => '/social-wall-post-type',
-        ], function ()
-        {
-            Route::get('event', [SocialWallPostTypeController::class, 'event']);
-            Route::get('message', [SocialWallPostTypeController::class, 'message']);
-            Route::get('comment', [SocialWallPostTypeController::class, 'comment']);
-        });
-    });
-
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {
@@ -328,18 +306,35 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/assignableEvent',[App\Http\Controllers\API\LeaderboardEventController::class, 'assignable'])->middleware('can:viewAny,App\LeaderboardEvent,organization,program,leaderboard');
 
     Route::patch('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/event',[App\Http\Controllers\API\LeaderboardEventController::class, 'assign'])->middleware('can:assign,App\LeaderboardEvent,organization,program,leaderboard');
-
-	//Manager invite participant
-	  Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
-
-      //GoalType
    
-       Route::get('/v1/goalplantype',[App\Http\Controllers\API\GoalPlanTypeController::class, 'index'])->middleware('can:viewAny,App\GoalPlanType');
+    Route::get('/v1/goalplantype',[App\Http\Controllers\API\GoalPlanTypeController::class, 'index'])->middleware('can:viewAny,App\GoalPlanType');
       //Goal plans
-         Route::post('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'store'])->middleware('can:create,App\GoalPlan,organization,program');
-         //->name('api.v1.organization.program.goalplan.store')
-   
-       // Expiration rules
-       Route::get('/v1/expirationrule',[App\Http\Controllers\API\ExpirationRuleController::class, 'index'])->middleware('can:viewAny,App\ExpirationRule');
+   Route::post('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'store'])->middleware('can:create,App\GoalPlan,organization,program');
+    //->name('api.v1.organization.program.goalplan.store')
+    // Expiration rules
+    Route::get('/v1/expirationrule',[App\Http\Controllers\API\ExpirationRuleController::class, 'index'])->middleware('can:viewAny,App\ExpirationRule');
+    Route::group([
+        'prefix' => '/v1/organization/{organization}/program/{program}',
+    ], function ()
+    {
+        Route::group([
+            'prefix' => '/social-wall-post',
+        ], function ()
+        {
+            Route::get('', [SocialWallPostController::class, 'index']);
+            Route::post('create', [SocialWallPostController::class,'store']);
+            Route::delete('{socialWallPost}',[App\Http\Controllers\API\SocialWallPostController::class, 'delete'])
+                ->middleware('can:delete, App\SocialWallPost,organization,program,socialWallPost');
+        });
+
+        Route::group([
+            'prefix' => '/social-wall-post-type',
+        ], function ()
+        {
+            Route::get('event', [SocialWallPostTypeController::class, 'event']);
+            Route::get('message', [SocialWallPostTypeController::class, 'message']);
+            Route::get('comment', [SocialWallPostTypeController::class, 'comment']);
+        });
+    });
 });
 

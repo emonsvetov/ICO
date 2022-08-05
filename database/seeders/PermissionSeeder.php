@@ -113,6 +113,11 @@ class PermissionSeeder extends Seeder
             'program-event-delete',
             'leaderboard-event-list',
             'leaderboard-event-assign',
+            'program-social-wall-post-list',
+            'program-social-wall-post-view',
+            'program-social-wall-post-create',
+            'program-social-wall-post-update',
+            'program-social-wall-post-delete',
             'goal-plan-create',
             'goal-plan-type-list',
             'expiration-rule-list'
