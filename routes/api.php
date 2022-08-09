@@ -76,28 +76,6 @@ Route::group(['middleware' => ['json.response']], function () {
 
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
-    Route::group([
-        'prefix' => '/v1/organization/{organization}/program/{program}',
-    ], function ()
-    {
-        Route::group([
-            'prefix' => '/social-wall-post',
-        ], function ()
-        {
-            Route::get('', [SocialWallPostController::class, 'index']);
-            Route::post('create', [SocialWallPostController::class,'store']);
-        });
-
-        Route::group([
-            'prefix' => '/social-wall-post-type',
-        ], function ()
-        {
-            Route::get('event', [SocialWallPostTypeController::class, 'event']);
-            Route::get('message', [SocialWallPostTypeController::class, 'message']);
-            Route::get('comment', [SocialWallPostTypeController::class, 'comment']);
-        });
-    });
-
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {
@@ -336,4 +314,27 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/invoice/on-demand',[App\Http\Controllers\API\InvoiceController::class, 'createOnDemand'])->middleware('can:createOnDemand,App\Invoice,organization,program');
 
 
+    Route::group([
+        'prefix' => '/v1/organization/{organization}/program/{program}',
+    ], function ()
+    {
+        Route::group([
+            'prefix' => '/social-wall-post',
+        ], function ()
+        {
+            Route::get('', [SocialWallPostController::class, 'index']);
+            Route::post('create', [SocialWallPostController::class,'store']);
+            Route::delete('{socialWallPost}',[App\Http\Controllers\API\SocialWallPostController::class, 'delete'])
+                ->middleware('can:delete, App\SocialWallPost,organization,program,socialWallPost');
+        });
+
+        Route::group([
+            'prefix' => '/social-wall-post-type',
+        ], function ()
+        {
+            Route::get('event', [SocialWallPostTypeController::class, 'event']);
+            Route::get('message', [SocialWallPostTypeController::class, 'message']);
+            Route::get('comment', [SocialWallPostTypeController::class, 'comment']);
+        });
+    });
 });

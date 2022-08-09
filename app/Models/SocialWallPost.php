@@ -17,9 +17,17 @@ class SocialWallPost extends BaseModel
 
     protected $guarded = [];
 
+    protected static function boot() {
+        parent::boot();
+
+        static::deleting(function ($socialWallPost) {
+            $socialWallPost->comments()->each->delete();
+        });
+    }
+
     public function program()
     {
-        return $this->hasOne(Program::class, 'program_account_holder_id', 'account_holder_id');
+        return $this->hasOne(Program::class, 'program_id', 'account_holder_id');
     }
 
     public function eventXmlData()

@@ -114,6 +114,11 @@ class PermissionSeeder extends Seeder
             'leaderboard-event-list',
             'leaderboard-event-assign',
             'invoice-create-on-demand',
+            'program-social-wall-post-list',
+            'program-social-wall-post-view',
+            'program-social-wall-post-create',
+            'program-social-wall-post-update',
+            'program-social-wall-post-delete',
         ];
 
         foreach ($permissions as $permission) {

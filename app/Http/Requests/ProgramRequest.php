@@ -70,7 +70,7 @@ class ProgramRequest extends FormRequest
             'use_one_leaderboard'=>'nullable|boolean',
             //Approvals and Budget
             'use_cascading_approvals'=>'nullable|boolean','enable_schedule_awards'=>'nullable|boolean',
-            'use_budget_cascading'=>'nullable|boolean', 
+            'use_budget_cascading'=>'nullable|boolean',
             'budget_summary'=>'nullable|boolean',
             //Reference Document
             'enable_reference_documents'=>'nullable|boolean',
@@ -80,7 +80,7 @@ class ProgramRequest extends FormRequest
             'enable_global_search'=>'nullable|boolean',
             //Archive
             'archive_program'=>'nullable|boolean',
-            //Deactivate Account 
+            //Deactivate Account
             'deactivate_account'=>'nullable|boolean',
             //Billing  Information
             'is_pay_in_advance'=>'nullable|boolean',
@@ -120,6 +120,9 @@ class ProgramRequest extends FormRequest
             'show_all_social_wall'=>'nullable|boolean',
             'social_wall_separation'=>'nullable|boolean',
             'uses_social_wall'=>'nullable|boolean',
+            // If it is enabled and the participant has the status "pending deactivation". Then he can then log in to
+            // the home page, but will not be able to view the social wall.
+            'remove_social_from_pending_deactivation'=>'nullable|boolean',
             'amount_override_limit_percent'=>'nullable|integer',
             'awards_limit_amount_override'=>'nullable|boolean',
 			//Brochures
