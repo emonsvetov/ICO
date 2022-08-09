@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\GetModelByMixed;
+use App\Models\Status;
 
 class BaseModel extends Model
 {
@@ -17,5 +18,9 @@ class BaseModel extends Model
             ]);
         }
         return $id;
+    }
+
+    public function getByNameAndContext( $name, $context ) {
+        return Status::getByNameAndContext($name, $context);
     }
 }

@@ -42,7 +42,7 @@ class ProgramEventPolicy
         return $user->can('program-event-view');
     }
 
-    public function create(User $user, Organization $organization)
+    public function create(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization) ) return false;
         if( $user->isAdmin() ) return true;
@@ -53,10 +53,7 @@ class ProgramEventPolicy
     public function update(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() )
-        {
-            return true;
-        }
+        if( $user->isAdmin() ) return true;
         if( $user->isManagerToProgram( $program )) return true;
         return $user->can('program-event-update');
     }

@@ -15,5 +15,5 @@ yarn-error.log
 .DS_Store
 /public/import
 /public/php_errors.log
-/public/adminrss.php
 php_errors.log
+.idea
