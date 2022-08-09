@@ -11,6 +11,24 @@ use App\Models\Invoice;
 
 class InvoiceController extends Controller
 {
+    public function index( Organization $organization, Program $program, InvoiceService $invoiceService)
+    {
+        $invoices = $invoiceService->index( $program );
+
+        if ( $invoices->isNotEmpty() )
+        {
+            return response( $invoices );
+        }
+
+        return response( [] );
+    }
+
+    public function createOnDemand(InvoiceRequest $request, InvoiceService $invoiceService, Organization $organization, Program $program )
+    {
+        // return $request->validated();
+        return response( $invoiceService->createOnDemand($request->validated(), $program));
+    }
+
     public function store(InvoiceRequest $request, Organization $organization, Program $program )
     {
         $newAward = Invoice::create(

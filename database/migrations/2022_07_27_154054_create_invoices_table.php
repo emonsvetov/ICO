@@ -28,6 +28,7 @@ class CreateInvoicesTable extends Migration
             $table->date('date_due');
             $table->double('amount')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

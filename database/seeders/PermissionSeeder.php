@@ -113,6 +113,7 @@ class PermissionSeeder extends Seeder
             'program-event-delete',
             'leaderboard-event-list',
             'leaderboard-event-assign',
+            'invoice-create-on-demand',
         ];
 
         foreach ($permissions as $permission) {
