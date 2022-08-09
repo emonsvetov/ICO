@@ -29,7 +29,7 @@ class InvoiceService
         // });
         // pr(DB::enableQueryLog());
         $query = self::filterable(Invoice::class);
-        $query = $query->where('program_id', $program->id);
+        $query = $query->where('program_id', $program->id)->with('invoice_type');
         if( $paginate ) {
             $invoices = $query->paginate( self::$PARAMS['limit'] );
         }   else    {

@@ -12,7 +12,7 @@ class Invoice extends BaseModel
     protected $guarded = [];
     public $timestamps = true;
     const DAYS_TO_PAY = 45;
-    public function type()    {
+    public function invoice_type()    {
         return $this->belongsTo(InvoiceType::class);
     }
     public function journal_events()
