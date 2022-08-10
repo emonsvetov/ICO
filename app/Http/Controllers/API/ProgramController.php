@@ -54,7 +54,7 @@ class ProgramController extends Controller
     {
         if ( $program )
         {
-            $program->load(['domains', 'merchants', 'template', 'organization']);
+            $program->load(['domains', 'merchants', 'template', 'organization', 'address']);
             return response( $program );
         }
 

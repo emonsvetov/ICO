@@ -43,6 +43,11 @@ class Program extends BaseModel
         return $this->hasMany(Event::class);
     }
 
+    public function address()
+    {
+        return $this->hasOne(Address::class, 'account_holder_id', 'account_holder_id')->with(['state', 'country']);
+    }
+
     public function merchants()
     {
         return $this->belongsToMany(Merchant::class, 'program_merchant')
