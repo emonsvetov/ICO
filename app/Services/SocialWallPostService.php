@@ -8,17 +8,17 @@ use App\Models\Program;
 use App\Models\SocialWallPost;
 use App\Models\SocialWallPostType;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use App\Repositories\interfaces\UserRepositoryInterface;
 
 class SocialWallPostService
 {
     private ProgramService $programService;
-    private UserService $userService;
+    private UserRepositoryInterface $userRepository;
 
-    public function __construct(ProgramService $programService, UserService $userService)
+    public function __construct(ProgramService $programService, UserRepositoryInterface $userRepository)
     {
         $this->programService = $programService;
-        $this->userService = $userService;
+        $this->userRepository = $userRepository;
     }
 
     public function create(array $data): ?SocialWallPost
@@ -29,7 +29,7 @@ class SocialWallPostService
 
     }
 
-    public function getIndexData(Organization $organization, Program $program, User $user, array $request): array
+    public function getIndexData(Organization $organization, Program $program, $user, array $request): array
     {
         $uses_social_wall = (bool)$program->uses_social_wall;
         $can_view_hierarchy_social_wall = (bool)$program->can_view_hierarchy_social_wall;
@@ -81,7 +81,7 @@ class SocialWallPostService
     {
         $resultProgramIds = [];
 
-        $programs = $this->userService->getParticipantPrograms($user);
+        $programs = $this->userRepository->getParticipantPrograms($user);
         foreach ($programs as $programItem){
             $uses_social_wall = (bool)$programItem->uses_social_wall;
             $can_view_hierarchy_social_wall = (bool)$programItem->can_view_hierarchy_social_wall;

@@ -43,20 +43,4 @@ class UserService
         return $users;
     }
 
-    /**
-     * @param User $user
-     * @return array
-     */
-    public function getParticipantPrograms(User $user): array
-    {
-        $resultPrograms = [];
-        $programs = $user->programs()->get();
-        foreach ($programs as $program){
-            if ($user->isProgramParticipant($program)){
-                $resultPrograms[] = $program;
-            }
-        }
-        return $resultPrograms;
-    }
-
 }
