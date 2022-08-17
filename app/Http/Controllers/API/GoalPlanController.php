@@ -30,7 +30,7 @@ class GoalPlanController extends Controller
         $new_goal_plan = GoalPlan::create(  $validated +
         [
             'organization_id' => $organization->id,
-            'state_type_id'=>1,
+            'state_type_id'=>1, //not found in create function of old system
             'program_id' => $program->id, 
             'progress_notification_email_id'=>1, //pending
             'created_by'=>1, //pending
