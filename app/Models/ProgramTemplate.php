@@ -7,6 +7,10 @@ use App\Models\BaseModel;
 
 class ProgramTemplate extends BaseModel
 {
-    protected $guarded = [];
     use HasFactory;
+
+    const IMAGE_FIELDS = ['small_logo', 'big_logo', 'hero_banner'];
+
+    protected $guarded = [];
+
 }
