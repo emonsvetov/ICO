@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ProgramRequest extends FormRequest
+class CSVProgramRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -16,6 +16,15 @@ class ProgramRequest extends FormRequest
         return true;
     }
 
+    public function importRules()
+    {
+        return [
+            'external_id'   => 'mustExistInModel:Program|matchWith:external_id|use:external_id|filter:organization_id,=,organization_id',
+            // 'program_name'  => 'mustExistInModel:Program|matchWith:name|use:name|filter:organization_id,=,organization_id',
+            'program_id'    => 'mustComeFromModel:Program|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
+        ];
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -24,8 +33,12 @@ class ProgramRequest extends FormRequest
     public function rules()
     {
         return [
-            'parent_id'            => 'nullable|integer',
-            'name'                  => 'required|string',
+            'external_id'   => 'nullable|string',
+            // 'program_name'  => 'required|string',
+            'program_id'    => 'required|integer',
+/*
+            'program_id'            => 'nullable|integer',
+            
             'type'                  => 'required|string',
             'status'                => 'nullable|string',
             'setup_fee'             => 'required|numeric',
@@ -36,7 +49,7 @@ class ProgramRequest extends FormRequest
 			//new
             'public_contact_email'=>'nullable|string|email',
             'prefix'=>'nullable|string',
-            'external_id'=>'nullable|string',
+            
             //'program_type_id'=>'nullable|integer', pending dropdown
             'corporate_entity'=> 'nullable|string',
             //Expiration Rule:
@@ -70,7 +83,7 @@ class ProgramRequest extends FormRequest
             'use_one_leaderboard'=>'nullable|boolean',
             //Approvals and Budget
             'use_cascading_approvals'=>'nullable|boolean','enable_schedule_awards'=>'nullable|boolean',
-            'use_budget_cascading'=>'nullable|boolean',
+            'use_budget_cascading'=>'nullable|boolean', 
             'budget_summary'=>'nullable|boolean',
             //Reference Document
             'enable_reference_documents'=>'nullable|boolean',
@@ -80,7 +93,7 @@ class ProgramRequest extends FormRequest
             'enable_global_search'=>'nullable|boolean',
             //Archive
             'archive_program'=>'nullable|boolean',
-            //Deactivate Account
+            //Deactivate Account 
             'deactivate_account'=>'nullable|boolean',
             //Billing  Information
             'is_pay_in_advance'=>'nullable|boolean',
@@ -120,9 +133,6 @@ class ProgramRequest extends FormRequest
             'show_all_social_wall'=>'nullable|boolean',
             'social_wall_separation'=>'nullable|boolean',
             'uses_social_wall'=>'nullable|boolean',
-            // If it is enabled and the participant has the status "pending deactivation". Then he can then log in to
-            // the home page, but will not be able to view the social wall.
-            'remove_social_from_pending_deactivation'=>'nullable|boolean',
             'amount_override_limit_percent'=>'nullable|integer',
             'awards_limit_amount_override'=>'nullable|boolean',
 			//Brochures
@@ -160,15 +170,7 @@ class ProgramRequest extends FormRequest
             //Goal Tracker
             'uses_goal_tracker'=>'nullable|boolean',
             'country'=>'nullable|string',
-            'transaction_fee'=>'nullable|numeric',
-        ];
-    }
-
-    public function importRules()
-    {
-        return [
-            'type'                  => 'mustComeFromList:default,employee,resident,shell',
-            'status'                => 'mustComeFromList:active,deleted,locked',
+            'transaction_fee'=>'nullable|numeric',*/
         ];
     }
 }
