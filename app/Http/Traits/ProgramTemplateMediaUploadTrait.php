@@ -4,7 +4,7 @@ namespace App\Http\Traits;
 use Illuminate\Support\Facades\Storage;
 
 trait ProgramTemplateMediaUploadTrait {
-    public $_media_fields = ['small_logo', 'big_logo'];
+    public $_media_fields = ['small_logo', 'big_logo', 'hero_banner'];
     public function handleProgramTemplateMediaUpload( $request, $program, $updating = false ) {
         $uploads = [];
         foreach( $this->_media_fields as $field ) {
