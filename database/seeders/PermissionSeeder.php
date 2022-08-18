@@ -119,6 +119,10 @@ class PermissionSeeder extends Seeder
             'program-social-wall-post-update',
             'program-social-wall-post-delete',
             'goal-plan-create',
+            'goal-plan-list',
+            'goal-plan-view',
+            'goal-plan-update',
+            'goal-plan-delete',
             'goal-plan-type-list',
             'expiration-rule-list'
         ];

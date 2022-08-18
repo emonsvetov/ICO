@@ -28,4 +28,22 @@ class GoalPlanPolicy
 
         return $user->isManagerToProgram( $program ) || $user->can('goal-plan-create');
     }
+    public function viewAny(User $user, Organization $organization, Program $program)
+    {
+        // return true;
+        if ( !$this->__authCheck($user, $organization, $program ) )
+        {
+            return false;
+        }
+        
+        if($user->isAdmin()) return true;
+
+        return $user->isManagerToProgram( $program ) || $user->can('goal-plan-list');
+        //This action to get EventTypes needs to be public?!
+    }
 }
+
+/*'goal-plan-list',
+'goal-plan-view',
+'goal-plan-update',
+'goal-plan-delete',*/
