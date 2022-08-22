@@ -1,5 +1,7 @@
 <?php
 namespace App\Services;
+use App\Models\Program;
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\Filterable;
 use App\Models\Traits\UserFilters;
@@ -7,7 +9,7 @@ use App\Models\Status;
 use App\Models\User;
 use DB;
 
-class UserService 
+class UserService
 {
     use Filterable, UserFilters;
 
@@ -40,4 +42,5 @@ class UserService
         // pr(DB::getQueryLog());
         return $users;
     }
+
 }
