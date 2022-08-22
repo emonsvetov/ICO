@@ -4,6 +4,7 @@ namespace App\Policies;
 use App\Models\User;
 use App\Models\Program;
 use App\Models\Organization;
+use App\Models\GoalPlan;
 use Illuminate\Auth\Access\HandlesAuthorization;
 use Illuminate\Support\Facades\Gate;
 
@@ -16,34 +17,108 @@ class GoalPlanPolicy
         if( $organization->id != $program->organization_id) return false;
         return true;
     }
-	 public function create(User $user, Organization $organization, Program $program)
+      /**
+     * Determine whether the user can create the model.
+     *
+     * @param  \App\Models\User  $authuser
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Program  $program
+     * @return mixed
+     */
+	 public function create(User $authUser, Organization $organization, Program $program)
     {
        // return true;
-        if ( !$this->__authCheck($user, $organization, $program ) )
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
         }
         
-        if($user->isAdmin()) return true;
+        if($authUser->isAdmin()) return true;
 
-        return $user->isManagerToProgram( $program ) || $user->can('goal-plan-create');
+        return $user->isManagerToProgram( $program ) || $authUser->can('goal-plan-create');
     }
-    public function viewAny(User $user, Organization $organization, Program $program)
+     /**
+     * Determine whether the user can view all records of the model.
+     *
+     * @param  \App\Models\User  $authuser
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Program  $program
+     * @return mixed
+     */
+    public function viewAny(User $authUser, Organization $organization, Program $program)
     {
         // return true;
-        if ( !$this->__authCheck($user, $organization, $program ) )
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
+        {
+            return false;
+        }
+        
+        if($authUser->isAdmin()) return true;
+
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-list');
+    }
+        /**
+     * Determine whether the user can view the model.
+     *
+     * @param  \App\Models\User  $authuser
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Program  $program
+     * @param  \App\Models\GoalPlan  $goalplan
+     * @return mixed
+     */
+    public function view(User $authUser, Organization $organization, Program $program)
+    {
+        // return true;
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
+        {
+            return false;
+        }
+        
+        if($authUser->isAdmin()) return true;
+
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-view');
+    }
+       /**
+     * Determine whether the user can update the model.
+     *
+     * @param  \App\Models\User  $authuser
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Program  $program
+     * @param  \App\Models\GoalPlan  $goalplan
+     * @return mixed
+     */
+    public function update(User $authUser, Organization $organization, Program $program, GoalPlan $goalplan)
+    {
+        // return true;
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
         }
         
         if($user->isAdmin()) return true;
 
-        return $user->isManagerToProgram( $program ) || $user->can('goal-plan-list');
-        //This action to get EventTypes needs to be public?!
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-update');
+    }
+     /**
+     * Determine whether the user can delete the model.
+     *
+     * @param  \App\Models\User  $authuser
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Program  $program
+     * @param  \App\Models\GoalPlan  $goalplan
+     * @return mixed
+     */
+    public function delete(User $authUser, Organization $organization, Program $program, GoalPlan $goalplan)
+    {
+       
+        // return true;
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
+        {
+            return false;
+        }
+        
+        if($authUser->isAdmin()) return true;
+
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-delete');
     }
 }
-
-/*'goal-plan-list',
-'goal-plan-view',
-'goal-plan-update',
-'goal-plan-delete',*/

@@ -76,4 +76,36 @@ class GoalPlanController extends Controller
 
         return response( [] );
     }
+    public function show( Organization $organization, Program $program, GoalPlan $goal_plan )
+    {
+        if ( !( $organization->id == $program->organization_id && $program->id == $goal_plan->program_id ) )
+        {
+            return response(['errors' => 'Invalid Organization or Program'], 422);
+        }
+
+        if ( $goal_plan )
+        {
+            return response( $goal_plan );
+        }
+
+        return response( [] );
+    }
+
+    public function update(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlan $goal_plan )
+    {
+        if ( !( $organization->id == $program->organization_id && $program->id == $goal_plan->program_id ) )
+        {
+            return response(['errors' => 'Invalid Organization or Program'], 422);
+        }
+
+        if ( $goal_plan->organization_id != $organization->id )
+        {
+            return response(['errors' => 'No Program Found'], 404);
+        }
+
+        $validated = $request->validated();
+        $goal_plan->update( $validated );
+
+        return response([ 'goalplan' => $goal_plan ]);
+    }
 }
