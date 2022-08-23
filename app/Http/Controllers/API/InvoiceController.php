@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\InvoiceRequest;
 use App\Http\Controllers\Controller;
 use App\Services\InvoiceService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Invoice;
@@ -55,7 +56,18 @@ class InvoiceController extends Controller
 
     public function show( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
     {
-        $invoice = $invoiceService->getView($invoice);
+        $invoice = $invoiceService->getInvoice($invoice);
         return response( $invoice );
+    }
+
+    public function download( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
+    {
+        // $invoice = ['name' => 'My Name'];
+        $invoice = $invoiceService->getInvoice($invoice);
+        // $pdf = Pdf::loadView('pdf.invoice', $invoice->toArray());
+        // return $pdf->download('invoice.pdf');
+
+        // return response( $invoice );
+        return view('pdf.invoice', ['invoice' => $invoice]);
     }
 }

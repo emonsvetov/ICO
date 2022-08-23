@@ -115,6 +115,7 @@ class PermissionSeeder extends Seeder
             'leaderboard-event-assign',
             'invoice-create-on-demand',
             'invoice-view',
+            'invoice-download',
             'program-social-wall-post-list',
             'program-social-wall-post-view',
             'program-social-wall-post-create',

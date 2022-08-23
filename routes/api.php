@@ -313,6 +313,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}',[App\Http\Controllers\API\InvoiceController::class, 'show'])->middleware('can:view,App\Invoice,organization,program');
 
+    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}/download',[App\Http\Controllers\API\InvoiceController::class, 'download'])->middleware('can:download,App\Invoice,organization,program');
+
     Route::post('/v1/organization/{organization}/program/{program}/invoice/on-demand',[App\Http\Controllers\API\InvoiceController::class, 'createOnDemand'])->middleware('can:createOnDemand,App\Invoice,organization,program');
 
     // Country

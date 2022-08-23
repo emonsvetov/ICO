@@ -47,4 +47,12 @@ class InvoicePolicy
         if( $user->isManagerToProgram( $program )) return true;
         return $user->can('invoice-view');
     }
+
+    public function download(User $user, Organization $organization, Program $program, Invoice $invoice)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program, $invoice) ) return false;
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('invoice-download');
+    }
 }

@@ -179,7 +179,7 @@ class InvoiceService
         return $invoice;
     }
 
-    public function getView(Invoice $invoice)   {
+    public function getInvoice(Invoice $invoice)   {
         if( !$invoice->exists() ) return null;
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
         $invoice_statement = $this->getInvoiceStatement($invoice);
