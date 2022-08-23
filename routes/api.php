@@ -311,7 +311,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Invoice
     Route::get('/v1/organization/{organization}/program/{program}/invoice',[App\Http\Controllers\API\InvoiceController::class, 'index'])->middleware('can:viewAny,App\Invoice,organization,program');
 
+    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}',[App\Http\Controllers\API\InvoiceController::class, 'show'])->middleware('can:view,App\Invoice,organization,program');
+
     Route::post('/v1/organization/{organization}/program/{program}/invoice/on-demand',[App\Http\Controllers\API\InvoiceController::class, 'createOnDemand'])->middleware('can:createOnDemand,App\Invoice,organization,program');
+
+    // Country
+    Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);
 
 
     Route::group([

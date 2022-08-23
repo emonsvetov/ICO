@@ -328,4 +328,18 @@ class ProgramService
         }
         return $program->descendants()->get()->toTree();
     }
+
+    public function update($program, $data)    {
+        if( isset($data['address']) )   {
+            if( $program->address()->exists() )   {
+                $program->address()->update($data['address']);   
+            }   else  {
+                $program->address()->create($data['address']);   
+            }
+            unset($data['address']);
+        }
+        if($program->update($data)) {
+            return $program;
+        }
+    }
 }

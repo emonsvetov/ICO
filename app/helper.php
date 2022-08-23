@@ -1,4 +1,9 @@
 <?php
+defined ( 'DEBIT' ) or define ( 'DEBIT', '0' );
+defined ( 'CREDIT' ) or define ( 'CREDIT', '1' );
+defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING', 'Reversal program pays for monies pending' );
+defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE', 'Reversal program pays for deposit fee' );
+
 if(!function_exists('pr'))  {
     function pr($d)    {
         $appPath = app_path();
@@ -77,4 +82,115 @@ if(!function_exists('collectIdsInATree'))  {
             }
         }
     }
+}
+
+if (! function_exists ( 'account_type_parser' )) {
+	function account_type_parser($data = array(), $report_type = "") {
+		$account_type_data = array (
+				'Cash' => array (
+						DEBIT => 1,
+						CREDIT => - 1 
+				),
+				'Equity' => array (
+						DEBIT => 1,
+						CREDIT => - 1 
+				),
+				'Escrow' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Gift Codes Available' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Gift Codes Pending' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Gift Codes Redeemed' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Gift Codes Spent' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Income' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Awarded' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Deposits' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Due to Owner' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Fees' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Paid to Progam' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Pending' => array (
+						DEBIT => 1,
+						CREDIT => - 1 
+				),
+				'Monies Redeemed' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Shared' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Transaction' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Monies Setup' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Points Available' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Points Awarded' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Points Pending' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Points Redeemed' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				),
+				'Points Fees' => array (
+						DEBIT => - 1,
+						CREDIT => 1 
+				) 
+		);
+		// loop the data passed
+		foreach ( $data as $key => $value ) {
+			// check if the account type name exist
+			if (isset ( $account_type_data [$value->account_type_name] )) {
+				$data [$key]->amount = $data [$key]->amount * $account_type_data [$value->account_type_name] [$value->is_credit];
+				if ($report_type == 'trial balance') {
+					$data [$key]->amount = $data [$key]->amount * - 1;
+				}
+			}
+		}
+		return $data;
+	
+	}
 }

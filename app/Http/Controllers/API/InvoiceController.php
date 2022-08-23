@@ -52,4 +52,10 @@ class InvoiceController extends Controller
 
         return response([ 'award' => $newAward ]);
     }
+
+    public function show( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
+    {
+        $invoice = $invoiceService->getView($invoice);
+        return response( $invoice );
+    }
 }

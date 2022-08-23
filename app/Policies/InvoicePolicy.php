@@ -16,7 +16,7 @@ class InvoicePolicy
     {
         if( $organization->id != $authUser->organization_id ) return false;
         if( $organization->id != $program->organization_id ) return false;
-        if( $invoice && $organization->id != $invoice->organization_id ) return false;
+        if( $invoice && $program->id != $invoice->program_id ) return false;
         return true;
     }
 
@@ -38,5 +38,13 @@ class InvoicePolicy
         if($authUser->isAdmin()) return true;
         if($authUser->isManagerToProgram($program)) return true;
         return $authUser->can('invoice-create-on-demand');
+    }
+
+    public function view(User $user, Organization $organization, Program $program, Invoice $invoice)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program, $invoice) ) return false;
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('invoice-view');
     }
 }

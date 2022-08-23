@@ -61,11 +61,9 @@ class ProgramController extends Controller
         return response( [] );
     }
 
-    public function update(ProgramRequest $request, Organization $organization, Program $program )
+    public function update(ProgramRequest $request, Organization $organization, Program $program, ProgramService $programService )
     {
-
-        $program->update( $request->validated() );
-
+        $program = $programService->update( $program, $request->validated());
         return response([ 'program' => $program ]);
     }
 
