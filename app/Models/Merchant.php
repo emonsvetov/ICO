@@ -47,7 +47,7 @@ class Merchant extends Model
         $merchant = parent::create($data + ['account_holder_id' => $merchant_account_holder_id]);
 
         $asset = FinanceType::getIdByName('Asset', true);
-        $monies_mt = MediumType::getIdByName('Monies', true);
+        $gift_codes_mt = MediumType::getIdByName('Gift Codes', true);
         $default_accounts = array (
             array (
                     'account_type' => 'Gift Codes Available',
