@@ -62,12 +62,9 @@ class InvoiceController extends Controller
 
     public function download( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
     {
-        // $invoice = ['name' => 'My Name'];
-        $invoice = $invoiceService->getInvoice($invoice);
-        // $pdf = Pdf::loadView('pdf.invoice', $invoice->toArray());
-        // return $pdf->download('invoice.pdf');
 
-        // return response( $invoice );
-        return view('pdf.invoice', ['invoice' => $invoice]);
+        $invoice = $invoiceService->getInvoice($invoice);
+        $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $invoice->toArray()]);
+        return $pdf->stream();
     }
 }
