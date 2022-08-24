@@ -35,7 +35,7 @@ class GoalPlanPolicy
         
         if($authUser->isAdmin()) return true;
 
-        return $user->isManagerToProgram( $program ) || $authUser->can('goal-plan-create');
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-create');
     }
      /**
      * Determine whether the user can view all records of the model.

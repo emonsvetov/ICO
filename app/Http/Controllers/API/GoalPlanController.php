@@ -22,10 +22,21 @@ class GoalPlanController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
-       // $request->date_begin = date("Y-m-d");
+        $data = $request->validated();
+        
+        
+         if( empty($data['date_begin']) )   {
+            $data['date_begin'] = date("Y-m-d");
+         }
+         if( empty($data['date_end']) )   { //pending to fix
+            $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
+         }
         // Default custom expire date to 1 year from today
         //$request->request->add(['date_end'=>date('Y-m-d', strtotime('+1 year'))]);
         //$request->goal_measurement_label = '$';
+        if( empty($data['state_type_id']) )   {
+            $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+        }
          // All goal plans use standard events except recognition goal
          $event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
@@ -36,15 +47,14 @@ class GoalPlanController extends Controller
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
         // ), 0, 9999);\
-        $validated = $request->validated();
-        $new_goal_plan = GoalPlan::create(  $validated +
+       
+        $new_goal_plan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
-            'state_type_id'=>1, //not found in create function of old system
+            //'state_type_id'=>1, //not found in create function of old system
             'program_id' => $program->id, 
             'progress_notification_email_id'=>1, //pending
             'created_by'=>1, //pending
-            'date_end'=>date('Y-m-d', strtotime('+1 year'))
         ] );
         
         if ( !$new_goal_plan )
@@ -62,9 +72,27 @@ class GoalPlanController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
+        /*$expired =  request()->get('expired');
+        $active =  request()->get('active');
+        $future =  request()->get('future');
+        pr($expired);
+        $today = today()->format('Y-m-d');
+        pr($today);
+        $where[]=['program_id','=', $program->id];
+        if($expired)
+            $where[]=['date_end', '>', $today];
+        if($active)
+            $where[]=['date_end', '<=', $today];
+        if($future)
+            $where[]=['date_begin', '>', $today];*/
 
+
+
+        //pr($where); 
+       // die;
         $goal_plans = GoalPlan::where('organization_id', $organization->id)
                         ->where('program_id', $program->id)
+                        //->where($where)
                         ->orderBy('name')
                         ->with(['goalPlanType'])
                         ->get();
