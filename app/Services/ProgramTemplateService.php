@@ -23,6 +23,9 @@ class ProgramTemplateService
         $newProgramTemplate = ProgramTemplate::create([
             'program_id' => $program->id,
             'welcome_message' => $validated['welcome_message'],
+            'button_color' => $validated['button_color'],
+            'button_bg_color' => $validated['button_bg_color'],
+            'button_corner' => $validated['button_corner'],
         ]);
 
         $uploads = $this->handleProgramTemplateMediaUpload($request, $program);
@@ -44,7 +47,10 @@ class ProgramTemplateService
     {
         $validated = $request->validated();
         $fieldsToUpdate = [
-            'welcome_message' => $validated['welcome_message']
+            'welcome_message' => $validated['welcome_message'],
+            'button_color' => $validated['button_color'],
+            'button_bg_color' => $validated['button_bg_color'],
+            'button_corner' => $validated['button_corner'],
         ];
 
         $uploads = $this->handleProgramTemplateMediaUpload($request, $program);
