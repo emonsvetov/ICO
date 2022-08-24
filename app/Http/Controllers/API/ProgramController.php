@@ -54,18 +54,16 @@ class ProgramController extends Controller
     {
         if ( $program )
         {
-            $program->load(['domains', 'merchants', 'template', 'organization']);
+            $program->load(['domains', 'merchants', 'template', 'organization', 'address']);
             return response( $program );
         }
 
         return response( [] );
     }
 
-    public function update(ProgramRequest $request, Organization $organization, Program $program )
+    public function update(ProgramRequest $request, Organization $organization, Program $program, ProgramService $programService )
     {
-
-        $program->update( $request->validated() );
-
+        $program = $programService->update( $program, $request->validated());
         return response([ 'program' => $program ]);
     }
 
@@ -80,6 +78,14 @@ class ProgramController extends Controller
     public function delete(Organization $organization, Program $program )
     {
         $program->delete();
+        $program->update(['status'=>'deleted']);
         return response([ 'delete' => true ]);
+    }
+
+    public function restore(Organization $organization, Program $program )
+    {
+        $program->restore();
+        $program->update(['status'=>'active']);
+        return response([ 'success' => true ]);
     }
 }

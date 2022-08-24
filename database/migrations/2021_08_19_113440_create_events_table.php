@@ -34,6 +34,7 @@ class CreateEventsTable extends Migration
 			$table->integer('ledger_code')->nullable();
 		
             $table->timestamps();
+            $table->softDeletes();
 
             $table->index(['id','organization_id','program_id']);
         });
