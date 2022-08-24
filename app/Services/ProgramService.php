@@ -9,7 +9,7 @@ use App\Models\Role;
 use App\Models\User;
 use DB;
 
-class ProgramService 
+class ProgramService
 {
     use IdExtractor;
 
@@ -179,7 +179,7 @@ class ProgramService
                 _flatten($results, $newResults);
                 return $newResults;
             }
-            
+
             return $results;
         }
 
@@ -188,7 +188,7 @@ class ProgramService
         // }
 
         $results = $query->paginate( $params['limit']);
-        return $results;    
+        return $results;
     }
 
     public function getParticipants($program, $paginate = false)   {
@@ -200,8 +200,8 @@ class ProgramService
         $exclude = $program->ancestorsAndSelf()->get()->pluck('id');
         // pr($exclude);
         $programs = $this->index($organization, [
-            'except' => $exclude->toArray(), 
-            'minimal'=>true, 
+            'except' => $exclude->toArray(),
+            'minimal'=>true,
             'flatlist'=>true
         ]);
         // return $programs;
@@ -229,7 +229,7 @@ class ProgramService
         // exit;
         // $subprograms = $this->getSubprograms( $organization, Program::find($topLevelProgram, [
         //     'except' => $exclude,
-        //     'minimal'=>true, 
+        //     'minimal'=>true,
         //     // 'flatlist'=>true
         // ]);
         // if( $topLevelProgram->id != $parent->id) {
@@ -244,9 +244,9 @@ class ProgramService
             return $subquery;
         }])
         ->withOrganization($organization, 1);
-        
-        return 
-            [ 
+
+        return
+            [
                 'tree' => $program2->first(),
                 'exclude' => $exclude
             ];
@@ -262,7 +262,7 @@ class ProgramService
             if( !in_array($program['id'], $ids)) {
                 $diff->push($program);
             }
-            
+
         }
         return $diff;
     }
@@ -278,7 +278,7 @@ class ProgramService
         $program->parent_id = null;
         $program->save();
     }
-    
+
     public function unlinkNode($organization, $program) {
         $parent_id = $program->parent ? $program->parent->id : null;
         if(!$program->children->isEmpty())  {
@@ -346,4 +346,17 @@ class ProgramService
             return $program;
         }
     }
+    /**
+     * @param Program $program
+     * @param array $where
+     * @return mixed
+     */
+    public function getDescendentsWithCondition( Program $program, array $where ) {
+        $result = $program->descendants()
+            ->where($where)
+            ->get()
+            ->toTree();
+        return $result;
+    }
+    
 }

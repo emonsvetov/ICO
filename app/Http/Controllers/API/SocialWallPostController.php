@@ -19,9 +19,10 @@ class SocialWallPostController extends Controller
         $this->socialWallPostService = $socialWallPostService;
     }
 
-    public function index(Request $request)
+    public function index(Organization $organization, Program $program, Request $request)
     {
-        return $this->socialWallPostService->getIndexData($request->all());
+        $user = auth()->guard('api')->user();
+        return $this->socialWallPostService->getIndexData($organization, $program, $user, $request->all());
     }
 
     public function store(SocialWallPostRequest $request)
