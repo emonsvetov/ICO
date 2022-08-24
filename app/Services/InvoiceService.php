@@ -182,7 +182,7 @@ class InvoiceService
     public function getInvoice(Invoice $invoice)   {
         if( !$invoice->exists() ) return null;
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
-        $invoice_statement = $this->getInvoiceStatement($invoice);
+        $invoice_statement = $this->read_compiled_invoice($invoice);
 		$invoice->invoices = [
 			[
 				'info' => $invoice_statement, 
@@ -214,7 +214,7 @@ class InvoiceService
         return $invoice;
     }
 
-    public function getInvoiceStatement(Invoice $invoice)   {
+    public function read_compiled_invoice(Invoice $invoice)   {
         // pr($invoice->invoice_type->name);
         switch ($invoice->invoice_type->name) {
 			case InvoiceType::INVOICE_TYPE_CREDITCARD :
