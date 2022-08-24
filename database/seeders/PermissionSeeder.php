@@ -63,6 +63,8 @@ class PermissionSeeder extends Seeder
             'program-create',
             'program-edit',
             'program-delete',
+            'program-move',
+            'program-restore',
             'program-leaderboard-list',
             'program-leaderboard-view',
             'program-leaderboard-create',

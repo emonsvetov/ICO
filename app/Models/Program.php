@@ -23,6 +23,11 @@ class Program extends BaseModel
 
     protected $guarded = [];
 
+    public function resolveSoftDeletableRouteBinding($value, $field = null)
+    {
+        return parent::resolveSoftDeletableRouteBinding($value, $field);
+    }
+
     public function organization()
     {
         return $this->belongsTo(Organization::class);

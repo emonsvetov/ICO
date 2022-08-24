@@ -78,6 +78,14 @@ class ProgramController extends Controller
     public function delete(Organization $organization, Program $program )
     {
         $program->delete();
+        $program->update(['status'=>'deleted']);
         return response([ 'delete' => true ]);
+    }
+
+    public function restore(Organization $organization, Program $program )
+    {
+        $program->restore();
+        $program->update(['status'=>'active']);
+        return response([ 'success' => true ]);
     }
 }

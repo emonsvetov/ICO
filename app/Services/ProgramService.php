@@ -81,6 +81,10 @@ class ProgramService
 
         $query = Program::where($where);
 
+        if($status && strtolower($status) == 'deleted')     {
+            $query = $query->withTrashed();
+        }
+
         if( $keyword )
         {
             $query = $query->where(function($query1) use($keyword) {
