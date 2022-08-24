@@ -14,13 +14,19 @@ class AddDeletedFieldToTables extends Migration
     public function up()
     {
         Schema::table('events', function (Blueprint $table) {
-            $table->timestamp('deleted_at')->nullable();
+            if(!$table->hasColumn('deleted_at'))  {
+                $table->timestamp('deleted_at')->nullable();
+            }
         });
         Schema::table('invoices', function (Blueprint $table) {
-            $table->timestamp('deleted_at')->nullable();
+            if(!$table->hasColumn('deleted_at'))  {
+                $table->timestamp('deleted_at')->nullable();
+            }
         });
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('deleted_at')->nullable();
+            if(!$table->hasColumn('deleted_at'))  {
+                $table->timestamp('deleted_at')->nullable();
+            }
         });
     }
 
@@ -31,14 +37,5 @@ class AddDeletedFieldToTables extends Migration
      */
     public function down()
     {
-        Schema::table('events', function (Blueprint $table) {
-            $table->dropColumn('deleted_at');
-        });        
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropColumn('deleted_at');
-        });
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('deleted_at');
-        });
     }
 }
