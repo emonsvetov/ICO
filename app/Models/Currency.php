@@ -2,12 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel;
 
-class Currency extends Model
+class Currency extends BaseModel
 {
     protected $guarded = [];
-    public function getIdByType( $type, $insert = false ) {
+    public function getIdByType( $type = 'USD', $insert = false ) {
         $first = self::where('type', $type)->first();
         if( $first )    {
             return $first->id;

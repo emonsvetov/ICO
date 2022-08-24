@@ -49,4 +49,17 @@ trait Filterable
         self::$PARAMS = array_merge(self::$DEFAULT_PARAMS, $params);
         return self::$PARAMS;
     }
+
+    public function filterable($model, $return = true)  {
+        if( !self::$query && $model ) {
+            self::$query = $model::query();
+        }
+        self::_makeParams();
+        if( method_exists(__CLASS__, 'applyFilters') )  {
+            self::applyFilters();
+        }
+        if( $return ) {
+            return self::$query;
+        }
+    }
 }

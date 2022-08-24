@@ -105,12 +105,13 @@ class ProgramRequest extends FormRequest
             'cc_email_list'=>'nullable|string',
             'notification_email_list'=>'nullable|string',
             //Address Information
-			//'state_id'=> 'nullable|integer', pending dropdown
-			'address'=>'nullable|string',
-			'address_ext'=>'nullable|string',
-			'city'=>'nullable|string',
-            'state'=>'nullable|string',
-			'zip'=>'nullable|string',
+            'address.id'=>'sometimes|integer',
+			'address.address'=>'nullable|string',
+			'address.address_ext'=>'nullable|string',
+			'address.city'=>'nullable|string',
+			'address.zip'=>'nullable|string',
+			'address.country_id'=>'nullable|integer',
+			'address.state_id'=> 'nullable|integer',
             //Social Wall
             'allow_hierarchy_to_view_social_wall'=>'nullable|boolean',
             'can_post_social_wall_comments'=>'nullable|boolean',
