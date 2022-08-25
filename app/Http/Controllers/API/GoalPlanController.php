@@ -34,9 +34,10 @@ class GoalPlanController extends Controller
         // Default custom expire date to 1 year from today
         //$request->request->add(['date_end'=>date('Y-m-d', strtotime('+1 year'))]);
         //$request->goal_measurement_label = '$';
-        if( empty($data['state_type_id']) )   {
+      //  if( empty($data['state_type_id']) )   {
             $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
-        }
+        //}
+       // pr($data['state_type_id']);
          // All goal plans use standard events except recognition goal
          $event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
@@ -67,32 +68,24 @@ class GoalPlanController extends Controller
 	}
     public function index( Organization $organization, Program $program )
     {
-
         if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
-        /*$expired =  request()->get('expired');
-        $active =  request()->get('active');
-        $future =  request()->get('future');
-        pr($expired);
-        $today = today()->format('Y-m-d');
-        pr($today);
         $where[]=['program_id','=', $program->id];
-        if($expired)
-            $where[]=['date_end', '>', $today];
-        if($active)
-            $where[]=['date_end', '<=', $today];
-        if($future)
-            $where[]=['date_begin', '>', $today];*/
+        $today = today()->format('Y-m-d');
+        $state_type_id =  request()->get('status');
+        
+        if($state_type_id)
+            $where[]=['state_type_id', '=', $state_type_id];
 
 
 
         //pr($where); 
        // die;
         $goal_plans = GoalPlan::where('organization_id', $organization->id)
-                        ->where('program_id', $program->id)
-                        //->where($where)
+                        //->where('program_id', $program->id)
+                        ->where($where)
                         ->orderBy('name')
                         ->with(['goalPlanType'])
                         ->get();
