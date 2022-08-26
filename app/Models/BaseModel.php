@@ -10,9 +10,10 @@ class BaseModel extends Model
 {
     use GetModelByMixed;
     
-    public function getIdByName( $name, $insert = false ) {
+    public static function getIdByName( $name, $insert = false ) {
         $row = self::where('name', $name)->first();
         $id = $row->id ?? null;
+
         if( !$id && $insert)    {
             $id = self::insertGetId([
                 'name'=>$name

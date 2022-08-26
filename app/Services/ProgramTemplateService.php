@@ -18,22 +18,16 @@ class ProgramTemplateService
      */
     public function create(ProgramTemplateRequest $request, Program $program): ?ProgramTemplate
     {
-        $validated = $request->validated();
-
-        $newProgramTemplate = ProgramTemplate::create([
-            'program_id' => $program->id,
-            'welcome_message' => $validated['welcome_message'],
-            'button_color' => $validated['button_color'],
-            'button_bg_color' => $validated['button_bg_color'],
-            'button_corner' => $validated['button_corner'],
-        ]);
+        $newProgramTemplate = ProgramTemplate::create(
+            ['program_id' => $program->id] + $request->validated()
+        );
 
         $uploads = $this->handleProgramTemplateMediaUpload($request, $program);
 
         if ($uploads) {
             $newProgramTemplate->update($uploads);
         }
-
+        
         return $newProgramTemplate;
     }
 
