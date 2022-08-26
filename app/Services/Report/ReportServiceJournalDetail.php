@@ -285,8 +285,9 @@ class ReportServiceJournalDetail extends ReportServiceAbstractBase
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING,
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES 
 				);
-				$cost_of_redeemed_report = new report_handler_sum_program_cost_of_gift_codes_redeemed ( $subreport_params );
+				$cost_of_redeemed_report = new ReportServiceSumProgramCostOfGiftCodesRedeemed ( $subreport_params );
 				$cost_of_redeemed_report_table = $cost_of_redeemed_report->getTable ();
+				pr($cost_of_redeemed_report_table);
 			}
 		}
 	}
