@@ -70,8 +70,10 @@ class InvoiceController extends Controller
 
     public function pay( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
     {
-        $invoice = $invoiceService->getInvoice($invoice);
-        $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $invoice->toArray()]);
-        return $pdf->stream();
+        $invoice = $invoiceService->getPayableInvoice($invoice);
+        return $invoice;
+        // return view('pdf.pay_invoice', ['invoice' => $invoice->toArray()]);
+        // $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $invoice->toArray()]);
+        // return $pdf->stream();
     }
 }

@@ -137,4 +137,12 @@ class Program extends BaseModel
 
         return $program;
     }
+
+    public function read_programs($programIds, $with_rank = false)  {
+        if( !$programIds ) return;
+        if( $with_rank )    {
+            //TODO
+        }
+        return self::whereIn('id', $programIds)->get();
+    }
 }
