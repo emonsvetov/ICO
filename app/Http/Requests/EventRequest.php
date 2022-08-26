@@ -44,4 +44,16 @@ class EventRequest extends FormRequest
             // 'email_template'=> 'required |string',
         ];
     }
+    
+    public function importRules()
+    {
+        return [
+            'organization_id'=> 'mustExistInModel:Organization|use:id|hide:true|provided:true',
+			'event_type_id'=> 'mustComeFromModel:EventType|matchWith:type|use:id',
+			'event_icon_id'=> 'mustComeFromModel:EventIcon|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
+			'email_template_id'=> 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
+            'post_to_social_wall'=> 'required|boolean',
+            'custom_email_template' =>'hide:true',
+        ];
+    }
 }
