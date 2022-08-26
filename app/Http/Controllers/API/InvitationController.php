@@ -33,6 +33,7 @@ class InvitationController extends Controller
 
             if( !empty($roles) ) 
             {
+                $program->users()->sync( [ $user->id ], false );
                 $user->syncProgramRoles($program->id, $roles);
             }
             event( new UserInvited( $user, $program ) );
