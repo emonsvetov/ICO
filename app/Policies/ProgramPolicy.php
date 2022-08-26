@@ -72,4 +72,11 @@ class ProgramPolicy
         if( $user->isAdmin() ) return true;
         return $user->can('program-move');
     }
+
+    public function restore(User $user, Organization $organization, Program $program)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-restore');
+    }
 }

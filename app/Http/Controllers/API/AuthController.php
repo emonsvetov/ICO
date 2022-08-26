@@ -23,7 +23,6 @@ class AuthController extends Controller
     {
 
         $registerFields = $request->validated();
-        $registerFields['password'] = bcrypt($request->password);
         if( !empty($registerFields['organization_name']) )  {
             $organization = Organization::create([
                 'name' => $registerFields['organization_name']

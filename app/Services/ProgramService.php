@@ -81,6 +81,10 @@ class ProgramService
 
         $query = Program::where($where);
 
+        if($status && strtolower($status) == 'deleted')     {
+            $query = $query->withTrashed();
+        }
+
         if( $keyword )
         {
             $query = $query->where(function($query1) use($keyword) {
@@ -329,6 +333,19 @@ class ProgramService
         return $program->descendants()->get()->toTree();
     }
 
+    public function update($program, $data)    {
+        if( isset($data['address']) )   {
+            if( $program->address()->exists() )   {
+                $program->address()->update($data['address']);   
+            }   else  {
+                $program->address()->create($data['address']);   
+            }
+            unset($data['address']);
+        }
+        if($program->update($data)) {
+            return $program;
+        }
+    }
     /**
      * @param Program $program
      * @param array $where

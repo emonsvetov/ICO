@@ -23,6 +23,11 @@ class Program extends BaseModel
 
     protected $guarded = [];
 
+    public function resolveSoftDeletableRouteBinding($value, $field = null)
+    {
+        return parent::resolveSoftDeletableRouteBinding($value, $field);
+    }
+
     public function organization()
     {
         return $this->belongsTo(Organization::class);
@@ -41,6 +46,11 @@ class Program extends BaseModel
     public function events()
     {
         return $this->hasMany(Event::class);
+    }
+
+    public function address()
+    {
+        return $this->hasOne(Address::class, 'account_holder_id', 'account_holder_id')->with(['state', 'country']);
     }
 
     public function merchants()
