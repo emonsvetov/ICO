@@ -34,9 +34,16 @@ class EventImportController extends Controller
 
     public function show(Organization $organization, CsvImport $csvImport)
     {
-        $csvImport['notifications'] = $csvImport->notifications;
+        $context = CsvImportType::find($csvImport['csv_import_type'])[0]['context'];
 
-        return response($csvImport);
+        if ($context === 'Events')
+        {
+            $csvImport['notifications'] = $csvImport->notifications;
+
+            return response($csvImport);
+        }
+
+        return response([]);
     }
 
     

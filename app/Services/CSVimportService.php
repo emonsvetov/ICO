@@ -97,7 +97,7 @@ class CSVimportService
                             else 
                             {
                                 # Each [table][database field] = csv file value
-                                $saveData[$formRequest][$line][$dbField] =  !empty($csvFieldValue) ? $csvFieldValue : NULL;
+                                $saveData[$formRequest][$line][$dbField] =  ($csvFieldValue !== '') ? $csvFieldValue : NULL;
                             }   
                         }
 

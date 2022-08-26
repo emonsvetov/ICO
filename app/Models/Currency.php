@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Currency extends Model
 {
     protected $guarded = [];
-    public function getIdByType( $type, $insert = false ) {
+    public static function getIdByType( $type, $insert = false ) {
         $first = self::where('type', $type)->first();
         if( $first )    {
             return $first->id;

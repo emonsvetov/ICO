@@ -9,19 +9,24 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-use App\Models\User;
-use App\Models\Program;
-use App\Models\Organization;
-use App\Mail\templates\WelcomeEmail;
-use DB;
-use Mail;
-use DateTime;
+use App\Http\Traits\UserImportTrait;
+use App\Models\CsvImportType;
 
-use App\Notifications\CSVImportNotification;
+// use App\Models\User;
+// use App\Models\Program;
+// use App\Models\Organization;
+
+// use App\Mail\templates\WelcomeEmail;
+// use DB;
+// use Mail;
+// use DateTime;
+
+// use App\Notifications\CSVImportNotification;
 
 class ImportUserForProgramJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use UserImportTrait;
 
     public $csvImport;
     public $importData;
@@ -52,6 +57,20 @@ class ImportUserForProgramJob implements ShouldQueue
         $data = $this->importData;
         $supplied_constants = $this->supplied_constants;
 
+        $type = CsvImportType::find( $this->csvImport->csv_import_type_id)->type;
+        
+        switch ($type)
+        {
+            case 'add_participants':
+                $this->addUser($this->csvImport, $this->importData, $this->supplied_constants);
+                break;
+            
+            case 'add_managers':
+                $this->addUser($this->csvImport, $this->importData, $this->supplied_constants);
+                break;
+        }
+
+        /*
         try
         {
             $userIds = DB::transaction(function() use ($data, $supplied_constants) {
@@ -121,6 +140,7 @@ class ImportUserForProgramJob implements ShouldQueue
         {
             $this->csvImport->notify(new CSVImportNotification(['errors' => $e->getMessage()]));
         }
+        */
 
     }
 }
