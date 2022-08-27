@@ -288,6 +288,66 @@ class ReportServiceJournalDetail extends ReportServiceAbstractBase
 				$cost_of_redeemed_report = new ReportServiceSumProgramCostOfGiftCodesRedeemed ( $subreport_params );
 				$cost_of_redeemed_report_table = $cost_of_redeemed_report->getTable ();
 				pr($cost_of_redeemed_report_table);
+				if (is_array ( $cost_of_redeemed_report_table ) && count ( $cost_of_redeemed_report_table ) > 0) {
+					foreach ( $cost_of_redeemed_report_table as $program_account_holder_id => $programs_cost_of_redeemed_report_table ) {
+						// Get an easier reference to the program
+						$program = $this->table [$program_account_holder_id];
+						if (is_array ( $programs_cost_of_redeemed_report_table ) && count ( $programs_cost_of_redeemed_report_table ) > 0) {
+							foreach ( $programs_cost_of_redeemed_report_table as $account_type_name => $account ) {
+								if (is_array ( $account ) && count ( $account ) > 0) {
+									foreach ( $account as $journal_event_type => $sum_row ) {
+										if (is_array ( $sum_row ) && count ( $sum_row ) > 0) {
+											foreach ( $sum_row as $sum_type => $amount ) {
+												switch ($sum_type) {
+													case report_handler_sum_program_cost_of_gift_codes_redeemed::FIELD_COST_BASIS :
+														switch ($account_type_name) {
+															case ACCOUNT_TYPE_POINTS_REDEEMED :
+															case ACCOUNT_TYPE_MONIES_REDEEMED :
+																switch ($journal_event_type) {
+																	case JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
+																	case JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
+																		if ($program->invoice_for_awards) {
+																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_cost = $amount;
+																		}
+																		break;
+																	case JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
+																		if (! $program->invoice_for_awards) {
+																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_cost = $amount;
+																		}
+																		break;
+																}
+																break;
+														}
+														break;
+													case report_handler_sum_program_cost_of_gift_codes_redeemed::FIELD_PREMIUM :
+														switch ($account_type_name) {
+															case ACCOUNT_TYPE_POINTS_REDEEMED :
+															case ACCOUNT_TYPE_MONIES_REDEEMED :
+																switch ($journal_event_type) {
+																	case JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
+																	case JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
+																		if ($program->invoice_for_awards) {
+																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_premium = $amount;
+																		}
+																		break;
+																	case JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
+																		if (! $program->invoice_for_awards) {
+																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_premium = $amount;
+																		}
+																		break;
+																}
+																break;
+														}
+														break;
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
