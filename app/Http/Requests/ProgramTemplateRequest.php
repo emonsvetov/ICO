@@ -33,6 +33,7 @@ class ProgramTemplateRequest extends FormRequest
             'button_corner' => 'integer|nullable',
             'button_color' => 'string|nullable',
             'button_bg_color' => 'string|nullable',
+            'font_family' => 'string|nullable',
             'welcome_message' => 'string|nullable',
             'is_active' => 'boolean|nullable'
         ];

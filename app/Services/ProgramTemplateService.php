@@ -45,6 +45,7 @@ class ProgramTemplateService
             'button_color' => $validated['button_color'],
             'button_bg_color' => $validated['button_bg_color'],
             'button_corner' => $validated['button_corner'],
+            'font_family' => $validated['font_family'],
         ];
 
         $uploads = $this->handleProgramTemplateMediaUpload($request, $program);
