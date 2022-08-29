@@ -95,7 +95,7 @@ class GoalPlanPolicy
             return false;
         }
         
-        if($user->isAdmin()) return true;
+        if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-update');
     }

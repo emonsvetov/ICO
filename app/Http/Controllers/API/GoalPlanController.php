@@ -124,8 +124,9 @@ class GoalPlanController extends Controller
             return response(['errors' => 'No Program Found'], 404);
         }
 
-        $validated = $request->validated();
-        $goalplan->update( $validated );
+        $data = $request->validated();
+        $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+        $goalplan->update( $data );
 
         return response([ 'goalplan' => $goalplan ]);
     }

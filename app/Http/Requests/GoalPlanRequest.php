@@ -35,7 +35,7 @@ class GoalPlanRequest extends FormRequest
             'goal_plan_type_id'=>'required|integer',
             'state_type_id'=>'required|integer',
             'default_target'=>'required|numeric',
-            'email_template_id'=>'integer',
+            //'email_template_id'=>'integer',
             'notification_body'=>'string',
             'achieved_callback_id'=>'string',
             'exceeded_callback_id'=>'string',
