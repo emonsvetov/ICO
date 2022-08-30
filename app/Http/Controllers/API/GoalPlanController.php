@@ -23,12 +23,21 @@ class GoalPlanController extends Controller
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
         $data = $request->validated();
-        
-        
+
+        //CALLBACK_TYPE_GOAL_MET=Goal Met
+        /*$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET);
+        $goal_exceeded_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_EXCEEDED);
+        $email_templates = $this->email_templates_model->read_list_program_email_templates_by_type((int) $this->program->account_holder_id, "Goal Progress", 0, 9999);
+        $empty_callback = new stdClass();
+        $empty_callback->id = 0;
+        $empty_callback->name = $this->lang->line('txt_none');
+        array_unshift($goal_met_program_callbacks, $empty_callback);
+        array_unshift($goal_exceeded_program_callbacks, $empty_callback);
+        */
          if( empty($data['date_begin']) )   {
-            $data['date_begin'] = date("Y-m-d");
+            $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
          }
-         if( empty($data['date_end']) )   { //pending to fix
+         if( empty($data['date_end']) )   { //default custom expire date to 1 year from today
             $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
          }
         // Default custom expire date to 1 year from today
@@ -61,6 +70,14 @@ class GoalPlanController extends Controller
         if ( !$new_goal_plan )
         {
         return response(['errors' => 'Goal plan Creation failed'], 422);
+        }   else {
+            // Assign goal plans after goal plan created based on INC-206
+            //if assign all current participants then run now
+            /*if($assign_all_participants_now==1){
+                $goal_plan->id = $result;
+                $this->assign_all_participants_now($this->program->account_holder_id, $goal_plan);
+            }
+            redirect('/manager/program-settings/edit-goal-plan/' . $result);*/
         }
         // unset($validated['custom_email_template']);
         return response([ 'new_goal_plan' => $new_goal_plan ]);
