@@ -130,4 +130,10 @@ class GoalPlanController extends Controller
 
         return response([ 'goalplan' => $goalplan ]);
     }
+    public function destroy(Organization $organization, Program $program, GoalPlan $goalplan)
+    {
+        $goalplan->delete();
+        return response(['success' => true]);
+    }
+
 }
