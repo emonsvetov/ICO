@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\IdExtractor;
 use App\Models\Traits\Redeemable;
@@ -11,7 +12,7 @@ use DB;
 
 class Giftcode extends Model
 {
-    use HasFactory, IdExtractor, Redeemable;
+    use HasFactory, IdExtractor, Redeemable, SoftDeletes;
 
     protected $guarded = [];
     protected $table = 'medium_info';

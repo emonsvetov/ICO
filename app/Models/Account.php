@@ -18,7 +18,7 @@ class Account extends Model
         'currency_type'
     ];
 
-    public function getIdByColumns( $args = [], $insert = true)    {
+    public static function getIdByColumns( $args = [], $insert = true)    {
         $fields = [];
         $_fields = ['account_holder_id', 'account_type_id', 'finance_type_id', 'medium_type_id', 'currency_type_id'];
         foreach( $_fields as $field )    {
@@ -112,7 +112,7 @@ class Account extends Model
         return $result;
     }
 
-	public function create_multi_accounts($account_holder_id = 0, $accounts = array()) {
+	public static function create_multi_accounts($account_holder_id = 0, $accounts = array()) {
 		$result = false;
 		foreach ( $accounts as $i => $info ) {
             if( blank($info) ) continue;

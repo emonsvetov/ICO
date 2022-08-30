@@ -39,4 +39,15 @@ class AwardRequest extends FormRequest
             'user_id.*' => 'required|integer',
         ];
     }
+
+
+    public function importRules()
+    {
+        return [
+            'email_template_id' => 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
+            'event_id'          => 'mustComeFromModel:Event|matchWith:name|use:id',
+            'documentationFile' => 'hide:true',
+            // 'user_id'           => 'required|array',
+        ];
+    }
 }
