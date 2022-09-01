@@ -3,7 +3,7 @@ namespace App\Models\Traits;
 
 trait GetModelByMixed
 {
-    public function getModelByMixed( $mixed )   {
+    public static function getModelByMixed( $mixed )   {
         if( gettype($mixed)=='object' ) {
             return $mixed;
         } else if( gettype($mixed)=='array' ) {
