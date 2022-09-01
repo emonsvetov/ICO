@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Http\Requests\UserRequest;
@@ -13,13 +14,20 @@ use DB;
 
 class UserController extends Controller
 {
+    private UserService $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     public function index( Organization $organization )
     {
         if ( !$organization )
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
-        
+
         $sortby = request()->get('sortby', 'id');
         $keyword = request()->get('keyword');
         $direction = request()->get('direction', 'asc');
@@ -30,7 +38,7 @@ class UserController extends Controller
         // if( $keyword)
         // {
         //     $where[] = [ DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%" ];
-            
+
         //     //more search criteria here
         // }
         // return $organization;
@@ -62,15 +70,15 @@ class UserController extends Controller
         } else {
             $users = $query->with(['roles'])->paginate(request()->get('limit', 10));
         }
-       
-        if ( $users->isNotEmpty() ) 
-        { 
+
+        if ( $users->isNotEmpty() )
+        {
             return response( $users );
         }
 
         return response( [] );
     }
-    
+
     public function store(UserRequest $request, Organization $organization)
     {
         try {
@@ -93,20 +101,9 @@ class UserController extends Controller
 
     public function update(UserRequest $request, Organization $organization, User $user )
     {
-        $validated = $request->validated();
-        $user->update( $validated );
-        if( !empty($validated['roles']))   {
-            //only a Super admin or a Admin can be assigned here. so we need to keep existing program roles intact
-            $newRoles = [];
-            $columns = ['program_id' => 0]; //a hack!
-            $user->roles()->wherePivot('program_id','=',0)->detach();
-            foreach($validated['roles'] as $role_id)    {
-                $newRoles[$role_id] = $columns;
-            }
-            $user->roles()->attach( $newRoles );
-            // $user->syncRoles( [$validated['roles']] );
-        }
-        return response([ 'user' => $user ]);
+        $newUser = $this->userService->update($request, $user);
+
+        return response(['user' => $newUser]);
     }
 
     protected function UserResponse(User $user): UserResource
