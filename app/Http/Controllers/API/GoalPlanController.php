@@ -123,6 +123,7 @@ class GoalPlanController extends Controller
 
         if ( $goalplan )
         {
+            $goalplan->load('GoalPlanType');
             return response( $goalplan );
         }
 
