@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\ProgramPaymentRequest;
 use App\Http\Requests\ProgramMoveRequest;
+use App\Services\ProgramPaymentService;
 use App\Http\Requests\ProgramRequest;
 use App\Http\Controllers\Controller;
 use App\Services\ProgramService;
@@ -91,13 +93,13 @@ class ProgramController extends Controller
         return response([ 'success' => true ]);
     }
 
-    public function getPayments(Organization $organization, Program $program, ProgramService $programService)  {
-        $payments = $programService->getPayments($program);
+    public function getPayments(Organization $organization, Program $program, ProgramPaymentService $programPaymentService)  {
+        $payments = $programPaymentService->getPayments($program);
         return response($payments);
     }
 
-    public function submitPayments(Organization $organization, Program $program, ProgramService $programService)  {
-        $payments = $programService->getPayments($program);
-        return response($payments);
+    public function submitPayments(ProgramPaymentRequest $request, Organization $organization, Program $program, ProgramPaymentService $programPaymentService)  {
+        $result = $programPaymentService->submitPayments($program, $request->validated());
+        return response($result);
     }
 }

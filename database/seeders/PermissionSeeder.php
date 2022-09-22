@@ -114,6 +114,7 @@ class PermissionSeeder extends Seeder
             'program-event-create',
             'program-event-update',
             'program-event-delete',
+            'program-update-payments',
             'leaderboard-event-list',
             'leaderboard-event-assign',
             'invoice-create-on-demand',
