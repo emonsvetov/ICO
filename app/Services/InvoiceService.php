@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 use Illuminate\Database\Eloquent\Builder;
+use App\Services\InvoicePaymentService;
 use App\Models\Traits\InvoiceFilters;
 use App\Models\Traits\Filterable;
 use App\Models\JournalEventType;
@@ -31,7 +32,7 @@ class InvoiceService
         // });
         // pr(DB::enableQueryLog());
         $query = self::filterable(Invoice::class);
-        $query = $query->where('program_id', $program->id)->with('invoice_type');
+        $query = $query->where('program_id', $program->id);
         if( $paginate ) {
             $invoices = $query->paginate( self::$PARAMS['limit'] );
         }   else    {
@@ -183,7 +184,8 @@ class InvoiceService
     public function getInvoice(Invoice $invoice)   {
         if( !$invoice->exists() ) return null;
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
-        $invoice_statement = $this->read_compiled_invoice($invoice);
+
+        $invoice = $this->read_compiled_invoice($invoice);
 
 		if ($invoice->invoice_type->name == InvoiceType::INVOICE_TYPE_MONTHLY) {
 			// TODO - Dont remove
@@ -208,56 +210,83 @@ class InvoiceService
 
 	public function getPayableInvoice(Invoice $invoice)   {
 		if( !$invoice->exists() ) return null;
+		$view_params = [];
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
         $invoice = $this->read_compiled_invoice($invoice);
-		// $payments = $this->read_invoice_payments($invoice);
+		$payments = $this->read_invoice_payments($invoice);
+
+		// Create a simpler data structure for the view
+		$invoice_for_view = new \stdClass ();
+		$invoice_for_view->invoice_id = $invoice->id;
+		$invoice_for_view->invoice_number = $invoice->invoice_number;
+		$invoice_for_view->parent_program_name = $invoice->program->name;
+		$invoice_for_view->date_end = $invoice->date_end;
+		$invoice_for_view->statements = array ();
 		$invoice_program_ids = array ();
+
 		foreach ( $invoice->invoices as $statement ) {
 			$invoice_program_ids [] = ( int ) $statement ['info']->program_id;
 		}
-		// return $invoice_program_ids ;
-		return $report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
-		// return $invoice_program_ids; 
+		// pr($invoice_program_ids);
+		$report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
+
+		// pr($report_data);
+		// exit;
+
 		foreach ( $invoice->invoices as $statement ) {
 			// Create a line item for the program
-			$program_statement = new stdClass ();
+			// pr($statement);
+
+			$program_statement = new \stdClass ();
 			$program_statement->program_id = $statement ['info']->program_id;
 			$program_statement->program_name = $statement ['info']->program_name;
 			$program_statement->program_account_holder_id = $statement ['info']->program_account_holder_id;
 			$program_statement->charges = array ();
 			$data = $report_data[$statement ['info']->program_account_holder_id];
+			// pr($data->toArray());
+			// exit;
 			if ($data->invoice_for_awards) {
 				// Mapping of the items to pull out of the journal report and the corresponding payment journal event type that needs to be used to pay for it
 				$report_items_to_charge = array (
-						'points_purchased' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
-						'transaction_fees' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE, // Special case to handle transaction fees, as a business rule we dont have these on "Invoice for Awards" Programs
-						'admin_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
-						'usage_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
-						'program_setup_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
-						'program_fixed_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
+						'points_purchased' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
+						'transaction_fees' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE, // Special case to handle transaction fees, as a business rule we dont have these on "Invoice for Awards" Programs
+						'admin_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
+						'usage_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
+						'program_setup_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
+						'program_fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
 				);
+				// pr($report_items_to_charge);
 				// Mapping of the refund items to pull out of the journal report and the corresponding charge that should be credited for it
 				$report_items_to_refund = array (
-						'reclaims' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
-						'refunded_transaction_fees' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE 
+						'reclaims' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
+						'refunded_transaction_fees' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE 
 				);
+				// pr($report_items_to_refund);
+				// exit;
 			} else {
 				// Mapping of the items to pull out of the journal report and the corresponding payment journal event type that needs to be used to pay for it
 				$report_items_to_charge = array (
-						// 'points_purchased' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
+						// 'points_purchased' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
 						// 'transaction_fees' => "transaction fee", //Special case to handle transaction fees, as a business rule we dont have these on "Invoice for Awards" Programs
-						'admin_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
-						'usage_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
-						'program_setup_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
-						'program_fixed_fee' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
+						'admin_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
+						'usage_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
+						'program_setup_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
+						'program_fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
 				);
 				// Mapping of the refund items to pull out of the journal report and the corresponding charge that should be credited for it
 				$report_items_to_refund = array ();
-				// 'reclaims' => JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
+				// 'reclaims' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
 				// 'refunded_transaction_fees' => "transaction fee"
+				//Charges for Air program - pay in advance
+				$charges_for_pay_in_advance = array(
+					JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING,
+					JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE,
+				);
 			}
 			// Group the charges
 			foreach ( $report_items_to_charge as $report_index => $journal_event_type ) {
+				// pr([$journal_event_type, $report_index, $data->$report_index]);
+				// continue;
 				if ($data->$report_index <= 0) {
 					continue;
 				}
@@ -278,7 +307,7 @@ class InvoiceService
 			foreach ( $report_items_to_refund as $report_index => $journal_event_type ) {
 				// Check to see if we already have a debit of this journal event type, if not create it
 				if (! isset ( $program_statement->charges [$journal_event_type] )) {
-					$debit_line_item = new stdClass ();
+					$debit_line_item = new \stdClass ();
 					$debit_line_item->total = 0;
 					$debit_line_item->due = 0;
 					$debit_line_item->refunds = 0;
@@ -290,8 +319,126 @@ class InvoiceService
 				$program_statement->charges [$journal_event_type]->refunds += - 1 * $data->$report_index;
 				$program_statement->charges [$journal_event_type]->due -= $data->$report_index;
 			}
-			$invoice_for_view->statements [$program_statement->program_account_holder_id] = $program_statement;
+			//Charges for Pay in invoice
+			if (isset($charges_for_pay_in_advance) && !empty($charges_for_pay_in_advance)) {
+				foreach ($invoice->invoices as $invoice_data) {
+					if (is_array($invoice_data['info']->debits) && count($invoice_data['info']->debits) > 0) {
+						foreach($invoice_data['info']->debits as $row) {
+							if ($row->amount == 0 ) {
+								continue;
+							}
+							$journal_event_type = isset($charges_for_pay_in_advance[$row->journal_event_type])
+								? $charges_for_pay_in_advance[$row->journal_event_type] : $row->journal_event_type;
+							if (in_array($row->journal_event_type, array_keys($charges_for_pay_in_advance))) {
+								if (! isset ( $program_statement->charges [$journal_event_type] )) {
+									$debit_line_item = new \stdClass ();
+									$debit_line_item->total = 0;
+									$debit_line_item->due = 0;
+									$debit_line_item->refunds = 0;
+									$debit_line_item->payments = 0;
+									$program_statement->charges [$journal_event_type] = $debit_line_item;
+								}
+								// Add the charge to the line item
+								$program_statement->charges [$journal_event_type]->total -= $row->amount;
+								$program_statement->charges [$journal_event_type]->due -= $row->amount;
+							}
+						}
+					}
+				}
+			}
+			$invoice_for_view->statements[$program_statement->program_account_holder_id] = $program_statement;
 		}
+		// Subtract payments from each type
+		if (is_array ( $payments ) && count ( $payments ) > 0) {
+			foreach ( $payments as $payment ) {
+				// Check to see if we already have a debit of this journal event type, if not create it
+				if (! isset ( $invoice_for_view->statements [$payment->program_account_holder_id]->charges [$payment->journal_event_type] )) {
+					$debit_line_item = new \stdClass ();
+					$debit_line_item->total = 0;
+					$debit_line_item->due = 0;
+					$debit_line_item->refunds = 0;
+					$debit_line_item->payments = 0;
+					$invoice_for_view->statements [$payment->program_account_holder_id]->charges [$payment->journal_event_type] = $debit_line_item;
+				}
+				// Add the charge to the line item
+				// $program_statement->charges[$payment->journal_event_type]->total -= $payment->amount;
+				$invoice_for_view->statements [$payment->program_account_holder_id]->charges [$payment->journal_event_type]->due -= $payment->amount;
+				$invoice_for_view->statements [$payment->program_account_holder_id]->charges [$payment->journal_event_type]->payments += - 1 * $payment->amount;
+			}
+		}
+		if (isset ( $invoice ['invoice'] [0] ['info']->journal_summary )) {
+			$view_params ['journal_summary'] = $invoice ['invoice'] [0] ['info']->journal_summary;
+		}
+		$view_params ['total_start_balance'] = $invoice->total_start_balance;
+		$view_params ['total_end_balance'] = $invoice->total_end_balance;
+		$view_params ['total_invoice_amount'] = $invoice->total_invoice_amount;
+		// $view_params ['total_payments'] = $invoice ['total_payments'];
+		// $view_params ['invoice_data'] = $invoice ['invoice_data'];
+		// $view_params['invoice'] = $invoice_data['invoice'];
+		sort($invoice_for_view->statements);
+		$view_params ['invoice'] = $invoice_for_view;
+		$view_params ['payments'] = $payments;
+		$invoice->view_params = $view_params;
+		return $invoice;
+	}
+
+	public function submitPayment(Invoice $invoice, $validated)	{
+		$response = [];
+		$this->invoicePaymentService = new InvoicePaymentService($invoice);
+		// return $validated;
+		$notes = $validated['notes'];
+		foreach( $validated['applied_payments'] as $appliedPayment)	{
+			$program_id = $appliedPayment['program_id'];
+			if(isset($appliedPayment['payments']) && $appliedPayment['payments'])	{
+				// pr($appliedPayment['payments']);
+				foreach($appliedPayment['payments'] as $jet => $amount)	{
+					if ($amount <= 0) {
+						continue;
+					}
+					// pr($jet);
+					try {
+						switch ($jet) {
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE :
+								$res = $this->invoicePaymentService->program_pays_for_admin_fee ( $program_id, $amount, $notes, $invoice_id );
+								$response['success'][] = "Program paid for admin fee successfully...";
+								break;
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE :
+								$res = $this->invoicePaymentService->program_pays_for_setup_fee ( $program_id, $amount, $notes );
+								$response['success'][] = "Program paid for setup fee successfully...";
+								break;
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE :
+								$res = $this->invoicePaymentService->program_pays_for_usage_fee ( $program_id, $amount, $notes );
+								$response['success'][] = "Program paid for usage fee successfully...";
+								break;
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE :
+								$res = $this->invoicePaymentService->program_pays_for_fixed_fee ( $this->program_id, $amount, $notes );
+								$response['success'][] = "Program paid for fixed fee successfully...";
+								break;
+								break;
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS :
+								$res = $this->invoicePaymentService->program_pays_for_points ( $program_id, $amount, $notes );
+								$response['success'][] = "Program paid for points successfully...";
+								break;
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE :
+								$this->invoicePaymentService->program_pays_for_points_transaction_fee ( $program_id, $amount, $notes );
+								$response['success'][] = "Program paid for transaction fee successfully...";
+								break;
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE :
+								$this->invoicePaymentService->program_pays_for_deposit_fee ( $program_id, $amount, $notes);
+								$response['success'][] = "Program paid for deposit fee successfully...";
+								break;
+							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING :
+								$this->invoicePaymentService->program_pays_for_monies_pending ( $program_id, $amount, $notes );
+								$response['success'][] = "Program paid for monies pending successfully...";
+								break;
+						}
+					} catch ( \Exception $e ) {
+						return ['errors' => sprintf('Exception with error: %s on line: %d in InvoiceService', $e->getMessage(), $e->getLine())];
+					}
+				}
+			}
+		}
+		return $response;
 	}
 
     public function read_compiled_invoice(Invoice $invoice)   {
@@ -342,11 +489,6 @@ class InvoiceService
 	}
 
     public function read_invoice_details(Invoice $invoice, $invoice_type_name) {
-		// assert_is_positive_int ( "program_account_holder_id", $program_account_holder_id );
-		// assert_is_positive_int ( "invoice_id", $invoice_id );
-		// $invoice = $this->read_invoice ( $program_account_holder_id, $invoice_id );
-		// assert_date_matches_format ( "invoice->date_begin", $invoice->date_begin, "Y-m-d" );
-		// assert_date_matches_format ( "invoice->date_end", $invoice->date_end, "Y-m-d" );
 		$statement = new \stdClass ();
 		$statement->start_date = $invoice->date_begin;
 		$statement->end_date = $invoice->date_end;

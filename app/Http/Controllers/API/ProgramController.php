@@ -11,6 +11,7 @@ use App\Events\ProgramCreated;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use App\Models\Program;
+use DB;
 
 class ProgramController extends Controller
 {
@@ -52,6 +53,7 @@ class ProgramController extends Controller
 
     public function show( Organization $organization, Program $program )
     {
+
         if ( $program )
         {
             $program->load(['domains', 'merchants', 'template', 'organization', 'address']);
@@ -87,5 +89,15 @@ class ProgramController extends Controller
         $program->restore();
         $program->update(['status'=>'active']);
         return response([ 'success' => true ]);
+    }
+
+    public function getPayments(Organization $organization, Program $program, ProgramService $programService)  {
+        $payments = $programService->getPayments($program);
+        return response($payments);
+    }
+
+    public function submitPayments(Organization $organization, Program $program, ProgramService $programService)  {
+        $payments = $programService->getPayments($program);
+        return response($payments);
     }
 }

@@ -162,6 +162,7 @@ class ProgramRequest extends FormRequest
             'uses_goal_tracker'=>'nullable|boolean',
             'country'=>'nullable|string',
             'transaction_fee'=>'nullable|numeric',
+            'create_setup_fee_account'=>'nullable|boolean',
         ];
     }
 

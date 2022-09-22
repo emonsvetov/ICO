@@ -305,7 +305,7 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 	 * 
 	 * @throws AppException */
 	protected function getBaseSql() {
-		throw new RuntimeException ( get_class ( $this ) . ' > getBaseSql is not implemented' );
+		throw new \RuntimeException ( get_class ( $this ) . ' > getBaseSql is not implemented' );
 	
 	}
 

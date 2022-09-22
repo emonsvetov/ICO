@@ -43,7 +43,7 @@ class Account extends Model
         }
     }
 
-    public function postings(
+    public static function postings(
         $debit_account_holder_id,
         $debit_account_type_name,
         $debit_finance_type_id,
@@ -62,41 +62,28 @@ class Account extends Model
 
         $result = null;
 
-        // pr("debit_account_type_name");
-        // pr($debit_account_type_name);
-
+        // GetSet Accounts
         $debit_account_type_id = AccountType::getIdByName($debit_account_type_name, true);
-        // pr("debit_account_type_id");
-        // pr($debit_account_type_id);
-        // Debit Account
+
+        // Debit Account - GetSet/Create Accounts
         $debit_account_id = self::getIdByColumns([
             'account_type_id' => $debit_account_type_id,
             'account_holder_id' => $debit_account_holder_id,
             'finance_type_id' => $debit_finance_type_id,
             'medium_type_id' => $debit_medium_type_id,
             'currency_type_id' => $currency_id
-        ]);
-
-        // pr("debit_account_id");
-        // pr($debit_account_id);
-
-        // pr("credit_account_type_name");
-        // pr($credit_account_type_name);
+        ], true);
 
         $credit_account_type_id = AccountType::getIdByName($credit_account_type_name, true);
-        // pr("credit_account_type_id");
-        // pr($credit_account_type_id);
-        // Credit Account
+
+        // Credit Account - GetSet/Create Accounts
         $credit_account_id = self::getIdByColumns([
             'account_type_id' => $credit_account_type_id,
             'account_holder_id' => $credit_account_holder_id,
             'finance_type_id' => $credit_finance_type_id,
             'medium_type_id' => $credit_medium_type_id,
             'currency_id' => $currency_id
-        ]);
-
-        // pr("credit_account_id");
-        // pr($credit_account_id);
+        ], true);
 
         $result['postings'] = Posting::createPostings([
             'journal_event_id' => $journal_event_id,
@@ -108,6 +95,8 @@ class Account extends Model
             'medium_info_id' => $medium_info_id,
             'debit_medium_type_id' => $debit_medium_type_id,
         ]);
+
+        $result['success'] = true;
 
         return $result;
     }

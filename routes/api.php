@@ -335,7 +335,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/invoice/on-demand',[App\Http\Controllers\API\InvoiceController::class, 'createOnDemand'])->middleware('can:createOnDemand,App\Invoice,organization,program');
 
-    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}/pay',[App\Http\Controllers\API\InvoiceController::class, 'pay'])->middleware('can:pay,App\Invoice,organization,program,invoice');
+    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}/pay',[App\Http\Controllers\API\InvoiceController::class, 'payView'])->middleware('can:pay,App\Invoice,organization,program,invoice');
+
+    Route::post('/v1/organization/{organization}/program/{program}/invoice/{invoice}/pay',[App\Http\Controllers\API\InvoiceController::class, 'paySubmit'])->middleware('can:pay,App\Invoice,organization,program,invoice');
+
+    Route::get('/v1/organization/{organization}/program/{program}/payments',[App\Http\Controllers\API\ProgramController::class, 'getPayments'])->middleware('can:listPayments,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/payments',[App\Http\Controllers\API\ProgramController::class, 'submitPayments'])->middleware('can:updatePayments,App\Program,organization,program');
 
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);

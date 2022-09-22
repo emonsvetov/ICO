@@ -71,6 +71,7 @@ class PermissionSeeder extends Seeder
             'program-leaderboard-update',
             'program-leaderboard-delete',
             'program-leaderboardType-list',
+            'program-list-payments',
             'program-merchant-list',
             'program-merchant-add',
             'program-merchant-remove',
