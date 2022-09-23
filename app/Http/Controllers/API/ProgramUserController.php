@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Models\Organization;
 use App\Models\User;
 use App\Models\Program;
+use App\Services\UserService;
 Use Exception;
 use DB;
 
@@ -118,15 +119,17 @@ class ProgramUserController extends Controller
     }
 
 
-    public function readBalance(Organization $organization, Program $program, User $user )
+    public function readBalance(Organization $organization, Program $program, User $user, UserService $userService)
     {
         $amount_balance = $user->readAvailableBalance( $program, $user);
         $factor_valuation = $program->factor_valuation;
         $points_balance = $amount_balance * $program->factor_valuation;
+        $peerBalance = $userService->readAvailablePeerBalance($user, $program);
         return response([
             'points' => $points_balance,
             'amount' => $amount_balance,
-            'factor' => $factor_valuation
+            'factor' => $factor_valuation,
+            'peerBalance' => $peerBalance
         ]);
     }
 

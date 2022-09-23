@@ -172,6 +172,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return self::_read_balance( $user->account_holder_id, $account_type, $journal_event_types );
     }
 
+    // TODO: This function not only for "User", we should use AccountService->readBalance()
 	private function _read_balance($account_holder_id, $account_type, $journal_event_types = []) {
 		$credits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 1 );
 		$debits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 0 );
@@ -211,4 +212,27 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return self::IMAGE_PATH;
     }
 
+    /**
+     * Verify that the user can be awarded
+     *
+     * @param Program $program
+     * @return bool
+     */
+    public function canBeAwarded(Program $program): bool
+    {
+        $result = true;
+        $availableStates = [
+            config('global.user_status_deactivated'),
+            config('global.user_status_deleted'),
+        ];
+        if($program->allow_awarding_pending_activation_participants){
+            $availableStates[] = config('global.user_status_pending_activation');
+        }
+
+        if (in_array($this->status()->first()->status, $availableStates)){
+            $result = false;
+        }
+
+        return $result;
+    }
 }

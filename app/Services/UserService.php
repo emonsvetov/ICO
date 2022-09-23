@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 use App\Http\Requests\UserRequest;
+use App\Models\AccountType;
 use App\Models\Program;
 use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
@@ -14,6 +15,12 @@ use App\Http\Traits\MediaUploadTrait;
 class UserService
 {
     use Filterable, UserFilters, MediaUploadTrait;
+
+    private AccountService $accountService;
+
+    public function __construct(AccountService $accountService) {
+        $this->accountService = $accountService;
+    }
 
     public function getSuperAdmins( $paginate = false )   {
         $query = User::whereHas('roles', function (Builder $query) {
@@ -95,4 +102,15 @@ class UserService
         // $user->syncRoles( [$validated['roles']] );
     }
 
+    /**
+     * @param User $user
+     * @param Program $program
+     * @return float
+     */
+    public function readAvailablePeerBalance(User $user, Program $program): float
+    {
+        $accountTypeName = AccountType::getTypePeer2PeerPoints();
+
+        return $this->accountService->readBalance($user->account_holder_id, $accountTypeName);
+    }
 }
