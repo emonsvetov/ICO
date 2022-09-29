@@ -1,6 +1,6 @@
 <?php
 namespace App\Services;
-use Illuminate\Database\Eloquent\Builder;
+
 use App\Services\InvoicePaymentService;
 use App\Models\Traits\InvoiceFilters;
 use App\Models\Traits\Filterable;

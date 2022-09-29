@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use Illuminate\Support\Facades\Validator;
+use App\Http\Requests\ProgramPaymentReverseRequest;
 use App\Http\Requests\ProgramPaymentRequest;
 use App\Http\Requests\ProgramMoveRequest;
 use App\Services\ProgramPaymentService;
@@ -13,6 +14,7 @@ use App\Events\ProgramCreated;
 use App\Models\Organization;
 use Illuminate\Http\Request;
 use App\Models\Program;
+use App\Models\Invoice;
 use DB;
 
 class ProgramController extends Controller
@@ -100,6 +102,11 @@ class ProgramController extends Controller
 
     public function submitPayments(ProgramPaymentRequest $request, Organization $organization, Program $program, ProgramPaymentService $programPaymentService)  {
         $result = $programPaymentService->submitPayments($program, $request->validated());
+        return response($result);
+    }
+
+    public function reversePayment(ProgramPaymentReverseRequest $request, Organization $organization, Program $program, Invoice $invoice, ProgramPaymentService $programPaymentService)  {
+        $result = $programPaymentService->reversePayment($program, $invoice, $request->validated());
         return response($result);
     }
 }

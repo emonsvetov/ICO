@@ -12,9 +12,10 @@ class ProgramPolicy
 {
     use HandlesAuthorization;
 
-    private function __preAuthCheck($authUser, $organization, $program = null)   {
+    private function __preAuthCheck($authUser, $organization, $program = null, $invoice = null)   {
         if( $authUser->organization_id != $organization->id) return false;
         if( $program && $program->organization_id != $organization->id) return false;
+        if( $program && $invoice && $program->id != $invoice->program_id) return false;
         return true;
     }
 
@@ -92,5 +93,12 @@ class ProgramPolicy
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
         return $user->can('program-update-payments');
+    }
+
+    public function reversePayments(User $user, Organization $organization, Program $program, Invoice $invoice)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program, $invoice) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-reverse-payments');
     }
 }
