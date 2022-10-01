@@ -24,18 +24,21 @@ class AwardService
     private AccountService $accountService;
     private EventXmlDataService $eventXmlDataService;
     private JournalEventService $journalEventService;
+    private UserService $userService;
 
     public function __construct(
         ProgramService $programService,
         EventXmlDataService $eventXmlDataService,
         JournalEventService $journalEventService,
-        AccountService $accountService
+        AccountService $accountService,
+        UserService $userService
     )
     {
         $this->programService = $programService;
         $this->eventXmlDataService = $eventXmlDataService;
         $this->journalEventService = $journalEventService;
         $this->accountService = $accountService;
+        $this->userService = $userService;
     }
 
     /**
@@ -56,6 +59,15 @@ class AwardService
         if($eventType->isEventTypePeer2PeerAllocation()){
             $newAward = $this->allocatePeer2Peer($program, $currentUser, $data);
         } else {
+            if ( $eventType->isEventTypePeer2Peer() ) {
+                $amount = $data['override_cash_value'] ?? 0;
+                $users = $data['user_id'] ?? [];
+                if (!$this->canPeerPayForAwards($program, $currentUser, (float)$amount, $users)) {
+                    throw new Exception('Your account balance is too low.');
+                }
+            }
+
+
             $newAward = Award::create(
                 (object) ($data +
                     [
@@ -181,5 +193,22 @@ class AwardService
             throw $e;
         }
         return $result;
+    }
+
+    /**
+     * @param Program $program
+     * @param User $user
+     * @param float $amount
+     * @param array $users
+     * @return bool
+     */
+    public function canPeerPayForAwards(Program $program, User $user, float $amount, array $users): bool
+    {
+        $available = $this->userService->readAvailablePeerBalance($user, $program);
+        $awardTotal = count($users) * $amount;
+        if ($available < $awardTotal) {
+            return false;
+        }
+        return true;
     }
 }

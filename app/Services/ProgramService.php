@@ -410,7 +410,7 @@ class ProgramService
             /** @var EventType $eventType */
             $eventType = $event->eventType()->firstOrFail();
             $isEventTypeBadge = $eventType->isEventTypeBadge();
-            $isEventTypePeer2PeerBadge = $eventType->isEventTypePeer2PeerBadge($event);
+            $isEventTypePeer2PeerBadge = $eventType->isEventTypePeer2PeerBadge();
 
             // If the event is badge - The amount should be zero, So we don't need to check the funds.
             if ($isEventTypeBadge || $isEventTypePeer2PeerBadge) {

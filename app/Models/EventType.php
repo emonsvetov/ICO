@@ -17,12 +17,17 @@ class EventType extends Model
         return (int)self::where('type', $type)->first()->id ?? null;
     }
 
+    public function isEventTypePeer2Peer(): bool
+    {
+        return $this->type == config('global.event_type_peer2peer');
+    }
+
     public function isEventTypeBadge(): bool
     {
         return $this->type == config('global.event_type_badge');
     }
 
-    public function isEventTypePeer2PeerBadge(Event $event): bool
+    public function isEventTypePeer2PeerBadge(): bool
     {
         return $this->type == config('global.event_type_peer2peer_badge');
     }
