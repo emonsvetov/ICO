@@ -351,7 +351,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Program > TransferMonies
 
-    Route::match(array('GET','POST'), '/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'transferMonies'])->middleware('can:view,App\Program,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'getTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'submitTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
     
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);

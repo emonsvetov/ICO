@@ -111,8 +111,13 @@ class ProgramController extends Controller
         return response($result);
     }
 
-    public function transferMonies(ProgramTransferMoniesRequest $request, Organization $organization, Program $program, ProgramService $programService)  {
-        $result = $programService->transferMonies($program, $request->validated());
+    public function getTransferMonies(Organization $organization, Program $program, ProgramService $programService)  {
+        $result = $programService->getTransferMonies($program);
+        return response($result);
+    }
+
+    public function submitTransferMonies(ProgramTransferMoniesRequest $request, Organization $organization, Program $program, ProgramService $programService)  {
+        $result = $programService->submitTransferMonies($program, $request->validated());
         return response($result);
     }
 }

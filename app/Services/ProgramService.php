@@ -1,5 +1,6 @@
 <?php
 namespace App\Services;
+use App\Services\Program\TransferMoniesService;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\IdExtractor;
 use App\Models\Traits\Filterable;
@@ -162,10 +163,6 @@ class ProgramService
             return $results;
         }
 
-        // if( $params['paginate'] ) {
-        //     return $query->paginate( $params['limit']);
-        // }
-
         $results = $query->paginate( $params['limit']);
         return $results;
     }
@@ -232,16 +229,6 @@ class ProgramService
             collectIdsInATree($children->toArray(), $exclude);
         }
 
-        // pr($exclude);
-        // exit;
-        // $subprograms = $this->getSubprograms( $organization, Program::find($topLevelProgram, [
-        //     'except' => $exclude,
-        //     'minimal'=>true,
-        //     // 'flatlist'=>true
-        // ]);
-        // if( $topLevelProgram->id != $parent->id) {
-        //     $subprograms->prepend($topLevelProgram); //push at the top
-        // }
         $program2 = Program::find($topLevelProgram->id)
         ->with(['children' => function($query)  {
             $subquery = $query->select('id','name','parent_id');
@@ -405,12 +392,12 @@ class ProgramService
         return false;
     }
 
-    public function transferMonies(Program $program, $data)    {
+    public function getTransferMonies(Program $program)    {
         $topLevelProgram = $program->rootAncestor()->select(['id', 'name'])->first();
         if( !$topLevelProgram ) {
             $topLevelProgram = $program;
         }
-        $programs = $topLevelProgram->descendants()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
+        $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
         $balance = Account::read_available_balance_for_program ( $program );
         return 
             [
@@ -419,5 +406,26 @@ class ProgramService
                 'balance' => $balance,
             ]
         ;
+    }
+
+    public function submitTransferMonies(Program $program, $data)    {
+        if(sizeof($data["amounts"]) > 0)    {
+            $result = [];
+            $transerMoniesService = new TransferMoniesService();
+            foreach($data["amounts"] as $programId => $amount)  {
+                $balance = Account::read_available_balance_for_program ( $program );
+                if ($amount > $balance) {
+                    throw new \RuntimeException ( "Account balance has insufficient funds to transfer $" . $amount, 400 );
+                }
+                $user_account_holder_id = auth()->user()->account_holder_id;
+                $program_account_holder_id = $program->account_holder_id;
+                $new_program_account_holder_id = $program->where('id', $programId)->first()->account_holder_id;
+                $result[$programId] = $transerMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
+            }
+            if( sizeof($data["amounts"]) == sizeof($result))    {
+                $balance = Account::read_available_balance_for_program ( $program );
+                return ['success'=>true, 'transferred' => $result, 'balance' => $balance];
+            }
+        }
     }
 }

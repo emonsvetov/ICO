@@ -101,4 +101,11 @@ class ProgramPolicy
         if( $user->isAdmin() ) return true;
         return $user->can('program-reverse-payments');
     }
+
+    public function transferMonies(User $user, Organization $organization, Program $program)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-transfer-monies');
+    }
 }
