@@ -7,6 +7,7 @@ use App\Http\Requests\MerchantStatusRequest;
 use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\MerchantNode;
 use App\Models\Node;
@@ -19,14 +20,12 @@ class MerchantController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Organization $organization)
     {
 
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
-
-        // DB::enableQueryLog();
 
         $where = [];
 
@@ -40,7 +39,7 @@ class MerchantController extends Controller
             $orderByRaw = "{$sortby} {$direction}";
         }
 
-        $query = Merchant::whereNull('parent_id')->where( $where );
+        $query = Merchant::where( $where );
 
         if( $keyword )
         {
@@ -66,8 +65,6 @@ class MerchantController extends Controller
             $merchants = $query->with('children')->paginate(request()->get('limit', 50));
         }
 
-        // Log::debug("Query:", DB::getQueryLog());
-
         if ( $merchants->isNotEmpty() )
         {
             return response( $merchants );
@@ -84,7 +81,7 @@ class MerchantController extends Controller
      */
     public function store(MerchantRequest $request)
     {
-        $newMerchant = Merchant::create( $request->validated() );
+        $newMerchant = Merchant::createAccount( $request->validated() );
 
         if ( !$newMerchant )
         {
@@ -123,7 +120,6 @@ class MerchantController extends Controller
      */
     public function update(MerchantRequest $request, Merchant $merchant)
     {
-
         if ( ! $merchant->exists )
         {
             return response(['errors' => 'No Merchant Found'], 404);

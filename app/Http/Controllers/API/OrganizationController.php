@@ -4,9 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Events\OrganizationCreated;
 
 use App\Http\Requests\OrganizationRequest;
 use App\Models\Organization;
+use App\Models\User;
 
 class OrganizationController extends Controller
 {
@@ -27,13 +29,15 @@ class OrganizationController extends Controller
 
     public function store(OrganizationRequest $request)
     {
-        
+
         $organization = Organization::create( $request->validated() );
 
         if ( !$organization )
         {
             return response(['errors' => 'Organization Creation failed'], 422);
         }
+
+        event( new OrganizationCreated($organization) );
         
         return response([ 'organization' => $organization ]);
     }

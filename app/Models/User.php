@@ -2,24 +2,38 @@
 
 namespace App\Models;
 
+use App\Models\interfaces\ImageInterface;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Traits\WithOrganizationScope;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Traits\HasProgramRoles;
+use App\Models\Traits\GetModelByMixed;
+use App\Models\Traits\IdExtractor;
 use Laravel\Passport\HasApiTokens;
+use App\Models\AccountHolder;
 use App\Models\Permission;
+use App\Models\Program;
 use App\Models\Role;
-
 
 use App\Notifications\ResetPasswordNotification;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope, GetModelByMixed;
+    use SoftDeletes;
+
+    const IMAGE_FIELDS = ['avatar'];
+    const IMAGE_PATH = 'users';
 
     public $timestamps = true;
+
+    private $isSuperAdmin = false; //user is super admin
+    private $isAdmin = false; //user is admin
 
     /**
      * The attributes that are mass assignable.
@@ -28,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected $fillable = [
         'organization_id',
+        'account_holder_id',
         'first_name',
         'last_name',
         'email',
@@ -53,9 +68,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'update_id',
         'role_id',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'avatar'
     ];
-    
+
     /**
      * The attributes that should be hidden for arrays.
      *
@@ -69,9 +85,9 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $visible = [
     ];
 
-    protected $with = [
-        'role'
-    ];
+    // protected $with = [
+    //     'roles'
+    // ];
 
     /**
      * The attributes that should be cast to native types.
@@ -82,31 +98,48 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['name'];
-
-    public function getNameAttribute()
+    protected $appends = ['name', 'isSuperAdmin', 'isAdmin'];
+    protected function getNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
     }
-
-    public function setPasswordAttribute($password)
-    {   
+    protected function getIsSuperAdminAttribute()
+    {
+        return $this->hasRole(config('roles.super_admin'));
+    }
+    protected function getIsAdminAttribute()
+    {
+        return $this->hasRole(config('roles.admin'));
+    }
+    protected function setPasswordAttribute($password)
+    {
         $this->attributes['password'] = bcrypt($password);
     }
-    
+    public function isAdmin()
+    {
+        return $this->hasRole(config('roles.admin'));
+    }
+    public function isSuperAdmin()
+    {
+        return $this->hasRole(config('roles.super_admin'));
+    }
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);
     }
-
-    public function role()
+    public function organization()
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Organization::class);
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class, 'user_status_id');
     }
 
     public function sendPasswordResetNotification($token)
     {
-        
+
         $url = env('APP_URL', 'http://localhost') . '/reset-password?token=' . $token;
 
         $this->notify(new ResetPasswordNotification($url));
@@ -115,45 +148,67 @@ class User extends Authenticatable implements MustVerifyEmail
     public function programs()
     {
         return $this->belongsToMany(Program::class, 'program_user')
-        // ->withPivot('featured', 'cost_to_program')
         ->withTimestamps();
     }
 
-    public function syncRolesByProgram($programId, array $roles ) {
-        $permissions = [];
-        foreach( $roles as $roleId)    {
-            $permisssionName = "program.{$programId}.role.{$roleId}";
-            $permission = Permission::firstOrCreate(['name' => $permisssionName, 'organization_id' => $this->organization_id]);
-            if( $permission )   {
-                array_push($permissions, $permission->id);
+    public function readAvailableBalance( $program, $user )  {
+        $program_id = self::extractId($program);
+        $user_id = self::extractId($user);
+        if( !$program_id || !$user_id ) return;
+        $journal_event_types = array (); // leave $journal_event_types empty to get all  - original comment
+        if( gettype($program)!='object' ) {
+            $program = Program::where('id', $program_id)->select(['id'])->first();
+        }
+        if( gettype($user)!='object' ) {
+            $user = self::where('id', $user_id)->select(['id'])->first();
+        }
+        if ($program->program_is_invoice_for_awards ()) {
+			// use points
+			$account_type = config('global.account_type_points_awarded');
+		} else {
+			// use monies
+            $account_type = config('global.account_type_monies_awarded');
+		}
+        return self::_read_balance( $user->account_holder_id, $account_type, $journal_event_types );
+    }
+
+	private function _read_balance($account_holder_id, $account_type, $journal_event_types = []) {
+		$credits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 1 );
+		$debits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 0 );
+		$bal = ( float ) (number_format ( ($credits->total - $debits->total), 2, '.', '' ));
+		return $bal;
+	}
+
+    public function createAccount( $data )    {
+        $account_holder_id = AccountHolder::insertGetId(['context'=>'User', 'created_at' => now()]);
+        if( !isset($data['user_status_id']) )   {
+            $user_status = self::getStatusByName( 'Pending Activation' );
+            if( $user_status )
+            {
+                $data['user_status_id'] = $user_status->id;
             }
         }
-        if( $permissions )  {
-            $this->syncPermissionsByProgram($programId, $permissions);
-        }
-        return $this;
+        return parent::create($data + ['account_holder_id' => $account_holder_id]);
     }
 
-    public function syncPermissionsByProgram($programId, array $permissions)
+    public function getStatusByName( $status ) {
+        return Status::getByNameAndContext($status, 'Users');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getImageFields(): array
     {
-        $permissionIds = Permission::where('name', 'LIKE', "program.{$programId}.role.%")->get()->pluck('id'); //filter by program to narrow down the change
-        $current = $this->permissions->filter(function($permission) use ($permissionIds) {
-            return in_array($permission->pivot->permission_id, $permissionIds->toArray());
-        })->pluck('id');
-    
-        $detach = $current->diff($permissions)->all();
-        $attach_ids = collect($permissions)->diff($current)->all();
-
-        $attach_pivot = [];
-
-        foreach( $attach_ids as $permission_id )  {
-            $attach_pivot[] = ['permission_id' => $permission_id];
-        }
-        $attach = array_combine($attach_ids, $attach_pivot);
-
-        $this->permissions()->detach($detach);
-        $this->permissions()->attach($attach);
-    
-        return $this;
+        return self::IMAGE_FIELDS;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function getImagePath(): string
+    {
+        return self::IMAGE_PATH;
+    }
+
 }

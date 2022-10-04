@@ -14,3 +14,6 @@ npm-debug.log
 yarn-error.log
 .DS_Store
 /public/import
+/public/php_errors.log
+php_errors.log
+.idea

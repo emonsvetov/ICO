@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class MerchantsColumnUpdate extends Migration
+class CreateOwnersTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,12 @@ class MerchantsColumnUpdate extends Migration
      */
     public function up()
     {
-        Schema::table('merchants', function (Blueprint $table) {
-            $table->integer('parent_id')->after('id')->nullable();
-            $table->dropColumn('deleted');
-            $table->softDeletes();
+        Schema::create('owners', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('account_holder_id');
+            $table->string('name', 45);
+            $table->timestamps();
+            $table->index('account_holder_id');
         });
     }
 
@@ -27,6 +29,6 @@ class MerchantsColumnUpdate extends Migration
      */
     public function down()
     {
-        //
+        Schema::dropIfExists('owners');
     }
 }

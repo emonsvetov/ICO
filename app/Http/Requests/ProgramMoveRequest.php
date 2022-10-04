@@ -24,7 +24,7 @@ class ProgramMoveRequest extends FormRequest
     public function rules()
     {
         return [
-            'program_id' => 'nullable|integer',
+            'parent_id' => 'nullable|integer',
         ];
     }
 }

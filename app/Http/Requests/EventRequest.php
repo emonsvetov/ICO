@@ -26,12 +26,11 @@ class EventRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-			'enable'=> 'boolean|nullable',
-			'type_id'=> 'required|numeric', //dropdown pending
-			'event_icon_id'=> 'required|integer',
-			'amount'=> ['required', new Decimal82()],
-			'allow_amount_overriding'=> 'nullable|boolean',
-			'email_template_id'=> 'required|integer', //dropdown pending
+			'enable'=> 'sometimes|boolean|nullable',
+			'event_type_id'=> 'required|numeric',
+			'event_icon_id'=> 'sometimes|integer',
+			'max_awardable_amount'=> ['required', new Decimal82()],
+			'email_template_id'=> 'sometimes|integer',
 			'post_to_social_wall'=> 'nullable|boolean',
 			'message'=> 'required|string',
 			'include_in_budget'=> 'boolean|nullable',
@@ -40,6 +39,21 @@ class EventRequest extends FormRequest
 			'is_anniversary_award'=> 'boolean|nullable',
 			'award_message_editable'=> 'boolean|nullable',
 			'ledger_code'=> 'numeric|nullable',
+            'custom_email_template' =>'sometimes|boolean',
+            // 'template_name'=> 'required |string',
+            // 'email_template'=> 'required |string',
+        ];
+    }
+    
+    public function importRules()
+    {
+        return [
+            'organization_id'=> 'mustExistInModel:Organization|use:id|hide:true|provided:true',
+			'event_type_id'=> 'mustComeFromModel:EventType|matchWith:type|use:id',
+			'event_icon_id'=> 'mustComeFromModel:EventIcon|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
+			'email_template_id'=> 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
+            'post_to_social_wall'=> 'required|boolean',
+            'custom_email_template' =>'hide:true',
         ];
     }
 }

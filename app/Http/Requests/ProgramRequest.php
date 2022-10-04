@@ -24,13 +24,14 @@ class ProgramRequest extends FormRequest
     public function rules()
     {
         return [
-            'program_id'            => 'nullable|integer',
+            'parent_id'            => 'nullable|integer',
             'name'                  => 'required|string',
             'type'                  => 'required|string',
             'status'                => 'nullable|string',
             'setup_fee'             => 'required|numeric',
+            'factor_valuation'=>'required|integer',
             'is_pay_in_advance'     => 'required|boolean',
-            'is_invoice_for_rewards'=> 'required|boolean',
+            'invoice_for_awards'=> 'required|boolean',
             'is_add_default_merchants'=> 'required|boolean',
 			//new
             'public_contact_email'=>'nullable|string|email',
@@ -69,7 +70,7 @@ class ProgramRequest extends FormRequest
             'use_one_leaderboard'=>'nullable|boolean',
             //Approvals and Budget
             'use_cascading_approvals'=>'nullable|boolean','enable_schedule_awards'=>'nullable|boolean',
-            'use_budget_cascading'=>'nullable|boolean', 
+            'use_budget_cascading'=>'nullable|boolean',
             'budget_summary'=>'nullable|boolean',
             //Reference Document
             'enable_reference_documents'=>'nullable|boolean',
@@ -79,11 +80,11 @@ class ProgramRequest extends FormRequest
             'enable_global_search'=>'nullable|boolean',
             //Archive
             'archive_program'=>'nullable|boolean',
-            //Deactivate Account 
+            //Deactivate Account
             'deactivate_account'=>'nullable|boolean',
             //Billing  Information
             'is_pay_in_advance'=>'nullable|boolean',
-            'is_invoice_for_rewards'=>'nullable|boolean',
+            'invoice_for_awards'=>'nullable|boolean',
             'create_invoices'=>'nullable|boolean',
             'allow_creditcard_deposits'=>'nullable|boolean',
 			//Transaction Fees - This is many to one with a add tier amount button that adds new fields (Pending) Tier amount : text, Transaction fee: text
@@ -99,18 +100,18 @@ class ProgramRequest extends FormRequest
             'fixed_fee'=>'nullable|integer',
             'convenience_fee'=>'nullable|integer',
             'monthly_usage_fee'=>'nullable|integer',
-            'factor_valuation'=>'nullable|integer',
             'accounts_receivable_email'=>'nullable|string|email',
             'bcc_email_list'=>'nullable|string',
             'cc_email_list'=>'nullable|string',
             'notification_email_list'=>'nullable|string',
             //Address Information
-			//'state_id'=> 'nullable|integer', pending dropdown
-			'address'=>'nullable|string',
-			'address_ext'=>'nullable|string',
-			'city'=>'nullable|string',
-            'state'=>'nullable|string',
-			'zip'=>'nullable|string',
+            'address.id'=>'sometimes|integer',
+			'address.address'=>'nullable|string',
+			'address.address_ext'=>'nullable|string',
+			'address.city'=>'nullable|string',
+			'address.zip'=>'nullable|string',
+			'address.country_id'=>'nullable|integer',
+			'address.state_id'=> 'nullable|integer',
             //Social Wall
             'allow_hierarchy_to_view_social_wall'=>'nullable|boolean',
             'can_post_social_wall_comments'=>'nullable|boolean',
@@ -120,6 +121,9 @@ class ProgramRequest extends FormRequest
             'show_all_social_wall'=>'nullable|boolean',
             'social_wall_separation'=>'nullable|boolean',
             'uses_social_wall'=>'nullable|boolean',
+            // If it is enabled and the participant has the status "pending deactivation". Then he can then log in to
+            // the home page, but will not be able to view the social wall.
+            'remove_social_from_pending_deactivation'=>'nullable|boolean',
             'amount_override_limit_percent'=>'nullable|integer',
             'awards_limit_amount_override'=>'nullable|boolean',
 			//Brochures
@@ -158,6 +162,14 @@ class ProgramRequest extends FormRequest
             'uses_goal_tracker'=>'nullable|boolean',
             'country'=>'nullable|string',
             'transaction_fee'=>'nullable|numeric',
+        ];
+    }
+
+    public function importRules()
+    {
+        return [
+            'type'                  => 'mustComeFromList:default,employee,resident,shell',
+            'status'                => 'mustComeFromList:active,deleted,locked',
         ];
     }
 }

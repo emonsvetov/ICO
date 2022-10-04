@@ -73,9 +73,76 @@ Every incoming form request must be validated using Laravel's Form Request Valid
 Add common file uploads to .gitignore file. For example:
 `/public/uploads`
 
-## Update Log 
+## Update Log
 
-** Feb 22, 2022 - START
+** August 26, 2022
+
+php artisan db:seed --class=CountrySeeder
+php artisan db:seed --class=StateSeeder
+
+** July 27, 2022
+
+Run `migrations`
+`php artisan migrate`
+    - Creates `invoices`, `invoice_types`, `invoice_journal_event`, `payment_methods` tables
+
+Run `seeders`
+    `php artisan db:seed --class=InvoiceTypeSeeder`
+    `php artisan db:seed --class=PaymentMethodSeeder`
+
+** July 22 2022
+Run `migrations`
+`php artisan migrate`
+    - Creates `leaderboards`, `leaderboard_types`, `leaderboard_event`, `leaderboard_goal_plan`, `leaderboard_journal_event` tables
+
+Run `seeders`
+    `php artisan db:seed --class=LeaderboardTypeSeeder`
+
+** July 06 2022
+
+Install adjacency-list
+`composer install staudenmeir/laravel-adjacency-list`
+
+Run migrations
+
+`php artisan migrate`
+
+** May 20, 2022
+
+`php artisan migrate`
+
+`php artisan db:seed --class=OwnerSeeder`
+`php artisan db:seed --class=AccountHolderPatcher`
+`php artisan db:seed --class=CallbackTypeSeeder`
+
+** Apr 28, 2022
+
+To update db run
+
+`php artisan migrate`
+
+Seeders were added
+
+`php artisan db:seed --class=AccountTypeSeeder`
+`php artisan db:seed --class=CurrencySeeder`
+`php artisan db:seed --class=StatusSeeder`
+
+** Apr 20, 2022
+
+Various new db table and changes were added. 
+
+To update db run
+
+`php artisan migrate`
+
+Seeders were added
+
+`php artisan db:seed --class=EventTypeSeeder`
+`php artisan db:seed --class=JournalEventTypeSeeder`
+`php artisan db:seed --class=FinanceTypeSeeder`
+`php artisan db:seed --class=MediumTypeSeeder`
+
+** Feb 22, 2022
 
 ### Permission updates
 
@@ -97,5 +164,3 @@ Seed:
 `php artisan db:seed --class=PermissionSeeder`
 
 Visit https://spatie.be/docs/laravel-permission/v5/introduction for more info about the package
-
--- Feb 22, 2022 - END

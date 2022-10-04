@@ -10,27 +10,27 @@ use App\Models\ParticipantGroup;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Event;
+use App\Models\EmailTemplate;
 use DB;
 
 class EventController extends Controller
 {
-    
     public function index( Organization $organization, Program $program )
     {
-        
+
         if ( $organization->id != $program->organization_id )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
-        
+
         $events = Event::where('organization_id', $organization->id)
                         ->where('program_id', $program->id)
                         ->orderBy('name')
-                        ->with('icon')
+                        ->with(['icon', 'eventType'])
                         ->get();
 
-        if ( $events->isNotEmpty() ) 
-        { 
+        if ( $events->isNotEmpty() )
+        {
             return response( $events );
         }
 
@@ -39,18 +39,29 @@ class EventController extends Controller
 
     public function store(EventRequest $request, Organization $organization, Program $program )
     {
-                 
-        if ( !( $organization->id == $program->organization_id ) )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
+        $validated = $request->validated();
+        if(isset($validated['custom_email_template'])){
+            $template['name']  = $validated['template_name'];
+            $template['content']= $validated['email_template'];
+            $template['type']= 'program_event';
+            $newTemplate = EmailTemplate::create( $template);
+            if ( !$newTemplate )
+            {
+                return response(['errors' => 'Email Template Creation failed'], 422);
+            }
+            $validated['email_template_id'] = $newTemplate->id;
         }
-        
-        $newEvent = Event::create( 
-                                    $request->validated() + 
+
+        unset($validated['custom_email_template']);
+        unset($validated['template_name']);
+        unset($validated['email_template']);
+
+        $newEvent = Event::create(
+                                    $validated +
                                     [
                                         'organization_id' => $organization->id,
                                         'program_id' => $program->id
-                                    ] 
+                                    ]
                                 );
 
         if ( !$newEvent )
@@ -58,22 +69,22 @@ class EventController extends Controller
             return response(['errors' => 'Event Creation failed'], 422);
         }
 
-        
-        
+
+
         return response([ 'event' => $newEvent ]);
     }
 
     public function show( Organization $organization, Program $program, Event $event )
     {
-        if ( !( $organization->id == $program->organization_id && $program->id == $event->program_id ) )        
+        if ( !( $organization->id == $program->organization_id && $program->id == $event->program_id ) )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
-        $event->icon = $event->icon->toArray();
+        $event->icon;
 
-        if ( $event ) 
-        { 
+        if ( $event )
+        {
             return response( $event );
         }
 
@@ -86,15 +97,29 @@ class EventController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
-        
-        if ( $event->organization_id != $organization->id ) 
-        { 
+
+        if ( $event->organization_id != $organization->id )
+        {
             return response(['errors' => 'No Program Found'], 404);
         }
 
-        // return $request->validated();
+        $validated = $request->validated();
+        if(isset($validated['custom_email_template'])){
+            $template['name']  = $validated['template_name'];
+            $template['content']= $validated['email_template'];
+            $template['type']= 'program_event';
+            $newTemplate = EmailTemplate::create( $template);
+            if ( !$newTemplate )
+            {
+                return response(['errors' => 'Email Template Creation failed'], 422);
+            }
+            $validated['email_template_id'] = $newTemplate->id;
+        }
 
-        $event->update( $request->validated() );
+        unset($validated['custom_email_template']);
+        unset($validated['template_name']);
+        unset($validated['email_template']);
+        $event->update( $validated );
 
         return response([ 'event' => $event ]);
     }

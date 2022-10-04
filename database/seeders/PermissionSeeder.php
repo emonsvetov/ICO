@@ -1,10 +1,10 @@
 <?php
-  
+
 namespace Database\Seeders;
-  
+
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
-  
+
 class PermissionSeeder extends Seeder
 {
     /**
@@ -17,6 +17,8 @@ class PermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $permissions = [
+            'award-create',
+            'checkout',
             'domain-list',
             'domain-view',
             'domain-create',
@@ -27,11 +29,14 @@ class PermissionSeeder extends Seeder
             'domain-delete-ip',
             'domain-add-program',
             'domain-delete-program',
+            'domain-listAvailableProgramsToAdd',
+            'emailtemplate-list',
             'event-list',
             'event-view',
             'event-create',
             'event-edit',
             'event-delete',
+            'eventtype-list',
             'merchant-list',
             'merchant-view',
             'merchant-create',
@@ -58,13 +63,28 @@ class PermissionSeeder extends Seeder
             'program-create',
             'program-edit',
             'program-delete',
+            'program-move',
+            'program-restore',
+            'program-leaderboard-list',
+            'program-leaderboard-view',
+            'program-leaderboard-create',
+            'program-leaderboard-update',
+            'program-leaderboard-delete',
+            'program-leaderboardType-list',
             'program-merchant-list',
             'program-merchant-add',
             'program-merchant-remove',
+            'program-merchant-view',
+            'program-merchant-view-giftcodes',
+            'program-merchant-view-redeemable',
+            'program-participant-list',
+            'program-participant-change-status',
             'program-user-list',
             'program-user-add',
+            'program-user-view',
             'program-user-update',
             'program-user-remove',
+            'program-user-readbalance',
             'role-list',
             'role-view',
             'role-create',
@@ -75,6 +95,8 @@ class PermissionSeeder extends Seeder
             'submerchant-list',
             'submerchant-add',
             'submerchant-remove',
+            'subprogram-list',
+            'subprogram-unlink',
             'user-list',
             'user-view',
             'user-create',
@@ -83,9 +105,26 @@ class PermissionSeeder extends Seeder
             'user-program-list',
             'user-program-add',
             'user-program-remove',
-            'user-program-permissions',
+            'user-program-roles',
+			'can-invite',
+			'can-invite-resend',
+            'program-event-list',
+            'program-event-view',
+            'program-event-create',
+            'program-event-update',
+            'program-event-delete',
+            'leaderboard-event-list',
+            'leaderboard-event-assign',
+            'invoice-create-on-demand',
+            'invoice-view',
+            'invoice-download',
+            'program-social-wall-post-list',
+            'program-social-wall-post-view',
+            'program-social-wall-post-create',
+            'program-social-wall-post-update',
+            'program-social-wall-post-delete',
         ];
-     
+
         foreach ($permissions as $permission) {
              Permission::create(['name' => $permission, 'organization_id' => 1]);
         }
