@@ -79,12 +79,14 @@ class Program extends BaseModel
         return $this->hasOne(ProgramTemplate::class);
     }
 
-    public function program_is_invoice_for_awards() {
+    public function program_is_invoice_for_awards( $extraArg = false) {
 		if ($this->invoice_for_awards == 1) {
 			return true;
 		}
-        if ( $this->factor_valuation != 1 ) {
-            return true;
+        if($extraArg)   {
+            if ( $this->factor_valuation != 1 ) {
+                return true;
+            }
         }
 		return false;
 	}

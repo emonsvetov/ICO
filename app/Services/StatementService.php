@@ -8,13 +8,42 @@ use App\Models\Program;
 use App\Models\Posting;
 use App\Models\Role;
 use App\Models\User;
+use DB;
 
 class StatementService
 {
     public function get(Program $program, array $filters = null)   {
+        $statement = new \stdClass();
+
         $start_date = $filters['start_date'];
         $end_date = $filters['end_date'];
-        return $this->read_statement($program, $start_date, $end_date);
+
+        $program->load('address');
+        $statement->address_info = $program->address;
+
+        $invoice_statement = $this->read_statement($program, $start_date, $end_date);
+
+        $statement->start_date = $start_date;
+        $statement->end_date = $end_date;
+        $statement->previous_balance_date = date('Y-m-d', strtotime('-1 day', strtotime($start_date)));
+
+        $statement->total_start_balance = $invoice_statement->start_balance;
+        $statement->total_end_balance = $invoice_statement->end_balance;
+        $statement->statement[0]['info'] = $invoice_statement;
+
+        $descendants = $program->descendants()->depthFirst()->get();
+
+        foreach($descendants as $descendant)    {
+            $invoice_statement = $this->read_statement($descendant, $start_date, $end_date );
+            $statement->statement[] = array (
+                    'info' => $invoice_statement 
+            );
+            // $data['statement'][$key + 1]['name'] = $program->name;
+            $statement->total_start_balance += $invoice_statement->start_balance;
+            $statement->total_end_balance += $invoice_statement->end_balance;
+        }
+
+        return $statement;
     }
 
 	/** read_statement
@@ -28,24 +57,25 @@ class StatementService
 		$statement->start_date = $start_date;
 		$statement->end_date = $end_date;
 		// Get the starting balance of the statement requested, used for doing the itemization math
-		return $statement->start_balance = $this->read_financial_balance_less_than_date ( $program->account_holder_id, $start_date );
+		$statement->start_balance = $this->read_financial_balance_less_than_date ( $program, $start_date );
 		// Get the ending balance of the statement, used to validate that the itemization math was correct
 		// Add 1 day since the query will get everything less than this day and we need to include the end date of the statement
-		return $statement->end_balance = $this->read_financial_balance_less_than_date ( $program_account_holder_id, date ( 'Y-m-d', strtotime ( '+1 day', strtotime ( $end_date ) ) ) );
-		// $statement->invoice_amount= $this->read_billed_amount_between($program_account_holder_id, $start_date, $end_date);
-		$statement->payments = $this->read_payments_between ( $program_account_holder_id, $start_date, $end_date );
+		$statement->end_balance = $this->read_financial_balance_less_than_date ( $program, date ( 'Y-m-d', strtotime ( '+1 day', strtotime ( $end_date ) ) ) );
+		// $statement->invoice_amount= $this->read_billed_amount_between($program_account_holder_id, $start_date, $end_date); //commented out in current system
+		$statement->payments = $this->read_payments_between ( $program, $start_date, $end_date );
 		// Read the program info to include in the statement
-		$program_info = $this->programs_model->get_program_info ( $program_account_holder_id );
-		$statement->program_name = $program_info->name;
-		
-		$program_extra_info = $this->programs_model->read_extra_program_info ( $program_account_holder_id );
+		$statement->program_name = $program->name;
 
-		$qry_statement = "
+        $invoiceForAwards = $program->program_is_invoice_for_awards();
+
+        //Prepare Credit Statement
+
+		$sql = "
         SELECT 
             a.account_holder_id,
-            atypes.account_type_name,
-            ftypes.finance_type_name,
-            mtypes.medium_type_name,
+            atypes.name AS account_type_name,
+            ftypes.name,
+            mtypes.name,
             posts.is_credit,
             c.type as currency,
             jet.type as journal_event_type,
@@ -53,36 +83,35 @@ class StatementService
             sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea, 
             sum(posts.qty * posts.posting_amount) as amount,
             exml.name as event_name,
-            posts.posting_timestamp
+            posts.created_at
         		
         FROM " . PROGRAMS . " p
             INNER JOIN " . ACCOUNTS . " a ON a.account_holder_id = p.account_holder_id
             INNER JOIN " . ACCOUNT_TYPES . " atypes ON atypes.id = a.account_type_id
             INNER JOIN " . FINANCE_TYPES . " ftypes ON ftypes.id = a.finance_type_id
             INNER JOIN " . MEDIUM_TYPES . " mtypes ON mtypes.id = a.medium_type_id
-            INNER JOIN " . CURRENCY . " c ON c.id = a.currency_type_id
+            INNER JOIN " . CURRENCIES . " c ON c.id = a.currency_type_id
             INNER JOIN " . POSTINGS . " posts ON posts.account_id = a.id
             INNER JOIN " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
             INNER JOIN " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id
-            INNER JOIN " . PROGRAMS_EXTRA . " px ON px.program_account_holder_id = p.account_holder_id
             LEFT JOIN " . EVENT_XML_DATA . " exml ON exml.id = je.event_xml_data_id
             LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = je.id 
         WHERE
-            p.account_holder_id = {$program_account_holder_id}
-            AND atypes.account_type_name = 'Monies Due to Owner'
-            AND (posts.posting_timestamp >= {$this->read_db->escape($start_date)}
-                and posts.posting_timestamp < DATE_ADD({$this->read_db->escape($end_date)}, INTERVAL 1 DAY)
+            p.id = :program_id
+            AND atypes.name = 'Monies Due to Owner'
+            AND (posts.created_at >= :start_date
+                and posts.created_at < DATE_ADD(:end_date, INTERVAL 1 DAY)
             )
             AND
             posts.is_credit > 0
         ";
-		if (! $this->programs_model->program_is_invoice_for_awards ( $program_account_holder_id )) {
-			$qry_statement = $qry_statement . "
+		if ( !$invoiceForAwards ) {
+			$sql = $sql . "
 	            AND ( invoicej.invoice_id is null
                		or (jet.type not in (
-							'" . JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING . "'
-							, '" . JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'
-							, '" . JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'		
+							'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING . "'
+							, '" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'
+							, '" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'		
         				) 
         			and 
         				invoicej.invoice_id is not null
@@ -90,30 +119,35 @@ class StatementService
             	)
         	";
 		}
-		$qry_statement = $qry_statement . "
+		$sql = $sql . "
         GROUP BY
             posts.id
         ORDER BY
-            journal_event_type, posts.posting_timestamp ASC;
+            journal_event_type, posts.created_at ASC;
         ";
-        //$this->read_db->query ('INSERT INTO debug SET note = "'. $qry_statement .'"');
-		// throw new Exception($qry_statement);
-		// we execute query for reading the invoice of the program
-		// throw new RuntimeException($qry_statement);
-		$query = $this->read_db->query ( $qry_statement );
-		// make sure we have a valid query object
-		// we can't proceed if we don't :) so we have to fail fast
-		if (! $query) {
-			throw new RuntimeException ( 'Internal query failed, please contact API administrator ' . $qry_statement, 500 );
-		}
-		$statement_data_credits = $query->result ();
+
+        DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
+        try {
+            $result = DB::select( DB::raw($sql), array(
+                'program_id' =>  $program->id,
+                'start_date' =>  $start_date,
+                'end_date' => $end_date
+            ));
+            $statement_data_credits = $result;
+        } catch (Exception $e) {
+            throw new \RuntimeException ( 'Could not get data in  StatementService:read_financial_balance_less_than_date. DB query failed.', 500 );
+        }
+
 		$statement_data_credits = account_type_parser ( $statement_data_credits );
-		$qry_statement = "
+
+        //Prepare Debig Statement
+
+		$sql = "
         SELECT 
             a.account_holder_id,
-            atypes.account_type_name,
-            ftypes.finance_type_name,
-            mtypes.medium_type_name,
+            atypes.name AS account_type_name,
+            ftypes.name,
+            mtypes.name,
             posts.is_credit,
             c.type as currency,
             jet.type as journal_event_type,
@@ -126,30 +160,29 @@ class StatementService
             INNER JOIN " . ACCOUNT_TYPES . " atypes ON atypes.id = a.account_type_id
             INNER JOIN " . FINANCE_TYPES . " ftypes ON ftypes.id = a.finance_type_id
             INNER JOIN " . MEDIUM_TYPES . " mtypes ON mtypes.id = a.medium_type_id
-            INNER JOIN " . CURRENCY . " c ON c.id = a.currency_type_id
+            INNER JOIN " . CURRENCIES . " c ON c.id = a.currency_type_id
             INNER JOIN " . POSTINGS . " posts ON posts.account_id = a.id
             INNER JOIN " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
             INNER JOIN " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id
-            INNER JOIN " . PROGRAMS_EXTRA . " px ON px.program_account_holder_id = p.account_holder_id
             LEFT JOIN " . EVENT_XML_DATA . " exml ON exml.id = je.event_xml_data_id
             LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = je.id 
         WHERE
-            p.account_holder_id = {$program_account_holder_id}
-            AND atypes.account_type_name = 'Monies Due to Owner'
-            AND (posts.posting_timestamp >= {$this->read_db->escape($start_date)}
-                and posts.posting_timestamp < DATE_ADD({$this->read_db->escape($end_date)}, INTERVAL 1 DAY)
+            p.id = :program_id
+            AND atypes.name = 'Monies Due to Owner'
+            AND (posts.created_at >= :start_date
+                and posts.created_at < DATE_ADD(:end_date, INTERVAL 1 DAY)
             )
             AND
             posts.is_credit = 0
         ";
-		if (! $this->programs_model->program_is_invoice_for_awards ( $program_account_holder_id )) {
-			$qry_statement = $qry_statement . "
+		if ( !$invoiceForAwards ) {
+			$sql = $sql . "
             AND ( invoicej.invoice_id is null
                	or (
         			jet.type not in (
-							'" . JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING . "'
-							,'" . JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE . "'
-							,'" . JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE . "'
+							'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE . "'
         			)
         		and 
         			invoicej.invoice_id is not null
@@ -157,77 +190,87 @@ class StatementService
             )
         ";
 		}
-		$qry_statement = $qry_statement . "
+		$sql = $sql . "
         GROUP BY
             exml.name, atypes.id, posts.posting_amount, jet.type
         ORDER BY
             p.name, exml.name, posts.posting_amount, journal_event_type;
         ";
-		// throw new Exception($qry_statement);
-		// we execute query for reading the invoice of the program
 
-		$query = $this->read_db->query ( $qry_statement );
-		// make sure we have a valid query object
-		// we can't proceed if we don't :) so we have to fail fast
-		if (! $query) {
-			throw new RuntimeException ( 'Internal query failed, please contact API administrator ' . $qry_statement, 500 );
-		}
-		$statement_data_debits = $query->result ();
+		DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
+        try {
+            $result = DB::select( DB::raw($sql), array(
+                'program_id' =>  $program->id,
+                'start_date' =>  $start_date,
+                'end_date' => $end_date
+            ));
+            $statement_data_debits = $result;
+        } catch (Exception $e) {
+            throw new \RuntimeException ( 'Could not get data in  StatementService:read_financial_balance_less_than_date. DB query failed.', 500 );
+        }
+
 		$statement_data_debits = account_type_parser ( $statement_data_debits );
-		$top_level_program = $this->programs_model->get_top_level_program_id((int)$program_account_holder_id);
-		$invoiceForAwards = $this->programs_model->program_is_invoice_for_awards ( $program_account_holder_id );
-		
-		if($invoiceForAwards){
-			$sql_ext = "{$program_account_holder_id}";
-		}else{
-			$sql_ext = "SELECT p.descendant FROM program_paths p WHERE p.ancestor =  {$top_level_program}";
-		}
+        $statement->debits = $statement_data_debits;
+
+        /*
+            // This section doing nothing in the current code as well so commented out
+            $top_level_program = $program->getRoot(['id', 'name']);
+            
+            if($invoiceForAwards){
+                $sql_ext = "{$program_account_holder_id}";
+            }else{
+                $sql_ext = "SELECT p.descendant FROM program_paths p WHERE p.ancestor =  {$top_level_program}";
+            }
+        */
 
 		$sql = "
-                SELECT 
-                COALESCE(SUM(mi.cost_basis), 0) AS cost_basis,
-                COALESCE(SUM(mi.redemption_value - mi.sku_value), 0) AS premiumamount,
-                            jet.type AS journal_event_type,
-                            a.account_holder_id AS account_holder_id,
-                            atypes.account_type_name AS account_type_name
-                FROM
-                    " . POSTINGS . " AS posts
-                        LEFT JOIN
-                    " . ACCOUNTS . " a ON posts.account_id = a.id
-                        LEFT JOIN
-                    " . ACCOUNT_TYPES . " atypes ON atypes.id = a.account_type_id
-                        INNER JOIN
-                    " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
-                        INNER JOIN
-                    " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id
-                        INNER JOIN
-                    " . POSTINGS . " merchant_posts ON merchant_posts.journal_event_id = je.id
-                        INNER JOIN
-                    " . MEDIUM_INFO . " mi ON mi.id = merchant_posts.medium_info_id
-                        INNER JOIN
-                    " . ACCOUNTS . " merchant_account ON merchant_account.id = merchant_posts.account_id
-                        INNER JOIN
-                    " . MERCHANTS . " m ON m.account_holder_id = merchant_account.account_holder_id
-                    WHERE 
-                     posts.is_credit = 1 
-					 AND atypes.account_type_name IN ('Points Redeemed','Monies Redeemed','Monies Available','Monies Due to Owner') 
-					 AND jet.type IN ('Redeem points for gift codes','Redeem points for international shopping','Redeem monies for gift codes') 
-					 AND a.account_holder_id = {$program_account_holder_id}
-					 AND posts.posting_timestamp >= {$this->read_db->escape($start_date)}
-					 AND posts.posting_timestamp < DATE_ADD({$this->read_db->escape($end_date)}, INTERVAL 1 DAY)
-					GROUP BY a.account_holder_id,atypes.id,jet.id;
-                    ";
+            SELECT 
+            COALESCE(SUM(mi.cost_basis), 0) AS cost_basis,
+            COALESCE(SUM(mi.redemption_value - mi.sku_value), 0) AS premiumamount,
+                jet.type AS journal_event_type,
+                a.account_holder_id AS account_holder_id,
+                atypes.name AS account_type_name
+            FROM
+                " . POSTINGS . " AS posts
+                    LEFT JOIN
+                " . ACCOUNTS . " a ON posts.account_id = a.id
+                    LEFT JOIN
+                " . ACCOUNT_TYPES . " atypes ON atypes.id = a.account_type_id
+                    INNER JOIN
+                " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
+                    INNER JOIN
+                " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id
+                    INNER JOIN
+                " . POSTINGS . " merchant_posts ON merchant_posts.journal_event_id = je.id
+                    INNER JOIN
+                " . MEDIUM_INFO . " mi ON mi.id = merchant_posts.medium_info_id
+                    INNER JOIN
+                " . ACCOUNTS . " merchant_account ON merchant_account.id = merchant_posts.account_id
+                    INNER JOIN
+                " . MERCHANTS . " m ON m.account_holder_id = merchant_account.account_holder_id
+            WHERE 
+                posts.is_credit = 1 
+                AND atypes.name IN ('Points Redeemed','Monies Redeemed','Monies Available','Monies Due to Owner') 
+                AND jet.type IN ('Redeem points for gift codes','Redeem points for international shopping','Redeem monies for gift codes') 
+                AND a.account_holder_id = :program_account_holder_id
+                AND posts.created_at >= :start_date
+                AND posts.created_at < DATE_ADD(:end_date, INTERVAL 1 DAY)
+            GROUP BY a.account_holder_id,atypes.id,jet.id;
+        ";
 
-		$query = $this->read_db->query ( $sql );
-		// make sure we have a valid query object
-		// we can't proceed if we don't :) so we have to fail fast
-		
-		if (! $query) {
-			throw new RuntimeException ( 'Internal query failed, please contact API administrator ' . $qry_statement, 500 );
-		}
-		$premiumRow = $query->row ();
+        DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
+        try {
+            $result = DB::select( DB::raw($sql), array(
+                'program_account_holder_id' =>  $program->account_holder_id,
+                'start_date' =>  $start_date,
+                'end_date' => $end_date
+            ));
+            $premiumRow = current($result);
+        } catch (Exception $e) {
+            throw new \RuntimeException ( 'Could not get data in  StatementService:read_financial_balance_less_than_date. DB query failed.', 500 );
+        }
 
-		if($program_extra_info->air_premium_cost_to_program){
+		if($program->air_premium_cost_to_program){
 			$premium = new stdClass();
 			 
 			$premium->account_holder_id = $premiumRow->account_holder_id;
@@ -258,13 +301,13 @@ class StatementService
 			foreach ( $statement_data_credits as &$statement_credit_item ) {
 				$start_balance += $statement_credit_item->amount;
 				// Rename the journal event type using the language file for better human readability
-				if ($this->lang->line ( 'jet_' . $statement_credit_item->journal_event_type )) {
-					$statement_credit_item->friendly_journal_event_type = $statement_credit_item->journal_event_type;
+				if (\Lang::has( 'jet.' . $statement_credit_item->journal_event_type )) {
+                    $statement_credit_item->friendly_journal_event_type = __( 'jet_' . $statement_credit_item->journal_event_type );
 				} else {
 					$statement_credit_item->friendly_journal_event_type = $statement_credit_item->journal_event_type;
 				}
-				if ($this->lang->line ( 'jet_' . $statement_credit_item->event_name )) {
-					$statement_credit_item->event_name = $this->lang->line ( 'jet_' . $statement_credit_item->event_name );
+				if (\Lang::has( 'jet_' . $statement_credit_item->event_name )) {
+					$statement_credit_item->event_name = __( 'jet_' . $statement_credit_item->event_name );
 				}
 			}
 		}
@@ -272,24 +315,24 @@ class StatementService
 			foreach ( $statement_data_debits as &$statement_debit_item ) {
 				$start_balance += $statement_debit_item->amount;
 				// Rename the journal event type using the language file for better human readability
-				if ($this->lang->line ( 'jet_' . $statement_debit_item->journal_event_type )) {
-					$statement_debit_item->friendly_journal_event_type = $statement_debit_item->journal_event_type;
+				if (\Lang::has( 'jet_' . $statement_debit_item->journal_event_type )) {
+					$statement_debit_item->friendly_journal_event_type = __('jet_' . $statement_debit_item->journal_event_type);
 				} else {
 					$statement_debit_item->friendly_journal_event_type = $statement_debit_item->journal_event_type;
 				}
-				if ($this->lang->line ( 'jet_' . $statement_debit_item->event_name )) {
-					$statement_debit_item->event_name = $this->lang->line ( 'jet_' . $statement_debit_item->event_name );
+				if (\Lang::has( 'jet_' . $statement_debit_item->event_name )) {
+					$statement_debit_item->event_name = __( 'jet_' . $statement_debit_item->event_name );
 				}
 			}
 		}
 		if (round ( $start_balance, 4 ) != round ( $statement->end_balance, 4 )) {
-			throw new RuntimeException ( 'Internal query failed, value mismatch, please contact API administrator.', 500 );
+			throw new \RuntimeException ( 'Internal query failed, value mismatch, please contact API administrator.', 500 );
 		}
 		return $statement;
 	
 	}
 
-    public function read_financial_balance_less_than_date($program_account_holder_id, $end_date) {
+    public function read_financial_balance_less_than_date($program, $end_date) {
 		$sql = "
             SELECT
                 SUM(IF(" . POSTINGS . ".is_credit = 0, -1 * (" . POSTINGS . ".qty * " . POSTINGS . ".posting_amount),  (" . POSTINGS . ".qty * " . POSTINGS . ".posting_amount))) as balance
@@ -311,29 +354,24 @@ class StatementService
                 " . JOURNAL_EVENT_TYPES . " ON " . JOURNAL_EVENT_TYPES . ".id = " . JOURNAL_EVENTS . ".journal_event_type_id
             INNER JOIN
                 " . PROGRAMS . " ON " . PROGRAMS . ".account_holder_id = " . ACCOUNTS . ".account_holder_id
-            INNER JOIN
-                " . PROGRAMS_EXTRA . " ON " . PROGRAMS_EXTRA . ".program_account_holder_id = " . PROGRAMS . ".account_holder_id
 			LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = " . JOURNAL_EVENTS . ".id
 			
             WHERE
-                " . ACCOUNTS . ".account_holder_id = $program_account_holder_id
-				AND " . ACCOUNT_TYPES . ".account_type_name = 'Monies Due to Owner'
-                AND " . POSTINGS . ".posting_timestamp < {$this->read_db->escape($end_date)}
+                " . ACCOUNTS . ".account_holder_id = :program_account_holder_id
+				AND " . ACCOUNT_TYPES . ".name = 'Monies Due to Owner'
+                AND " . POSTINGS . ".created_at < :created_at
         ";
-		if (! $this->programs_model->program_is_invoice_for_awards ( $program_account_holder_id )) {
+		if (! $program->program_is_invoice_for_awards ()) {
 			$sql = $sql . "
                 AND ( invoicej.invoice_id is null
 
 					or (" . JOURNAL_EVENT_TYPES . ".type not in (
-							'" . JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING . "'
-							,'" . JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING . "'
-							
-							,'" . JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE . "'
-							,'" . JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'			
-							
-							,'" . JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE . "'
-							,'" . JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'			
-						
+							'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'
 						)
 						and
 							invoicej.invoice_id is not null) 
@@ -346,13 +384,76 @@ class StatementService
         DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
         try {
             $result = DB::select( DB::raw($sql), array(
-                'invoice_id' => $invoice->id,
+                'program_account_holder_id' =>  $program->account_holder_id,
+                'created_at' => $end_date
             ));
+            return current($result)->balance;
         } catch (Exception $e) {
             throw new \RuntimeException ( 'Could not get data in  StatementService:read_financial_balance_less_than_date. DB query failed.', 500 );
         }
-        return $result;
-		return $row->balance;
+	}
+
+	public function read_payments_between($program, $start_date, $end_date) {
+		$sql = "
+            SELECT
+                SUM(IF(" . POSTINGS . ".is_credit = 0, 0 * (" . POSTINGS . ".qty * " . POSTINGS . ".posting_amount), -1 * (" . POSTINGS . ".qty * " . POSTINGS . ".posting_amount))) as balance
+            FROM
+                " . ACCOUNTS . "
+            INNER JOIN
+                " . ACCOUNT_TYPES . " ON " . ACCOUNT_TYPES . ".id = " . ACCOUNTS . ".account_type_id
+            INNER JOIN
+                " . FINANCE_TYPES . " ON " . FINANCE_TYPES . ".id = " . ACCOUNTS . ".finance_type_id
+            INNER JOIN
+                " . MEDIUM_TYPES . " ON " . MEDIUM_TYPES . ".id = " . ACCOUNTS . ".medium_type_id
+            INNER JOIN
+                " . CURRENCIES . " ON " . CURRENCIES . ".id = " . ACCOUNTS . "." . CURRENCY . "_type_id
+            INNER JOIN
+                " . POSTINGS . " ON " . POSTINGS . ".account_id = " . ACCOUNTS . ".id
+            INNER JOIN
+                " . JOURNAL_EVENTS . " ON " . JOURNAL_EVENTS . ".id = " . POSTINGS . ".journal_event_id
+            INNER JOIN
+                " . JOURNAL_EVENT_TYPES . " ON " . JOURNAL_EVENT_TYPES . ".id = " . JOURNAL_EVENTS . ".journal_event_type_id
+            INNER JOIN
+                " . PROGRAMS . " ON " . PROGRAMS . ".account_holder_id = " . ACCOUNTS . ".account_holder_id
+			LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = " . JOURNAL_EVENTS . ".id
+	
+            WHERE
+                " . ACCOUNTS . ".account_holder_id = :program_account_holder_id
+	                AND " . ACCOUNT_TYPES . ".name = 'Monies Due to Owner'
+                AND " . POSTINGS . ".created_at >= DATE(:start_date)
+	                AND " . POSTINGS . ".created_at < DATE_ADD(DATE(:end_date), INTERVAL 1 DAY)
+	                ";
+		if (! $program->program_is_invoice_for_awards ()) {
+			$sql = $sql . "
+                AND ( invoicej.invoice_id is null
+	
+					or (" . JOURNAL_EVENT_TYPES . ".type not in (
+							'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE . "'
+							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'
+						)
+						and
+						invoicej.invoice_id is not null)
+                	)
+        	";
+		}
+		$sql = $sql . "
+	        ORDER BY " . ACCOUNTS . ".id;";
+
+        DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
+        try {
+            $result = DB::select( DB::raw($sql), array(
+                'program_account_holder_id' =>  $program->account_holder_id,
+                'start_date' =>  $start_date,
+                'end_date' => $end_date
+            ));
+            return current($result)->balance;
+        } catch (Exception $e) {
+            throw new \RuntimeException ( 'Could not get data in  StatementService:read_financial_balance_less_than_date. DB query failed.', 500 );
+        }
 	
 	}
 }

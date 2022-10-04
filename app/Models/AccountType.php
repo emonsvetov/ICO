@@ -15,6 +15,7 @@ class AccountType extends Model
     const ACCOUNT_TYPE_PROMOTIONAL_POINTS = 'Award Promotional Points';
     const ACCOUNT_TYPE_POINTS_REDEEMED = 'Points Redeemed';
     const ACCOUNT_TYPE_MONIES_REDEEMED = 'Monies Redeemed';
+    const ACCOUNT_TYPE_POINTS_AVAILABLE = 'Points Available';
 
     public static function getIdByName( $name, $insert = false ) {
         $first = self::where('name', $name)->first();

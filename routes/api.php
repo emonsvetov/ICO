@@ -347,8 +347,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Statements
 
-    Route::post('/v1/organization/{organization}/program/{program}/statement',[App\Http\Controllers\API\StatementController::class, 'show'])->middleware('can:view,App\Statement,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/statement',[App\Http\Controllers\API\StatementController::class, 'show'])->middleware('can:view,App\Statement,organization,program');
 
+    // Program > TransferMonies
+
+    Route::match(array('GET','POST'), '/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'transferMonies'])->middleware('can:view,App\Program,organization,program');
+    
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);
 

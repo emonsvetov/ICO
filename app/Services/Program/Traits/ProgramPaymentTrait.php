@@ -72,7 +72,7 @@ trait ProgramPaymentTrait {
         return $result;
     }
 
-    public function program_pays_for($user_account_holder_id, $program_account_holder_id, $payment_kind, $amount, $notes, $invoice_id )  {
+    public function program_pays_for($payment_kind, $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )  {
 
         $owner_account_holder_id = Owner::find(1)->account_holder_id;
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
@@ -83,7 +83,8 @@ trait ProgramPaymentTrait {
 
         $monies = MediumType::getIdByName('Monies', true);
         $asset = FinanceType::getIdByName('Asset', true);
-        $journal_event_type_id = JournalEventType::getIdByType( $payment_kind );
+
+        $journal_event_type_id = JournalEventType::getIdByType( $payment_kind, true );
 
         //create JouralEvent
         $journal_event_id = JournalEvent::insertGetId([

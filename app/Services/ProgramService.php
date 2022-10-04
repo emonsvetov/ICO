@@ -6,6 +6,7 @@ use App\Models\Traits\Filterable;
 use App\Models\JournalEventType;
 use App\Services\InvoiceService;
 use App\Services\UserService;
+use App\Models\Account;
 use App\Models\Program;
 use App\Models\Posting;
 use App\Models\Role;
@@ -402,5 +403,21 @@ class ProgramService
 
         if( sizeof($result) > 0) return true;
         return false;
+    }
+
+    public function transferMonies(Program $program, $data)    {
+        $topLevelProgram = $program->rootAncestor()->select(['id', 'name'])->first();
+        if( !$topLevelProgram ) {
+            $topLevelProgram = $program;
+        }
+        $programs = $topLevelProgram->descendants()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
+        $balance = Account::read_available_balance_for_program ( $program );
+        return 
+            [
+                'program' => $program,
+                'programs' => $programs,
+                'balance' => $balance,
+            ]
+        ;
     }
 }

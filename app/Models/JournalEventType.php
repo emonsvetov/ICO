@@ -45,6 +45,7 @@ class JournalEventType extends Model
     const JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE = 'Charge program for deposit fee';
     const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE = 'Program pays for deposit fee';
     const JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_MONIES_PENDING = 'Program refunds for monies pending';
+    const JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE = 'Charge program for convenience fee';
 
 
     public static function getIdByType( $type, $insert = false ) {

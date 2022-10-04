@@ -14,6 +14,9 @@ class StatementController extends Controller
 {
     public function show(ProgramStatementRequest $request, Organization $organization, Program $program, StatementService $statementService )
     {
-        return $statementService->get($program, $request->validated());
+        $statement = $statementService->get($program, $request->validated());
+        return response()->json($statement);
+        // return $statement;
+        // return response(['statement'=>$statement]);
     }
 }
