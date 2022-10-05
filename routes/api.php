@@ -60,18 +60,10 @@ Route::group([
         'prefix' => '/event',
     ], function ()
     {
-        Route::get('', [App\Http\Controllers\API\EventController::class, 'index'])->name('api.v1.organization.program.event.index');
+        Route::get('', [App\Http\Controllers\API\EventController::class, 'index'])->name('api.v1.organization.program.event.index')->middleware('can:view,App\ProgramEvent,organization,program');
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
         Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
-    });
-
-    Route::group([
-        'prefix' => '/event-by-type',
-    ], function ()
-    {
-        Route::get('peer2peer-allocation', [App\Http\Controllers\API\EventController::class, 'peer2peerAllocation']);
     });
 });
 
