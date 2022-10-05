@@ -26,4 +26,14 @@ class AccountType extends Model
             ]);
         }
     }
+
+    public static function getTypeIdPeer2PeerPoints(): int
+    {
+        return (int)self::getIdByName(config('global.account_type_peer_to_peer_points'), true);
+    }
+
+    public static function getTypePeer2PeerPoints(): string
+    {
+        return config('global.account_type_peer_to_peer_points');
+    }
 }

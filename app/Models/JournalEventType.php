@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class JournalEventType extends Model
 {
     use HasFactory;
+
     protected $guarded = [];
 
     const JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT = 'Award points to recipient';
@@ -59,5 +60,10 @@ class JournalEventType extends Model
                 'type'=>$type
             ]);
         }
+    }
+
+    public static function getTypeAllocatePeerPoints(): int
+    {
+        return (int)self::getIdByType(config('global.journal_event_type_allocate_peer_points'));
     }
 }

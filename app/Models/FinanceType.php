@@ -18,4 +18,15 @@ class FinanceType extends Model
         }
         return $id;
     }
+
+    public static function getTypeLiability(): int
+    {
+        return (int)self::getIdByName(config('global.finance_type_liability'), true);
+    }
+
+    public static function getTypeAsset(): int
+    {
+        return (int)self::getIdByName(config('global.finance_type_asset'), true);
+    }
+
 }

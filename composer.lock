@@ -4886,16 +4886,16 @@
         },
         {
             "name": "spatie/laravel-permission",
-            "version": "v4.x-dev",
+            "version": "5.5.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-permission.git",
-                "reference": "dc3e18021bf0ea7895196a40ec6b4fc4947a7388"
+                "reference": "f2303a70be60919811ca8afc313e8244fda00974"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/dc3e18021bf0ea7895196a40ec6b4fc4947a7388",
-                "reference": "dc3e18021bf0ea7895196a40ec6b4fc4947a7388",
+                "url": "https://api.github.com/repos/spatie/laravel-permission/zipball/f2303a70be60919811ca8afc313e8244fda00974",
+                "reference": "f2303a70be60919811ca8afc313e8244fda00974",
                 "shasum": ""
             },
             "require": {
@@ -4952,7 +4952,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-permission/issues",
-                "source": "https://github.com/spatie/laravel-permission/tree/v4"
+                "source": "https://github.com/spatie/laravel-permission/tree/5.5.5"
             },
             "funding": [
                 {
@@ -4960,7 +4960,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2021-12-24T09:26:47+00:00"
+            "time": "2022-06-29T23:11:42+00:00"
         },
         {
             "name": "staudenmeir/laravel-adjacency-list",
