@@ -2,14 +2,18 @@
 
 namespace App\Services;
 
-use App\Models\Event;
-use App\Models\EventType;
-use App\Models\JournalEvent;
-use App\Services\UserService;
+use App\Services\Program\TransferMoniesService;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\IdExtractor;
 use App\Models\Traits\Filterable;
+use App\Models\JournalEventType;
+use App\Services\InvoiceService;
+use App\Services\UserService;
+use App\Models\JournalEvent;
+use App\Models\Account;
+use App\Models\Event;
 use App\Models\Program;
+use App\Models\Posting;
 use App\Models\Role;
 use App\Models\User;
 use DB;
@@ -17,6 +21,9 @@ use DB;
 class ProgramService
 {
     use IdExtractor;
+    public $program;
+    public $program_account_holder_id;
+    public $user_account_holder_id;
 
     private UserService $userService;
     private AccountService $accountService;
@@ -169,12 +176,7 @@ class ProgramService
             }
             return $results;
         }
-
-        // if( $params['paginate'] ) {
-        //     return $query->paginate( $params['limit']);
-        // }
-
-        $results = $query->paginate($params['limit']);
+        $results = $query->paginate( $params['limit']);
         return $results;
     }
 
@@ -243,16 +245,6 @@ class ProgramService
             collectIdsInATree($children->toArray(), $exclude);
         }
 
-        // pr($exclude);
-        // exit;
-        // $subprograms = $this->getSubprograms( $organization, Program::find($topLevelProgram, [
-        //     'except' => $exclude,
-        //     'minimal'=>true,
-        //     // 'flatlist'=>true
-        // ]);
-        // if( $topLevelProgram->id != $parent->id) {
-        //     $subprograms->prepend($topLevelProgram); //push at the top
-        // }
         $program2 = Program::find($topLevelProgram->id)
             ->with([
                 'children' => function ($query) {
@@ -270,8 +262,6 @@ class ProgramService
                 'tree' => $program2->first(),
                 'exclude' => $exclude
             ];
-
-
         // return $subprograms;
     }
 
@@ -367,7 +357,10 @@ class ProgramService
             }
             unset($data['address']);
         }
-        if ($program->update($data)) {
+        if($program->update($data)) {
+            if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
+                $program->create_setup_fee_account();
+            }
             return $program;
         }
     }
@@ -384,6 +377,81 @@ class ProgramService
             ->get()
             ->toTree();
         return $result;
+    }
+
+    public function isFeeAccountExists( $program )    {
+        DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
+
+        $qry_statement = "
+        SELECT 
+            posts.*,
+            posts.created_at as posting_timestamp,
+            jet.type as journal_event_type
+        	FROM postings posts
+            INNER JOIN journal_events je ON je.id = posts.journal_event_id
+            INNER JOIN journal_event_types jet ON jet.id = je.journal_event_type_id
+            INNER JOIN accounts a ON a.id = posts.account_id
+            INNER JOIN account_types atypes ON atypes.id = a.account_type_id
+            INNER JOIN finance_types ftypes ON ftypes.id = a.finance_type_id
+            INNER JOIN medium_types mtypes ON mtypes.id = a.medium_type_id
+            INNER JOIN currencies c ON c.id = a.currency_type_id
+        WHERE
+            a.account_holder_id = :program_account_holder_id
+            and jet.type = :journal_event_type
+        GROUP BY
+        posts.id
+        ORDER BY
+            journal_event_type, posting_timestamp ASC;
+        ";
+		
+        try {
+			$result = DB::select( DB::raw($qry_statement), array(
+				'journal_event_type' => 'Charge setup fee to program',
+				'program_account_holder_id' => $program->account_holder_id
+			));
+		} catch (Exception $e) {
+			throw new \RuntimeException ( 'Could not get fee account information in  ProgramService:isFeeAccountExists. DB query failed.', 500 );
+		}
+
+        if( sizeof($result) > 0) return true;
+        return false;
+    }
+
+    public function getTransferMonies(Program $program)    {
+        $topLevelProgram = $program->rootAncestor()->select(['id', 'name'])->first();
+        if( !$topLevelProgram ) {
+            $topLevelProgram = $program;
+        }
+        $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
+        $balance = Account::read_available_balance_for_program ( $program );
+        return 
+            [
+                'program' => $program,
+                'programs' => $programs,
+                'balance' => $balance,
+            ]
+        ;
+    }
+
+    public function submitTransferMonies(Program $program, $data)    {
+        if(sizeof($data["amounts"]) > 0)    {
+            $result = [];
+            $transerMoniesService = new TransferMoniesService();
+            foreach($data["amounts"] as $programId => $amount)  {
+                $balance = Account::read_available_balance_for_program ( $program );
+                if ($amount > $balance) {
+                    throw new \RuntimeException ( "Account balance has insufficient funds to transfer $" . $amount, 400 );
+                }
+                $user_account_holder_id = auth()->user()->account_holder_id;
+                $program_account_holder_id = $program->account_holder_id;
+                $new_program_account_holder_id = $program->where('id', $programId)->first()->account_holder_id;
+                $result[$programId] = $transerMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
+            }
+            if( sizeof($data["amounts"]) == sizeof($result))    {
+                $balance = Account::read_available_balance_for_program ( $program );
+                return ['success'=>true, 'transferred' => $result, 'balance' => $balance];
+            }
+        }
     }
 
     /**
@@ -445,5 +513,4 @@ class ProgramService
         }
         return $this->accountService->readBalance($program->account_holder_id, $account_type, []);
     }
-
 }

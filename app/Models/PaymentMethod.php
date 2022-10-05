@@ -13,17 +13,17 @@ class PaymentMethod extends BaseModel
     const PAYMENT_METHOD_WIRE_TRANSFER = 'Wire Transfer';
     const PAYMENT_METHOD_CREDITCARD = 'Credit Card';
 
-    public function getPaymentMethodAch() {
+    public static function getPaymentMethodAch() {
         return self::getIdByName(self::PAYMENT_METHOD_ACH);
     }
-    public function getPaymentMethodCheck( $insert = false ) {
+    public static function getPaymentMethodCheck( $insert = false ) {
         // return self::PAYMENT_METHOD_CHECK;
         return self::getIdByName(self::PAYMENT_METHOD_CHECK, $insert);
     }
-    public function getPaymentMethodWireTransfer() {
+    public static function getPaymentMethodWireTransfer() {
         return self::getIdByName(self::PAYMENT_METHOD_WIRE_TRANSFER);
     }
-    public function getPaymentMethodCreditcard() {
+    public static function getPaymentMethodCreditcard() {
         return self::getIdByName(self::PAYMENT_METHOD_CREDITCARD);
     }
 }

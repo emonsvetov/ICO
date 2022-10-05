@@ -26,31 +26,7 @@
 <table border="0" cellpadding="2" cellspacing="1" width="100%" style="border-collapse:collapse">
     <tr>
         <td width="50%">
-            <div style="margin-bottom:20px;"><img src="{{ public_path() }}/logo/Incentco_Logo.jpeg" style='max-Width:200px' /></div>
-            <div  style="margin-bottom:20px;">
-                <p>
-                    3801 PGA Blvd <br /> Suite 600 <br /> Palm Beach Gardens, FL 33410
-                </p>
-            </div>
-            <div>
-                <p>
-                    Bill To : <br />
-                    @if (isset($invoice['program']))
-                        {{ $invoice['program']['name'] }}<br />
-                    @endif
-                    @if( isset($invoice['program']['address']) )
-                        @if ($invoice['program']['address']['address'])
-                            {{ $invoice['program']['address']['address'] }}<br />
-                        @endif
-                        @if ($invoice['program']['address']['address_ext'])
-                            {{ $invoice['program']['address']['address_ext'] }}<br />
-                        @endif
-                        @if ($invoice['program']['address']['city'] || $invoice['program']['address']['zip'])
-                            {{ $invoice['program']['address']['city'] }}, {{ $invoice['program']['address']['state']['code'] }} {{ $invoice['program']['address']['zip'] }}<br />
-                        @endif
-                    @endif
-                </p>
-            </div>
+            <div style="margin-bottom:20px;"><img src="{{ URL::to('/') }}/logo/Incentco_Logo.jpeg" style='max-Width:200px' /></div>
         </td>
         <td width="50%" align="right" valign="top">
             <div>Invoice # {{ $invoice['invoice_number'] }}</div>
@@ -74,38 +50,6 @@
                     <td>{{ $dues['amount'] }}</td>
                 </tr>
             </table>
-            <div>
-                <br />
-                <table style="font-size:0.9em;">
-                    <tr>
-                        <td></td>
-                        <td><b><u>Wire Transfer</u></b></td>
-                        <td><b><u>ACH Payment</u></b></td>
-                    </tr>
-                    <tr>
-                        <td>Routing Number (RTN/ABA):</td>
-                        <td>021000021</td>
-                        <td>102001017</td>
-                    </tr>
-                    <tr>
-                        <td>Account Number:</td>
-                        <td>138091170</td>
-                        <td>138091170</td>
-                    </tr>
-                    <tr>
-                        <td>Bank:</td>
-                        <td>Chase Bank, NA</td>
-                        <td>Chase Bank, NA</td>
-                    </tr>
-                    <tr>
-                        <td valign="top">Address:</td>
-                        <td>2696 S Colorado Blvd&nbsp;&nbsp;&nbsp;<br /> Denver, CO 80222
-                        </td>
-                        <td>2696 S Colorado Blvd<br /> Denver, CO 80222
-                        </td>
-                    </tr>
-                </table>
-            </div>
         </td>
     </tr>
 </table>
@@ -152,28 +96,25 @@
 <br />
 <div>
     <table border="0" cellpadding="2" cellspacing="1" width="100%" style="border-collapse:collapse">
-    <tr>
-        <td><b>Program</b></td>
-        <td><b>Description</b></td>
-        <td align="right"><b>Qty</b></td>
-        <td align="right"><b>Price</b></td>
-        <td align="right"><b>Total</b></td>
-    </tr>
-    <?php
-    foreach ( $invoice['invoices'] as $key => $data ) {
-        // pr($data);
-        // exit;
-    ?>
-    <tr>
-        <td>
+        <thead>
+            <tr>
+                <td valign="top"><b>Program Name</b></td>
+                <td valign="top" align="right"><b>Needed Payment Type</b></td>
+                <td valign="top" align="right"><b>Total</b></td>
+                <td valign="top" align="right"><b>Refunds</b></td>
+                <td valign="top" align="right"><b>Payments</b></td>
+                <td valign="top" align="right"><b>Amount Due</b></td>
+                <td></td>
+                <td valign="top" align="right"><b>Amount needing dispersal: <br />
+                        <span id="amount_left_to_disperse">$0.00</span></b></td>
+            </tr>
+        </thead>
         <?php
-            echo $data['info']->program_name;
+            $total = 0;
+            $total_refunds = 0;
+            $total_payments = 0;
+            $total_due = 0;
         ?>
-        </td>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
     <?php if (is_array($data['info']->debits) && count($data['info']->debits) > 0) :?>
 
         <?php if ($invoice['invoice_type']['name'] == InvoiceType::INVOICE_TYPE_ON_DEMAND || $invoice['invoice_type']['name'] == InvoiceType::INVOICE_TYPE_CREDITCARD) :?>

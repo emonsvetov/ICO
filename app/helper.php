@@ -1,8 +1,29 @@
 <?php
 defined ( 'DEBIT' ) or define ( 'DEBIT', '0' );
 defined ( 'CREDIT' ) or define ( 'CREDIT', '1' );
+
+// DB TableNames
+defined ( 'POSTINGS' ) or define ( 'POSTINGS', 'postings' );
+defined ( 'ACCOUNTS' ) or define ( 'ACCOUNTS', 'accounts' );
+defined ( 'INVOICES_TBL' ) or define ( 'INVOICES_TBL', 'invoices' );
+defined ( 'EVENT_XML_DATA' ) or define ( 'EVENT_XML_DATA', 'event_xml_data' );
+defined ( 'INVOICE_JOURNAL_EVENTS' ) or define ( 'INVOICE_JOURNAL_EVENTS', 'invoice_journal_event' );
+defined ( 'ACCOUNT_TYPES' ) or define ( 'ACCOUNT_TYPES', 'account_types' );
+defined ( 'FINANCE_TYPES' ) or define ( 'FINANCE_TYPES', 'finance_types' );
+defined ( 'MEDIUM_TYPES' ) or define ( 'MEDIUM_TYPES', 'medium_types' );
+defined ( 'CURRENCY' ) or define ( 'CURRENCY', 'currency' );
+defined ( 'CURRENCIES' ) or define ( 'CURRENCIES', 'currencies' );
+defined ( 'JOURNAL_EVENTS' ) or define ( 'JOURNAL_EVENTS', 'journal_events' );
+defined ( 'JOURNAL_EVENT_TYPES' ) or define ( 'JOURNAL_EVENT_TYPES', 'journal_event_types' );
+defined ( 'MEDIUM_INFO' ) or define ( 'MEDIUM_INFO', 'medium_info' );
+defined ( 'MERCHANTS' ) or define ( 'MERCHANTS', 'merchants' );
+defined ( 'PROGRAMS' ) or define ( 'PROGRAMS', 'programs' );
+defined ( 'PROGRAM_MERCHANT' ) or define ( 'PROGRAM_MERCHANT', 'program_merchant' );
+
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING', 'Reversal program pays for monies pending' );
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE', 'Reversal program pays for deposit fee' );
+defined ( 'ALLOWED_HTML_TAGS' ) or define ( 'ALLOWED_HTML_TAGS', '<strong><b><p><br>' );
+
 
 if(!function_exists('pr'))  {
     function pr($d)    {

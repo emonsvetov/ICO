@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\InvoicePaymentRequest;
 use App\Http\Requests\InvoiceRequest;
 use App\Http\Controllers\Controller;
 use App\Services\InvoiceService;
@@ -66,5 +67,21 @@ class InvoiceController extends Controller
         $invoice = $invoiceService->getInvoice($invoice);
         $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $invoice->toArray()]);
         return $pdf->stream();
+    }
+
+    public function payView( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
+    {
+        $invoice = $invoiceService->getPayableInvoice($invoice);
+        return response( $invoice );
+    }
+
+    public function paySubmit(InvoicePaymentRequest $request, Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
+    {
+        // return $request->validated();
+        $invoice = $invoiceService->submitPayment($invoice, $request->validated());
+        return $invoice;
+        // return view('pdf.pay_invoice', ['invoice' => $invoice->toArray()]);
+        // $pdf = Pdf::loadView('pdf.invoice', ['invoice' => $invoice->toArray()]);
+        // return $pdf->stream();
     }
 }
