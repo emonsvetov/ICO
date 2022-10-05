@@ -15,10 +15,9 @@ class ProgramParticipantPolicy
     {
         if( $user->organization_id !== $organization->id ) return false;
         if( $program->organization_id !== $organization->id ) return false;
-        if( $user->isAdmin() ) return true;
-        return $user->isManagerToProgram( $program ) || $user->can('program-participant-list');
+        return true;
     }
-    
+
     public function changeStatus(User $user, Organization $organization, Program $program)
     {
         if( $user->organization_id !== $organization->id ) return false;

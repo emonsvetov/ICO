@@ -20,4 +20,9 @@ class Currency extends BaseModel
             ]);
         }
     }
+
+    public static function getDefault()
+    {
+        return self::getIdByType(config('global.default_currency'), true);
+    }
 }

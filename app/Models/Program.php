@@ -137,4 +137,18 @@ class Program extends BaseModel
 
         return $program;
     }
+
+    public function programIsInvoiceForAwards(): bool
+    {
+        if ($this->invoice_for_awards || $this->factor_valuation != 1) {
+            return true;
+        }
+        return false;
+    }
+
+    public function isShellProgram(): bool
+    {
+        return $this->type == config('global.program_type_shell');
+    }
+
 }

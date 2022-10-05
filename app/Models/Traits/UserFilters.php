@@ -8,7 +8,7 @@ use DB;
 trait UserFilters
 {
     // use Filterable;
-    
+
     protected function applyFilters()    {
         if(!empty(self::$PARAMS['status']))    {
             $statuses = explode(',', self::$PARAMS['status']);
@@ -27,6 +27,10 @@ trait UserFilters
                 // ->orWhere('users.first_name', 'LIKE', "%{$keyword}%")
                 // ->orWhere('users.last_name', 'LIKE', "%{$keyword}%");
             });
+        }
+        if(!empty(self::$PARAMS['except'])) {
+            $users = explode(',', self::$PARAMS['except']);
+            self::$query = self::$query->whereNotIn('id', $users);
         }
     }
 

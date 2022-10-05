@@ -7,7 +7,7 @@ use App\Models\AccountType;
 use App\Models\Currency;
 use App\Models\Posting;
 
-class Account extends Model
+class Account extends BaseModel
 {
     protected $guarded = [];
 
@@ -43,7 +43,7 @@ class Account extends Model
         }
     }
 
-    public function postings(
+    public static function postings(
         $debit_account_holder_id,
         $debit_account_type_name,
         $debit_finance_type_id,
@@ -133,7 +133,7 @@ class Account extends Model
 
             $attributes = [
                 'account_holder_id' => $account_holder_id,
-                'account_type_id' => $account_type_id, 
+                'account_type_id' => $account_type_id,
                 'finance_type_id' => $info['finance_type'],
                 'medium_type_id' => $info ['medium_type'],
                 'currency_type_id' => $info ['currency_type'],
@@ -142,6 +142,6 @@ class Account extends Model
 			$result [] = self::getIdByColumns ( $attributes, true );
 		}
 		return $result;
-	
+
 	}
 }
