@@ -29,9 +29,9 @@ class JournalEvent extends Model
 				join journal_event_types jet on (jet.id = je.journal_event_type_id)
 	
 			where
-				a.account_holder_id = $account_holder_id
-				and at.name = '$account_type_name'
-				and posts.is_credit = '{$is_credit}'
+				a.account_holder_id = :account_holder_id
+				and at.name = :account_type_name
+				and posts.is_credit = :is_credit
 		";
 		if (is_array ( $journal_event_types )) {
 			// this not empty check is nested on purpose, otherwise the else gets executed if the array is empty because an empty array is != ""
@@ -44,8 +44,9 @@ class JournalEvent extends Model
 		// throw new RuntimeException($sql);
 		try {
 			$results = DB::select( DB::raw($sql), array(
-				//'account_holder_id' => $account_holder_id,
-				//'account_type_name' => $account_type_name
+				'account_holder_id' => $account_holder_id,
+				'account_type_name' => $account_type_name,
+				'is_credit' => $is_credit
 			));
 		} catch (Exception $e) {
 			throw new RuntimeException ( 'Could not get information in  Journal:read_sum_postings_by_account_and_journal_events. DB query failed.', 500 );

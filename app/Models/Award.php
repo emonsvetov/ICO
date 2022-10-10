@@ -14,6 +14,7 @@ use App\Models\Currency;
 use App\Models\Event;
 use App\Models\User;
 use DB;
+use mysql_xdevapi\Exception;
 
 class Award extends Model
 {
@@ -21,11 +22,13 @@ class Award extends Model
 
     protected $table = null;
 
-    public function create( $award, $program, $awarder )
+    public static function create( $award, $program, $awarder )
     {
+//        print_r($award);
+//        throw new Exception('asd');
         $event = Event::where('id', $award->event_id)->first();
         $eventType = EventType::where('id', $event->event_type_id)->first();
-        $peer2peer = $eventType->isPeer2peer;
+        $peer2peer = null;
         $referrer = isset($award->referrer) ? $award->referrer : null;
         $lease_number = isset($award->lease_number) ? $award->lease_number : null;
 
@@ -39,7 +42,7 @@ class Award extends Model
         $eventName = $event->name;
         $awarder_account_holder_id = $awarder->account_holder_id; //user_id
         $notificationBody = $award->message; //TODO
-        $notes = $award->notes;
+        $notes = $award->notes ?? '';
         $quantity = 1;
         $medium_info_id = 0;
 
@@ -54,9 +57,17 @@ class Award extends Model
         // echo config('global.account_type_peer2peer_points');
         // return;
 
-        if ( $peer2peer ) {
-			$escrow_account = config('global.account_type_peer2peer_points'); // .", -- escrow account type name
+        if ( $eventType->isEventTypePeer2Peer() ) {
+            $peer2peer = true;
 		}
+        if ( $eventType->isEventTypePeer2PeerBadge() ) {
+            $peer2peer = true;
+            $award_amount = 0;
+		}
+        if ($peer2peer){
+            $escrow_account = config('global.account_type_peer2peer_points'); // .", -- escrow account type name
+        }
+
 
         // echo $escrow_account_type_name;
 

@@ -109,7 +109,7 @@ class Giftcode extends Model
 		$response['gift_code_id'] = $gift_code_id;
 		$user_account_holder_id = $user->account_holder_id;
 		$merchant_account_holder_id = $merchant->account_holder_id;
-        $owner_account_holder_id = Owner::find(1)->id;
+        $owner_account_holder_id = Owner::find(1)->account_holder_id;
 		$journal_event_type_id = JournalEventType::getIdByType( "Purchase gift codes for monies" );
 		$journal_event_id = JournalEvent::insertGetId([
 			'journal_event_type_id' => $journal_event_type_id,
