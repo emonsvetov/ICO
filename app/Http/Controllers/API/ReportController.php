@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
+use App\Models\Program;
+use App\Services\reports\ReportFactory;
+use App\Services\reports\ReportServiceAbstract;
 use Illuminate\Http\Request;
 use App\Models\Organization;
 use App\Models\ProgramBudget;
-use App\Http\Requests\ReportRequest;
+//use App\Http\Requests\ReportRequest;
+
 class ReportController extends Controller
 {
     public function index(Request $request, Organization $organization, $type )
@@ -45,5 +49,17 @@ class ReportController extends Controller
 
         }
 
+    }
+
+    public function show(Organization $organization, Program $program, string $title, Request $request, ReportFactory $reportService)
+    {
+        try {
+            /** @var ReportServiceAbstract $report */
+            $report = $reportService->build($title, $request->all());
+            $response = $report->getReport();
+            return response($response);
+        } catch (\Exception $e) {
+            return response(['errors' => 'Error report generate', 'e' => $e->getMessage()], 422);
+        }
     }
 }

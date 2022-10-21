@@ -251,6 +251,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Reports routes
     Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
+    Route::get('/v1/organization/{organization}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
 
     //MerchantGiftcodes
 
