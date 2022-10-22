@@ -25,13 +25,13 @@ class ReportServiceJournalDetail extends ReportServiceAbstractBase
 			if ( $ranked_programs->isNotEmpty() ) {
 				$account_holder_ids = [];
 				$defaultValues = [
-					'program_fixed_fee' => 0,
-					'program_setup_fee' => 0,
+					'fixed_fee' => 0,
+					'setup_fee' => 0,
 					'admin_fee' => 0,
 					'usage_fee' => 0,
 					'deposit_fee' => 0,
-					'transaction_fees' => 0,
-					'refunded_transaction_fees' => 0,
+					'transaction_fee' => 0,
+					'refunded_transaction_fee' => 0,
 					'deposits' => 0,
 					'points_purchased' => 0,
 					'points_redeemed' => 0,
@@ -90,128 +90,127 @@ class ReportServiceJournalDetail extends ReportServiceAbstractBase
 				];
 				$credits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
 				$credits_report_table = $credits_report->getTable ();
-				// pr($credits_report_table);
-				// exit;
-				// if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
-				// 	foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
-				// 		// Get an easier reference to the program
-				// 		$program = $this->table [$program_account_holder_id];
-				// 		if (is_array ( $programs_credits_report_table ) && count ( $programs_credits_report_table ) > 0) {
-				// 			foreach ( $programs_credits_report_table as $account_type_name => $account ) {
-				// 				if (is_array ( $account ) && count ( $account ) > 0) {
-				// 					foreach ( $account as $journal_event_type => $amount ) {
-				// 						switch ($account_type_name) {
-				// 							case AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS :
-				// 							case AccountType::ACCOUNT_TYPE_PROMOTIONAL_POINTS :
-				// 								switch ($journal_event_type) {
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT :
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT :
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE :
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD :
-				// 										$this->table[$program->account_holder_id]->points_purchased = $amount;
-				// 										break;
-				// 								}
-				// 								break;
-				// 							case AccountType::ACCOUNT_TYPE_MONIES_FEES :
-				// 								switch ($journal_event_type) {
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT :
-				// 										if ($program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->transaction_fees = $amount;
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT :
-				// 										if (! $program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->transaction_fees = $amount;
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_FIXED_FEE :
-				// 										$this->table[$program->account_holder_id]->program_fixed_fee = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_SETUP_FEE :
-				// 										$this->table[$program->account_holder_id]->program_setup_fee = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_ADMIN_FEE :
-				// 										$this->table[$program->account_holder_id]->admin_fee = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONTHLY_USAGE_FEE :
-				// 										$this->table[$program->account_holder_id]->usage_fee = $amount;
-				// 										break;
-				// 								}
-				// 								break;
-				// 							case AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER :
-				// 								switch ($journal_event_type) {
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE :
-				// 										$this->table[$program->account_holder_id]->deposit_fee = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE :
-				// 										$this->table[$program->account_holder_id]->convenience_fees = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_POINTS_TRANSACTION_FEE :
-				// 										$this->table[$program->account_holder_id]->refunded_transaction_fees = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS :
-				// 										$this->table[$program->account_holder_id]->reclaims = $amount;
-				// 										break;
-				// 								}
-				// 								break;
-				// 							case AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE :
-				// 								switch ($journal_event_type) {
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING :
-				// 										$this->table[$program->account_holder_id]->deposits = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES :
-				// 										$this->table[$program->account_holder_id]->reclaims = $amount;
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_MONIES_TRANSACTION_FEE :
-				// 										$this->table[$program->account_holder_id]->refunded_transaction_fees = $amount;
-				// 										break;
-				// 								}
-				// 								break;
-				// 							case AccountType::ACCOUNT_TYPE_MONIES_SHARED :
-				// 								switch ($journal_event_type) {
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
-				// 										if ($program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
-				// 										if (! $program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_POINTS :
-				// 										if ($program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_MONIES :
-				// 										if (! $program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS :
-				// 										if ($program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES :
-				// 										if (! $program->invoice_for_awards) {
-				// 											$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
-				// 										}
-				// 										break;
-				// 									case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_TOTAL_SPEND_REBATE :
-				// 										$this->table[$program->account_holder_id]->total_spend_rebate = $amount;
-				// 										break;
-				// 								}
-				// 							break;
-				// 						}
-				// 					}
-				// 				}
-				// 			}
-				// 		}
-				// 	}
-				// }
+				
+				if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
+					foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
+						// Get an easier reference to the program
+						$program = $this->table [$program_account_holder_id];
+						if (is_array ( $programs_credits_report_table ) && count ( $programs_credits_report_table ) > 0) {
+							foreach ( $programs_credits_report_table as $account_type_name => $account ) {
+								if (is_array ( $account ) && count ( $account ) > 0) {
+									foreach ( $account as $journal_event_type => $amount ) {
+										switch ($account_type_name) {
+											case AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS :
+											case AccountType::ACCOUNT_TYPE_PROMOTIONAL_POINTS :
+												switch ($journal_event_type) {
+													case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT :
+													case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT :
+													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE :
+													case JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD :
+														$this->table[$program->account_holder_id]->points_purchased = $amount;
+														break;
+												}
+												break;
+											case AccountType::ACCOUNT_TYPE_MONIES_FEES :
+												switch ($journal_event_type) {
+													case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT :
+														if ($program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->transaction_fee = $amount;
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT :
+														if (! $program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->transaction_fee = $amount;
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_FIXED_FEE :
+														$this->table[$program->account_holder_id]->fixed_fee = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_SETUP_FEE :
+														$this->table[$program->account_holder_id]->setup_fee = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_ADMIN_FEE :
+														$this->table[$program->account_holder_id]->admin_fee = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONTHLY_USAGE_FEE :
+														$this->table[$program->account_holder_id]->usage_fee = $amount;
+														break;
+												}
+												break;
+											case AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER :
+												switch ($journal_event_type) {
+													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE :
+														$this->table[$program->account_holder_id]->deposit_fee = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE :
+														$this->table[$program->account_holder_id]->convenience_fees = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_POINTS_TRANSACTION_FEE :
+														$this->table[$program->account_holder_id]->refunded_transaction_fee = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS :
+														$this->table[$program->account_holder_id]->reclaims = $amount;
+														break;
+												}
+												break;
+											case AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE :
+												switch ($journal_event_type) {
+													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING :
+														$this->table[$program->account_holder_id]->deposits = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES :
+														$this->table[$program->account_holder_id]->reclaims = $amount;
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_MONIES_TRANSACTION_FEE :
+														$this->table[$program->account_holder_id]->refunded_transaction_fee = $amount;
+														break;
+												}
+												break;
+											case AccountType::ACCOUNT_TYPE_MONIES_SHARED :
+												switch ($journal_event_type) {
+													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
+													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
+														if ($program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
+														if (! $program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_POINTS :
+														if ($program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_MONIES :
+														if (! $program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS :
+														if ($program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES :
+														if (! $program->invoice_for_awards) {
+															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+														}
+														break;
+													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_TOTAL_SPEND_REBATE :
+														$this->table[$program->account_holder_id]->total_spend_rebate = $amount;
+														break;
+												}
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
 				// TODO: Include deposit reversals and subtract from the deposits row
 				// Get all types of fees, etc where we are interested in them being debits
 				$subreport_params[ReportServiceSumPostsByAccountAndJournalEventAndCredit::IS_CREDIT] = 0;

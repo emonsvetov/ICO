@@ -105,6 +105,11 @@ return [
             'path' => storage_path('logs/redemption.log'),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
+        'invoicing' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/invoicing.log'),
+            'level' => 'info',
+        ],
     ],
 
 ];

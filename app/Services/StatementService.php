@@ -325,8 +325,11 @@ class StatementService
 				}
 			}
 		}
+
 		if (round ( $start_balance, 4 ) != round ( $statement->end_balance, 4 )) {
-			throw new \RuntimeException ( 'Internal query failed, value mismatch, please contact API administrator.', 500 );
+			// throw new \RuntimeException ( 'Internal query failed, value mismatch, please contact API administrator.', 500 );
+            \Log::channel('invoicing')->error( sprintf('StatementService:read_statement() - Value mismatch in statement for program: %s(%d)',$program->name, $program->id) );
+            return false;
 		}
 		return $statement;
 	
@@ -454,6 +457,5 @@ class StatementService
         } catch (Exception $e) {
             throw new \RuntimeException ( 'Could not get data in  StatementService:read_financial_balance_less_than_date. DB query failed.', 500 );
         }
-	
 	}
 }
