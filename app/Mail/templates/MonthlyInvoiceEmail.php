@@ -4,10 +4,10 @@ namespace App\Mail\templates;
 
 use App\Mail\SendgridEmail;
 
-class GiftCodeEmail extends SendgridEmail
+class MonthlyInvoiceEmail extends SendgridEmail
 {
-    public string $type = 'emails.giftCode';
-    public $subject = 'You have received a Gift Code';
+    public string $type = 'emails.monthlyInvoice';
+    public $subject = 'Incentco Automatic Email Notification';
 
     /**
      * Create a new message instance.
@@ -17,12 +17,7 @@ class GiftCodeEmail extends SendgridEmail
      */
     public function __construct(
         string $contactFirstName,
-        string $merchantName,
-        string $giftCode,
-        string $giftCodeUrl,
-        float $giftCodeSkuValue,
-        int $giftCodePin,
-        string $merchantRedemptionInstructions,
+        string $eventName,
         string $contactProgramHost0
     ) {
         parent::__construct();

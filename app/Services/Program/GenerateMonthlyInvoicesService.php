@@ -27,13 +27,14 @@ class GenerateMonthlyInvoicesService
 
     public function generate()
     {
-        $response = null;
+        $allResponses = null;
         $cronInvoices = CronInvoice::getProgramsToInvoice();
         // dd($cronInvoices->toArray());
         $last_month = strtotime(date('Y-m')  . " -1 month" );
         $date_start = date('Y-m-01', $last_month); 
         $date_end = date('Y-m-t', $last_month);
         foreach ($cronInvoices as $cronInvoice) {
+            $response = ['cronInvoice' => $cronInvoice];
             $program = $cronInvoice->program;
             // dump($program->toArray());
 
@@ -44,14 +45,18 @@ class GenerateMonthlyInvoicesService
 
             $is_root = $program->isRoot();
 
-            if (!$program->bill_parent_program || $is_root) {
+            if (!$program->bill_parent_program || $is_root) 
+            {
                 $exists = Invoice::getProgramMonthlyInvoice4Date($program, $date_start);
                 // dump($mios->toArray());
-                \Log::info( "checking invoice for ProgramID: " . $program->id . PHP_EOL ); 
-                if (false && $exists) {
-                    \Log::info( "skipping " . $program->id . " already invoiced" . PHP_EOL ); 
-                } else { 
-                    \Log::info( "need to generate invoice for " . $program->account_holder_id . PHP_EOL ); 
+                \Log::info( "checking invoice for ProgramID: " . $program->id ); 
+                if (false && $exists) 
+                {
+                    \Log::info( "skipping " . $program->id . " already invoiced" ); 
+                } 
+                else 
+                { 
+                    \Log::info( "need to generate invoice for " . $program->id ); 
 
                     $days_to_pay = 15; // default to 15 days after end_date
                     $invoice_type = 'Monthly'; // default to monthly invoicing
@@ -59,22 +64,52 @@ class GenerateMonthlyInvoicesService
                     $invoice = $this->createInvoiceService->process ( $program, $invoice_type, $date_start, $date_end, $days_to_pay, $payment_method_id );
 
                     $invoice->load('program');
-                    $invoiceData = $this->readCompiledInvoiceService->get ($invoice );
+                    $compiledInvoice = $this->readCompiledInvoiceService->get ($invoice );
                     // dd($invoice_data->toArray());
-                    $response[] = $this->sendMonthlyInvoiceService->send($program, $invoiceData);
-                    // $response = $this->crons_model->send_monthly_invoice((int) $program->account_holder_id, $date_start, $date_end); 
-                    // echo( "send email for program: " . $program->name . PHP_EOL ); 
+                    $sendResult = $this->sendMonthlyInvoiceService->send($program, $compiledInvoice);
+
+                    $response['msg'] = $sendResult['msg'];
+
+                    if( isset($sendResult['success']) )    
+                    {
+                        \Log::info( "Monthly invoice sent for program: " . $program->id ); 
+                        $updatable['invoice_id'] = $invoice->id;
+                        $updatable['msg'] = 'Sent monthly invoice for program: '. $program->id;
+
+                        $response['success'] = true;
+
+                    }   elseif (isset($sendResult['error']))
+                    {
+                        $response['error'] = true;
+                    }
                 }
-                    
-            } else {
-                // echo "not an invoicable program: " . $program->account_holder_id;
-                // $response['msg'] = "not an invoicable program: " . $program->account_holder_id; 
-                // $response['invoice_id'] = 0; 
             } 
-            // $this->crons_model->add_invoice_cron_info($program, $response); 
-            // $this->crons_model->mark_program_processed($program, 'invoice_date'); 
+            else
+            {
+                \Log::info( "Not an invoicable program: " . $program->id ); 
+                $updatable['msg'] = "Not an invoicable program: " . $program->id; 
+                $updatable['invoice_id'] = 0; 
+            }
+
+            if( isset($updatable) ) 
+            {
+                $cronInvoice->update([
+                    'response' => $updatable['msg'],
+                    'invoice_id' => $updatable['invoice_id'],
+                    'invoice_date' => now(),
+                ]);
+                // Ref. $this->crons_model->add_invoice_cron_info($program, $response); 
+            }   
+            else 
+            {
+                $cronInvoice->update([
+                    'invoice_date' => now()
+                ]);
+                // Ref. $this->crons_model->mark_program_processed($program, 'invoice_date'); 
+            }
+            $allResponses[$cronInvoice->id] = $response;
         }
-        dd($response);
+        return $allResponses;
     }
 
     /* public function post()

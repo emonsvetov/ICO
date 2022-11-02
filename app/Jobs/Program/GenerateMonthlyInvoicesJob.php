@@ -38,12 +38,12 @@ class GenerateMonthlyInvoicesJob implements ShouldQueue
     public function handle(GenerateMonthlyInvoicesService $generateMonthlyInvoicesService, UserService $userService)
     {
         \Log::info("GenerateMonthlyInvoicesJob starts!");
-        $generateMonthlyInvoicesService->generate();
+        $generateResponse = $generateMonthlyInvoicesService->generate();
         \Log::info("GenerateMonthlyInvoicesJob Ends!");
-
+        
         //Notification
         $superAdmins = $userService->getSuperAdmins();
-        Notification::send($superAdmins, new GenerateMonthlyInvoicesNotification( ['message' => "Job: GenerateMonthlyInvoicesJob completed"] ));
+        Notification::send($superAdmins, new GenerateMonthlyInvoicesNotification( ['message' => "Job: GenerateMonthlyInvoicesJob completed", 'response' => $generateResponse] ));
 
         //The UserService() not working for required argument of AccountService class
     }

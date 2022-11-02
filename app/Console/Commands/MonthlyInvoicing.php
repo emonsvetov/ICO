@@ -39,10 +39,13 @@ class MonthlyInvoicing extends Command
      */
     public function handle()
     {
-        \Log::info("cron:monthly-invoicing command ran!");
-        // $this->cronService->addProgramsToInvoice();
-        // $this->cronService->postMonthlyChargesToInvoice();
+        \Log::info("...... cron:monthly-invoicing command running ......");
+        $this->cronService->addProgramsToInvoice();
+        \Log::info("------ MonthlyInvoicing > addProgramsToInvoice done! ------");
+        $this->cronService->postMonthlyChargesToInvoice();
+        \Log::info("------ MonthlyInvoicing > postMonthlyChargesToInvoice done! ------");
         $this->cronService->generateMonthlyInvoices();
+        \Log::info("------ MonthlyInvoicing > generateMonthlyInvoices done! ------");
         // pr($programs);
         return 0;
     }
