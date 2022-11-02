@@ -38,14 +38,16 @@
                     @if (isset($invoice['program']))
                         {{ $invoice['program']['name'] }}<br />
                     @endif
-                    @if ($invoice['program']['address']['address'])
-                        {{ $invoice['program']['address']['address'] }}<br />
-                    @endif
-                    @if ($invoice['program']['address']['address_ext'])
-                        {{ $invoice['program']['address']['address_ext'] }}<br />
-                    @endif
-                    @if ($invoice['program']['address']['city'] || $invoice['program']['address']['zip'])
-                        {{ $invoice['program']['address']['city'] }}, {{ $invoice['program']['address']['state']['code'] }} {{ $invoice['program']['address']['zip'] }}<br />
+                    @if( isset($invoice['program']['address']) )
+                        @if ($invoice['program']['address']['address'])
+                            {{ $invoice['program']['address']['address'] }}<br />
+                        @endif
+                        @if ($invoice['program']['address']['address_ext'])
+                            {{ $invoice['program']['address']['address_ext'] }}<br />
+                        @endif
+                        @if ($invoice['program']['address']['city'] || $invoice['program']['address']['zip'])
+                            {{ $invoice['program']['address']['city'] }}, {{ $invoice['program']['address']['state']['code'] }} {{ $invoice['program']['address']['zip'] }}<br />
+                        @endif
                     @endif
                 </p>
             </div>

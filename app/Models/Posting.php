@@ -9,7 +9,7 @@ use App\Models\Giftcode;
 class Posting extends Model
 {
     protected $guarded = [];
-    public function createPostings( $data ) {
+    public static function createPostings( $data ) {
 
         // pr($data);
 

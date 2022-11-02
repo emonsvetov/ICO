@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Services\ProgramService;
 use Illuminate\Http\Request;
 
 use App\Http\Requests\EventRequest;
@@ -15,29 +16,13 @@ use DB;
 
 class EventController extends Controller
 {
-    public function index( Organization $organization, Program $program )
+
+    public function index( Organization $organization, Program $program, Request $request )
     {
-
-        if ( $organization->id != $program->organization_id )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
-        $events = Event::where('organization_id', $organization->id)
-                        ->where('program_id', $program->id)
-                        ->orderBy('name')
-                        ->with(['icon', 'eventType'])
-                        ->get();
-
-        if ( $events->isNotEmpty() )
-        {
-            return response( $events );
-        }
-
-        return response( [] );
+        return response(Event::getIndexData($organization, $program, $request->all()) ?? []);
     }
 
-    public function store(EventRequest $request, Organization $organization, Program $program )
+    public function store(EventRequest $request, Organization $organization, Program $program)
     {
         $validated = $request->validated();
         if(isset($validated['custom_email_template'])){
@@ -82,6 +67,7 @@ class EventController extends Controller
         }
 
         $event->icon;
+        $event->eventType;
 
         if ( $event )
         {

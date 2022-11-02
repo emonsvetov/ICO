@@ -26,6 +26,6 @@ class AwardPolicy
     {
         if( $organization->id != $user->organization_id ) return false;
         if( $organization->id != $program->organization_id ) return false;
-        return $user->isManagerToProgram( $program ) || $user->can('award-create');
+        return true;
     }
 }
