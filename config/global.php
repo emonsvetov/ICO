@@ -5,8 +5,6 @@ return [
     'factor_valuation' => 40,
     'account_type_peer2peer_points' => 'Peer to Peer Points',
     'default_currency' => 'USD',
-    'account_type_points_awarded' => 'Points Awarded',
-    'account_type_monies_awarded' => 'Monies Awarded',
     'medium_type_gift_codes' => 1,
     'state_context_orders' => 'Orders',
     'state_orders_pending' => 'Pending',
@@ -51,5 +49,7 @@ return [
     'user_status_new' => 'New',
 
     // Account Type
+    'account_type_points_awarded' => 'Points Awarded',
+    'account_type_monies_awarded' => 'Monies Awarded',
     'account_type_peer_to_peer_points' => 'Peer to Peer Points',
 ];

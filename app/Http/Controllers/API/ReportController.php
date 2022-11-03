@@ -5,7 +5,13 @@ use App\Services\Report\InventoryService;
 use App\Services\Report\ReportService;
 use App\Http\Requests\ReportRequest;
 use App\Http\Controllers\Controller;
+use App\Models\Program;
+use App\Services\reports\ReportFactory;
+use App\Services\reports\ReportServiceAbstract;
+use Illuminate\Http\Request;
 use App\Models\Organization;
+use App\Models\ProgramBudget;
+
 
 class ReportController extends Controller
 {
@@ -40,5 +46,17 @@ class ReportController extends Controller
             break;
         }
         // return $this->reportService->getReport();
+    }
+
+    public function show(Organization $organization, Program $program, string $title, Request $request, ReportFactory $reportService)
+    {
+        try {
+            /** @var ReportServiceAbstract $report */
+            $report = $reportService->build($title, $request->all());
+            $response = $report->getReport();
+            return response($response);
+        } catch (\Exception $e) {
+            return response(['errors' => 'Error report generate', 'e' => $e->getMessage()], 422);
+        }
     }
 }

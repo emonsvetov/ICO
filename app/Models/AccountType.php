@@ -36,4 +36,14 @@ class AccountType extends Model
     {
         return config('global.account_type_peer_to_peer_points');
     }
+
+    public static function getTypePointsAwarded(): string
+    {
+        return config('global.account_type_points_awarded');
+    }
+
+    public static function getTypeMoniesAwarded(): string
+    {
+        return config('global.account_type_monies_awarded');
+    }
 }
