@@ -14,7 +14,7 @@ class CreateInvoiceService
         $invoice_type_id = InvoiceType::getIdByName($invoice_type);
 
         $type_on_demand = InvoiceType::getIdByTypeOnDemand(true);
-        $type_monthly = InvoiceType::getIdByTypeMonthly(true);
+        // $type_monthly = InvoiceType::getIdByTypeMonthly(true);
         $type_creditcard = InvoiceType::getIdByTypeCreditCard(true);
 
         $invoice = null;

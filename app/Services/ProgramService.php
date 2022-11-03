@@ -517,7 +517,7 @@ class ProgramService
      */
     public function getBillableDescendants(Program $program): Array
     {
-        $descendants = $program->descendants()->select(['id', 'name', 'path', 'bill_parent_program'])->get();
+        $descendants = $program->descendants()->get();
         $billable_programs = [];
         $programs_to_skip = [];
         foreach( $descendants as $subProgram)   {

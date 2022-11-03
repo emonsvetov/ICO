@@ -41,26 +41,15 @@ class PostMonthlyChargesToInvoiceService
 
     private function postMonthlyCharges($program, $date_start, $date_end)   
     {
-        // \DB::enableQueryLog();
         $countParticipants = $program->getBillableParticipants(true);
-        // pr($countParticipants);
-        // pr(toSql(\DB::getQueryLog()));
-        // exit;
         $countNewParticipants = $program->getBillableParticipants(true, $date_start);
-        // pr($countNewParticipants);
-        // \DB::enableQueryLog();
         $countManagers = $program->getManagers(true);
-        // // pr(toSql(\DB::getQueryLog()));
-        // // pr($program->toArray());
 
         $admin_fee_amount = $program->administrative_fee;
 		$admin_fee_quantity = 0;
 		$admin_fee_calc = $program->administrative_fee_calculation;
 		$fixed_fee = $program->fixed_fee;
 		$currency_type = Currency::getIdByType(config('global.default_currency'), true);
-        // echo $currency_type;
-        // dump($program);
-        // dd($admin_fee_calc);
         switch ($admin_fee_calc) 
         {
 			case ADMIN_FEE_CALC_PARTICIPANTS :

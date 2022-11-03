@@ -30,9 +30,8 @@ class ReadInvoiceJournalSummaryService
 		 * 1) get list of IDs for programs under this program that are !bill_direct
 		 * 2) run report query for journal details
 		 */
-		// $program_account_holder_ids= $this->programs_model->get_programs_in_hierarchy((int)$program_account_holder_id);
+
 		$billable_sub_programs = $this->programService->getBillableDescendants ( $program );
-        // dd($billable_sub_programs);
 
 		if (is_array ( $billable_sub_programs ) && count ( $billable_sub_programs ) > 0) {
 			foreach ( $billable_sub_programs as $sub_program ) {
@@ -40,8 +39,7 @@ class ReadInvoiceJournalSummaryService
 			}
 		}
 		$report = Report::read_journal_entry_detail ( $program_ids, $start_date, $end_date );
-		// dump('$report');
-		// dd($report);
+
 		$summary = $report[$program->account_holder_id];
 
 		if (! isset ( $summary )) {
@@ -89,7 +87,7 @@ class ReadInvoiceJournalSummaryService
 			$result [4] [$TOTAL_SETUP_FEES] += ( float ) $data->setup_fee;
 			$result [5] [$TOTAL_USAGE_FEES] += ( float ) $data->usage_fee;
 			$result [6] [$TOTAL_FIXED_FEES] += ( float ) $data->fixed_fee;
-			// if($program->air_premium_cost_to_program){
+			// if($program->air_premium_cost_to_program){ //TODO - not sure if need to make it work
 			// 	$premiumFees = $this->getPremiumFee($program_account_holder_ids, $start_date, $end_date);
 			// 	if($result [8] [$TOTAL_PREMIUM] == 0){
 			// 		foreach($premiumFees as $premiumFee){
@@ -111,8 +109,6 @@ class ReadInvoiceJournalSummaryService
 				$result ['grand_total'] += $amount;
 			}
 		}
-		// dump('$result');
-		// dump($result);
 		return $result;
 	}
 }

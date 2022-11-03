@@ -53,6 +53,7 @@ class StatementService
 	 * @param date $end_date         */
 	public function read_statement(Program $program, $start_date, $end_date) {
 		$statement = new StatementObject ();
+        $statement->program_id = $program->id;
 		$statement->program_account_holder_id = $program->account_holder_id;
 		$statement->start_date = $start_date;
 		$statement->end_date = $end_date;

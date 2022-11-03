@@ -26,20 +26,17 @@ class ReadCompiledInvoiceService
     public function get(Invoice $invoice)   {
         switch ($invoice->invoice_type->name) {
 			case InvoiceType::INVOICE_TYPE_CREDITCARD :
-				// $invoice_statement = $this->read_creditcard_deposit_invoice_details ( $program_account_holder_id, $invoice_id );
-                $invoice_statement = 'INVOICE_TYPE_CREDITCARD';
+				$invoice_statement = $this->read_creditcard_deposit_invoice_details ( $invoice );
 			break;
 			case InvoiceType::INVOICE_TYPE_ON_DEMAND :
 				$invoice_statement = $this->read_on_demand_invoice_details ( $invoice );
-                // $invoice_statement = 'INVOICE_TYPE_ON_DEMAND';
 			break;
 			case InvoiceType::INVOICE_TYPE_MONTHLY :
-				// I could not see any difference in these two conditions below but still copying them as it is, may be i am missing something - Arvind!
-				if (!$invoice->program->program_is_invoice_for_awards ()) {
+				if (!$invoice->program->program_is_invoice_for_awards()) {
+					// I could not see any difference in these two conditions below but still copying them as it is though! - Arvind
 					$start_date = $invoice->date_begin;
 					$end_date = $invoice->date_end;
 					$invoice_statement = $this->statementService->read_statement ( $invoice->program, $start_date, $end_date );
-					// dd($invoice_statement);
 					$invoice_statement->journal_summary = $this->readInvoiceJournalSummaryService->get ( $invoice->program, $start_date, $end_date );
 				} else {
 					$start_date = $invoice->date_begin;
@@ -48,8 +45,6 @@ class ReadCompiledInvoiceService
 					$invoice_statement->journal_summary = $this->readInvoiceJournalSummaryService->get ( $invoice->program, $start_date, $end_date );
 				}
 				$journal_summary = $invoice_statement->journal_summary;
-				// dump("Jounral Summary");
-				// dump($journal_summary);
 			break;
 			default :
 				throw new \InvalidArgumentException ( "Unsupported Invoice Type." );
@@ -63,7 +58,7 @@ class ReadCompiledInvoiceService
 		];
 		$invoice->total_start_balance = $invoice_statement->start_balance;
 		$invoice->total_end_balance = $invoice_statement->end_balance;
-		$invoice->total_invoice_amount = $invoice_statement->invoice_amount; //not found!
+		// $invoice->total_invoice_amount = $invoice_statement->invoice_amount; //not found!
 		$invoice->total_payments = $invoice_statement->payments;
 
 		$subprogramInvoices = [];
@@ -89,16 +84,12 @@ class ReadCompiledInvoiceService
 			$invoice->invoices = array_merge($invoice->invoices, $subprogramInvoices);
 		}
 
-		// dump("JGrantTodal:" . $journal_summary['grand_total']);
-
 		// DHF-135 - suppress all $0 invoices from being created 
 		if ($invoice->invoice_type->name == InvoiceType::INVOICE_TYPE_MONTHLY && isset($journal_summary['grand_total'])) {
 			$invoice->custom_invoice_amount = $journal_summary['grand_total'];
 		}else{
 			$invoice->custom_invoice_amount = $invoice->total_end_balance;
 		}
-
-		// dump($invoice->custom_invoice_amount);
 
 		$this->updateInvoiceFinalAmount($invoice->id, $invoice->custom_invoice_amount);
         return $invoice;
@@ -112,6 +103,9 @@ class ReadCompiledInvoiceService
 	public function read_on_demand_invoice_details(Invoice $invoice) {
 		return $this->read_invoice_details ( $invoice, InvoiceType::INVOICE_TYPE_ON_DEMAND );
 	}
+	public function read_creditcard_deposit_invoice_details(Invoice $invoice) {
+		return $this->read_invoice_details ( $invoice, InvoiceType::INVOICE_TYPE_CREDITCARD );
+	}
     public function read_invoice_details(Invoice $invoice, $invoice_type_name) {
 		$statement = new \stdClass ();
 		$statement->start_date = $invoice->date_begin;
@@ -119,8 +113,6 @@ class ReadCompiledInvoiceService
 		// Starting balance is always 0 since this invoice is just for a requested amount
 		$statement->start_balance = 0;
 		$statement->end_balance = $statement->start_balance;
-		// Read the program info to include in the statement
-		// $program_info = $this->programs_model->get_program_info ( $program_account_holder_id );
 		$statement->program_name = $invoice->program->name;
 		$statement->program_id = $invoice->program->id;
 		$statement->program_account_holder_id = $invoice->program->account_holder_id;
@@ -173,7 +165,7 @@ class ReadCompiledInvoiceService
 				'program_id' => $invoice->program->id,
 				'invoice_id' => $invoice->id,
 			));
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			throw new \RuntimeException ( 'Could not get information in  InvoiceService:read_invoice_details:statement_data_credits. DB query failed.', 500 );
 		}
 

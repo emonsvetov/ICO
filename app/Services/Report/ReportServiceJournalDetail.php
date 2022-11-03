@@ -14,6 +14,7 @@ use App\Models\Program;
 class ReportServiceJournalDetail extends ReportServiceAbstractBase
 {
 	protected function calcByDateRange(Array $params) {
+		// dump($params);
 		$this->table = array ();
 		// Setup the default params for the sub reports
 		$subreport_params = array ();

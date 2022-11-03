@@ -19,7 +19,6 @@ use App\Models\Invoice;
 use App\Models\Account;
 use App\Models\Report;
 use App\Models\Owner;
-use DB;
 
 class InvoiceService 
 {
@@ -53,73 +52,31 @@ class InvoiceService
         }   else    {
             $invoices = $query->get();
         }
-        // pr(DB::getQueryLog());
         return $invoices;
     }
 
 	public function createOnDemand($data, $program) {
 		// payment method
         $amount = $data['amount'];
-		$payment_method_id = PaymentMethod::getPaymentMethodCheck(true);
 		$deposit_fee = $program->deposit_fee / 100.0;
 		$deposit_fee_amount = $deposit_fee * $amount;
+
+		$payment_method_id = PaymentMethod::getPaymentMethodCheck(true);
+
 		// create a new invoice
 		$date_begin = $date_end = date ( 'Y-m-d' );
 		$days_to_pay = isset($data['days_to_pay']) && $data['days_to_pay'] > 0 ? $data['days_to_pay'] : Invoice::DAYS_TO_PAY;
-        $invoice_type_id = InvoiceType::getIdByTypeOnDemand(true);
-        $program_id = $program->id;
 
-        $user = auth()->user();
+		$invoice = $this->createInvoiceService->process($program, "On-Demand", $date_begin, $date_end, $days_to_pay, $payment_method_id);
 
-        $invoice_key = $program->account_holder_id . date('ym', strtotime($date_end)); //making "invoice_key" with help of "account_holder_id" to support legacy version
+		$user = auth()->user();
 
-        $type_on_demand = InvoiceType::getIdByTypeOnDemand(true);
-        $type_monthly = InvoiceType::getIdByTypeMonthly(true);
-        $type_creditcard = InvoiceType::getIdByTypeCreditCard(true);
-        $invoice = null;
-
-        if( $invoice_type_id == $type_on_demand || $invoice_type_id == $type_creditcard )   
-        {
-            
-        }   
-        else 
-        {
-            $query = Invoice::where(['program_id' => $program_id, 'date_end' => $date_end, 'invoice_type_id' => $invoice_type_id]);
-            if( $query->count() > 0)
-            {
-                $invoice = $query->select('id')->first();
-            }
-        }
-
-        if( !$invoice )   {
-            $count = Invoice::where(['program_id' => $program_id])
-            ->where('created_at', '<=', now())
-            ->count();
-            $seq = $count + 1;
-            // pr($days_to_pay);
-            $date_due_strtotime = strtotime($date_end . " +{$days_to_pay} days");
-            // pr($date_due_strtotime);
-
-            $invoice = Invoice::create([
-                'program_id' => $program_id,
-                'key' => $invoice_key,
-                'seq' => $seq,
-                'invoice_type_id' => $invoice_type_id,
-                'payment_method_id' => $payment_method_id,
-                'date_begin' => $date_begin,
-                'date_end' => $date_end,
-                'date_due' => date ( 'Y-m-d', $date_due_strtotime )
-            ]);
-        }
-
-        if( $invoice )  {
+		if( $invoice )  {
             $invoice = $this->chargeForMoniesPending($invoice, $user, $program, $amount );
             if ($deposit_fee > 0) {
             	$invoice = $this->chargeForDepositFee ($invoice, $user, $program, $deposit_fee_amount);
             }
         }
-
-		return $invoice;
 	}
 
     public function chargeForMoniesPending(Invoice $invoice, $user, $program, $amount)    {
@@ -199,35 +156,17 @@ class InvoiceService
     public function getInvoice(Invoice $invoice)   {
         if( !$invoice->exists() ) return null;
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
-
         $invoice = $this->readCompiledInvoiceService->get($invoice);
-
-		if ($invoice->invoice_type->name == InvoiceType::INVOICE_TYPE_MONTHLY) {
-			// TODO - Dont remove
-			// $billable_sub_programs = $this->programs_model->read_list_billable_descendants ( $program_account_holder_id );
-			// if (is_array ( $billable_sub_programs ) && count ( $billable_sub_programs ) > 0) {
-			// 	foreach ( $billable_sub_programs as $key => $program ) {
-			// 		// loop the journal for invoice data
-			// 		$invoice_statement = $this->read_statement ( ( int ) $program->account_holder_id, $invoice_data->date_begin, $invoice_data->date_end );
-			// 		$data ['invoice'] [] = array (
-			// 				'info' => $invoice_statement,
-			// 				'name' => $program->name 
-			// 		);
-			// 		$data ['total_start_balance'] += $invoice_statement->start_balance;
-			// 		$data ['total_end_balance'] += $invoice_statement->end_balance;
-			// 		$data ['total_invoice_amount'] += $invoice_statement->invoice_amount;
-			// 		$data ['total_payments'] += $invoice_statement->payments;
-			// 	}
-			// }
-		}
         return $invoice;
     }
 
 	public function getPayableInvoice(Invoice $invoice)   {
 		if( !$invoice->exists() ) return null;
 		$view_params = [];
+		
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
         $invoice = $this->readCompiledInvoiceService->get($invoice);
+
 		$payments = $this->readInvoicePaymentsService->get($invoice);
 
 		// Create a simpler data structure for the view
@@ -242,22 +181,18 @@ class InvoiceService
 		foreach ( $invoice->invoices as $statement ) {
 			$invoice_program_ids [] = ( int ) $statement ['info']->program_id;
 		}
-		// pr($invoice_program_ids);
 		$report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
-
-		// pr($report_data);
-		// exit;
 
 		foreach ( $invoice->invoices as $statement ) {
 			// Create a line item for the program
-			// pr($statement);
 
 			$program_statement = new \stdClass ();
 			$program_statement->program_id = $statement ['info']->program_id;
 			$program_statement->program_name = $statement ['info']->program_name;
 			$program_statement->program_account_holder_id = $statement ['info']->program_account_holder_id;
 			$program_statement->charges = array ();
-			$data = $report_data[$statement ['info']->program_account_holder_id];
+			$data = $report_data[$statement['info']->program_account_holder_id];
+			// dd($data->invoice_for_awards);
 			// pr($data->toArray());
 			// exit;
 			if ($data->invoice_for_awards) {
@@ -307,7 +242,7 @@ class InvoiceService
 				}
 				// Check to see if we already have a debit of this journal event type, if not create it
 				if (! isset ( $program_statement->charges [$journal_event_type] )) {
-					$debit_line_item = new stdClass ();
+					$debit_line_item = new \stdClass ();
 					$debit_line_item->total = 0;
 					$debit_line_item->due = 0;
 					$debit_line_item->refunds = 0;
@@ -414,7 +349,7 @@ class InvoiceService
 					try {
 						switch ($jet) {
 							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE :
-								$res = $this->invoicePaymentService->program_pays_for_admin_fee ( $program_id, $amount, $notes, $invoice_id );
+								$res = $this->invoicePaymentService->program_pays_for_admin_fee ( $program_id, $amount, $notes);
 								$response['success'][] = "Program paid for admin fee successfully...";
 								break;
 							case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE :
