@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\IdExtractor;
@@ -21,6 +22,8 @@ use DB;
 class ProgramService
 {
     use IdExtractor;
+    use ChargeFeeTrait;
+
     public $program;
     public $program_account_holder_id;
     public $user_account_holder_id;
@@ -159,7 +162,6 @@ class ProgramService
 
     public function index($organization, $params = [])
     {
-
         $params = array_merge($this->_buildParams(), $params);
         $query = $this->_buildQuery($organization, $params)
             ->whereNull('parent_id')
@@ -167,11 +169,8 @@ class ProgramService
 
         if ($params['minimal']) {
             $results = $query->get();
-            // return $results;
             if ($params['flatlist']) {
-                // exit;
-                $newResults = collect([]);
-                _flatten($results, $newResults);
+                $newResults = _flatten($results);
                 return $newResults;
             }
             return $results;
@@ -189,11 +188,8 @@ class ProgramService
 
         if ($params['minimal']) {
             $results = $query->get();
-            // return $results;
             if ($params['flatlist']) {
-                // exit;
-                $newResults = collect([]);
-                _flatten($results, $newResults);
+                $newResults = _flatten($results);
                 return $newResults;
             }
 
@@ -487,14 +483,14 @@ class ProgramService
 
             $transaction_fee = $this->programsTransactionFeeService->calculateTransactionFee($program, $amount);
             // Get the total of transaction fees and award based on how many people will be awarded
-            $total_transaction_fees = $transaction_fee * count($userIds);
+            $total_transaction_fee = $transaction_fee * count($userIds);
 
             $total_awards = $amount * count($userIds);
             $program_balance = $this->readAvailableBalance($program);
             if (isset($extraArgs['pending_amount']) && $extraArgs['pending_amount'] > 0) {
                 $program_balance = $program_balance - floatval($extraArgs['pending_amount']);
             }
-            return ($program_balance >= $total_awards + $total_transaction_fees);
+            return ($program_balance >= $total_awards + $total_transaction_fee);
         }
     }
 
@@ -512,5 +508,35 @@ class ProgramService
             $account_type = config('global.account_type_monies_awarded');
         }
         return $this->accountService->readBalance($program->account_holder_id, $account_type, []);
+    }
+    /**
+     * Returns the list of billable descedents under a given program
+     *
+     * @param Program $program
+     * @return float
+     */
+    public function getBillableDescendants(Program $program): Array
+    {
+        $descendants = $program->descendants()->get();
+        $billable_programs = [];
+        $programs_to_skip = [];
+        foreach( $descendants as $subProgram)   {
+            $rank = explode ( ".", $subProgram->path );
+            $b_Skip_This = false;
+            if (count ( $programs_to_skip ) > 0) {
+				foreach ( $programs_to_skip as $program_to_skip ) {
+					if (in_array ( $program_to_skip, $rank )) {
+						$b_Skip_This = true;
+					}
+				}
+			}
+            if ( !$subProgram->bill_parent_program && !$b_Skip_This) {
+				$billable_programs[$subProgram->id] = $subProgram;
+
+			} else {
+				$programs_to_skip[] = $program->id;
+			}
+        }
+        return $billable_programs;
     }
 }

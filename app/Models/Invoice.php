@@ -41,4 +41,13 @@ class Invoice extends BaseModel
     {
         return $this->belongsToMany(JournalEvent::class)->withTimestamps();
     }
+
+    public static function getProgramMonthlyInvoice4Date($program, $date_begin)
+    {
+        return self::where('program_id', $program->id)
+        ->where('date_begin', 'LIKE', $date_begin)
+        ->whereHas('invoice_type', function($query) {
+            $query->where('name', 'LIKE', 'Monthly');
+        })->get();
+    }
 }
