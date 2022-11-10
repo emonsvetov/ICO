@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0529578081206741907224daa1ca5725",
+    "content-hash": "64684c885321bee63ec58b2a0f18f00a",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -338,6 +338,56 @@
                 }
             ],
             "time": "2022-08-10T22:54:19+00:00"
+        },
+        {
+            "name": "buildrr/tango-raas-api",
+            "version": "v1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Buildrr/tango-raas-api.git",
+                "reference": "6defd97dfb0a992b2e6bd745b49717b0b4f9d5e1"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Buildrr/tango-raas-api/zipball/6defd97dfb0a992b2e6bd745b49717b0b4f9d5e1",
+                "reference": "6defd97dfb0a992b2e6bd745b49717b0b4f9d5e1",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "4.3.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Buildrr\\TangoRaasApi\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "InimistArvind",
+                    "homepage": "https://github.com/buildrr/tango-raas-api/contributors"
+                }
+            ],
+            "description": "TangoCard RAAS PHP SDK",
+            "homepage": "https://github.com/buildrr/tango-raas-api",
+            "keywords": [
+                "sdk",
+                "tangocard"
+            ],
+            "support": {
+                "issues": "https://github.com/Buildrr/tango-raas-api/issues",
+                "source": "https://github.com/Buildrr/tango-raas-api/tree/v1.0"
+            },
+            "time": "2022-11-09T13:58:47+00:00"
         },
         {
             "name": "defuse/php-encryption",
@@ -10284,8 +10334,8 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^7.4|^8.1"
+        "php": "^7.4|^8.0"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.0.0"
+    "plugin-api-version": "2.3.0"
 }
