@@ -7,6 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\GoalPlan;
 use App\Models\Program;
+use App\Services\ProgramService;
+use App\Models\User;
+use App\Models\UserGoal;
 //use App\Models\EmailTemplate;
 //use App\Models\User;
 //use App\Models\Role;
@@ -15,7 +18,7 @@ use DB;
 
 class GoalPlanController extends Controller
 {
-    public function store(GoalPlanRequest $request, Organization $organization, Program $program)
+    public function store(GoalPlanRequest $request, Organization $organization, Program $program, ProgramService $programService)
     {
         //pr($request->all()); die;
         if ( !( $organization->id == $program->organization_id ) )
@@ -57,28 +60,33 @@ class GoalPlanController extends Controller
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
         // ), 0, 9999);\
-       
+        $user_id=1;
         $new_goal_plan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
             //'state_type_id'=>1, //not found in create function of old system
             'program_id' => $program->id, 
             'progress_notification_email_id'=>1, //pending
-            'created_by'=>1, //pending
+            'created_by'=>auth()->user()->id, //pending
         ] );
-        
-        if ( !$new_goal_plan )
-        {
-        return response(['errors' => 'Goal plan Creation failed'], 422);
-        }   else {
+        $assign_all_participants_now=1;
+     //   pr($new_goal_plan);
+        //if ($new_goal_plan > 0) {
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
-            /*if($assign_all_participants_now==1){
-                $goal_plan->id = $result;
-                $this->assign_all_participants_now($this->program->account_holder_id, $goal_plan);
+           // $users = $programService->getParticipants($program, true);
+           // pr($users);
+            if($assign_all_participants_now==1){
+                //$new_goal_plan->id = $result;
+                $this->assign_all_participants_now($user_id, $new_goal_plan, $program, $programService);
             }
-            redirect('/manager/program-settings/edit-goal-plan/' . $result);*/
-        }
+           // debug('there');
+            //redirect('/manager/program-settings/edit-goal-plan/' . $result);
+       // } else {
+        
+       //     return response(['errors' => 'Goal plan Creation failed'], 422);
+       // }
+        //after this code pending
         // unset($validated['custom_email_template']);
         return response([ 'new_goal_plan' => $new_goal_plan ]);
        
@@ -153,5 +161,49 @@ class GoalPlanController extends Controller
         $goalplan->delete();
         return response(['success' => true]);
     }
+    protected function assign_all_participants_now($user_id, $goal_plan, $program, $programService) {
+	    //$max = 50000;
+        //This is temporary solution - pending implemntation of original function
+        pr($goal_plan);
+        $users = $programService->getParticipants($program, true);
+        $users->load('status');
+       //Pending to implement this large function 
+	   //$data = $this->users_model->readParticipantListWithProgramAwardLevelObject((int) $account_holder_id, 0, '', 0, $max, 'last_name', 'asc', array());
+	    $available_statuses = array("Active","Pending Activation","New");
+        $added_info = array();
+        if(!empty($users)) { 
+            foreach($users as $user){
+                $valid_check = true;
+                //check for duplicates
+                foreach($added_info as $val){
+                    if($val['goal_plan_id']==$goal_plan->id && $val['users_id']==$user_id){
+                        $valid_check = false;
+                        break;
+                    }  
+	            }
+                $user_goal=[];
+                $user_id = $user->id;
+              //  pr($goal_plan->date_begin);
+                // Copy the submitted info into the user's goal plan object
+                $user_goal['goal_plan_id'] =  $goal_plan->id;
+                $user_goal['target_value'] = $goal_plan->default_target;
+                $user_goal['date_begin'] = $goal_plan->date_begin;
+                $user_goal['date_end'] = $goal_plan->date_end;
+                $user_goal['factor_before'] = $goal_plan->factor_before;
+                $user_goal['factor_after'] = $goal_plan->factor_after;
+                $user_goal['created_by'] =  $goal_plan->created_by;
+                $user_goal['achieved_callback_id'] = $goal_plan->achieved_callback_id;
+                $user_goal['exceeded_callback_id'] = $goal_plan->exceeded_callback_id;
+                $user_goal['user_id'] = $user_id;
+                if (in_array($user->status->status, $available_statuses) && $valid_check) {
+                    pr($user_goal);
+                    $added_info=array("goal_plan_id"=>$goal_plan->id,"users_id"=>$user_id);
+                    $response = UserGoal::add($user_goal,$goal_plan);
+                    pr($response);
+                  // $new_user_goal[] = UserGoal::create($user_goal);
+    		}
+        }
+	    }
+	}
 
 }
