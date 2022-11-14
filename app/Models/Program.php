@@ -52,6 +52,11 @@ class Program extends BaseModel
         return $this->hasMany(Event::class);
     }
 
+    public function unit_numbers()
+    {
+        return $this->hasMany(UnitNumber::class);
+    }
+
     public function address()
     {
         return $this->hasOne(Address::class, 'account_holder_id', 'account_holder_id')->with(['state', 'country']);
@@ -209,4 +214,55 @@ class Program extends BaseModel
         return $this->type == config('global.program_type_shell');
     }
 
+    public function getManagers( $count = false )
+    {
+        $excludeStatus = [
+            'Active',
+            'Pending Deactivation',
+            'Locked'
+        ];
+
+        $query = User::whereHas('roles', function ($query) {
+            $query->where('roles.name', 'LIKE', config('roles.manager'))
+            ->where('model_has_roles.program_id', $this->id);
+        })
+        ->join('statuses', 'statuses.id', '=', 'users.user_status_id')
+        ->where('statuses.context', '=',  'Users')
+        ->where(function ($query) use($excludeStatus) {
+            for ($i = 0; $i < count($excludeStatus); $i++){
+               $query->orwhere('statuses.status', '=',  $excludeStatus[$i]);
+            }
+       });
+       if( $count ) {
+        return $query->count();
+       }
+       return $query->get();
+    }
+
+    public function getBillableParticipants( $count = false, $since = '1970-01-01')
+    {
+        $excludeStatus = [
+            'Pending Activation',
+            'Active',
+            'Pending Deactivation',
+            'Locked'
+        ];
+
+        $query = User::whereHas('roles', function ($query) {
+            $query->where('name', 'LIKE', config('roles.participant'))
+            ->where('model_has_roles.program_id', $this->id);
+        })
+        ->join('statuses', 'statuses.id', '=', 'users.user_status_id')
+        ->where('statuses.context', '=',  'Users')
+        ->where('users.created_at', '>=',  $since)
+        ->where(function ($query) use($excludeStatus) {
+            for ($i = 0; $i < count($excludeStatus); $i++){
+               $query->orwhere('statuses.status', '=',  $excludeStatus[$i]);
+            }
+       });
+       if( $count ) {
+        return $query->count();
+       }
+       return $query->get();
+    }
 }

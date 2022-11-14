@@ -6,12 +6,12 @@ use DB;
 trait Treeable
 {
 
-    public function isRoot()
+    public function isRoot(): Bool
     {
         return is_null($this->getParentId());
     }
 
-    public function getParentIdName()
+    public function getParentIdName(): String
     {
         return 'parent_id';
     }

@@ -23,6 +23,9 @@ defined ( 'PROGRAM_MERCHANT' ) or define ( 'PROGRAM_MERCHANT', 'program_merchant
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING', 'Reversal program pays for monies pending' );
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE', 'Reversal program pays for deposit fee' );
 defined ( 'ALLOWED_HTML_TAGS' ) or define ( 'ALLOWED_HTML_TAGS', '<strong><b><p><br>' );
+defined ( 'ADMIN_FEE_CALC_PARTICIPANTS' ) or define ('ADMIN_FEE_CALC_PARTICIPANTS', 'participants' );
+defined ( 'ADMIN_FEE_CALC_UNITS' ) or define ('ADMIN_FEE_CALC_UNITS', 'units' );
+defined ( 'ADMIN_FEE_CALC_CUSTOM' ) or define ('ADMIN_FEE_CALC_CUSTOM', 'custom' );
 
 
 if(!function_exists('pr'))  {
@@ -73,21 +76,37 @@ if(!function_exists('isValidDate'))  {
     }
 }
 
+// if(!function_exists('_flatten'))  {
+//     function _flatten($collection, &$newCollection)
+//     {
+//         foreach( $collection as $model ) {
+//             $children = $model->children;
+//             unset($model->children);
+//             if( !$newCollection ) {
+//                 $newCollection = collect([$model]);
+//             }   else {
+//                 $newCollection->push($model);
+//             }
+//             if (!$children->isEmpty()) {
+//                 $newCollection->merge(_flatten($children, $newCollection));
+//             }
+//         }
+//     }
+// }
 if(!function_exists('_flatten'))  {
-    function _flatten($collection, &$newCollection)
+    function _flatten($collection)
     {
+		if(!isset($newCollection)) $newCollection = collect();
+
         foreach( $collection as $model ) {
             $children = $model->children;
             unset($model->children);
-            if( !$newCollection ) {
-                $newCollection = collect([$model]);
-            }   else {
-                $newCollection->push($model);
-            }
+            $newCollection = $newCollection->push($model);
             if (!$children->isEmpty()) {
-                $newCollection->merge(_flatten($children, $newCollection));
+                $newCollection = $newCollection->merge(_flatten($children));
             }
         }
+		return $newCollection;
     }
 }
 if(!function_exists('collectIdsInATree'))  {
@@ -215,3 +234,18 @@ if (! function_exists ( 'account_type_parser' )) {
 	
 	}
 }
+if (! function_exists ( 'toSql' )) 
+{
+	function toSql($log)
+    {
+		$newLog = [];
+		foreach($log as $query)	{
+			$newLog[] = \Str::replaceArray(
+				'?', array_map(function ($a) { return is_numeric($a) ? $a : "'$a'"; }, $query['bindings']), 
+				$query['query']
+			);
+		}
+		return $newLog;
+	}
+}
+
