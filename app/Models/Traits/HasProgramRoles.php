@@ -130,8 +130,8 @@ trait HasProgramRoles
         }
         return $programRoles;
     }
-    public function hasRolesInProgram( $roles = [], $program) {
-        if( !$roles ) return false;
+    public function hasRolesInProgram( $roles, $program) {
+        if( !$roles  || !$program ) return false;
         $result = null;
         foreach( $roles as $roleName)   {
             if( $this->hasRoleInProgram( $roleName, $program) )    {
@@ -140,8 +140,8 @@ trait HasProgramRoles
         }
         return $result;
     }
-    public function hasAnyRoleInProgram( $roles = [], $program) {
-        if( !$roles ) return false;
+    public function hasAnyRoleInProgram( $roles, $program) {
+        if( !$roles  || !$program ) return false;
         foreach( $roles as $roleName)   {
             if( $this->hasRoleInProgram( $roleName, $program) )    {
                 return true;

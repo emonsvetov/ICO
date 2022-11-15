@@ -13,13 +13,26 @@ class InvoiceType extends BaseModel
     const INVOICE_TYPE_MONTHLY = 'Monthly';
     const INVOICE_TYPE_CREDITCARD = 'Credit Card Deposit';
 
-    public function getIdByTypeOnDemand( $insert = false)   {
+    public static function getIdByName( $name, $insert = false, $description = '')   {
+        $row = self::where('name', $name)->first();
+        $id = $row->id ?? null;
+
+        if( !$id && $insert)    {
+            $id = self::insertGetId([
+                'name'=>$name,
+                'description'=>$description
+            ]);
+        }
+        return $id;
+    }    
+
+    public static function getIdByTypeOnDemand( $insert = false)   {
         return self::getIdByName(self::INVOICE_TYPE_ON_DEMAND, $insert);
     }    
-    public function getIdByTypeMonthly( $insert = false)   {
+    public static function getIdByTypeMonthly( $insert = false)   {
         return self::getIdByName(self::INVOICE_TYPE_MONTHLY, $insert);
     }
-    public function getIdByTypeCreditCard( $insert = false)   {
+    public static function getIdByTypeCreditCard( $insert = false)   {
         return self::getIdByName(self::INVOICE_TYPE_CREDITCARD, $insert);
     }
 }

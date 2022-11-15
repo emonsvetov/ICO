@@ -75,6 +75,11 @@ Add common file uploads to .gitignore file. For example:
 
 ## Update Log
 
+** August 26, 2022
+
+php artisan db:seed --class=CountrySeeder
+php artisan db:seed --class=StateSeeder
+
 ** July 27, 2022
 
 Run `migrations`

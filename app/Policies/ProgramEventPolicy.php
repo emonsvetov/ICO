@@ -37,6 +37,7 @@ class ProgramEventPolicy
     public function view(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        return true;
         if( $user->isAdmin() ) return true;
         if( $user->isManagerToProgram( $program )) return true;
         return $user->can('program-event-view');

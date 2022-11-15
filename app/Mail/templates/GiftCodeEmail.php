@@ -28,5 +28,4 @@ class GiftCodeEmail extends SendgridEmail
         parent::__construct();
         $this->init(func_get_args());
     }
-
 }

@@ -7,7 +7,9 @@ use App\Models\BaseModel;
 class Currency extends BaseModel
 {
     protected $guarded = [];
-    public function getIdByType( $type = 'USD', $insert = false ) {
+
+    public static function getIdByType( $type = 'USD', $insert = false ) {
+
         $first = self::where('type', $type)->first();
         if( $first )    {
             return $first->id;
@@ -17,5 +19,10 @@ class Currency extends BaseModel
                 'type'=>$type
             ]);
         }
+    }
+
+    public static function getDefault()
+    {
+        return self::getIdByType(config('global.default_currency'), true);
     }
 }

@@ -15,7 +15,7 @@ class JournalEvent extends Model
     protected $guarded = [];
     public $timestamps = true;
 
-	public static function read_sum_postings_by_account_and_journal_events($account_holder_id, $account_type_name, $journal_event_types, $is_credit) {
+	public static function read_sum_postings_by_account_and_journal_events($account_holder_id, $account_type_name, $journal_event_types, $is_credit, $from_date = null, $to_date = null) {
 		$sql = "
 			select
 				count(0) as count
@@ -29,10 +29,14 @@ class JournalEvent extends Model
 				join journal_event_types jet on (jet.id = je.journal_event_type_id)
 	
 			where
-				a.account_holder_id = $account_holder_id
-				and at.name = '$account_type_name'
-				and posts.is_credit = '{$is_credit}'
+				a.account_holder_id = :account_holder_id
+				and at.name = :account_type_name
+				and posts.is_credit = :is_credit
 		";
+		if( $from_date && $to_date)	{
+			$sql .= "and posts.created_at between '" . $from_date . "' and '" . $to_date . "'
+			";
+		}
 		if (is_array ( $journal_event_types )) {
 			// this not empty check is nested on purpose, otherwise the else gets executed if the array is empty because an empty array is != ""
 			if (! empty ( $journal_event_types )) {
@@ -44,8 +48,9 @@ class JournalEvent extends Model
 		// throw new RuntimeException($sql);
 		try {
 			$results = DB::select( DB::raw($sql), array(
-				//'account_holder_id' => $account_holder_id,
-				//'account_type_name' => $account_type_name
+				'account_holder_id' => $account_holder_id,
+				'account_type_name' => $account_type_name,
+				'is_credit' => $is_credit
 			));
 		} catch (Exception $e) {
 			throw new RuntimeException ( 'Could not get information in  Journal:read_sum_postings_by_account_and_journal_events. DB query failed.', 500 );
@@ -55,5 +60,14 @@ class JournalEvent extends Model
 			throw new RuntimeException ( 'Zero row in Journal:read_sum_postings_by_account_and_journal_events', 400 );
 		}
 		return $row;
+	}
+
+	public static function read_sum_postings_by_account_and_journal_events_between($account_holder_id, $account_type_name, $journal_event_types, $is_credit, $from_date, $to_date)	{
+		return self::read_sum_postings_by_account_and_journal_events($account_holder_id, $account_type_name, $journal_event_types, $is_credit, $from_date, $to_date);
+	}
+
+	public static function backdatePosting( $journal_event_id )
+	{
+		
 	}
 }

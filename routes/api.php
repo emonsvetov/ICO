@@ -21,6 +21,23 @@ WARNING WARNING WARNING
 NEED TO CREATE MIDDLEWARE THAT CONFIRMS THE CURRENT USER BELONGS TO THE REQUESTED ORGANIZATION
 */
 
+Route::post('/v1/organization/{organization}/userimportheaders', [App\Http\Controllers\API\UserImportController::class, 'userHeaderIndex']);
+Route::post('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'userFileImport']);
+Route::get('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'index']);
+Route::get('/v1/organization/{organization}/userimport/{csvImport}', [App\Http\Controllers\API\UserImportController::class, 'show']);
+
+Route::post('/v1/organization/{organization}/eventimportheaders', [App\Http\Controllers\API\EventImportController::class, 'eventHeaderIndex']);
+Route::post('/v1/organization/{organization}/eventimport', [App\Http\Controllers\API\EventImportController::class, 'eventFileImport']);
+Route::get('/v1/organization/{organization}/eventimport', [App\Http\Controllers\API\EventImportController::class, 'index']);
+Route::get('/v1/organization/{organization}/eventimport/{csvImport}', [App\Http\Controllers\API\EventImportController::class, 'show']);
+
+Route::post('/v1/organization/{organization}/programimportheaders', [App\Http\Controllers\API\ProgramImportController::class, 'programHeaderIndex']);
+Route::post('/v1/organization/{organization}/programimport', [App\Http\Controllers\API\ProgramImportController::class, 'programFileImport']);
+Route::get('/v1/organization/{organization}/programimport', [App\Http\Controllers\API\ProgramImportController::class, 'index']);
+Route::get('/v1/organization/{organization}/programimport/{csvImport}', [App\Http\Controllers\API\ProgramImportController::class, 'show']);
+
+
+
 Route::get('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'index'])->name('api.v1.event_icons.index');
 Route::post('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'store'])->name('api.v1.event_icons.store');
 Route::delete('/v1/organization/{organization}/event_icons/{eventIcon}', [App\Http\Controllers\API\EventIconController::class, 'delete']);
@@ -35,11 +52,20 @@ Route::get('/v1/organization/{organization}/participantgroup/{participantGroup}/
 Route::post('/v1/organization/{organization}/participantgroup/{participantGroup}/user', [App\Http\Controllers\API\ParticipantGroupUserController::class, 'store'])->name('api.v1.organization.participantgroup.user.store');
 Route::delete('/v1/organization/{organization}/participantgroup/{participantGroup}/user', [App\Http\Controllers\API\ParticipantGroupUserController::class, 'destroy'])->name('api.v1.organization.participantgroup.user.destroy');
 
-Route::get('/v1/organization/{organization}/program/{program}/event', [App\Http\Controllers\API\EventController::class, 'index'])->name('api.v1.organization.program.event.index')->middleware('can:viewAny,App\ProgramEvent,organization,program');
-Route::get('/v1/organization/{organization}/program/{program}/event/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
-Route::post('/v1/organization/{organization}/program/{program}/event', [App\Http\Controllers\API\EventController::class, 'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
-Route::put('/v1/organization/{organization}/program/{program}/event/{event}', [App\Http\Controllers\API\EventController::class, 'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
-//Route::delete('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\EventController::class, 'destroy'])->name('api.v1.organization.program.destroy');
+Route::group([
+    'prefix' => '/v1/organization/{organization}/program/{program}',
+], function ()
+{
+    Route::group([
+        'prefix' => '/event',
+    ], function ()
+    {
+        Route::get('', [App\Http\Controllers\API\EventController::class, 'index'])->name('api.v1.organization.program.event.index')->middleware('can:view,App\ProgramEvent,organization,program');
+        Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
+        Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
+        Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+    });
+});
 
 Route::get('/v1/organization/{organization}/programgroup', [App\Http\Controllers\API\ProgramGroupController::class, 'index'])->name('api.v1.organization.programgroup.index');
 Route::get('/v1/organization/{organization}/programgroup/{programGroup}', [App\Http\Controllers\API\ProgramGroupController::class, 'show'])->name('api.v1.organization.programgroup.show');
@@ -107,9 +133,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Route::delete('/v1/organization/{organization}', [App\Http\Controllers\API\OrganizationController::class, 'destroy'])->name('api.v1.organization.destroy')->middleware('can:delete,organization');
 
     //ROLES & PERMISSIONS
-    Route::get('/v1/organization/{organization}/user/{user}/role', [App\Http\Controllers\API\RoleController::class, 'userRoleIndex'])->name('api.v1.organization.user.roles')->middleware('can:view,App\Role,user');
-    Route::put('/v1/organization/{organization}/user/{user}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'assign'])->name('api.v1.organization.user.role.assign')->middleware('can:update,role');
-    Route::delete('/v1/organization/{organization}/user/{user}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'revoke'])->name('api.v1.organization.user.role.revoke')->middleware('can:update,role');
+    // Route::get('/v1/organization/{organization}/user/{user}/role', [App\Http\Controllers\API\RoleController::class, 'userRoleIndex'])->name('api.v1.organization.user.roles')->middleware('can:view,App\Role,user');
+    // Route::put('/v1/organization/{organization}/user/{user}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'assign'])->name('api.v1.organization.user.role.assign')->middleware('can:update,role');
+    // Route::delete('/v1/organization/{organization}/user/{user}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'revoke'])->name('api.v1.organization.user.role.revoke')->middleware('can:update,role');
 
     Route::get('/v1/organization/{organization}/role', [App\Http\Controllers\API\RoleController::class, 'index'])->name('api.v1.organization.role.index')->middleware('can:viewAny,App\Role,organization');
     Route::get('/v1/organization/{organization}/role/{role}', [App\Http\Controllers\API\RoleController::class, 'show'])->name('api.v1.organization.role.show')->middleware('can:view,role');
@@ -199,7 +225,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/redeemable', [App\Http\Controllers\API\ProgramMerchantController::class, 'redeemable'])->middleware('can:viewRedeemable,App\ProgramMerchant,organization,program,merchant');
 
     //ProgramUser routes
-
+//
     Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}',[App\Http\Controllers\API\ProgramUserController::class, 'show'])->middleware('can:view,App\ProgramUser,organization,program,user');
@@ -224,7 +250,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     [App\Http\Controllers\API\UserProgramController::class, 'getRole'])->middleware('can:getRoles,App\UserProgram,organization,user,program');
 
     //Reports routes
-    Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
+    Route::post('/v1/organization/{organization}/report',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
+    //Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
+    Route::get('/v1/organization/{organization}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
 
     //MerchantGiftcodes
 
@@ -269,7 +297,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Statuses
 
-    Route::get('/v1/status',[App\Http\Controllers\API\StatusController::class, 'index'])->middleware('can:viewAny,App\Status');
+    // Route::get('/v1/status',[App\Http\Controllers\API\StatusController::class, 'index'])->middleware('can:viewAny,App\Status');
 
     //Checkout
 
@@ -312,12 +340,32 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Invoice
     Route::get('/v1/organization/{organization}/program/{program}/invoice',[App\Http\Controllers\API\InvoiceController::class, 'index'])->middleware('can:viewAny,App\Invoice,organization,program');
 
-    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}',[App\Http\Controllers\API\InvoiceController::class, 'show'])->middleware('can:view,App\Invoice,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}',[App\Http\Controllers\API\InvoiceController::class, 'show'])->middleware('can:view,App\Invoice,organization,program,invoice');
 
-    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}/download',[App\Http\Controllers\API\InvoiceController::class, 'download'])->middleware('can:download,App\Invoice,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}/download',[App\Http\Controllers\API\InvoiceController::class, 'download'])->middleware('can:download,App\Invoice,organization,program,invoice');
 
     Route::post('/v1/organization/{organization}/program/{program}/invoice/on-demand',[App\Http\Controllers\API\InvoiceController::class, 'createOnDemand'])->middleware('can:createOnDemand,App\Invoice,organization,program');
 
+    Route::get('/v1/organization/{organization}/program/{program}/invoice/{invoice}/pay',[App\Http\Controllers\API\InvoiceController::class, 'payView'])->middleware('can:pay,App\Invoice,organization,program,invoice');
+
+    Route::post('/v1/organization/{organization}/program/{program}/invoice/{invoice}/pay',[App\Http\Controllers\API\InvoiceController::class, 'paySubmit'])->middleware('can:pay,App\Invoice,organization,program,invoice');
+
+    Route::get('/v1/organization/{organization}/program/{program}/payments',[App\Http\Controllers\API\ProgramController::class, 'getPayments'])->middleware('can:listPayments,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/payments',[App\Http\Controllers\API\ProgramController::class, 'submitPayments'])->middleware('can:updatePayments,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/invoice/{invoice}/reversepayment',[App\Http\Controllers\API\ProgramController::class, 'reversePayment'])->middleware('can:reversePayments,App\Program,organization,program');
+
+    // Statements
+
+    Route::get('/v1/organization/{organization}/program/{program}/statement',[App\Http\Controllers\API\StatementController::class, 'show'])->middleware('can:view,App\Statement,organization,program');
+
+    // Program > TransferMonies
+
+    Route::get('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'getTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'submitTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
+    
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);
 

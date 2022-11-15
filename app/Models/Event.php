@@ -32,4 +32,38 @@ class Event extends Model
     {
         return $this->belongsToMany(ParticipantGroup::class);
     }
+
+    /**
+     * @param Organization $organization
+     * @param Program $program
+     * @param array $params
+     * @return mixed
+     */
+    public static function getIndexData(Organization $organization, Program $program, array $params)
+    {
+        $query = self::where('organization_id', $organization->id)
+            ->where('program_id', $program->id);
+
+        if (isset($params['type'])){
+            $types = explode(',', $params['type']);
+            $typeIds = [];
+            foreach ($types as $type){
+                $typeIds[] = EventType::getIdByType($type);
+            }
+            $query->whereIn('event_type_id', $typeIds);
+        }
+        if (isset($params['except_type'])){
+            $types = explode(',', $params['except_type']);
+            $typeIds = [];
+            foreach ($types as $type){
+                $typeIds[] = EventType::getIdByType($type);
+            }
+            $query->whereNotIn('event_type_id', $typeIds);
+        }
+
+        return $query->orderBy('name')
+            ->with(['icon', 'eventType'])
+            ->get();
+    }
+
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\interfaces\ImageInterface;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -21,10 +22,13 @@ use App\Models\Role;
 
 use App\Notifications\ResetPasswordNotification;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope, GetModelByMixed;
     use SoftDeletes;
+
+    const IMAGE_FIELDS = ['avatar'];
+    const IMAGE_PATH = 'users';
 
     public $timestamps = true;
 
@@ -64,9 +68,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'update_id',
         'role_id',
         'created_at',
-        'updated_at'
+        'updated_at',
+        'avatar'
     ];
-    
+
     /**
      * The attributes that should be hidden for arrays.
      *
@@ -107,15 +112,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasRole(config('roles.admin'));
     }
     protected function setPasswordAttribute($password)
-    {   
+    {
         $this->attributes['password'] = bcrypt($password);
     }
     public function isAdmin()
-    {   
+    {
         return $this->hasRole(config('roles.admin'));
     }
     public function isSuperAdmin()
-    {   
+    {
         return $this->hasRole(config('roles.super_admin'));
     }
     public function participant_groups()
@@ -134,7 +139,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendPasswordResetNotification($token)
     {
-        
+
         $url = env('APP_URL', 'http://localhost') . '/reset-password?token=' . $token;
 
         $this->notify(new ResetPasswordNotification($url));
@@ -150,7 +155,7 @@ class User extends Authenticatable implements MustVerifyEmail
         $program_id = self::extractId($program);
         $user_id = self::extractId($user);
         if( !$program_id || !$user_id ) return;
-        $journal_event_types = array (); // leave $journal_event_types empty to get all  - original comment 
+        $journal_event_types = array (); // leave $journal_event_types empty to get all  - original comment
         if( gettype($program)!='object' ) {
             $program = Program::where('id', $program_id)->select(['id'])->first();
         }
@@ -167,6 +172,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return self::_read_balance( $user->account_holder_id, $account_type, $journal_event_types );
     }
 
+    // TODO: This function not only for "User", we should use AccountService->readBalance()
 	private function _read_balance($account_holder_id, $account_type, $journal_event_types = []) {
 		$credits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 1 );
 		$debits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_event_types, 0 );
@@ -188,5 +194,45 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function getStatusByName( $status ) {
         return Status::getByNameAndContext($status, 'Users');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getImageFields(): array
+    {
+        return self::IMAGE_FIELDS;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getImagePath(): string
+    {
+        return self::IMAGE_PATH;
+    }
+
+    /**
+     * Verify that the user can be awarded
+     *
+     * @param Program $program
+     * @return bool
+     */
+    public function canBeAwarded(Program $program): bool
+    {
+        $result = true;
+        $availableStates = [
+            config('global.user_status_deactivated'),
+            config('global.user_status_deleted'),
+        ];
+        if($program->allow_awarding_pending_activation_participants){
+            $availableStates[] = config('global.user_status_pending_activation');
+        }
+
+        if (in_array($this->status()->first()->status, $availableStates)){
+            $result = false;
+        }
+
+        return $result;
     }
 }
