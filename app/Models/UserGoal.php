@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\GoalPlanType;
 use App\Models\GoalPlanModel;
-use DateTime;
 
 class UserGoal extends Model
 {
