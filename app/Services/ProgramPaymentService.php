@@ -16,13 +16,18 @@ class ProgramPaymentService
     public $program_account_holder_id;
     public $user_account_holder_id;
 
+    public function __construct(
+        InvoiceService $invoiceService
+    ) {
+        $this->invoiceService = $invoiceService;
+    }
+
     public function getPayments($program)   {
         $pays_for_points = request()->get('pays_for_points', false);
         if( $pays_for_points ) {
             return $this->read_list_program_pays_for($program, 'date_paid', 'DESC');
         }
-        $invoiceService = new InvoiceService();
-        $invoices = $invoiceService->index($program, false);
+        $invoices = $this->invoiceService->index($program, false);
         
         return [
             'payment_kinds' => Invoice::PROGRAM_PAYMENT_KINDS,

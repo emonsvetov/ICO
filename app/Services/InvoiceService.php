@@ -27,11 +27,13 @@ class InvoiceService
     public function __construct(
         ProgramService $programService,
         CreateInvoiceService $createInvoiceService,
+		InvoicePaymentService $invoicePaymentService,
         ReadInvoicePaymentsService $readInvoicePaymentsService,
         ReadCompiledInvoiceService $readCompiledInvoiceService,
     ) {
         $this->programService = $programService;
         $this->createInvoiceService = $createInvoiceService;
+        $this->invoicePaymentService = $invoicePaymentService;
         $this->readInvoicePaymentsService = $readInvoicePaymentsService;
         $this->readCompiledInvoiceService = $readCompiledInvoiceService;
     }
@@ -334,7 +336,8 @@ class InvoiceService
 
 	public function submitPayment(Invoice $invoice, $validated)	{
 		$response = [];
-		$this->invoicePaymentService = new InvoicePaymentService($invoice);
+		// $this->invoicePaymentService = new InvoicePaymentService($invoice);
+		$this->invoicePaymentService->setInvoice($invoice);
 		// return $validated;
 		$notes = $validated['notes'];
 		foreach( $validated['applied_payments'] as $appliedPayment)	{
