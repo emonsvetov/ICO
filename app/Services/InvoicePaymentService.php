@@ -15,7 +15,10 @@ use App\Models\Owner;
 class InvoicePaymentService
 {
     public $invoice = null;
-    public function __construct(Invoice $invoice)   {
+    public function __construct()   {
+    }
+
+    protected function setInvoice(Invoice $invoice) {
         $this->invoice = $invoice;
     }
 

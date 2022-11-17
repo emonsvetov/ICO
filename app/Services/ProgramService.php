@@ -35,10 +35,12 @@ class ProgramService
     public function __construct(
         UserService $userService,
         AccountService $accountService,
+        TransferMoniesService $transferMoniesService,
         ProgramsTransactionFeeService $programsTransactionFeeService
     ) {
         $this->userService = $userService;
         $this->accountService = $accountService;
+        $this->transferMoniesService = $transferMoniesService;
         $this->programsTransactionFeeService = $programsTransactionFeeService;
     }
 
@@ -432,7 +434,6 @@ class ProgramService
     public function submitTransferMonies(Program $program, $data)    {
         if(sizeof($data["amounts"]) > 0)    {
             $result = [];
-            $transerMoniesService = new TransferMoniesService();
             foreach($data["amounts"] as $programId => $amount)  {
                 $balance = Account::read_available_balance_for_program ( $program );
                 if ($amount > $balance) {
@@ -441,7 +442,7 @@ class ProgramService
                 $user_account_holder_id = auth()->user()->account_holder_id;
                 $program_account_holder_id = $program->account_holder_id;
                 $new_program_account_holder_id = $program->where('id', $programId)->first()->account_holder_id;
-                $result[$programId] = $transerMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
+                $result[$programId] = $this->transerMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
             }
             if( sizeof($data["amounts"]) == sizeof($result))    {
                 $balance = Account::read_available_balance_for_program ( $program );
