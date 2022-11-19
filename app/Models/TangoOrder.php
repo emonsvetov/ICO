@@ -26,6 +26,11 @@ class TangoOrder extends Model
         return $this->belongsTo(Merchant::class);
     }
 
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
+    }
+
     public static function read_not_submitted_orders()
     {
         return self::where('status', self::ORDER_STATUS_NEW)

@@ -8,10 +8,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Notification;
 
+use App\Notifications\SubmitTangoOrdersNotification;
 use App\Services\Program\TangoOrderService;
+use App\Services\UserService;
 
-class SubmitTangoOrdersJob implements ShouldQueue
+class SubmitTangoOrdersJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -29,10 +32,14 @@ class SubmitTangoOrdersJob implements ShouldQueue
      *
      * @return void
      */
-    public function handle(TangoOrderService $tangoOrderService)
+    public function handle(TangoOrderService $tangoOrderService, UserService $userService)
     {
         \Log::info("SubmitTangoOrdersJob starts!");
-        $tangoOrderService->submitOrders();
+        $response = $tangoOrderService->submitOrders();
         \Log::info("SubmitTangoOrdersJob ends!");
+
+        //Notification
+        $superAdmins = $userService->getSuperAdmins();
+        Notification::send($superAdmins, new SubmitTangoOrdersNotification( ['message' => "Job: SubmitTangoOrdersJob completed", 'response' => $response] ));
     }
 }

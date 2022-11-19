@@ -14,7 +14,7 @@ use App\Services\Program\GenerateMonthlyInvoicesService;
 use App\Notifications\GenerateMonthlyInvoicesNotification;
 use App\Services\UserService;
 
-class GenerateMonthlyInvoicesJob implements ShouldQueue
+class GenerateMonthlyInvoicesJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -44,7 +44,5 @@ class GenerateMonthlyInvoicesJob implements ShouldQueue
         //Notification
         $superAdmins = $userService->getSuperAdmins();
         Notification::send($superAdmins, new GenerateMonthlyInvoicesNotification( ['message' => "Job: GenerateMonthlyInvoicesJob completed", 'response' => $generateResponse] ));
-
-        //The UserService() not working for required argument of AccountService class
     }
 }
