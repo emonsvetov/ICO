@@ -23,9 +23,25 @@ class GoalPlanController extends Controller
     {
         //pr($request->all()); die;
         $data = $request->validated();
-        $new_goal_plan= $goalplanservice->add_goal_plan($data,$organization,$program);
-        return response([ 'new_goal_plan' => $new_goal_plan ]);
-       
+        $response=[];
+        try{
+            $new_goal_plan= $goalplanservice->add_goal_plan($data,$organization,$program);
+            if(!empty($new_goal_plan['goal_plan'])) {
+                $response['goal_plan'] = $new_goal_plan['goal_plan'];
+                if(!empty($new_goal_plan['assign_all_participants']['success_count']) && $new_goal_plan['assign_all_participants']['success_count'] >= 1) {
+                    $response['msg'] = $new_goal_plan['assign_all_participants']['success_count']. " participant(s) assigned!";
+                }
+                if(!empty($new_goal_plan['assign_all_participants']['fail_count']) && $new_goal_plan['assign_all_participants']['fail_count'] >= 1) {
+                    $response['msg'] = $new_goal_plan['assign_all_participants']['fail_count']. " participant(s) assignment failed!";
+                }
+            } else {
+                return $response(['errors' => "Goal plan Creation failed"], 422);
+            }   
+
+        } catch (\Exception $e )    {
+            return response(['errors' => $e->getMessage()], 422);
+        }
+        return $response;
 	}
     public function index( Organization $organization, Program $program )
     {

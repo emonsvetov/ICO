@@ -26,9 +26,15 @@ class GoalPlanService
     }
 	public function add_goal_plan($data, $organization, $program)
     {
+		$response=[];
         //PENDING - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		//CALLBACK_TYPE_GOAL_MET=Goal Met 
-        /*$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET);
+        /*
+		 // If the program does not allow goals, kick them out
+        if (!$this->config_fields[CONFIG_PROGRAM_USES_GOAL_TRACKER]->value) {
+            redirect('/manager/program-settings');
+        }
+		$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET);
         $goal_exceeded_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_EXCEEDED);
         $email_templates = $this->email_templates_model->read_list_program_email_templates_by_type((int) $this->program->account_holder_id, "Goal Progress", 0, 9999);
         $empty_callback = new stdClass();
@@ -50,13 +56,12 @@ class GoalPlanService
          $event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
          if (isset($request->goal_plan_type_id) && ($request->goal_plan_type_id == GoalPlanType::GOAL_PLAN_TYPE_RECOGNITION)) {
-            $event_type_needed = 5; // Badge event type;
+            $event_type_needed = 5; // Badge event type; - PENDING need some contant here
          }
-        /* PENDING - Get the appropriate events for this goal plan type - this is old site code - Pending
+        /* PENDING - Get the appropriate events for this goal plan type - this is old site code - PENDING
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
         // ), 0, 9999);*/
-        $user_id=1;
         $new_goal_plan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
@@ -66,32 +71,28 @@ class GoalPlanService
             'created_by'=>auth()->user()->id,
         ] );
      	//pr($new_goal_plan);
+		 $response['goal_plan'] = $new_goal_plan;
         if (!empty($new_goal_plan->id)) {
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
             if($data['assign_goal_all_participants_default']==1)	{
                 //$new_goal_plan->id = $result;
-                $this->assign_all_participants_now($new_goal_plan, $program);
+                $assign_response = $this->assign_all_participants_now($new_goal_plan, $program);
+				$response['assign_all_participants']=$assign_response;
             }
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
-			return response([ 'goal_plan' => $new_goal_plan ]);
-		} else {
-            return response(['errors' => 'Goal plan Creation failed'], 422);
-        }
-           // debug('there');
-            //redirect('/manager/program-settings/edit-goal-plan/' . $result);
-       // } else {
-        
-       //     return response(['errors' => 'Goal plan Creation failed'], 422);
-       // }
-        //after this code pending
-        // unset($validated['custom_email_template']);
+		}
+			return $response;
+		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
+		//after this code pending
+		// unset($validated['custom_email_template']);
     }
     protected function assign_all_participants_now($goal_plan, $program) {
 		//
 	    //$max = 50000;
         //This is temporary solution - pending implemntation of original function
         //pr($goal_plan);
+		$response=[];
         $users =  $this->programService->getParticipants($program, true);
         $users->load('status');
        //Pending to implement this large function 
@@ -99,7 +100,9 @@ class GoalPlanService
 	    $available_statuses = array("Active","Pending Activation","New");
         $added_info = array();
        // pr($users);
-        if(!empty($users)) { 
+	  // $future_goal_plan_failure = 0;
+	  $success_user=$fail_user=$success_future_user=$fail_future_user=$already_assigned=[];
+        if(!empty($users)) {
             foreach($users as $user){
 				if (!in_array($user->status->status, $available_statuses)) {
 				 continue;
@@ -128,16 +131,47 @@ class GoalPlanService
                 $user_goal['exceeded_callback_id'] = $goal_plan->exceeded_callback_id;
                 $user_goal['user_id'] = $user_id;
 				
-				$response = self::add_user_goal($user_goal,$goal_plan);
-				$added_info[]=array("goal_plan_id"=>$goal_plan->id,"users_id"=>$user_id);
+				$date_begin = new DateTime ( $user_goal['date_begin'] );
+				$date_end = new DateTime ( $user_goal['date_end'] );
+				if ($date_end < $date_begin) {
+					//no need to loop other users and stop it here because goal plan data is same for all
+					//it should be in validation code -PENDING
+					$response['error']='Date begin cannot be less than Date end';
+					break;
+				}
+				unset($user_goal['date_begin']);
+				unset($user_goal['date_end']);
+
+				$response = self::add_user_goal($goal_plan, $user_goal);
+	
+				if(isset($response['already_assigned'])) {
+					$already_assigned[]=$user_id; // User is already assigned to this goal plan
+					continue;
+				}
+				if(!$response || !isset($response['user_goal_plan'])) {
+					$fail_user[]=$user_id;
+				} else if(isset($response['user_goal_plan'])) {
+					$added_info[]=array("goal_plan_id"=>$goal_plan->id,"users_id"=>$user_id);
+					$success_user[]=$user_id;
+				}
+				//$goal_plan is_recurring
+				if(isset($response['future_user_goal'])) { 
+					if($response['future_user_goal'])
+						$success_future_user[]=$user_id;
+					else
+						$fail_future_user[]=$user_id;
+				} //else no need of future goal	
     		}
-			//pending to return response
+			//create response 
+			$response['success_count']=count($success_user);
+			$response['fail_count']=count($fail_user);
         }
+		return $response;
 	}
-    public function add_user_goal($user_goal,$goal_plan) {
+    public function add_user_goal($goal_plan, $user_goal) {
 		$response=[];
 		$active_goal_plan_id = 0;
-		$valid = true;
+		$valid = true; 
 		/* PENDING
 		// Make sure the program allows peer 2 peer
 		$uses_goal_tracker_config = $this->programs_config_fields_model->read_config_field_by_name ( $program_account_holder_id, CONFIG_PROGRAM_USES_GOAL_TRACKER );
@@ -145,18 +179,18 @@ class GoalPlanService
 			throw new UnexpectedValueException ( 'This program does allow goal plans', 400 );
 		}
 		*/
-		$date_begin = new DateTime ( $user_goal['date_begin'] );
+		/*$date_begin = new DateTime ( $user_goal['date_begin'] );
 		$date_end = new DateTime ( $user_goal['date_end'] );
 		if ($date_end < $date_begin) {
-			$response['error'][]='date_begin cannot be less than date_end';
+			$response['error']='Date begin cannot be less than Date end';
 			return $response;
-		} 
-		unset($user_goal['date_begin']);
-		unset($user_goal['date_end']);
+		}
+		*/
 
 		$current_user_goal_plan = UserGoal::where(['user_id' =>$user_goal['user_id'], 'goal_plan_id' => $user_goal['goal_plan_id']])->first();
 		if ($current_user_goal_plan) {
-			$response['error'][]='User is already assigned to this goal plan';
+			//'User is already assigned to this goal plan';
+			$response['already_assigned']=1;
 			return $response;
 		}
 		if ($goal_plan->goal_plan_type_id != GoalPlanType::getIdByTypeSales()) {
@@ -164,24 +198,28 @@ class GoalPlanService
 			$user_goal['factor_before'] = 0;
 			$user_goal['factor_after'] = 0;
 		}
-		try {
-			$new_user_goal_plan = self::_insert_user_goal($user_goal,$goal_plan );
-			if(!empty($new_user_goal_plan)) {
-				$response['new_user_goal_plan']=$new_user_goal_plan;
-			}
-			// If we just created a new user goal and the goal plan is recurring, go ahead and create the user's future goal too
-			if ($goal_plan->is_recurring && isset ( $goal_plan->next_goal_id ) && $goal_plan->next_goal_id > 0) {
-				// Create the user's future goal plan
-				$future_goal_plan_id = self::create_future_goal ( $goal_plan, (array) $new_user_goal_plan );
-			}
-		} catch ( Exception $x ) {
-			$response['error'][] = ["Failure to Create Goal Plan: " . $x->getMessage () . " @{$x->getFile()}:{$x->getLine()} {$x->getCode()}"];
-			//throw new RuntimeException ( "Failure to Create Goal Plan: " . $x->getMessage () . " @{$x->getFile()}:{$x->getLine()} {$x->getCode()}", 500 );
+		
+		$new_user_goal_plan = self::_insert_user_goal($goal_plan,$user_goal);
+		if(!$new_user_goal_plan) {
+			return false;
 		}
-		// now we return the response back to the function caller
+		$response['user_goal_plan']=$new_user_goal_plan;
+		// If we just created a new user goal and the goal plan is recurring, go ahead and create the user's future goal too
+		if ($goal_plan->is_recurring && isset ( $goal_plan->next_goal_id ) && $goal_plan->next_goal_id > 0) {
+			// Create the user's future goal plan
+			$future_user_goal = self::create_future_goal( $goal_plan, (array) $new_user_goal_plan);
+			$response['future_user_goal']= $future_user_goal;
+		}
+			/*if($future_user_goal) { 
+				$response['future_user_goal']=$future_user_goal['future_user_goal'];
+			} else {
+				$response['future_user_goal']=false;
+			}		
+		}
+		// now we return the response back to the function caller*/
 		return $response;
 	}
-	private function _insert_user_goal($user_goal,$goal_plan) {
+	private function _insert_user_goal($goal_plan, $user_goal) {
 		// Create the user goal record$user_goal,$goal_plan
 		if (! isset ( $user_goal['previous_user_goal_id'] ) || $user_goal['previous_user_goal_id'] < 1) {
 			$user_goal['previous_user_goal_id'] = null;
@@ -189,12 +227,8 @@ class GoalPlanService
 		if (! isset ( $user_goal['next_user_goal_id'] ) || $user_goal['next_user_goal_id'] < 1) {
 			$user_goal['next_user_goal_id'] = null;
 		}
-		$new_user_goal_plan = UserGoal::create($user_goal);
-		if(!empty($new_user_goal_plan)) {
-			return $new_user_goal_plan;
-		} else {
-			return false;
-		}
+		$new_user_goal = UserGoal::create($user_goal);
+		return $new_user_goal;
 	}
 	public function create_future_goal($goal_plan, $user_goal) {
 		// set the new goal plan to begin when the previous one expires
@@ -218,16 +252,20 @@ class GoalPlanService
 		if ($user_goal->factor_after == $goal_plan->factor_after) {
 			$user_goal->factor_after = $future_goal_plan->factor_after;
 		}
-		// Create the Future Goal Plan
-		$future_goal_plan = self::_insert_user_goal($user_goal, $future_goal_plan);
-		// Update the active goal plan's next goal id with the future goal plan id
-		// build the query to INSERT an event then run it!
-		$future_goal_plan_id = $future_goal_plan->id;
 		
-		GoalPlanModel::where(['id'=>$user_goal->id])->update(['next_user_goal_id'=>$future_goal_plan_id]);
+		// Create the Future Goal Plan
+		$future_user_goal = self::_insert_user_goal($future_goal_plan, $user_goal);
+		if(!future_user_goal) {
+			return false; //if no future goal plan created then return here. No need of update goal plan model updates below.
+		}
 		// Update the active goal plan's next goal id with the future goal plan id
 		// build the query to INSERT an event then run it!
-		GoalPlanModel::where(['id'=>$future_goal_plan_id])->update(['previous_user_goal_id'=>$user_goal->id]);
-		return $future_goal_plan_id;
+		$future_user_goal_id = $future_user_goal->id;
+		
+		UserGoal::where(['id'=>$user_goal->id])->update(['next_user_goal_id'=>$future_user_goal_id]);
+		// Update the active goal plan's next goal id with the future goal plan id
+		// build the query to INSERT an event then run it!
+		UserGoal::where(['id'=>$future_user_goal_id])->update(['previous_user_goal_id'=>$user_goal->id]);
+		return $future_user_goal;
 	}
 }
