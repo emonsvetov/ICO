@@ -77,8 +77,9 @@ class GoalPlanService
             //if assign all current participants then run now
             if($data['assign_goal_all_participants_default']==1)	{
                 //$new_goal_plan->id = $result;
-                $assign_response = $this->assign_all_participants_now($new_goal_plan, $program);
-				$response['assign_all_participants']=$assign_response;
+                $assign_response =self::assign_all_participants_now($new_goal_plan, $program);
+				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
+				//$response['assign_all_participants']=$assign_response;
             }
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		}
@@ -87,7 +88,17 @@ class GoalPlanService
 		//after this code pending
 		// unset($validated['custom_email_template']);
     }
-    protected function assign_all_participants_now($goal_plan, $program) {
+	public function assign_all_participants_res($response) {
+		$msg='';
+		if(!empty($response['success_count']) && $response['success_count'] >= 1) {
+			$msg = $response['success_count']. " participant(s) assigned!";
+		}
+		if(!empty($response['fail_count']) && $response['fail_count'] >= 1) {
+			$msg = $response['fail_count']. " participant(s) assignment failed!";
+		}
+		return $msg;
+	}
+    public function assign_all_participants_now($goal_plan, $program) {
 		//
 	    //$max = 50000;
         //This is temporary solution - pending implemntation of original function
