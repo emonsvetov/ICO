@@ -17,9 +17,9 @@ class NewOrganizationListner
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(UserService $userService)
     {
-        //
+        $this->userService = $userService;
     }
 
     /**
@@ -30,7 +30,7 @@ class NewOrganizationListner
      */
     public function handle(OrganizationCreated $event)
     {
-        $superAdmins = (new UserService)->getSuperAdmins();
+        $superAdmins = $this->userService->getSuperAdmins();
         Notification::send($superAdmins, new NewOrganizationNotification( $event->organization ));
     }
 }

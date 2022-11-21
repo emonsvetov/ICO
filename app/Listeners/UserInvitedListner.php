@@ -29,9 +29,9 @@ class UserInvitedListner
      * @param  \App\Events\UserInvited  $event
      * @return void
      */
-    public function handle(UserInvited $event)
+    public function handle(UserInvited $event, UserService $userService)
     {
-        $superAdmins = (new UserService)->getSuperAdmins();
+        $superAdmins = $userService->getSuperAdmins();
         Notification::send($superAdmins, new UserInvitedNotifyAdmin( $event->sender, $event->recepient, $event->program ));
         Notification::send($event->recepient, new UserInvitedNotifyUser( $event->sender, $event->recepient, $event->program ));
     }

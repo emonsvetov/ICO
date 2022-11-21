@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -14,39 +16,55 @@ use App\Models\Organization;
 use App\Models\Domain;
 use App\Models\User;
 use App\Models\Role;
-use DB;
+
 
 class AuthController extends Controller
 {
     
     public function register(UserRegisterRequest $request)
     {
+        DB::beginTransaction();
+        try{
+            $registerFields = $request->validated();
+            if( !empty($registerFields['organization_name']) )  {
+                $organization = Organization::create([
+                    'name' => $registerFields['organization_name']
+                ]);
+                OrganizationCreated::dispatch($organization);
+                $registerFields['organization_id'] = $organization->id;
+                unset($registerFields['organization_name']);
+            }
+            
+            $user = User::createAccount( $registerFields );
+    
+            if ( !$user )
+            {
+                return response(['errors' => 'User registration failed'], 422);
+            }
+    
+            $adminRole = Role::where('name', config('roles.admin'))->pluck('id');
+            $user->syncRoles( $adminRole );
+    
+            $accessToken = $user->createToken('authToken')->accessToken;
 
-        $registerFields = $request->validated();
-        if( !empty($registerFields['organization_name']) )  {
-            $organization = Organization::create([
-                'name' => $registerFields['organization_name']
-            ]);
-            event( new OrganizationCreated($organization) );
-            $registerFields['organization_id'] = $organization->id;
-            unset($registerFields['organization_name']);
+            // dump();
+    
+            Registered:dispatch($user);
+
+            DB::commit();
+            
+            return response([ 'user' => $user, 'access_token' => $accessToken]);
         }
-        
-        $user = User::createAccount( $registerFields );
-
-        if ( !$user )
+        catch(\Exception $e)
         {
-            return response(['errors' => 'User registration failed'], 422);
+            $error = $e->getMessage();
+            $response = ['errors' => $error];
+            DB::rollBack();
+            if(env('APP_ENV')=='local') {
+                $response['stackTrace'] =  $e->getTrace();
+            }
+            return response($response, 422);
         }
-
-        $adminRole = Role::where('name', config('roles.admin'))->pluck('id');
-        $user->syncRoles( $adminRole );
-
-        $accessToken = $user->createToken('authToken')->accessToken;
-
-        event(new Registered($user));
-        
-        return response([ 'user' => $user, 'access_token' => $accessToken]);
     }
 
     public function login(UserLoginRequest $request)

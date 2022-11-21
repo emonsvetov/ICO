@@ -95,7 +95,7 @@ class Program extends BaseModel
         }
 		return false;
 	}
-    public function createAccount( $data )    {
+    public static function createAccount( $data )    {
         $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
         if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
             $data['allow_creditcard_deposits'] = 1;

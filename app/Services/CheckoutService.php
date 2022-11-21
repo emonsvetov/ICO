@@ -500,7 +500,7 @@ class CheckoutService
 			
 			try {
 				event( new OrderShippingRequest($data, $order_id) );
-			}   catch(Exception $e) {
+			}   catch(\Exception $e) {
 				$response['errors'][] = 'Error sending OrderShippingRequest notification with error:' . $e->getMessage() . ' in line ' . $e->getLine();
 				return $response;
 			}
