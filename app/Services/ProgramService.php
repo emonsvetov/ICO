@@ -442,7 +442,7 @@ class ProgramService
                 $user_account_holder_id = auth()->user()->account_holder_id;
                 $program_account_holder_id = $program->account_holder_id;
                 $new_program_account_holder_id = $program->where('id', $programId)->first()->account_holder_id;
-                $result[$programId] = $this->transerMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
+                $result[$programId] = $this->transferMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
             }
             if( sizeof($data["amounts"]) == sizeof($result))    {
                 $balance = Account::read_available_balance_for_program ( $program );
