@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Http\Requests\InvitationResendRequest;
 use App\Http\Requests\InvitationRequest;
 use App\Http\Controllers\Controller;
@@ -11,7 +13,6 @@ use App\Events\UserInvited;
 use App\Models\Program;
 use App\Models\User;
 use App\Models\Role;
-use DB;
 
 class InvitationController extends Controller
 {
@@ -21,6 +22,7 @@ class InvitationController extends Controller
     public function invite(InvitationRequest $request, Organization $organization, Program $program)
     {
         //return auth()->user();
+        DB::beginTransaction();
 		try {
             $validated = $request->validated();
             $validated['organization_id'] = $organization->id;
@@ -36,9 +38,11 @@ class InvitationController extends Controller
                 $program->users()->sync( [ $user->id ], false );
                 $user->syncProgramRoles($program->id, $roles);
             }
-            event( new UserInvited( $user, $program ) );
+            UserInvited::dispatch( $user, $program);
+            DB::commit();
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
+            DB::rollBack();
             return response(['errors' => $e->getMessage()], 422);
         }
 	}

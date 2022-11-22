@@ -46,8 +46,6 @@ class AuthController extends Controller
             $user->syncRoles( $adminRole );
     
             $accessToken = $user->createToken('authToken')->accessToken;
-
-            dump();
     
             Registered:dispatch($user);
 
