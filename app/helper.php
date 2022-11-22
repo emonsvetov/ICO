@@ -28,6 +28,14 @@ defined ( 'ADMIN_FEE_CALC_UNITS' ) or define ('ADMIN_FEE_CALC_UNITS', 'units' );
 defined ( 'ADMIN_FEE_CALC_CUSTOM' ) or define ('ADMIN_FEE_CALC_CUSTOM', 'custom' );
 
 
+// Database Tables names as CONSTANTS
+defined ( 'TBL_ORDER_LINE_ITEMS' ) or define ('TBL_ORDER_LINE_ITEMS', 'order_line_items' );
+defined ( 'TBL_MEDIUM_INFO' ) or define ('TBL_MEDIUM_INFO', 'medium_info' );
+defined ( 'TBL_MERCHANTS' ) or define ('TBL_MERCHANTS', 'merchants' );
+defined ( 'TBL_STATE_TYPES' ) or define ('TBL_STATE_TYPES', 'statuses' );
+defined ( 'TBL_USERS' ) or define ('TBL_USERS', 'users' );
+
+
 if(!function_exists('pr'))  {
     function pr($d)    {
         $appPath = app_path();
