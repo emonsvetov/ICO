@@ -123,6 +123,12 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return $this->hasRole(config('roles.super_admin'));
     }
+
+    public function acount_holder()
+    {
+        return $this->belongsTo(AccountHolder::class);
+    }
+
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);

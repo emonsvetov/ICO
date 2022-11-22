@@ -17,10 +17,8 @@ use App\Models\Domain;
 use App\Models\User;
 use App\Models\Role;
 
-
 class AuthController extends Controller
 {
-    
     public function register(UserRegisterRequest $request)
     {
         DB::beginTransaction();
@@ -46,10 +44,8 @@ class AuthController extends Controller
             $user->syncRoles( $adminRole );
     
             $accessToken = $user->createToken('authToken')->accessToken;
-
-            // dump();
     
-            Registered:dispatch($user);
+            event(new Registered($user));
 
             DB::commit();
             
@@ -57,10 +53,9 @@ class AuthController extends Controller
         }
         catch(\Exception $e)
         {
-            $error = $e->getMessage();
-            $response = ['errors' => $error];
+            $response = ['errors' => $e->getMessage()];
             DB::rollBack();
-            if(env('APP_ENV')=='local') {
+            if(env('APP_DEBUG')) {
                 $response['stackTrace'] =  $e->getTrace();
             }
             return response($response, 422);
