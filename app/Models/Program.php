@@ -147,7 +147,6 @@ class Program extends BaseModel
 
         Account::create_multi_accounts ( $program_account_holder_id, $default_accounts );
         
-
         //TODO ??
         // $this->tie_sub_program ( $program_account_holder_id, $program_account_holder_id );
 
@@ -264,5 +263,38 @@ class Program extends BaseModel
         return $query->count();
        }
        return $query->get();
+    }
+
+    /**
+     * Get Domain for a program;
+     * If no domain found for a program, then try to get parent program's domain;
+     * TODO: Discuss "get domain" approach with team.
+     */
+    public function getDomain() 
+    {
+        if( $this->domains->isNotEmpty())   {
+            return $this->domains->first();
+        }
+        if($this->parent()->exists())
+        {
+            $parent = $this->parent()->first();
+            return $parent->getDomain();
+        }
+        return null;
+    }
+
+    /**
+     * Get Domain Host for a program;
+     * If no domain found for a program, then try to get parent program's domain;
+     * TODO: Discuss "get domain" approach with team.
+     */
+    public function getHost()
+    {
+        $domain = $this->getDomain();
+        if( $domain &&  $domain->exists())
+        {
+            return $domain->name;
+        }
+        return null;
     }
 }

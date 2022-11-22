@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Jobs\Program\PostMonthlyChargesToInvoiceJob;
 use App\Jobs\Program\AddProgramsToInvoiceJob;
 use App\Jobs\Program\GenerateMonthlyInvoicesJob;
+use App\Jobs\Program\SubmitTangoOrdersJob;
 // use App\Notifications\CronNotification; //Can be used for CronNotifications
 
 class CronService
@@ -17,5 +18,8 @@ class CronService
     }
     public function generateMonthlyInvoices() {
         dispatch( new GenerateMonthlyInvoicesJob() );
+    }
+    public function submitTangoOrders() {
+        dispatch( new SubmitTangoOrdersJob() );
     }
 }
