@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -10,13 +11,15 @@ use App\Models\AccountHolder;
 use App\Models\FinanceType;
 use App\Models\MediumType;
 use App\Models\Account;
+use Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 
 class Merchant extends Model
 {
     use HasFactory;
     use SoftDeletes;
     use Treeable;
-  
+    use HasRecursiveRelationships;
+
     protected $guarded = [];
 
     public function findByIds($ids = [])
@@ -24,7 +27,7 @@ class Merchant extends Model
          //not sure whether to get with tree, if so, uncomment next line and the query block with "children"
         // $query = $this->where('parent_id', null);
         $query = $this;
-        if( is_array( $ids ) && count( $ids ) > 0 ) 
+        if( is_array( $ids ) && count( $ids ) > 0 )
         {
             $query = $query->whereIn( 'id',  $ids);
         }
@@ -71,18 +74,18 @@ class Merchant extends Model
             array (
                     'account_type' => 'Gift Codes Available',
                     'finance_type' => $asset,
-                    'medium_type' => $gift_codes_mt 
+                    'medium_type' => $gift_codes_mt
             ),
             array (
                     'account_type' => 'Monies Due to Owner',
                     'finance_type' => $asset,
-                    'medium_type' => $gift_codes_mt 
+                    'medium_type' => $gift_codes_mt
             ),
             array (
                     'account_type' => 'Gift Codes Available',
                     'finance_type' => $asset,
-                    'medium_type' => $gift_codes_mt 
-            ) 
+                    'medium_type' => $gift_codes_mt
+            )
         );
 
         Account::create_multi_accounts ( $merchant_account_holder_id, $default_accounts );
@@ -107,5 +110,12 @@ class Merchant extends Model
             $merchant = self::find($merchant);
         }
         return $merchant->getRoot();
+    }
+
+    public static function getTree(): Collection
+    {
+        return self::with('children')
+            ->whereNull('parent_id')
+            ->get();
     }
 }

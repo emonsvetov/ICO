@@ -26,6 +26,7 @@ class MerchantController extends Controller
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
+        $tree = request()->has('tree') ? true : false;
 
         $where = [];
 
@@ -53,16 +54,23 @@ class MerchantController extends Controller
 
         if ( request()->has('minimal') )
         {
-            $merchants = $query->select('id', 'name')
+            $query->select('id', 'name')
             ->with(['children' => function($query){
                 return $query->select('id','name','parent_id')
                 ->with(['children' => function($query){
                     return $query->select('id','name','parent_id');
                 }]);
-            }])
-            ->get();
+            }]);
+            if ($tree){
+                $query->whereNull('parent_id');
+            }
+            $merchants = $query->get();
         } else {
-            $merchants = $query->with('children')->paginate(request()->get('limit', 50));
+            $query->with('children');
+            if ($tree){
+                $query->whereNull('parent_id');
+            }
+            $merchants = $query->paginate(request()->get('limit', 50))->get();
         }
 
         if ( $merchants->isNotEmpty() )
