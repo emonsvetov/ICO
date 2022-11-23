@@ -21,4 +21,10 @@ class OptimalValue extends Model
         return self::where(['merchant_id' => $merchant_id, 'denomination' => $denomination])
         ->get();
     }
+
+    public static function getByMerchantId(int $merchantId)
+    {
+        return self::where(['merchant_id' => $merchantId])->get();
+    }
+
 }
