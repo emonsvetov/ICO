@@ -21,7 +21,6 @@ class InvitationController extends Controller
      */
     public function invite(InvitationRequest $request, Organization $organization, Program $program)
     {
-        //return auth()->user();
         DB::beginTransaction();
 		try {
             $validated = $request->validated();
@@ -33,12 +32,13 @@ class InvitationController extends Controller
 
             $roles[] = Role::getIdByName(config('roles.participant'));
 
-            if( !empty($roles) ) 
+            if( !empty($roles) )
             {
                 $program->users()->sync( [ $user->id ], false );
                 $user->syncProgramRoles($program->id, $roles);
             }
             UserInvited::dispatch( $user, $program);
+            event(new UserInvited($user, $program));
             DB::commit();
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {

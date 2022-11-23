@@ -7,6 +7,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
+use App\Mail\templates\PasswordResetEmail;
+
 class ResetPasswordNotification extends Notification
 {
     use Queueable;
@@ -42,10 +44,12 @@ class ResetPasswordNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-                    ->line('Forgot your Password?')
-                    ->action('Click to reset', $this->url)
-                    ->line('You will need to login after resetting the password to ensure your safety');
+        // dd("Heela");
+        return (new PasswordResetEmail('Arvind', 'arvind@inimisttech.com', 'TOKEN URL'));
+        // return (new MailMessage)
+        //             ->line('Forgot your Password Man?')
+        //             ->action('Click to reset', $this->url)
+        //             ->line('You will need to login after resetting the password to ensure your safety');
     }
 
     /**
