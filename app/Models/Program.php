@@ -95,7 +95,7 @@ class Program extends BaseModel
         }
 		return false;
 	}
-    public function createAccount( $data )    {
+    public static function createAccount( $data )    {
         $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
         if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
             $data['allow_creditcard_deposits'] = 1;
@@ -154,7 +154,7 @@ class Program extends BaseModel
 
         // $this->award_levels_model->create ( $program_account_holder_id, 'default' ); 
 
-        $program->create_setup_fee();
+        $program->create_setup_fee_account();
 
         return $program;
     }
@@ -170,7 +170,7 @@ class Program extends BaseModel
     public function create_setup_fee_account()   {
         $setup_fee = $this->setup_fee;
         if( !is_numeric($setup_fee) || $setup_fee <=0 ) return; //NOT SURE IF SHOULD CREATE
-        $owner_account_holder_id = Owner::find(1)->account_holder_id;
+        // $owner_account_holder_id = Owner::find(1)->account_holder_id; //$owner_account_holder_id is passed to the sp_journal_program_charge_for_setup_fee in current system but not used!
         $program_account_holder_id = $this->account_holder_id;
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
         $journal_event_type_id = JournalEventType::getIdByType( "Charge setup fee to program", true );

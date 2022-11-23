@@ -123,6 +123,12 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return $this->hasRole(config('roles.super_admin'));
     }
+
+    public function acount_holder()
+    {
+        return $this->belongsTo(AccountHolder::class);
+    }
+
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);
@@ -180,7 +186,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 		return $bal;
 	}
 
-    public function createAccount( $data )    {
+    public static function createAccount( $data )    {
         $account_holder_id = AccountHolder::insertGetId(['context'=>'User', 'created_at' => now()]);
         if( !isset($data['user_status_id']) )   {
             $user_status = self::getStatusByName( 'Pending Activation' );
@@ -192,7 +198,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return parent::create($data + ['account_holder_id' => $account_holder_id]);
     }
 
-    public function getStatusByName( $status ) {
+    public static function getStatusByName( $status ) {
         return Status::getByNameAndContext($status, 'Users');
     }
 
