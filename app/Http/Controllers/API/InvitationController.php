@@ -37,7 +37,7 @@ class InvitationController extends Controller
                 $program->users()->sync( [ $user->id ], false );
                 $user->syncProgramRoles($program->id, $roles);
             }
-            UserInvited::dispatch( $user, $program);
+            // UserInvited::dispatch( $user, $program);
             event(new UserInvited($user, $program));
             DB::commit();
             return response([ 'user' => $user ]);

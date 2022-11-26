@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+// use App\Services\DomainService;
 
 use App\Mail\templates\PasswordResetEmail;
 
@@ -13,16 +14,19 @@ class ResetPasswordNotification extends Notification
 {
     use Queueable;
 
-    public $url;
+    // private DomainService $domainServicestring;
+    public $token;
+    public $first_name;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct(string $url)
+    public function __construct(string $token, string $first_name)
     {
-        $this->url = $url;
+        $this->token = $token;
+        $this->first_name = $first_name;
     }
 
     /**
@@ -44,12 +48,14 @@ class ResetPasswordNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        // dd("Heela");
-        return (new PasswordResetEmail('Arvind', 'arvind@inimisttech.com', 'TOKEN URL'));
-        // return (new MailMessage)
-        //             ->line('Forgot your Password Man?')
-        //             ->action('Click to reset', $this->url)
-        //             ->line('You will need to login after resetting the password to ensure your safety');
+        $url = app()->call('App\Services\DomainService@makeUrl');
+        $url = $url . '/reset-password?token=' . $this->token;
+
+        return (new PasswordResetEmail(
+                $this->first_name,
+                $url
+            )
+        );
     }
 
     /**

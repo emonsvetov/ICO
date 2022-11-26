@@ -2,18 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Notifications\ResetPasswordNotification;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\DB;
+
 use App\Http\Controllers\Controller;
 use App\Services\UserService;
-use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Http\Requests\UserRequest;
-use App\Models\AccountHolder;
 use App\Models\Organization;
 use App\Models\User;
-use DB;
 
 class UserController extends Controller
 {
@@ -97,23 +93,8 @@ class UserController extends Controller
         }
     }
 
-    public function show( Organization $organization, User $user )
+    public function show( Organization $organization, User $user ): UserResource
     {
-        $status = Password::sendResetLink(
-            ['email'=>'malonparti32@incentco.com']
-        );
-
-        if ($status == Password::RESET_LINK_SENT) {
-            // $user->notify(new ResetPasswordNotification($url));
-            return [
-                'status' => __($status)
-            ];
-        }
-
-        throw \Illuminate\Validation\ValidationException::withMessages([
-            'email' => [trans($status)],
-        ]);
-
         return $this->UserResponse($user);
     }
 
