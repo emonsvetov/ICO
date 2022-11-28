@@ -99,26 +99,6 @@ class AuthController extends Controller
         return response( $response );
     }
 
-    public function adminLogin(UserLoginRequest $request)
-    {
-        if (!auth()->guard('web')->attempt( $request->validated() )) {
-            return response(['message' => 'Invalid Credentials'], 422);
-        }
-
-        $user = auth()->guard('web')->user();
-
-        if( ! ( $user->hasRole(config('roles.super_admin')) || $user->hasRole(config('roles.admin')) ) )   {
-            return response(['message' => 'Invalid Credentials'], 422);
-        }
-
-        $user->organization;
-
-        $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
-
-        return response(['user' => $user, 'access_token' => $accessToken]);
-
-    }
-
     public function logout (Request $request) {
        
         $token = $request->user()->token();
