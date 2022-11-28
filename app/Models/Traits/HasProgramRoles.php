@@ -9,7 +9,6 @@ use DB;
 
 trait HasProgramRoles
 {
-    private $isCompiled = false;
     private $programRoles = null;
     private $isManager = false;
     private $isParticipant = false;
@@ -26,10 +25,6 @@ trait HasProgramRoles
                 if( $programRole->name == config('roles.manager') ) return true;
             }
         }
-    }
-    protected function setCompiledProgramRoles( $programRoles )
-    {
-        $this->programRoles = $programRoles;
     }
     protected function getIsParticipantAttribute()
     {
@@ -77,39 +72,23 @@ trait HasProgramRoles
         // pr("Here");
     }
 
-    private function setIsCompiled( bool $flag )
+    public function getProgramRoles( $program = null, $domain = null )
     {
-        $this->isCompiled = $flag;
-    }
-
-    private function getIsCompiled()
-    {
-        return $this->isCompiled;
-    }
-
-    public function getProgramRoles( $program = null, $domain = null, $refresh = false )
-    {
-        if( $refresh )
-        {
-            $this->setIsCompiled(false);
-        }
-
-        if( $this->getIsCompiled() ) $this->programRoles;
 
         $programRoles = null;
 
         if( !$program ) {
             if( $domain ) {
-                $programRoles = $this->getProgramRoleByDomain( $domain );
+                $programRoles = $this->getProgramRolesByDomain( $domain );
             }   
             else {
-                $programRoles = $this->roles()->wherePivot( 'program_id', '!=', 0)->withPivot('program_id')->get();
+                $programRoles = $this->getAllProgramRoles();
             }
         }
         else 
         {
             if( $domain ) {
-                $programRoles = $this->getProgramRoleByDomainAndProgram($program, $domain);
+                $programRoles = $this->getProgramRolesByDomainAndProgram($program, $domain);
             }
             else
             {
@@ -120,14 +99,18 @@ trait HasProgramRoles
         return $programRoles;
     }
 
+    public function getAllProgramRoles()
+    {
+        return $this->roles()->wherePivot( 'program_id', '!=', 0)->withPivot('program_id')->get();
+    }
+
     private function getProgramRolesByProgram( $program )
     {
         $programId = self::extractId($program);
-        $roles = $this->roles()
+        return $this->roles()
         ->wherePivot( 'program_id', '=', $programId)
         ->withPivot('program_id')
         ->get();
-        return $this->compileProgramRoles($roles);
     }
 
     public function getProgramRolesByDomain( $domain )
@@ -144,10 +127,10 @@ trait HasProgramRoles
         // ->wherePivot( 'program_id', '!=', 0)
         ->withPivot('program_id')
         ->get();
-        return $this->compileProgramRoles($roles);
+        return $roles;
     }
 
-    private function getProgramRoleByDomainAndProgram( mixed $domain, mixed $program )
+    private function getProgramRolesByDomainAndProgram( mixed $domain, mixed $program )
     {
         $programId = self::extractId($program);
         $domainId = self::extractId($domain);
@@ -157,10 +140,17 @@ trait HasProgramRoles
         ->wherePivot( 'program_id', '=', $programId)
         ->withPivot('program_id')
         ->get();
-        return $this->compileProgramRoles($roles);
+        return $roles;
     }
 
-    private function compileProgramRoles($_roles)
+    public function getCompiledProgramRoles($program = null, $domain = null)
+    {
+        $roles = $this->getProgramRoles($program, $domain);
+        $programRoles = $this->compileProgramRoles($roles);
+        return $programRoles;
+    }
+
+    public function compileProgramRoles($_roles)
     {
         if( !$_roles ) return null;
         $programs = [];
@@ -182,8 +172,7 @@ trait HasProgramRoles
             }
             $programRoles[$program->id]['roles'][$roleId] = $_role;
         }
-        $this->setCompiledProgramRoles($programRoles);
-        $this->setIsCompiled(true);
+        
         return $programRoles;
     }
     public function hasRolesInProgram( $roles, $program) {

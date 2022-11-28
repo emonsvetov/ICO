@@ -89,7 +89,7 @@ class AuthController extends Controller
         $domainName = $domainService->getRequestDomainName();
         $domain = $domainService->getDomainByName($domainName);
         
-        $user->programRoles = $user->getProgramRolesByDomain( $domain );
+        $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
 
         if( !$user->programRoles )  {
             return response(['message' => 'No program roles '], 422);

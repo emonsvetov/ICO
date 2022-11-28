@@ -7,10 +7,13 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
+use App\Mail\templates\InviteParticipantEmail;
+
 class UserInvitedNotifyUser extends Notification
 {
     // use Queueable;
     public $data;
+    public $token;
 
     /**
      * Create a new notification instance.
@@ -22,6 +25,7 @@ class UserInvitedNotifyUser extends Notification
         $this->sender = $sender;
         $this->recepient = $recepient;
         $this->program = $program;
+        $this->token = rand();
     }
 
     /**
@@ -43,15 +47,10 @@ class UserInvitedNotifyUser extends Notification
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->line(sprintf('Hi %s,', $this->recepient->name))
-            ->line(sprintf('You have been invited as a %s', $this->recepient->roles()->first()->name))
-            ->line(sprintf('to program %s(%d)', $this->program->name, $this->program->id))
-            ->line(sprintf('by %s', $this->sender->name))
-            ->line('')
-            ->line('In order to accept this invitation, click button ')
-            ->action('Go to the App', url('/'))
-            ->line('Thank you!');
+        $url = app()->call('App\Services\DomainService@makeUrl');
+        $tokenUrl = $url . '/invitation?token=' . $this->token;
+
+        return (new InviteParticipantEmail($this->recepient->name, $tokenUrl));
     }
 
     /**
