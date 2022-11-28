@@ -25,25 +25,7 @@ class ForgotPasswordRequest extends FormRequest
 
     public function __validateDomainRequest()
     {
-        if($this->domainService->isValidDomainRequest())
-        {
-            if( $this->domainService->getIsAdminAppDomain() )
-            {
-                return true;
-            }
-
-            $user = User::whereEmail(request()->get('email'))->first();
-
-            if( !$user )
-            {
-                throw new \InvalidArgumentException ('User not found with given email address');
-            }
-            
-            if( $this->domainService->userHasFrontendRole( $user ) )
-            {
-                return true;
-            }
-        }
+        return $this->domainService->validateDomainRequest();
     }
 
     public function withValidator($validator)
@@ -55,7 +37,7 @@ class ForgotPasswordRequest extends FormRequest
                     $validator->errors()->add('validationError', 'Invalid domain or account');
                 }
             } catch (\Exception $e) {
-                $validator->errors()->add('validationError', $e->getMessage());
+                $validator->errors()->add('validationError', sprintf("%s", $e->getMessage()));
             }
         });
     }

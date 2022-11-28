@@ -28,6 +28,11 @@ class DomainService
         $this->setRequestDomainPort(!empty($requestDomain['port']) ? $requestDomain['port'] : '');
     }
 
+    public function getDomainByName( string $name)
+    {
+        return Domain::whereName($name)->first();
+    }
+
     public function makeUrl()
     {
         $requestDomain = $this->getRequestDomain();
@@ -37,14 +42,9 @@ class DomainService
         return  $scheme . '://' . $host . ($port ? ':' . $port : '');
     }
 
-    private function setIsAdminAppDomain($isAdminAppDomain)
+    public function isAdminAppDomain()
     {
-        $this->isAdminAppDomain = $isAdminAppDomain;
-    }
-
-    public function getIsAdminAppDomain()
-    {
-        return $this->isAdminAppDomain;
+        return $this->hostIsAdminApp();
     }
 
     private function setRequestDomain($requestDomain)
@@ -87,11 +87,9 @@ class DomainService
         return $this->requestDomainScheme;
     }
 
-    public function hostIsAdminApp()
+    private function hostIsAdminApp()
     {   
-        $isAdminApp = $this->hostService->isAdminApp();
-        $this->setIsAdminAppDomain($isAdminApp); //complimentory function
-        return $isAdminApp;
+        return $this->hostService->isAdminApp();
     }
 
     private function getDomainFromRequestHeaders()
@@ -123,25 +121,9 @@ class DomainService
      * Return value: bool
      */
 
-    public function refererIsValidDomain( string $requestDomainName = '' )
+    public function refererIsValidDomain()
     {
-        if( empty($requestDomainName) )
-        {
-            $requestDomainName = $this->getRequestDomainName();
-
-            if( !$requestDomainName )
-            {
-                throw new InvalidArgumentException ('domainError 2: Invalid host or domain');
-            }
-        }
-
-        $exists = Domain::where('name', $requestDomainName)->exists();
-        if( !$exists )   
-        {
-            throw new InvalidArgumentException ('domainError 3: Invalid host or domain');
-        }
-
-        return true;
+        return $this->isValidSystemDomain();
     }
 
     public function isValidDomainRequest()
@@ -157,42 +139,42 @@ class DomainService
         return false;
     }
 
-    // public function userHasRole( User $user )
-    // {
-    //     if( !$user )
-    //     {
-    //         throw new \InvalidArgumentException ('Invalid user, domain role validation failed');
-    //     }
-        
-    //     return $this->userHasBackendRole($user) || $this->userHasFrontendRole($user);
-    //     // if( $this->userHasFrontendRole( $user ) ) return true;
-        
-    //     // if( $this->userHasBackendRole($user) ) return true; //Do not allow super admin and admin to login to Frontend. Need to discuss! #TODO
-    //     return false;
-    // }
-
-    public function userHasFrontendRole( User $user )
+    public function isValidSystemDomain( $domainName = null ) //is valid system domain
     {
-        if( !$user )
-        {
-            throw new \InvalidArgumentException ('Invalid user or user does not exist');
+        if( !$domainName ) {
+            $domainName = $this->getRequestDomainName();
         }
-
-        $domainName = $this->getRequestDomainName();
 
         if( !$domainName )
         {
-            throw new \InvalidArgumentException ('Domain is required to validate this request');
+            throw new \InvalidArgumentException ('A domain is required to validate request');
         }
 
-        if(Domain::whereName($domainName)->exists())
+        if(!Domain::whereName($domainName)->exists())
         {
-            $domain = Domain::whereName($domainName)->first();
-            if($this->userHasProgramRolesInDomain($user, $domain))
-            {
-                return true;
-            }
+            throw new \InvalidArgumentException ('Invalid system domain or wrong entry point');
         }
+
+        return true;
+    }
+
+    public function userHasFrontendRole( User $user, Domain $domain )
+    {
+        if( !$user )
+        {
+            throw new \InvalidArgumentException ('Invalid user or role');
+        }
+
+        if( !$domain )
+        {
+            throw new \InvalidArgumentException ('Invalid domain to find user role');
+        }
+
+        if($this->userHasProgramRolesInDomain($user, $domain))
+        {
+            return true;
+        }
+
         return false;
     }
 
@@ -204,9 +186,7 @@ class DomainService
             throw new \InvalidArgumentException ('User does not belong to domain');
         }
 
-        $programRoles = $user->getProgramRolesByDomain( $domain );
-
-        // dump($programRoles);
+        $programRoles = $user->getProgramRolesByDomain( $domain ); //Need a boolean check; TODO
 
         if( !$programRoles )
         {
@@ -223,5 +203,38 @@ class DomainService
             throw new \InvalidArgumentException ('Invalid user, domain role validation failed');
         }
         return $user->isSuperAdmin() || $user->isAdmin();
+    }
+
+    public function validateDomainRequest()
+    {
+        if($this->isValidDomainRequest())
+        {
+            $isAdminAppDomain = $this->isAdminAppDomain();
+
+            $user = User::whereEmail(request()->get('email'))->first();
+
+            if( !$user )
+            {
+                throw new \InvalidArgumentException ('User not found with given email address');
+            }
+
+            if( $isAdminAppDomain && ($user->isSuperAdmin() || $user->isAdmin()) )
+            {
+                return true;
+            }
+            
+            if( !$this->isValidSystemDomain() )
+            {
+                throw new \InvalidArgumentException ('Domain is not a valid system domain');
+            }
+
+            $domainName = $this->getRequestDomainName();
+            $domain = $this->getDomainByName($domainName);
+            
+            if( $user->getProgramRolesByDomain( $domain ) )
+            {
+                return true;
+            }
+        }
     }
 }

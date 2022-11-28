@@ -12,6 +12,7 @@ use App\Events\OrganizationCreated;
 
 use App\Http\Requests\UserRegisterRequest;
 use App\Http\Requests\UserLoginRequest;
+use App\Services\DomainService;
 use App\Models\Organization;
 use App\Models\Domain;
 use App\Models\User;
@@ -65,37 +66,9 @@ class AuthController extends Controller
         }
     }
 
-    public function login(UserLoginRequest $request)
+    public function login(UserLoginRequest $request, DomainService $domainService)
     {
         $validated = $request->validated();
-
-        $host = '';
-        // $host = 'incentco.local';
-        $referer = request()->headers->get('referer');
-        $domain = request()->get('domain'); // For testing via postman
-
-        if( $referer )   {
-            $urlVars = parse_url($referer);
-            if( !isset($urlVars['host']) )  {
-                return response(['errors' => 'Invalid Host'], 422);
-            }
-            $host = $urlVars['host'];
-        }   else if($domain)   {
-            $host = $domain;
-        }
-
-        // return $host;
-
-        if( $host == 'localhost' || !$host)  {
-            // $host = null; //This needs to be revisted. More checks can be implemented here
-            return response(['errors' => 'Invalid host or host not allowed'], 422);
-        }
-
-        $domain = Domain::where('name', $host)->first();
-
-        if( !$domain )  {
-            return response(['message' => 'Domain not found for given host'], 422);
-        }
 
         if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
             return response(['message' => 'Invalid Credentials'], 422);
@@ -103,22 +76,27 @@ class AuthController extends Controller
 
         $user = auth()->guard('web')->user();
         $user->load(['organization', 'roles']);
-        // DB::enableQueryLog();
-        $user->programRoles = $user->getProgramRolesByDomain( $domain );
-        // return $programRoles;
-        // $user->programRoles = $user->getProgramsRoles(null, $domain->id);
-        // pr(DB::getQueryLog());
-        // return $programRoles;
-        if( !$user->programRoles )  {
-            return response(['message' => 'Invalid domain or no program'], 422);
-        }
-
-        // return $user;
 
         $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
 
-        return response(['user' => $user, 'access_token' => $accessToken, 'domain' => $domain]);
+        $response = ['user' => $user, 'access_token' => $accessToken];
 
+        if( $domainService->isAdminAppDomain()  && ($user->isSuperAdmin() || $user->isAdmin()) )
+        {
+            return response($response);
+        }
+
+        $domainName = $domainService->getRequestDomainName();
+        $domain = $domainService->getDomainByName($domainName);
+        
+        $user->programRoles = $user->getProgramRolesByDomain( $domain );
+
+        if( !$user->programRoles )  {
+            return response(['message' => 'No program roles '], 422);
+        }
+
+        $response['domain'] = $domain;
+        return response( $response );
     }
 
     public function adminLogin(UserLoginRequest $request)

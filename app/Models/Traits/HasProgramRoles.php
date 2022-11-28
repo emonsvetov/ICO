@@ -9,6 +9,7 @@ use DB;
 
 trait HasProgramRoles
 {
+    private $isCompiled = false;
     private $programRoles = null;
     private $isManager = false;
     private $isParticipant = false;
@@ -26,6 +27,10 @@ trait HasProgramRoles
             }
         }
     }
+    protected function setCompiledProgramRoles( $programRoles )
+    {
+        $this->programRoles = $programRoles;
+    }
     protected function getIsParticipantAttribute()
     {
         $programRoles = $this->getProgramRoles();
@@ -42,12 +47,12 @@ trait HasProgramRoles
         return $parent->getProgramRoles();
     }
 
-    public function getProgramRolesByDomain( $domain )   {
+    public function getAllProgramRolesByDomain( $domain )   {
         $allRoles = [];
         $domain =  Domain::getModelByMixed($domain);
         //Lets try to find it in associated programs aka parent programs
         foreach( $domain->programs as $program)    {
-            $programRoles = $this->getProgramsRoles($program);
+            $programRoles = $this->getProgramRolesByProgram($program);
             if( $programRoles ) {
                 $allRoles = array_merge($allRoles, $programRoles);
                 // return $programRoles;
@@ -59,7 +64,7 @@ trait HasProgramRoles
             // pr($descendants->toArray());
             if( !$descendants->isEmpty() ) {
                 foreach( $descendants as $child)    {
-                    $programRoles = $this->getProgramsRoles($child);
+                    $programRoles = $this->getProgramRolesByProgram($child);
                     if( $programRoles ) {
                         // pr($programRoles);
                         $allRoles = array_merge($allRoles, $programRoles);
@@ -72,43 +77,92 @@ trait HasProgramRoles
         // pr("Here");
     }
 
-    public function getProgramRoles( $byProgram = null, $byDomain = null )
+    private function setIsCompiled( bool $flag )
     {
-        if( !$byProgram ) {
-            if( $byDomain ) {
-                return $this->roles()
-                // ->whereHas('domains', function ($query) use($byDomain) {
-                //     $query->where('name', $byDomain);
-                // })
-                ->join('programs', 'programs.id', '=', 'model_has_roles.program_id')
-                ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
-                ->join('domains', 'domains.id', '=', 'domain_program.domain_id')
-                ->where('domains.id', $byDomain)
-                // ->wherePivot( 'program_id', '!=', 0)
-                ->withPivot('program_id')
-                ->get();
-            }   else return $this->roles()->wherePivot( 'program_id', '!=', 0)->withPivot('program_id')->get();
+        $this->isCompiled = $flag;
+    }
+
+    private function getIsCompiled()
+    {
+        return $this->isCompiled;
+    }
+
+    public function getProgramRoles( $program = null, $domain = null, $refresh = false )
+    {
+        if( $refresh )
+        {
+            $this->setIsCompiled(false);
         }
-        $programId = self::extractId($byProgram);
-        if( $byDomain ) {
-            return $this->roles()
-            ->join('domains', 'domains.name', '=', $byDomain)
-            ->join('domain_program', 'domain_program.domain_id', '=', 'domains.id')
-            ->wherePivot( 'program_id', '=', $programId)
-            ->withPivot('program_id')
-            ->get();
+
+        if( $this->getIsCompiled() ) $this->programRoles;
+
+        $programRoles = null;
+
+        if( !$program ) {
+            if( $domain ) {
+                $programRoles = $this->getProgramRoleByDomain( $domain );
+            }   
+            else {
+                $programRoles = $this->roles()->wherePivot( 'program_id', '!=', 0)->withPivot('program_id')->get();
+            }
         }
-        return $this->roles()
+        else 
+        {
+            if( $domain ) {
+                $programRoles = $this->getProgramRoleByDomainAndProgram($program, $domain);
+            }
+            else
+            {
+                $programRoles = $this->getProgramRolesByProgram($program);
+            }
+        }
+
+        return $programRoles;
+    }
+
+    private function getProgramRolesByProgram( $program )
+    {
+        $programId = self::extractId($program);
+        $roles = $this->roles()
         ->wherePivot( 'program_id', '=', $programId)
         ->withPivot('program_id')
         ->get();
+        return $this->compileProgramRoles($roles);
     }
-    public function getProgramsRoles( $byProgram = null, $byDomain = null )
+
+    public function getProgramRolesByDomain( $domain )
     {
-        $_roles = $this->getProgramRoles( $byProgram, $byDomain );
+        $domainId = self::extractId($domain);
+        $roles = $this->roles()
+        // ->whereHas('domains', function ($query) use($byDomain) {
+        //     $query->where('name', $byDomain);
+        // })
+        ->join('programs', 'programs.id', '=', 'model_has_roles.program_id')
+        ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
+        ->join('domains', 'domains.id', '=', 'domain_program.domain_id')
+        ->where('domains.id', $domainId)
+        // ->wherePivot( 'program_id', '!=', 0)
+        ->withPivot('program_id')
+        ->get();
+        return $this->compileProgramRoles($roles);
+    }
 
+    private function getProgramRoleByDomainAndProgram( mixed $domain, mixed $program )
+    {
+        $programId = self::extractId($program);
+        $domainId = self::extractId($domain);
+        $roles = $this->roles()
+        ->join('domains', 'domains.name', '=', $domainId)
+        ->join('domain_program', 'domain_program.domain_id', '=', 'domains.id')
+        ->wherePivot( 'program_id', '=', $programId)
+        ->withPivot('program_id')
+        ->get();
+        return $this->compileProgramRoles($roles);
+    }
+
+    private function compileProgramRoles($_roles)
+    {
         if( !$_roles ) return null;
-
         $programs = [];
         $roles = [];
         $programRoles = [];
@@ -128,11 +182,13 @@ trait HasProgramRoles
             }
             $programRoles[$program->id]['roles'][$roleId] = $_role;
         }
+        $this->setCompiledProgramRoles($programRoles);
+        $this->setIsCompiled(true);
         return $programRoles;
     }
     public function hasRolesInProgram( $roles, $program) {
         if( !$roles  || !$program ) return false;
-        $result = null;
+        $result = [];
         foreach( $roles as $roleName)   {
             if( $this->hasRoleInProgram( $roleName, $program) )    {
                 array_push($result, $roleName);

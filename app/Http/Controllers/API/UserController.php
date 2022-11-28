@@ -108,7 +108,7 @@ class UserController extends Controller
     protected function UserResponse(User $user): UserResource
     {
         $user->load('roles');
-        $user->programRoles = $user->getProgramsRoles();
+        $user->programRoles = $user->getAllProgramRoles();
         return new UserResource($user);
     }
 }

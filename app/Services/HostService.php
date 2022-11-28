@@ -39,7 +39,11 @@ class HostService
             return false;
         }
 
-        if($apps['host'] != $refs['host'])
+        if(
+            ($apps['host'] != $refs['host']) || 
+            ($apps['port'] != $refs['port']) || 
+            ($apps['scheme'] != $refs['scheme'])
+        )
         {
             return false;
         }
