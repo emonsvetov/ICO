@@ -39,7 +39,7 @@ class ProgramController extends Controller
             $newProgram = Program::createAccount(
                 $request->validated() +
                 ['organization_id' => $organization->id]
-                );
+            );
         }
         else
         {

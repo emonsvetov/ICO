@@ -3,6 +3,7 @@
 namespace App\Services\reports;
 
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\DB;
 
 abstract class ReportServiceAbstract
 {
@@ -15,6 +16,7 @@ abstract class ReportServiceAbstract
     const PROGRAMS = 'program_account_holder_ids';
     const AWARD_LEVEL_NAMES = "award_level_names";
     const EXPORT_CSV = 'exportToCsv';
+    const MERCHANTS = 'merchants';
 
     /**
      * The main key used to organize the return data. Change this in the subclass if it's different
@@ -32,6 +34,7 @@ abstract class ReportServiceAbstract
         $this->params[self::SQL_LIMIT] = $params[self::SQL_LIMIT] ?? null;
         $this->params[self::SQL_OFFSET] = $params[self::SQL_OFFSET] ?? null;
         $this->params[self::EXPORT_CSV] = $params[self::EXPORT_CSV] ?? null;
+        $this->params[self::MERCHANTS] = isset($params[self::MERCHANTS]) && is_array($params[self::MERCHANTS]) ? $params[self::MERCHANTS] : [];
     }
 
     /**
@@ -150,13 +153,19 @@ abstract class ReportServiceAbstract
         return $data;
     }
 
-    abstract protected function getCsvHeaders():array;
+    protected function getCsvHeaders(): array
+    {
+        return [];
+    }
 
     /**
      * Get basic sql without any filters
      *
      * @return Builder
      */
-    abstract protected function getBaseSql(): Builder;
+    protected function getBaseSql(): Builder
+    {
+        return DB::table();
+    }
 
 }

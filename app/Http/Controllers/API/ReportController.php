@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers\API;
 
-use App\Services\Report\InventoryService;
 use App\Services\Report\ReportService;
 use App\Http\Requests\ReportRequest;
 use App\Http\Controllers\Controller;
@@ -15,10 +14,6 @@ use App\Models\ProgramBudget;
 
 class ReportController extends Controller
 {
-    public function __construct(InventoryService $inventoryService)
-    {
-        $this->inventoryService = $inventoryService;
-    }
     public function index(ReportRequest $request, Organization $organization )
     {
         $type = request('report_type');

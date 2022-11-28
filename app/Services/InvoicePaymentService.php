@@ -18,7 +18,7 @@ class InvoicePaymentService
     public function __construct()   {
     }
 
-    protected function setInvoice(Invoice $invoice) {
+    public function setInvoice(Invoice $invoice) {
         $this->invoice = $invoice;
     }
 

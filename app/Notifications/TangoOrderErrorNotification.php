@@ -7,19 +7,24 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class NewOrganizationNotification extends Notification
+use App\Mail\TangoOrderErrorEmail;
+
+class TangoOrderErrorNotification extends Notification implements ShouldQueue
 {
-    // use Queueable;
-    private $organization;
+    use Queueable;
+
+    private $toAddress;
+    private $data;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($organization)
+    public function __construct($toAddress, $data)
     {
-        $this->organization = $organization;
+        $this->toAddress = $toAddress;
+        $this->data = $data;
     }
 
     /**
@@ -30,7 +35,7 @@ class NewOrganizationNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['mail', 'database'];
+        return ['mail'];
     }
 
     /**
@@ -41,10 +46,7 @@ class NewOrganizationNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-                    ->line(sprintf('A new organization "%s" was added to your system', $this->organization->name))
-                    ->action('Go to App', url('/'))
-                    ->line('Thank you for using our application!');
+        return (new TangoOrderErrorEmail($this->toAddress, $this->data));
     }
 
     /**
@@ -55,6 +57,5 @@ class NewOrganizationNotification extends Notification
      */
     public function toArray($notifiable)
     {
-        return $this->organization->toArray();
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Validation\Factory as ValidationFactory;
 use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\Decimal82;
 use App\Models\Account;
@@ -13,7 +12,7 @@ class ProgramTransferMoniesRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $invalid_programs = false;
-            $programs = $this->program->whereIn('id', array_keys($this->amounts))->select( 'organization_id')->get();
+            $programs = $this->program->whereIn('id', array_keys($this->amounts))->select('id', 'organization_id')->get();
             foreach($programs as $program)  {
                 if ( $program->organization_id != $this->program->organization_id) 
                 {
@@ -21,10 +20,16 @@ class ProgramTransferMoniesRequest extends FormRequest
                     $invalid_programs = true;
                     break;
                 }
+                if ( $program->id == $this->program->id) 
+                {
+                    $validator->errors()->add('programs', 'Cannot transfer money to and from the same program');
+                    $invalid_programs = true;
+                    break;
+                }
             }
             if( !$invalid_programs )    {
                 $balance = Account::read_available_balance_for_program ( $this->program );
-                if(array_sum($this->amounts) >= $balance)   {
+                if(array_sum($this->amounts) > $balance)   {
                     $validator->errors()->add('balance', 'Insufficient balance to transfer monies');
                 }
             }

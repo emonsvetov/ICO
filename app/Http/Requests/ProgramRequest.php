@@ -29,6 +29,7 @@ class ProgramRequest extends FormRequest
             'type'                  => 'required|string',
             'status'                => 'nullable|string',
             'setup_fee'             => 'required|numeric',
+            'is_demo'             => 'required|boolean',
             'factor_valuation'=>'required|integer',
             'is_pay_in_advance'     => 'required|boolean',
             'invoice_for_awards'=> 'required|boolean',
