@@ -218,8 +218,6 @@ class GoalPlanService
 	}
     public function add_user_goal($goal_plan, $user_goal) {
 		$response=[];
-		$active_goal_plan_id = 0;
-		$valid = true; 
 		/* PENDING
 		// Make sure the program allows peer 2 peer
 		$uses_goal_tracker_config = $this->programs_config_fields_model->read_config_field_by_name ( $program_account_holder_id, CONFIG_PROGRAM_USES_GOAL_TRACKER );
@@ -238,9 +236,8 @@ class GoalPlanService
 		$current_user_goal_plan = UserGoal::where(['user_id' =>$user_goal['user_id'], 'goal_plan_id' => $user_goal['goal_plan_id']])->first();
 		//pr($current_user_goal_plan); die;
 		if ($current_user_goal_plan) {
-			//'User is already assigned to this goal plan';
+			//User is already assigned to this goal plan;
 			$response['already_assigned']=1;
-			//return $response;
 		}
 		if(!isset($response['already_assigned'])) {
 			if ($goal_plan->goal_plan_type_id != GoalPlanType::getIdByTypeSales()) {
@@ -248,7 +245,6 @@ class GoalPlanService
 				$user_goal['factor_before'] = 0;
 				$user_goal['factor_after'] = 0;
 			}
-			
 			$new_user_goal_plan = self::_insert_user_goal($user_goal);
 			if(!$new_user_goal_plan) {
 				return false;
@@ -257,28 +253,17 @@ class GoalPlanService
 		} else {
 			$new_user_goal_plan = $current_user_goal_plan;
 		}
-		
 		// If we just created a new user goal and the goal plan is recurring, go ahead and create the user's future goal too
-		//if ($goal_plan->is_recurring && isset ( $goal_plan->next_goal_id ) && $goal_plan->next_goal_id > 0) {
+		if ($goal_plan->is_recurring && $goal_plan->next_goal_id) {
 			// Create the user's future goal plan
-			//$new_ugp_arr = $new_user_goal_plan->toArray();
 			$future_user_goal = self::create_future_goal( $goal_plan, $new_user_goal_plan);
-			//pr($future_user_goal);
-			//die;
 			$response['future_user_goal']= $future_user_goal;
-		//}
-			/*if($future_user_goal) { 
-				$response['future_user_goal']=$future_user_goal['future_user_goal'];
-			} else {
-				$response['future_user_goal']=false;
-			}		
 		}
-		
 		// now we return the response back to the function caller*/
 		return $response;
 	}
 	private function _insert_user_goal($user_goal) {
-		// Create the user goal record$user_goal,$goal_plan
+		//Create the user goal record $user_goal,$goal_plan
 		if (! isset ( $user_goal['previous_user_goal_id'] ) || $user_goal['previous_user_goal_id'] < 1) {
 			$user_goal['previous_user_goal_id'] = null;
 		}
@@ -290,17 +275,15 @@ class GoalPlanService
 	}
 	public function create_future_goal($goal_plan, $user_goal) {
 		// set the new goal plan to begin when the previous one expires
-		//$active_goal_start = $user_goal['date_begin'];
-		//$active_goal_end = $user_goal['date_end'];
 		//Read next goal plan
 		$future_goal_plan = GoalPlan::where(['id' =>$goal_plan->next_goal_id])->first();
 		if(empty($future_goal_plan))
 		return false;
 
 		$existing_user_goal_plan = UserGoal::where(['user_id' =>$user_goal->user_id, 'goal_plan_id' => $future_goal_plan->id])->first();
-		//pr($existing_user_goal_plan); die;
+		
 		if ($existing_user_goal_plan) {
-			//'User is already assigned to this goal plan';
+			//User is already assigned to this goal plan
 			return false;
 		}
 		$future_ugp = $user_goal->toArray();
@@ -316,18 +299,15 @@ class GoalPlanService
 		if ($user_goal->factor_after == $goal_plan->factor_after) {
 			$future_ugp['factor_after'] = $future_goal_plan->factor_after;
 		}
-		//pr($user_goal); die;
 		// Create the Future Goal Plan
 		$future_user_goal = self::_insert_user_goal($future_ugp);
 		if(!$future_user_goal) {
 			return false; //if no future goal plan created then return here. No need of update goal plan model updates below.
 		}
 		// Update the active goal plan's next goal id with the future goal plan id
-		// build the query to INSERT an event then run it!
 		$future_user_goal_id = $future_user_goal->id;
-		$test = UserGoal::where(['id'=>$user_goal->id])->update(['next_user_goal_id'=>$future_user_goal_id]);
-		// Update the active goal plan's next goal id with the future goal plan id
-		// build the query to INSERT an event then run it!
+		UserGoal::where(['id'=>$user_goal->id])->update(['next_user_goal_id'=>$future_user_goal_id]);
+		// Update the future user goal plan's previous user goal with the previous user goal id
 		UserGoal::where(['id'=>$future_user_goal_id])->update(['previous_user_goal_id'=>$user_goal->id]);
 		return $future_user_goal;
 	}
