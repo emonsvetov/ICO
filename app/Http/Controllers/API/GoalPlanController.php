@@ -33,7 +33,7 @@ class GoalPlanController extends Controller
             }   
 
         } catch (\Exception $e )    {
-            return response(['errors' => $e->getMessage()], 422);
+            return response(['errors' => __LINE__.$e->getMessage()], 422);
         }
         return $new_goal_plan;
 	}
@@ -80,37 +80,32 @@ class GoalPlanController extends Controller
             $goalplan->load('GoalPlanType');
             return response( $goalplan );
         }
+    
 
         return response( [] );
     }
 
     public function update(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlan $goalplan, GoalPlanService $goalplanservice )
     {
-        if ( !( $organization->id == $program->organization_id && $program->id == $goalplan->program_id ) )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
-        if ( $goalplan->organization_id != $organization->id )
-        {
-            return response(['errors' => 'No Program Found'], 404);
-        }
-
+        try{
         $data = $request->validated();
-        $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
-        $goalplan->update( $data );
-
-        $response['goal_plan'] = $goalplan;
+        //$goalplan->update( $data );
+        $update_goal_plan= $goalplanservice->update_goal_plan($data, $goalplan, $organization, $program);
+        $response['goal_plan'] = $update_goal_plan;
         if (!empty($goalplan->id)) {
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
-            if($data['assign_goal_all_participants_default']==1)	{
+            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'] == 1)	{
                 //$ew_goal_plan->id = $result;
                 $assign_response = $goalplanservice->assign_all_participants_now($goalplan, $program);
 				$response['assign_msg'] = $goalplanservice->assign_all_participants_res($assign_response);
             }
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		}
+    }
+    catch (\Exception $e )    {
+        return response(['errors' => __LINE__.$e->getMessage()], 422);
+    }
         return $response;
     }
     public function destroy(Organization $organization, Program $program, GoalPlan $goalplan)
