@@ -19,8 +19,6 @@ class UserInvited
     public $sender;
     public $recepient;
     public $program;
-    
-
     /**
      * Create a new event instance.
      *

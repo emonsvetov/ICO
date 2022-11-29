@@ -17,8 +17,7 @@ class PasswordResetEmail extends SendgridEmail
      */
     public function __construct(
         string $contactFirstName,
-        string $contactPasswordResetToken,
-        string $contactProgramHost0
+        string $contactPasswordResetTokenUrl
     ) {
         parent::__construct();
         $this->init(func_get_args());
