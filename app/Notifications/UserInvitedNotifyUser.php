@@ -20,12 +20,12 @@ class UserInvitedNotifyUser extends Notification
      *
      * @return void
      */
-    public function __construct($sender, $recepient, $program)
+    public function __construct($sender, $recepient, $program, $token)
     {
         $this->sender = $sender;
         $this->recepient = $recepient;
         $this->program = $program;
-        $this->token = rand();
+        $this->token = $token;
     }
 
     /**

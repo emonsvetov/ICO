@@ -19,15 +19,18 @@ class UserInvited
     public $sender;
     public $recepient;
     public $program;
+    public $token;
+
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct(User $recepient, Program $program)
+    public function __construct(User $recepient, Program $program, $token)
     {
         $this->sender = auth()->user();
         $this->recepient = $recepient;
         $this->program = $program;
+        $this->token = $token;
     }
 }
