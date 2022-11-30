@@ -61,7 +61,6 @@ class PasswordController extends Controller
         return response([
             'message'=> __($status)
         ], 500);
-
     }
 
 }
