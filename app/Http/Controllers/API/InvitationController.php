@@ -29,8 +29,8 @@ class InvitationController extends Controller
             $generatedPassword = rand();
             $validated['password'] = $generatedPassword;
 
-            // $user = User::createAccount( $validated );
-            $user = User::find( 553 );
+            $user = User::createAccount( $validated );
+            // $user = User::find( 553 );
             $token = Password::broker()->createToken($user);
 
             $roles[] = Role::getIdByName(config('roles.participant'));

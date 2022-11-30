@@ -36,4 +36,12 @@ class InvitationPolicy
         if($user->isAdmin()) return true;
         return $user->isManagerToProgram( $program ) || $user->can('can-invite-resend');
     }
+	public function accept(User $user)
+    {
+        // if ( !$this->__authCheck($user, $organization, $program ) )
+        // {
+        //     return false;
+        // }
+        return true;
+    }
 }
