@@ -36,6 +36,7 @@ class PasswordController extends Controller
             'token' => 'required',
             'email' => 'required|email',
             'password' => 'required|confirmed',
+            'invited' => 'sometimes|boolean',
         ]);
 
         $status = Password::reset(
@@ -45,6 +46,11 @@ class PasswordController extends Controller
                     'password' => $request->password,
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                if( $request->get('invited') )
+                {
+                    $user->update(['email_verified_at' => now()]);
+                }
 
                 $user->tokens()->delete();
 
@@ -61,7 +67,6 @@ class PasswordController extends Controller
         return response([
             'message'=> __($status)
         ], 500);
-
     }
 
 }

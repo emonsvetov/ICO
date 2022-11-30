@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\Password; 
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\InvitationResendRequest;
@@ -30,6 +31,7 @@ class InvitationController extends Controller
 
             $user = User::createAccount( $validated );
             // $user = User::find( 553 );
+            $token = Password::broker()->createToken($user);
 
             $roles[] = Role::getIdByName(config('roles.participant'));
 
@@ -38,7 +40,7 @@ class InvitationController extends Controller
                 $program->users()->sync( [ $user->id ], false );
                 $user->syncProgramRoles($program->id, $roles);
             }
-            event(new UserInvited($user, $program));
+            event(new UserInvited($user, $program, $token));
             DB::commit();
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
