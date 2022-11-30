@@ -26,6 +26,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('cron:monthly-invoicing')->monthly();
+        $schedule->command('cron:submit-tango-orders')->hourly();
     }
 
     /**

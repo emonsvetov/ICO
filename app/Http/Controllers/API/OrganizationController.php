@@ -12,7 +12,6 @@ use App\Models\User;
 
 class OrganizationController extends Controller
 {
-    
     public function index()
     {
         
@@ -37,7 +36,7 @@ class OrganizationController extends Controller
             return response(['errors' => 'Organization Creation failed'], 422);
         }
 
-        event( new OrganizationCreated($organization) );
+        OrganizationCreated::dispatch($organization);
         
         return response([ 'organization' => $organization ]);
     }

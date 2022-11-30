@@ -6,27 +6,25 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-// use App\Services\DomainService;
 
-use App\Mail\templates\PasswordResetEmail;
+use App\Mail\TangoOrderErrorEmail;
 
-class ResetPasswordNotification extends Notification
+class TangoOrderErrorNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    // private DomainService $domainServicestring;
-    public $token;
-    public $first_name;
+    private $toAddress;
+    private $data;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct(string $token, string $first_name)
+    public function __construct($toAddress, $data)
     {
-        $this->token = $token;
-        $this->first_name = $first_name;
+        $this->toAddress = $toAddress;
+        $this->data = $data;
     }
 
     /**
@@ -48,14 +46,7 @@ class ResetPasswordNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        $url = app()->call('App\Services\DomainService@makeUrl');
-        $url = $url . '/reset-password?token=' . $this->token;
-
-        return (new PasswordResetEmail(
-                $this->first_name,
-                $url
-            )
-        );
+        return (new TangoOrderErrorEmail($this->toAddress, $this->data));
     }
 
     /**
@@ -66,8 +57,5 @@ class ResetPasswordNotification extends Notification
      */
     public function toArray($notifiable)
     {
-        return [
-            //
-        ];
     }
 }

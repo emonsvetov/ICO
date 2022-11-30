@@ -31,14 +31,14 @@ class PostMonthlyChargesToInvoiceJob implements ShouldQueue
      *
      * @return void
      */
-    public function handle(PostMonthlyChargesToInvoiceService $postMonthlyChargesToInvoiceService)
+    public function handle(PostMonthlyChargesToInvoiceService $postMonthlyChargesToInvoiceService, UserService $userService)
     {
         \Log::info("PostMonthlyChargesToInvoiceJob starts!");
         $postMonthlyChargesToInvoiceService->post();
         \Log::info("PostMonthlyChargesToInvoiceJob Ends!");
 
         //Notification
-        // $superAdmins = (new UserService)->getSuperAdmins();
+        // $superAdmins = $userService->getSuperAdmins();
         // Notification::send($superAdmins, new AddProgramsToInvoiceNotification( ['message' => "Job: AddProgramsToInvoiceJob completed"] ));
 
         //The UserService() above not working for required argument of AccountService class

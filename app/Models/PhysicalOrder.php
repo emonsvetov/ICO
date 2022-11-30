@@ -9,6 +9,11 @@ class PhysicalOrder extends Model
 	protected $guarded = [];
     protected $table = 'physical_orders';
 
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
+    }
+
 	public static function create( $user_id, $program_id, $address, $notes = '' ) {
 		$pending = Status::get_order_pending_status();
 		return self::insertGetId(
@@ -37,5 +42,27 @@ class PhysicalOrder extends Model
 				'physical_order_id' => $physical_order_id
 			]
 		);
+	}
+	public function read_order_details() {
+		return self::where('physical_orders.id', $this->id)
+		->join( TBL_ORDER_LINE_ITEMS . " AS li", 'physical_orders.id', '=', "li.physical_order_id")
+		->join( TBL_MEDIUM_INFO . " AS mi", 'mi.id', '=', "li.medium_info_id")
+		->join( TBL_MERCHANTS . " AS m", 'm.id', '=', "mi.merchant_id")
+		->join( TBL_STATE_TYPES . " AS st", 'physical_orders.state_type_id', '=', "st.id")
+		->join( TBL_USERS . " AS u", 'u.id', '=', "physical_orders.user_id")
+		->select(
+			[
+				'physical_orders.id AS order_id',
+				'physical_orders.program_id',
+				'physical_orders.created_at',
+				'm.name AS merchant_name',
+				'm.merchant_code AS merchant_code',
+				'mi.sku_value',
+				'mi.code AS gift_code',
+				'mi.pin AS gift_code_pin',
+				'u.email'
+			]
+		)
+		->first();
 	}
 }

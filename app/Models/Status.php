@@ -10,7 +10,7 @@ class Status extends Model
     use HasFactory;
     protected $guarded = [];
 
-    public function getSetByContextAndName( $context, $name, $insert = true ) {
+    public static function getSetByContextAndName( $context, $name, $insert = true ) {
         if( !$context || !$name) return;
         $id = self::where(['status' => $name, 'context' => $context])->first()->id;
         if( !$id && $insert)    {
@@ -27,7 +27,11 @@ class Status extends Model
         return self::where(['status' => $name, 'context' => $context])->first();
     }
 
-    public function get_order_pending_status()  {
+    public static function get_order_pending_status()  {
         return self::getSetByContextAndName('Orders', 'Pending');
+    }
+    
+    public static function get_order_shipped_state()  {
+        return self::getSetByContextAndName('Orders', 'Shipped');
     }
 }

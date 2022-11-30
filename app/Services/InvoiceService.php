@@ -336,7 +336,6 @@ class InvoiceService
 
 	public function submitPayment(Invoice $invoice, $validated)	{
 		$response = [];
-		// $this->invoicePaymentService = new InvoicePaymentService($invoice);
 		$this->invoicePaymentService->setInvoice($invoice);
 		// return $validated;
 		$notes = $validated['notes'];

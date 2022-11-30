@@ -17,9 +17,9 @@ class UsersInvitedListner
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(UserService $userService)
     {
-        //
+        $this->userService = $userService;
     }
 
     /**
@@ -30,7 +30,7 @@ class UsersInvitedListner
      */
     public function handle(UsersInvited $event)
     {
-        // $superAdmins = (new UserService)->getSuperAdmins(); //Uncomment later
+        $superAdmins = $this->userService->getSuperAdmins();
         foreach($event->recepients as $recepient)   {
             // Notification::send($superAdmins, new UserInvitedNotifyAdmin( $event->sender, $recepient, $event->program )); //Uncomment later
             Notification::send($recepient, new UserInvitedNotifyUser( $event->sender, $recepient, $event->program ));
