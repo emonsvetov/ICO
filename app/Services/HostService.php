@@ -38,12 +38,9 @@ class HostService
         {
             return false;
         }
-
         if( $apps['host'] != $refs['host'] ) return false;
         if( $apps['scheme'] != $refs['scheme'] ) return false;
-        if(!empty($refs['port']) && empty($apps['port'])) return false;
-        if(empty($refs['port']) && !empty($apps['port'])) return false;
-        if($refs['port'] != $apps['port']) return false;
+        if(!empty($refs['port']) && !empty($apps['port']) && $refs['port'] != $apps['port']) return false;
 
         $this->setRequestHostName($refs['host']);
 
