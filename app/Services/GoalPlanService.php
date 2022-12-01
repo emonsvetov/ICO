@@ -28,7 +28,7 @@ class GoalPlanService
     {
 		$response=[];
 		
-        //PENDING - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
+        //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		//CALLBACK_TYPE_GOAL_MET=Goal Met 
         /*
 		 // If the program does not allow goals, kick them out
@@ -57,18 +57,18 @@ class GoalPlanService
          $event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
          if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::GOAL_PLAN_TYPE_RECOGNITION)) {
-            $event_type_needed = 5; // Badge event type; - PENDING need some constant here
+            $event_type_needed = 5; // Badge event type; - TO DO need some constant here
          }
-        /* PENDING - Get the appropriate events for this goal plan type - this is old site code - PENDING
+        /* TO DO - Get the appropriate events for this goal plan type - this is old site code - TO DO
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
         // ), 0, 9999);*/
         $new_goal_plan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
-            //'state_type_id'=>1, //PENDING - not found in create function of old system
+            //'state_type_id'=>1, //TO DO - not found in create function of old system
             'program_id' => $program->id, 
-            'progress_notification_email_id'=>1, //for now set any number, PENDING to make it dynamic
+            'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
             'created_by'=>auth()->user()->id,
         ] );
      	//pr($new_goal_plan);
@@ -86,13 +86,13 @@ class GoalPlanService
 		}
 			return $response;
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
-		//after this code pending
+		//after this code TO DO
 		// unset($validated['custom_email_template']);
     }
 	public function update_goal_plan($data, $goalplan, $organization, $program)
     {
 		$response=[];
-        //PENDING - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
+        //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		if( empty($data['date_begin']) )   {
             $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
          }
@@ -106,9 +106,9 @@ class GoalPlanService
          $event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
 		if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::GOAL_PLAN_TYPE_RECOGNITION)) {
-            $event_type_needed = 5; // Badge event type; - PENDING need some constant here
+            $event_type_needed = 5; // Badge event type; - TO DO need some constant here
          }
-        /* PENDING - Get the appropriate events for this goal plan type - this is old site code - PENDING
+        /* TO DO - Get the appropriate events for this goal plan type - this is old site code - TO DO
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
         // ), 0, 9999);*/
@@ -138,14 +138,14 @@ class GoalPlanService
     public function assign_all_participants_now($goal_plan, $program) {
 		//
 	    //$max = 50000;
-        //This is temporary solution - pending implemntation of original function
+        //This is temporary solution - TO DO implemntation of original function
         //pr($goal_plan);
 		$response=[];
         $users =  $this->programService->getParticipants($program, true);
         $users->load('status');
-       //Pending to implement this large function 
+       //TO DO to implement this large function 
 	   //$data = $this->users_model->readParticipantListWithProgramAwardLevelObject((int) $account_holder_id, 0, '', 0, $max, 'last_name', 'asc', array());
-	    $available_statuses = array("Active","Pending Activation","New");
+	    $available_statuses = array("Active","TO DO Activation","New");
         $added_info = array();
        // pr($users);
 	  // $future_goal_plan_failure = 0;
@@ -183,7 +183,7 @@ class GoalPlanService
 				$date_end = new DateTime ( $user_goal['date_end'] );
 				if ($date_end < $date_begin) {
 					//no need to loop other users and stop it here because goal plan data is same for all
-					//it should be in validation code -PENDING
+					//it should be in validation code -TO DO
 					$response['error']='Date begin cannot be less than Date end';
 					break;
 				}
@@ -218,7 +218,7 @@ class GoalPlanService
 	}
     public function add_user_goal($goal_plan, $user_goal) {
 		$response=[];
-		/* PENDING
+		/* TO DO
 		// Make sure the program allows peer 2 peer
 		$uses_goal_tracker_config = $this->programs_config_fields_model->read_config_field_by_name ( $program_account_holder_id, CONFIG_PROGRAM_USES_GOAL_TRACKER );
 		if (! $uses_goal_tracker_config->value) {
