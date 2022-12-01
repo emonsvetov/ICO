@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\Password; 
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\InvitationResendRequest;
@@ -21,7 +22,6 @@ class InvitationController extends Controller
      */
     public function invite(InvitationRequest $request, Organization $organization, Program $program)
     {
-        //return auth()->user();
         DB::beginTransaction();
 		try {
             $validated = $request->validated();
@@ -30,20 +30,30 @@ class InvitationController extends Controller
             $validated['password'] = $generatedPassword;
 
             $user = User::createAccount( $validated );
+            // $user = User::find( 553 );
+            $token = Password::broker()->createToken($user);
 
             $roles[] = Role::getIdByName(config('roles.participant'));
 
-            if( !empty($roles) ) 
+            if( !empty($roles) )
             {
                 $program->users()->sync( [ $user->id ], false );
                 $user->syncProgramRoles($program->id, $roles);
             }
-            UserInvited::dispatch( $user, $program);
+            event(new UserInvited($user, $program, $token));
             DB::commit();
             return response([ 'user' => $user ]);
         } catch (\Exception $e )    {
             DB::rollBack();
-            return response(['errors' => $e->getMessage()], 422);
+            if( config('app.env') != 'production')
+            {
+                $error = sprintf('Error inviting user (%d) to program (%d). Exception "%s" on line %d in file %s ', $user->id, $program->id, $e->getMessage(), $e->getLine(), $e->getFile());
+            }
+            else
+            {
+                $error = "Error inviting user to program";
+            }
+            return response(['errors' => $error], 422);
         }
 	}
     public function resend(InvitationResendRequest $request, Organization $organization, Program $program)

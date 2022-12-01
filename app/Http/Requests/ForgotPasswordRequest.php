@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use App\Services\DomainService;
 use App\Models\User;
 
-class UserLoginRequest extends FormRequest
+class ForgotPasswordRequest extends FormRequest
 {
     public function __construct(DomainService $domainService)
     {
@@ -50,12 +50,7 @@ class UserLoginRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email',
-            'password' => 'required',
-            // 'domain' => [
-            //     "sometimes",
-            //     "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/"
-            // ],
+            'email' => 'required|email'
         ];
     }
 }

@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Http\Controllers\Controller;
 use App\Services\UserService;
-use Illuminate\Http\Request;
 use App\Http\Resources\UserResource;
 use App\Http\Requests\UserRequest;
-use App\Models\AccountHolder;
 use App\Models\Organization;
 use App\Models\User;
-use DB;
 
 class UserController extends Controller
 {
@@ -109,7 +108,7 @@ class UserController extends Controller
     protected function UserResponse(User $user): UserResource
     {
         $user->load('roles');
-        $user->programRoles = $user->getProgramsRoles();
+        $user->programRoles = $user->compileProgramRoles($user->getAllProgramRoles());
         return new UserResource($user);
     }
 }

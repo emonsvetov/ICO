@@ -25,13 +25,13 @@ border-left:solid 1px;
         <tr>
             <td style="background-color:#ffffff;
                             border:none; text-align:center;">
-                <a href="{{ $contactProgramHost0 }}activation?token={{ $contactActivationToken }}"
+                <a href="{{ $contactActivationTokenUrl }}"
                    class="inf-track-23153"><img src="{{ $imagePath }}nk110-edc07421-56e4-4b9b-b09b-584844e6843b-v2.png"
                                                 border="0"></a>
                 <br>
                 <span style="font-size:10px;">Unable to see
                               the button?
-                              Click <a href="{{ $contactProgramHost0 }}activation?token={{ $contactActivationToken }}"
+                              Click <a href="{{ $contactActivationTokenUrl }}"
                                        style="color:#000;" class="inf-track-23155"> <span
                             style="text-decoration:underline;">Here</span></a>.</span>
             </td>
