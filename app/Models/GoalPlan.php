@@ -10,6 +10,7 @@ class GoalPlan extends BaseModel
 {
     use HasFactory;
     protected $guarded = [];
+    const CONFIG_PROGRAM_USES_GOAL_TRACKER = 1;
 
     public function goalPlanType()
     {
@@ -37,7 +38,7 @@ class GoalPlan extends BaseModel
         if( $status->exists()) return  $status->id;
         return null;
     }
-    public function calculateStatusId($date_begin, $date_end) {
+    public static function calculateStatusId($date_begin, $date_end) {
         $today = today()->format('Y-m-d');
         if($date_end < $today)
             $status_id = self::getExpiredStatusId();

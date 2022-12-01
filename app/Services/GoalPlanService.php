@@ -27,7 +27,9 @@ class GoalPlanService
 	public function add_goal_plan($data, $organization, $program)
     {
 		$response=[];
-		
+		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
+            return false;
+        }
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		//CALLBACK_TYPE_GOAL_MET=Goal Met 
         /*
