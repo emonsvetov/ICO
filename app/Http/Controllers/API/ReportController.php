@@ -43,11 +43,11 @@ class ReportController extends Controller
         // return $this->reportService->getReport();
     }
 
-    public function show(Organization $organization, Program $program, string $title, Request $request, ReportFactory $reportService)
+    public function show(Organization $organization, Program $program, string $title, Request $request, ReportFactory $reportFactory)
     {
         try {
             /** @var ReportServiceAbstract $report */
-            $report = $reportService->build($title, $request->all());
+            $report = $reportFactory->build($title, $request->all());
             $response = $report->getReport();
             return response($response);
         } catch (\Exception $e) {
