@@ -19,21 +19,21 @@ class GoalPlan extends BaseModel
     public function status()    {
         return $this->belongsTo(Status::class,'state_type_id');
     }
-    public function getStatusByName( $status ) {
+    public static function getStatusByName( $status ) {
         return self::getByNameAndContext($status, 'Goals');
     }   
     
-    public function getActiveStatusId() {
+    public static function getActiveStatusId() {
         $status = self::getByNameAndContext('Active', 'Goals');
         if( $status->exists()) return  $status->id;
         return null;
     }
-    public function getFutureStatusId() {
+    public static function getFutureStatusId() {
         $status = self::getByNameAndContext('Future', 'Goals');
         if( $status->exists()) return  $status->id;
         return null;
     }
-    public function getExpiredStatusId() {
+    public static function getExpiredStatusId() {
         $status = self::getByNameAndContext('Expired', 'Goals');
         if( $status->exists()) return  $status->id;
         return null;

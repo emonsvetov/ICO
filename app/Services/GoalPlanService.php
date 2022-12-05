@@ -25,14 +25,9 @@ class GoalPlanService
         $this->programService = $programService;
     }
 	public function add_goal_plan($data, $organization, $program)
-    {
-		$response=[];
-		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
-            return false;
-        }
-        //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
+    {   /*
+		//TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		//CALLBACK_TYPE_GOAL_MET=Goal Met 
-        /*
 		 // If the program does not allow goals, kick them out
         if (!$this->config_fields[CONFIG_PROGRAM_USES_GOAL_TRACKER]->value) {
             redirect('/manager/program-settings');
