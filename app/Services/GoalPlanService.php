@@ -73,7 +73,7 @@ class GoalPlanService
         if (!empty($new_goal_plan->id)) {
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
-            if($data['assign_goal_all_participants_default']==1)	{
+			if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
                 //$new_goal_plan->id = $result;
                 $assign_response =self::assign_all_participants_now($new_goal_plan, $program);
 				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
@@ -115,7 +115,7 @@ class GoalPlanService
         if (!empty($updated_goal_plan)) {
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
-            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'] == 1)	{
+            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
                 $assign_response =self::assign_all_participants_now($goalplan, $program);
 				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
             }

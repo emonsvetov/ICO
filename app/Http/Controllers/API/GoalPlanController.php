@@ -96,7 +96,7 @@ class GoalPlanController extends Controller
         if (!empty($goalplan->id)) {
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
-            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'] == 1)	{
+            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
                 //$ew_goal_plan->id = $result;
                 $assign_response = $goalplanservice->assign_all_participants_now($goalplan, $program);
 				$response['assign_msg'] = $goalplanservice->assign_all_participants_res($assign_response);
