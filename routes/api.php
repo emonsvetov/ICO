@@ -126,6 +126,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User,organization');
     //Route::delete('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'destroy'])->name('api.v1.organization.user.destroy')->middleware('can:delete,user');
 
+    // User Status
+    Route::get('/v1/organization/{organization}/userStatus', [App\Http\Controllers\API\UserStatusController::class, 'index'])->middleware('can:viewAny,App\UserStatus,organization');
+    Route::patch('/v1/organization/{organization}/user/{user}/status', [App\Http\Controllers\API\UserStatusController::class, 'update'])->middleware('can:update,App\UserStatus,organization,user');
+
     Route::get('/v1/organization', [App\Http\Controllers\API\OrganizationController::class, 'index'])->middleware('can:viewAny,App\Organization');
     Route::get('/v1/organization/{organization}', [App\Http\Controllers\API\OrganizationController::class, 'show'])->name('api.v1.organization.show')->middleware('can:view,organization');
     Route::post('/v1/organization', [App\Http\Controllers\API\OrganizationController::class, 'store'])->name('api.v1.organization.store')->middleware('can:create,App\Organization');
