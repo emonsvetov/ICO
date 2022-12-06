@@ -35,22 +35,16 @@ class PasswordController extends Controller
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
-            'password' => 'required|confirmed',
-            'invited' => 'sometimes|boolean',
+            'password' => 'required|confirmed'
         ]);
 
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
+            $request->only('email', 'password', 'password_confirmation'),
             function ($user) use ($request) {
                 $user->forceFill([
                     'password' => $request->password,
                     'remember_token' => Str::random(60),
                 ])->save();
-
-                if( $request->get('invited') )
-                {
-                    $user->update(['email_verified_at' => now()]);
-                }
 
                 $user->tokens()->delete();
 

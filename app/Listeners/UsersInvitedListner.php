@@ -33,7 +33,7 @@ class UsersInvitedListner
         $superAdmins = $this->userService->getSuperAdmins();
         foreach($event->recepients as $recepient)   {
             // Notification::send($superAdmins, new UserInvitedNotifyAdmin( $event->sender, $recepient, $event->program )); //Uncomment later
-            Notification::send($recepient, new UserInvitedNotifyUser( $event->sender, $recepient, $event->program ));
+            Notification::send($recepient, new UserInvitedNotifyUser( $event->sender, $recepient, $event->program, $recepient->token ));
         }
     }
 }

@@ -59,7 +59,7 @@ class ProgramUserController extends Controller
         else {
             $users = $query->with(['roles' => function ($query) use($program) {
                 $query->wherePivot('program_id', '=', $program->id);
-            }])->paginate(request()->get('limit', 20));
+            }, 'status'])->paginate(request()->get('limit', 20));
         }
 
         if ( $users->isNotEmpty() )
