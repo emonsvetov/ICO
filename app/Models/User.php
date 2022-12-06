@@ -30,6 +30,13 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     const IMAGE_FIELDS = ['avatar'];
     const IMAGE_PATH = 'users';
 
+    const STATUS_ACTIVE = 'Active';
+    const STATUS_PENDING_ACTIVATION = 'Pending Activation';
+    const STATUS_DELETED = 'Deleted';
+    const STATUS_PENDING_DEACTIVATION = 'Pending Deactivation';
+    const STATUS_DEACTIVATED = 'Deactivated';
+    const STATUS_LOCKED = 'Locked';
+
     public $timestamps = true;
 
     private $isSuperAdmin = false; //user is super admin
@@ -197,6 +204,16 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 
     public static function getStatusByName( $status ) {
         return Status::getByNameAndContext($status, 'Users');
+    }
+
+    public static function getIdStatusActive()
+    {
+        return self::getStatusActive()->id;
+    }
+
+    public static function getStatusActive()
+    {
+        return self::getStatusByName(self::STATUS_ACTIVE);
     }
 
     /**

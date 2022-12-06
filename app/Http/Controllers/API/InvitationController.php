@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\API;
 
-use Illuminate\Support\Facades\Password; 
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 use App\Http\Requests\InvitationResendRequest;
 use App\Http\Requests\InvitationRequest;
 use App\Http\Controllers\Controller;
+use App\Events\InvitationAccepted;
 use App\Models\Organization;
 use App\Events\UsersInvited;
 use App\Events\UserInvited;
@@ -63,10 +66,49 @@ class InvitationController extends Controller
             $validated = $request->validated();
             $recipients = $validated['recipients'];
             $users = User::find($recipients);
+            foreach($users as $user)
+            {
+                $user->token = Password::broker()->createToken($user);
+            }
             event( new UsersInvited( $users, $program, true ) );
             return response([ 'success' => true ]);
         } catch (\Exception $e )    {
             return response(['errors' => $e->getMessage()], 422);
         }
 	}
+
+    public function accept(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|confirmed'
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user) use ($request) {
+                $user->forceFill([
+                    'password' => $request->password,
+                    'remember_token' => Str::random(60),
+                    'email_verified_at' => now(),
+                    'user_status_id' => User::getIdStatusActive()
+                ])->save();
+
+                $user->tokens()->delete();
+
+                event(new InvitationAccepted($user));
+            }
+        );
+
+        if ($status == Password::PASSWORD_RESET) {
+            return response([
+                'message'=> 'Invitation accepted successfully'
+            ]);
+        }
+
+        return response([
+            'message'=> __($status)
+        ], 500);
+    }
 }
