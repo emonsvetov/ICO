@@ -164,10 +164,13 @@ class ProgramService
 
     public function index($organization, $params = [])
     {
+        $all = $params['all'] ?? false;
         $params = array_merge($this->_buildParams(), $params);
-        $query = $this->_buildQuery($organization, $params)
-            ->whereNull('parent_id')
-            ->withOrganization($organization);
+        $query = $this->_buildQuery($organization, $params);
+        if (!$all) {
+            $query->whereNull('parent_id');
+        }
+        $query->withOrganization($organization);
 
         if ($params['minimal']) {
             $results = $query->get();
@@ -381,7 +384,7 @@ class ProgramService
         DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
 
         $qry_statement = "
-        SELECT 
+        SELECT
             posts.*,
             posts.created_at as posting_timestamp,
             jet.type as journal_event_type
@@ -401,7 +404,7 @@ class ProgramService
         ORDER BY
             journal_event_type, posting_timestamp ASC;
         ";
-		
+
         try {
 			$result = DB::select( DB::raw($qry_statement), array(
 				'journal_event_type' => 'Charge setup fee to program',
@@ -422,7 +425,7 @@ class ProgramService
         }
         $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
         $balance = Account::read_available_balance_for_program ( $program );
-        return 
+        return
             [
                 'program' => $program,
                 'programs' => $programs,

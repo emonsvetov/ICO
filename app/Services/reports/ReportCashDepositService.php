@@ -98,8 +98,9 @@ class ReportCashDepositService extends ReportServiceAbstract
                 JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE,
                 JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE,
             ]);
-//        $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
+            $subQuery->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
             $subQuery->whereNull('reversals.id');
+            $subQuery->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
         }, 'subQuery')
             ->select(
                 DB::raw("
@@ -139,7 +140,7 @@ class ReportCashDepositService extends ReportServiceAbstract
      */
     protected function setWhereFilters(Builder $query): Builder
     {
-////        $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
+//
         return $query;
     }
 
