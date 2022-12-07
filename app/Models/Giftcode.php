@@ -81,10 +81,12 @@ class Giftcode extends Model
 
         try {
             $results = DB::select( DB::raw($sql), $params);
-        } catch (Exception $e) {
-            throw new Exception ( 'Could not get codes. DB query failed with error:' . $e->getMessage(), 400 );
+        } catch (\Exception $e) {
+            throw new \Exception ( 'Could not get codes. DB query failed with error:' . $e->getMessage(), 400 );
         }
 		return $results;
+	}
+
 	public function createGiftcode($user, $merchant, $giftcode)	{
 
 		if( !$user || !$merchant || !$giftcode ) return;
