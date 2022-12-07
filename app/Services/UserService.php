@@ -124,4 +124,14 @@ class UserService
 
         return $this->accountService->readBalance($user->account_holder_id, $accountTypeName);
     }
+
+    public function listStatus()
+    {
+        return Status::where('context', 'Users')->get();
+    }
+
+    public function updateStatus($validated, $user)
+    {
+        return $user->update( ['user_status_id' => $validated['user_status_id']] );
+    }
 }
