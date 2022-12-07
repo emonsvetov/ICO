@@ -13,6 +13,7 @@ use App\Services\ProgramService;
 use App\Models\User;
 use App\Models\UserGoal;
 use App\Models\GoalPlanType;
+use App\Models\ExternalCallback;
 use DateTime;
 
 class GoalPlanService 
@@ -41,6 +42,9 @@ class GoalPlanService
         array_unshift($goal_met_program_callbacks, $empty_callback);
         array_unshift($goal_exceeded_program_callbacks, $empty_callback);
         */
+		//CALLBACK_TYPE_GOAL_MET = Goal Met
+		$goal_met_program_callbacks = ExternalCallback::read_list_by_type($program->account_holder_id,'Goal Met');
+		pr($goal_met_program_callbacks); die;
 		if( empty($data['date_begin']) )   {
             $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
          }
@@ -63,7 +67,6 @@ class GoalPlanService
         $new_goal_plan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
-            //'state_type_id'=>1, //TO DO - not found in create function of old system
             'program_id' => $program->id, 
             'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
             'created_by'=>auth()->user()->id,
@@ -137,6 +140,7 @@ class GoalPlanService
 	    //$max = 50000;
         //This is temporary solution - TO DO implemntation of original function
         //pr($goal_plan);
+		//pr($program);
 		$response=[];
         $users =  $this->programService->getParticipants($program, true);
         $users->load('status');
@@ -178,6 +182,7 @@ class GoalPlanService
 				
 				$date_begin = new DateTime ( $user_goal['date_begin'] );
 				$date_end = new DateTime ( $user_goal['date_end'] );
+
 				if ($date_end < $date_begin) {
 					//no need to loop other users and stop it here because goal plan data is same for all
 					//it should be in validation code -TO DO
@@ -188,7 +193,6 @@ class GoalPlanService
 				unset($user_goal['date_end']);
 
 				$response = self::add_user_goal($goal_plan, $user_goal);
-	
 				if(isset($response['already_assigned'])) {
 					$already_assigned[]=$user_id; // User is already assigned to this goal plan
 					continue;
@@ -291,7 +295,7 @@ class GoalPlanService
 			$future_ugp['target_value'] = $future_goal_plan->default_target;
 		}
 		if ($user_goal->factor_before == $goal_plan->factor_before) {
-			$future_ugp['factor_before'] = $future_goal_plan->factor_before;
+ 			$future_ugp['factor_before'] = $future_goal_plan->factor_before;
 		}
 		if ($user_goal->factor_after == $goal_plan->factor_after) {
 			$future_ugp['factor_after'] = $future_goal_plan->factor_after;
