@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class EmailTemplate extends Model
 {
@@ -99,34 +100,25 @@ class EmailTemplate extends Model
 
 	}
     */
-    /*public function read_list_program_email_templates_by_type($program_account_holder_id = 0, $type = '', $offset = 0, $limit = 0) {
+    public static function read_list_program_email_templates_by_type($program_account_holder_id = 0, $type = '', $offset = 0, $limit = 0) {
+		$params=['program_account_holder_id'=>$program_account_holder_id, 'type'=>$type,'offset'=>$offset,'limit'=>$limit];
 		// build the query statement to check if we have this program_account_holder_id
 		$sql = "
-            SELECT
-                email_templates.*,
-                " . EMAIL_TEMPLATE_TYPES . ".type
-            FROM
-                " . PROGRAMS_EMAIL_TEMPLATES . "
-            LEFT JOIN
-                " . EMAIL_TEMPLATE_TYPES . " ON " . EMAIL_TEMPLATE_TYPES . ".id =  " . PROGRAMS_EMAIL_TEMPLATES . ".email_template_type_id
-            WHERE
-                " . PROGRAMS_EMAIL_TEMPLATES . ".`program_account_holder_id` = {$this->read_db->escape($program_account_holder_id)} 
-            AND 
-                " . EMAIL_TEMPLATE_TYPES . ".type = {$this->read_db->escape($type)} 
-            LIMIT {$offset}, {$limit}";
+		SELECT programs_email_templates.*, email_template_types.type FROM programs_email_templates LEFT JOIN email_template_types ON email_template_types.id =  programs_email_templates.email_template_type_id WHERE programs_email_templates.program_account_holder_id = :program_account_holder_id AND email_template_types.type = :type LIMIT :offset, :limit";
         try {
             $result = DB::select( DB::raw($sql), $params);
         } catch (Exception $e) {
-            throw new Exception ( 'Could not get codes. DB query failed with error:' . $e->getMessage(), 400 );
+            throw new Exception ( 'Could not get email templates. DB query failed with error:' . $e->getMessage(), 400 );
         }
-		if (sizeof ( $result ) == 0) {
+		//pr($result); die;
+		/*if (sizeof ( $result ) == 0) {
 			// scan up the heirarchy to see if we can find a match for this email template.
 			if ($this->programs_model->is_sub_program ( $program_account_holder_id )) {
 				$parent_id = $this->programs_model->read_parent_account_holder_id ( $program_account_holder_id );
 				return $this->read_list_program_email_templates_by_type ( ( int ) $parent_id, $type, $offset, $limit );
 			}
-		}
+		}*/
 		return $result;
 
-	}*/
+	}
 }
