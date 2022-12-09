@@ -10,10 +10,9 @@ use App\Models\User;
 class DomainService
 {
     private HostService $hostService;
-    private array $requestDomain;
-    private string $requestDomainName;
-    private string $requestDomainPort;
-    private string $requestDomainScheme;
+    private string $requestDomainPort = '';
+    private Domain $domain;
+
     private bool $isAdminAppDomain = false;
 
     public function __construct(
@@ -21,11 +20,66 @@ class DomainService
     )
     {
         $this->hostService = $hostService;
-        $requestDomain = $this->getDomainFromRequestHeaders();
-        $this->setRequestDomain($requestDomain);
-        $this->setRequestDomainName(!empty($requestDomain['host']) ? $requestDomain['host'] : '');
-        $this->setRequestDomainScheme(!empty($requestDomain['scheme']) ? $requestDomain['scheme'] : 'http');
-        $this->setRequestDomainPort(!empty($requestDomain['port']) ? $requestDomain['port'] : '');
+        $this->initialize(); //cannot catch exception so called manually
+    }
+
+    public function initialize()
+    {
+        $domain = $this->getDomainFromRequestKey(); // Try "domainKey" in request
+        $requestDomain = $this->getDomainFromRequestHeaders(); //Try "Referer" Header
+
+        if( !$domain )
+        {
+            if( $requestDomain && !empty($requestDomain['host']) )
+            {
+                $domain = $this->getDomainByName( $requestDomain['host'] );
+            }
+        }
+
+        if( $domain && $domain->exists())
+        {
+            $this->setDomain($domain);
+        }
+        
+        if( $requestDomain && !empty($requestDomain['port']) )
+        {
+            $this->setRequestDomainPort( $requestDomain['port'] ); //For xx.localhost:3000 purpose
+        }
+    }
+
+    public function setDomain( Domain $domain )
+    {
+        $this->domain = $domain;
+    }
+
+    public function getDomain()
+    {
+        return $this->domain;
+    }
+
+    public function getDomainName()
+    {
+        return $this->getDomain()->name;
+    }
+
+    public function getDomainHost()
+    {
+        $domain = $this->getDomain();
+        return !empty($domain->host) ? $domain->host : $domain->name ;
+    }
+
+    public function getDomainPort()
+    {
+        $domain = $this->getDomain();
+        return !empty($domain->port) ? $domain->port : $this->getRequestDomainPort() ;
+    }
+
+    public function getDomainFromRequestKey()
+    {
+        if( request()->get('domainKey') )
+        {
+            return $this->getDomainByKey( request()->get('domainKey') );
+        }
     }
 
     public function getDomainByName( string $name)
@@ -33,12 +87,18 @@ class DomainService
         return Domain::whereName($name)->first();
     }
 
+    public function getDomainByKey( string $key)
+    {
+        return Domain::whereSecretKey($key)->first();
+    }
+
     public function makeUrl()
     {
-        $requestDomain = $this->getRequestDomain();
-        $host = !empty($requestDomain['host']) ? $requestDomain['host'] : '';
-        $port = !empty($requestDomain['port']) ? $requestDomain['port'] : '';
-        $scheme = !empty($requestDomain['scheme']) ? $requestDomain['scheme'] : 'http';
+        $domain = $this->getDomain();
+        if( !$domain ) return null;
+        $host = $this->getDomainHost();
+        $port = $this->getDomainPort();
+        $scheme = !empty($domain['scheme']) ? $domain['scheme'] : 'http';
         return  $scheme . '://' . $host . ($port ? ':' . $port : '');
     }
 
@@ -47,44 +107,14 @@ class DomainService
         return $this->hostIsAdminApp();
     }
 
-    private function setRequestDomain($requestDomain)
+    public function setRequestDomainPort( $port )
     {
-        $this->requestDomain = $requestDomain;
+        return $this->requestDomainPort = $port;
     }
-
-    public function getRequestDomain()
-    {
-        return $this->requestDomain;
-    }
-
-    private function setRequestDomainName($requestDomainName)
-    {
-        $this->requestDomainName = $requestDomainName;
-    }
-
-    public function getRequestDomainName()
-    {
-        return $this->requestDomainName;
-    }
-
-    private function setRequestDomainPort($requestDomainPort)
-    {
-        $this->requestDomainPort = $requestDomainPort;
-    }
-
+    
     public function getRequestDomainPort()
     {
         return $this->requestDomainPort;
-    }
-
-    private function setRequestDomainScheme($requestDomainScheme)
-    {
-        $this->requestDomainScheme = $requestDomainScheme;
-    }
-
-    public function getRequestDomainScheme()
-    {
-        return $this->requestDomainScheme;
     }
 
     private function hostIsAdminApp()
@@ -95,19 +125,8 @@ class DomainService
     private function getDomainFromRequestHeaders()
     {
         $referer = request()->headers->get('referer');
-
-        if(empty($referer))
-        {
-            throw new InvalidArgumentException ('domainError-0: Invalid host or domain');
-        }
-
+        if( !$referer ) return;
         $refs = parse_url($referer);
-
-        if(empty($refs['scheme']) || empty($refs['host']))
-        {
-            throw new InvalidArgumentException ('domainError 1: Invalid host or domain');
-        }
-
         return $refs;
     }
 
@@ -142,7 +161,7 @@ class DomainService
     public function isValidSystemDomain( $domainName = null ) //is valid system domain
     {
         if( !$domainName ) {
-            $domainName = $this->getRequestDomainName();
+            $domainName = $this->getDomainName();
         }
 
         if( !$domainName )
@@ -228,7 +247,7 @@ class DomainService
                 throw new \InvalidArgumentException ('Domain is not a valid system domain');
             }
 
-            $domainName = $this->getRequestDomainName();
+            $domainName = $this->getDomainName();
             $domain = $this->getDomainByName($domainName);
             
             if( $user->getProgramRolesByDomain( $domain ) )

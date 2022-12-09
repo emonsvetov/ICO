@@ -99,9 +99,6 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::post('/v1/password/reset', [App\Http\Controllers\API\PasswordController::class, 'reset']);
 
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
-
-    Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
-
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {

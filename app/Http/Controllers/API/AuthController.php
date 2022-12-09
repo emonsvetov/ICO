@@ -68,35 +68,44 @@ class AuthController extends Controller
 
     public function login(UserLoginRequest $request, DomainService $domainService)
     {
-        $validated = $request->validated();
+        try {
 
-        if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
-            return response(['message' => 'Invalid Credentials'], 422);
+            $validated = $request->validated();
+            if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
+                return response(['message' => 'Invalid Credentials'], 422);
+            }
+    
+            $user = auth()->guard('web')->user();
+            $user->load(['organization', 'roles']);
+    
+            $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
+    
+            $response = ['user' => $user, 'access_token' => $accessToken];
+    
+            if( ($user->isSuperAdmin() || $user->isAdmin()) )
+            {
+                return response($response);
+            }
+            
+            $domain = $domainService->getDomain();
+            dd("HH");
+            $domainName = $domainService->getDomainName();
+            $domain = $domainService->getDomainByName($domainName);
+            
+            $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
+    
+            if( !$user->programRoles )  {
+                return response(['message' => 'No program roles '], 422);
+            }
+    
+            $response['domain'] = $domain;
+            return response( $response );
         }
-
-        $user = auth()->guard('web')->user();
-        $user->load(['organization', 'roles']);
-
-        $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
-
-        $response = ['user' => $user, 'access_token' => $accessToken];
-
-        if( $domainService->isAdminAppDomain()  && ($user->isSuperAdmin() || $user->isAdmin()) )
+        catch(\Exception $e)
         {
-            return response($response);
+            return response(['errors' => 'Login request failed', 'e' => $e->getMessage()], 422);
         }
-
-        $domainName = $domainService->getRequestDomainName();
-        $domain = $domainService->getDomainByName($domainName);
         
-        $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
-
-        if( !$user->programRoles )  {
-            return response(['message' => 'No program roles '], 422);
-        }
-
-        $response['domain'] = $domain;
-        return response( $response );
     }
 
     public function logout (Request $request) {
