@@ -65,9 +65,9 @@ class UserController extends Controller
 
         if ( request()->has('minimal') )
         {
-            $users = $query->select('id', 'first_name', 'last_name')->with(['roles'])->get();
+            $users = $query->select('id', 'first_name', 'last_name')->with(['roles', 'status'])->get();
         } else {
-            $users = $query->with(['roles'])->paginate(request()->get('limit', 10));
+            $users = $query->with(['roles', 'status'])->paginate(request()->get('limit', 10));
         }
 
         if ( $users->isNotEmpty() )

@@ -23,24 +23,24 @@ class UserLoginRequest extends FormRequest
         return true;
     }
 
-    public function __validateDomainRequest()
-    {
-        return $this->domainService->validateDomainRequest();
-    }
+    // public function __validateDomainRequest()
+    // {
+    //     return $this->domainService->validateDomainRequest();
+    // }
 
-    public function withValidator($validator)
-    {
-        $validator->after(function ($validator) {
-            try {
-                if( !$this->__validateDomainRequest() )
-                {
-                    $validator->errors()->add('validationError', 'Invalid domain or account');
-                }
-            } catch (\Exception $e) {
-                $validator->errors()->add('validationError', sprintf("%s", $e->getMessage()));
-            }
-        });
-    }
+    // public function withValidator($validator)
+    // {
+    //     $validator->after(function ($validator) {
+    //         try {
+    //             if( !$this->__validateDomainRequest() )
+    //             {
+    //                 $validator->errors()->add('validationError', 'Invalid domain or account');
+    //             }
+    //         } catch (\Exception $e) {
+    //             $validator->errors()->add('validationError', sprintf("%s", $e->getMessage()));
+    //         }
+    //     });
+    // }
 
     /**
      * Get the validation rules that apply to the request.
@@ -52,10 +52,7 @@ class UserLoginRequest extends FormRequest
         return [
             'email' => 'required|email',
             'password' => 'required',
-            // 'domain' => [
-            //     "sometimes",
-            //     "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/"
-            // ],
+            'domainKey' => 'sometimes|string'
         ];
     }
 }
