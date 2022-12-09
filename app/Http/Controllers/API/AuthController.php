@@ -100,13 +100,12 @@ class AuthController extends Controller
                 return response($response);
             }
 
-            return response(['errors' => 'Login request failed', 'e' => 'Unknow error: Invalid domain or user'], 422);
+            throw new \Exception ('Unknow error: Invalid domain or user');
         }
         catch(\Exception $e)
         {
             return response(['errors' => 'Login request failed', 'e' => $e->getMessage()], 422);
         }
-        
     }
 
     public function logout (Request $request) {
