@@ -81,25 +81,26 @@ class AuthController extends Controller
             $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
     
             $response = ['user' => $user, 'access_token' => $accessToken];
+
+            $isValidDomain = $domainService->isValidDomain();
+
+            if( $isValidDomain )
+            {
+                $domain = $domainService->getDomain();
+                $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
+                if( !$user->programRoles )  {
+                    return response(['message' => 'No program roles '], 422);
+                }
+                $response['domain'] = $domain;
+                return response( $response );
+            }
     
             if( ($user->isSuperAdmin() || $user->isAdmin()) )
             {
                 return response($response);
             }
-            
-            $domain = $domainService->getDomain();
-            dd("HH");
-            $domainName = $domainService->getDomainName();
-            $domain = $domainService->getDomainByName($domainName);
-            
-            $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
-    
-            if( !$user->programRoles )  {
-                return response(['message' => 'No program roles '], 422);
-            }
-    
-            $response['domain'] = $domain;
-            return response( $response );
+
+            return response(['errors' => 'Login request failed', 'e' => 'Unknow error: Invalid domain or user'], 422);
         }
         catch(\Exception $e)
         {

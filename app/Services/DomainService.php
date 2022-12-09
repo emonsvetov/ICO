@@ -12,6 +12,7 @@ class DomainService
     private HostService $hostService;
     private string $requestDomainPort = '';
     private Domain $domain;
+    private $isValidDomain = false;
 
     private bool $isAdminAppDomain = false;
 
@@ -21,6 +22,11 @@ class DomainService
     {
         $this->hostService = $hostService;
         $this->initialize(); //cannot catch exception so called manually
+    }
+
+    public function isValidDomain()
+    {
+        return $this->isValidDomain;
     }
 
     public function initialize()
@@ -38,6 +44,7 @@ class DomainService
 
         if( $domain && $domain->exists())
         {
+            $this->isValidDomain = true;
             $this->setDomain($domain);
         }
         
