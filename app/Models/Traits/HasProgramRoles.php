@@ -112,7 +112,15 @@ trait HasProgramRoles
         ->withPivot('program_id')
         ->get();
     }
-
+    public function hasProgramRolesByDomain( $domain )
+    {
+        return $this->roles()
+        ->join('programs', 'programs.id', '=', 'model_has_roles.program_id')
+        ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
+        ->join('domains', 'domains.id', '=', 'domain_program.domain_id')
+        ->where('domains.id', $domain->id)
+        ->count() > 0;
+    }
     public function getProgramRolesByDomain( $domain )
     {
         $domainId = self::extractId($domain);

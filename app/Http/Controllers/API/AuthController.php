@@ -94,17 +94,26 @@ class AuthController extends Controller
                 $response['domain'] = $domain;
                 return response( $response );
             }
-    
-            if( ($user->isSuperAdmin() || $user->isAdmin()) )
+            else if( is_null($isValidDomain) )
             {
-                return response($response);
+                if( ($user->isSuperAdmin() || $user->isAdmin()) )
+                {
+                    return response($response);
+                }
             }
 
             throw new \Exception ('Unknow error: Invalid domain or user');
         }
         catch(\Exception $e)
         {
-            return response(['errors' => 'Login request failed', 'e' => $e->getMessage()], 422);
+            return response(
+                [
+                    'message'=>'Login request failed',
+                    'errors' => [
+                        'loginError' => $e->getMessage()
+                    ]
+                ],
+                422);
         }
     }
 
