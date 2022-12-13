@@ -8,6 +8,12 @@ class EventType extends Model
 {
     protected $guarded = [];
 
+    protected $hidden = [
+        'created_at',
+        'updated_at',
+        'deleted',
+    ];
+
     /**
      * @param string $type
      * @return int|null
