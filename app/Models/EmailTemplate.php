@@ -110,14 +110,14 @@ class EmailTemplate extends Model
         } catch (Exception $e) {
             throw new Exception ( 'Could not get email templates. DB query failed with error:' . $e->getMessage(), 400 );
         }
-		//pr($result); die;
-		/*if (sizeof ( $result ) == 0) {
+		//$this->programs_model->is_sub_program ( $program_account_holder_id )
+		if (sizeof ( $result ) == 0) {
 			// scan up the heirarchy to see if we can find a match for this email template.
 			if ($this->programs_model->is_sub_program ( $program_account_holder_id )) {
 				$parent_id = $this->programs_model->read_parent_account_holder_id ( $program_account_holder_id );
 				return $this->read_list_program_email_templates_by_type ( ( int ) $parent_id, $type, $offset, $limit );
 			}
-		}*/
+		}
 		return $result;
 
 	}

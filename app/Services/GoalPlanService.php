@@ -15,16 +15,19 @@ use App\Models\UserGoal;
 use App\Models\GoalPlanType;
 use App\Models\ExternalCallback;
 use App\Models\EmailTemplate;
+use App\Services\EmailTemplateService;
 use DateTime;
 
 class GoalPlanService 
 {
 
     public function __construct(
-        ProgramService $programService
+        ProgramService $programService,
+		EmailTemplateService $emailTemplate
         )
 	{
         $this->programService = $programService;
+		$this->emailTemplateService = $emailTemplate;
     }
 	public function add_goal_plan($data, $organization, $program)
     {   /*
@@ -45,8 +48,10 @@ class GoalPlanService
         */
 		//CALLBACK_TYPE_GOAL_MET = Goal Met
 		$goal_met_program_callbacks = ExternalCallback::read_list_by_type($program->account_holder_id,'Goal Met');
-		$email_templates = EmailTemplate::read_list_program_email_templates_by_type($program->account_holder_id,"Goal Progress", 0, 9999);
-		pr($email_templates); die;
+		$email_templates = $this->emailTemplateService->read_list_program_email_templates_by_type($program->account_holder_id,"Goal Progress", 0, 9999);
+		pr($email_templates);
+		die;
+		//pr($email_templates); die;
 		if( empty($data['date_begin']) )   {
             $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
          }
