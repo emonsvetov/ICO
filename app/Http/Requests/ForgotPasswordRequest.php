@@ -34,10 +34,10 @@ class ForgotPasswordRequest extends FormRequest
             try {
                 if( !$this->__validateDomainRequest() )
                 {
-                    $validator->errors()->add('validationError', 'Invalid domain or account');
+                    $validator->errors()->add('domain', 'Invalid domain or account');
                 }
             } catch (\Exception $e) {
-                $validator->errors()->add('validationError', sprintf("%s", $e->getMessage()));
+                $validator->errors()->add('domain', sprintf("%s", $e->getMessage()));
             }
         });
     }

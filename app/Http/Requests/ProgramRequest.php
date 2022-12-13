@@ -29,7 +29,7 @@ class ProgramRequest extends FormRequest
             'type'                  => 'required|string',
             'status'                => 'nullable|string',
             'setup_fee'             => 'required|numeric',
-            'is_demo'             => 'required|boolean',
+            'is_demo'             => 'boolean|nullable',
             'factor_valuation'=>'required|integer',
             'is_pay_in_advance'     => 'required|boolean',
             'invoice_for_awards'=> 'required|boolean',
@@ -161,7 +161,6 @@ class ProgramRequest extends FormRequest
             'team_management_view'=>'nullable|boolean',
             //Goal Tracker
             'uses_goal_tracker'=>'nullable|boolean',
-            'country'=>'nullable|string',
             'transaction_fee'=>'nullable|numeric',
             'create_setup_fee_account'=>'nullable|boolean',
         ];

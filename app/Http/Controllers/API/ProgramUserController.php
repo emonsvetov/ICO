@@ -118,7 +118,6 @@ class ProgramUserController extends Controller
         return response([ 'success' => true ]);
     }
 
-
     public function readBalance(Organization $organization, Program $program, User $user, UserService $userService)
     {
         $amount_balance = $user->readAvailableBalance( $program, $user);

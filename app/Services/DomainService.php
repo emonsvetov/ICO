@@ -11,8 +11,9 @@ class DomainService
 {
     private HostService $hostService;
     private string $requestDomainPort = '';
+    private $referer = null;
     private Domain $domain;
-    private $isValidDomain = false;
+    private $isValidDomain = null;
 
     private bool $isAdminAppDomain = false;
 
@@ -24,6 +25,11 @@ class DomainService
         $this->initialize(); //cannot catch exception so called manually
     }
 
+    public function setIsValidDomain( $flag )
+    {
+        $this->isValidDomain = $flag;
+    }
+
     public function isValidDomain()
     {
         return $this->isValidDomain;
@@ -31,26 +37,14 @@ class DomainService
 
     public function initialize()
     {
-        $domain = $this->getDomainFromRequestKey(); // Try "domainKey" in request
-        $requestDomain = $this->getDomainFromRequestHeaders(); //Try "Referer" Header
+        $this->setDomainFromRequestKey(); // Try "domainKey" in request
 
-        if( !$domain )
+        if( !$this->isAdminAppDomain() )
         {
-            if( $requestDomain && !empty($requestDomain['host']) )
+            if( !$this->getDomain() )
             {
-                $domain = $this->getDomainByName( $requestDomain['host'] );
+                $this->setDomainFromRequestHeaders(); //Try "Referer" Header
             }
-        }
-
-        if( $domain && $domain->exists())
-        {
-            $this->isValidDomain = true;
-            $this->setDomain($domain);
-        }
-        
-        if( $requestDomain && !empty($requestDomain['port']) )
-        {
-            $this->setRequestDomainPort( $requestDomain['port'] ); //For xx.localhost:3000 purpose
         }
     }
 
@@ -61,12 +55,31 @@ class DomainService
 
     public function getDomain()
     {
+        if(isset($this->domain))
         return $this->domain;
     }
 
     public function getDomainName()
     {
         return $this->getDomain()->name;
+    }
+    public function setReferer($referer)
+    {
+        return $this->referer = $referer;
+    }
+
+    public function getReferer()
+    {
+        return $this->referer;
+    }
+
+    public function getRefererHost()
+    {
+        $referer = $this->getReferer();
+        if( $referer )
+        {
+            return $referer->host;
+        }
     }
 
     public function getDomainHost()
@@ -81,11 +94,46 @@ class DomainService
         return !empty($domain->port) ? $domain->port : $this->getRequestDomainPort() ;
     }
 
-    public function getDomainFromRequestKey()
+    public function setDomainFromRequestKey()
     {
         if( request()->get('domainKey') )
         {
-            return $this->getDomainByKey( request()->get('domainKey') );
+            $domain = $this->getDomainByKey( request()->get('domainKey') );
+            if( $domain && $domain->exists())
+            {
+                $this->setIsValidDomain(true);
+                $this->setDomain($domain);
+            }   
+            else
+            {
+                $this->setIsValidDomain(false);
+            }
+        }
+    }
+
+    private function setDomainFromRequestHeaders()
+    {
+        $referer = request()->headers->get('referer');
+        if( ! $referer ) return;
+        $refs = parse_url( $referer );
+
+        if( $refs && !empty($refs['host']) )
+        {
+            $this->setReferer((object) $refs);
+            $domain = $this->getDomainByName( $refs['host'] );
+            if( $domain && $domain->exists() ) 
+            {
+                $this->setIsValidDomain(true);
+                $this->setDomain( $domain );
+                if( $refs && !empty($refs['port']) )
+                {
+                    $this->setRequestDomainPort( $refs['port'] );
+                }
+            }
+            else
+            {
+                $this->setIsValidDomain(false);
+            }
         }
     }
 
@@ -129,60 +177,39 @@ class DomainService
         return $this->hostService->isAdminApp();
     }
 
-    private function getDomainFromRequestHeaders()
-    {
-        $referer = request()->headers->get('referer');
-        if( !$referer ) return;
-        $refs = parse_url($referer);
-        return $refs;
-    }
-
-    /**
-     * refererIsValidDomain
-     * Get domain from request or "passed string" and determine if domain exists in records
-     * domainError 0: Invalid Headers["Referer"]
-     * domainError 1: host entry not available in "parse_url" vars
-     * domainError 2: Failed to get domain from request headers for one of any reasons above
-     * domainError 3: Could not find domain in "domains" table
-     * Return value: bool
-     */
-
-    public function refererIsValidDomain()
-    {
-        return $this->isValidSystemDomain();
-    }
-
     public function isValidDomainRequest()
     {
         if($this->hostIsAdminApp())
         {
             return true;
         }
-        if( $this->refererIsValidDomain() )
+        if( $this->isValidDomain() )
         {
             return true;
         }
         return false;
     }
 
-    public function isValidSystemDomain( $domainName = null ) //is valid system domain
-    {
-        if( !$domainName ) {
-            $domainName = $this->getDomainName();
-        }
+    // public function isValidSystemDomain( $domainName = null ) //is valid system domain
+    // {
+    //     dd($this->isValidDomain());
 
-        if( !$domainName )
-        {
-            throw new \InvalidArgumentException ('A domain is required to validate request');
-        }
+    //     if( !$domainName ) {
+    //         $domainName = $this->getDomainName();
+    //     }
 
-        if(!Domain::whereName($domainName)->exists())
-        {
-            throw new \InvalidArgumentException ('Invalid system domain or wrong entry point');
-        }
+    //     if( !$domainName )
+    //     {
+    //         throw new \InvalidArgumentException ('A domain is required to validate request');
+    //     }
 
-        return true;
-    }
+    //     if(!Domain::whereName($domainName)->exists())
+    //     {
+    //         throw new \InvalidArgumentException ('Invalid system domain or wrong entry point');
+    //     }
+
+    //     return true;
+    // }
 
     public function userHasFrontendRole( User $user, Domain $domain )
     {
@@ -249,18 +276,12 @@ class DomainService
                 return true;
             }
             
-            if( !$this->isValidSystemDomain() )
+            if( !$this->isValidDomain() )
             {
                 throw new \InvalidArgumentException ('Domain is not a valid system domain');
             }
 
-            $domainName = $this->getDomainName();
-            $domain = $this->getDomainByName($domainName);
-            
-            if( $user->getProgramRolesByDomain( $domain ) )
-            {
-                return true;
-            }
+            return $user->hasProgramRolesByDomain( $this->getDomain() );
         }
     }
 }
