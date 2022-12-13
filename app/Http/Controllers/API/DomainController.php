@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
+use App\Services\DomainService;
 use App\Models\Organization;
 use Illuminate\Support\Str;
 use App\Models\Domain;
@@ -112,19 +113,23 @@ class DomainController extends Controller
         return response([ 'secret_key' => $secret_key ]);
     }
 
-    public function getProgram()    {
-        $domainName = request()->get('domainName');
+    public function getProgram(DomainService $domainService)    {
+
+        $domainName = $domainService->getDomainName();
+        // $domainHost = $domainService->getDomainHost();
+        // $domainPort = $domainService->getDomainPort();
+
         if( !$domainName ) {
             return response(['errors' => 'Invalid domain name'], 422);
         }
 
-        $domain = Domain::where('name', 'LIKE', $domainName)->first();
+        $domain = Domain::where('name', 'LIKE', $domainName)->select(['id', 'name'])->first();
 
         if( !$domain )  {
             return response(['errors' => 'Domain not found'], 422);
         }
 
-        $program = $domain->programs()->first();
+        $program = $domain->programs()->select(['programs.id', 'programs.name'])->first();
 
         if( !$program ) {
             return response(['errors' => 'No program found for the domain'], 422);

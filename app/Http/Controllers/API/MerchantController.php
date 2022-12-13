@@ -70,7 +70,7 @@ class MerchantController extends Controller
             if ($tree){
                 $query->whereNull('parent_id');
             }
-            $merchants = $query->paginate(request()->get('limit', 50))->get();
+            $merchants = $query->paginate(request()->get('limit', 50));
         }
 
         if ( $merchants->isNotEmpty() )
