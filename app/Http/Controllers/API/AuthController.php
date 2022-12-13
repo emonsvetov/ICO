@@ -76,7 +76,15 @@ class AuthController extends Controller
             }
     
             $user = auth()->guard('web')->user();
-            $user->load(['organization', 'roles']);
+            $user->load(['organization', 'roles'])
+            ->makeVisible(
+                [
+                    'isSuperAdmin',
+                    'isAdmin',
+                    'isManager',
+                    'isParticipant'
+                ]
+            );
     
             $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
     
