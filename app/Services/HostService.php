@@ -5,6 +5,22 @@ namespace App\Services;
 class HostService
 {
     private string $requestHostName;
+    private string $referer = '';
+
+    public function __construct()
+    {
+        $this->setReferer(request()->headers->get('referer'));
+    }
+
+    private function setReferer($referer)
+    {
+        $this->referer = $referer;
+    }
+
+    public function getReferer()
+    {
+        return $this->referer;
+    }
 
     private function setRequestHostName($requestHostName)
     {
@@ -24,7 +40,7 @@ class HostService
     public function isAdminApp()
     {
         $appUrl = env('APP_URL'); //This should be the url of the AdminFrontEnd
-        $referer = request()->headers->get('referer');
+        $referer = $this->getReferer();
 
         if(empty($referer) || empty($appUrl))
         {
