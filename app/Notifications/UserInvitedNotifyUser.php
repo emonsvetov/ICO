@@ -42,15 +42,16 @@ class UserInvitedNotifyUser extends Notification
     /**
      * Get the mail representation of the notification.
      *
-     * @param  mixed  $notifiable
+     * @param mixed $notifiable
      * @return \Illuminate\Notifications\Messages\MailMessage
+     * @throws \Exception
      */
     public function toMail($notifiable)
     {
         $url = app()->call('App\Services\DomainService@makeUrl');
         $tokenUrl = $url . '/invitation?token=' . $this->token;
 
-        return (new InviteParticipantEmail($this->recepient->name, $tokenUrl));
+        return (new InviteParticipantEmail($this->recepient->name, $tokenUrl))->convertToMailMessage();
     }
 
     /**
