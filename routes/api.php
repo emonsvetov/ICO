@@ -99,6 +99,8 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::post('/v1/password/reset', [App\Http\Controllers\API\PasswordController::class, 'reset']);
 
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
+
+    Route::post('/v1/invitation/accept', [App\Http\Controllers\API\InvitationController::class, 'accept']);
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {
@@ -313,7 +315,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 	//Manager invite participant
     Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/inviteResend', [App\Http\Controllers\API\InvitationController::class, 'resend'])->middleware('can:resend,App\Invitation,organization,program');    
-    Route::post('/v1/invitation/accept', [App\Http\Controllers\API\InvitationController::class, 'accept'])->middleware('can:accept,App\Invitation');
 
     // Leaderboard
 

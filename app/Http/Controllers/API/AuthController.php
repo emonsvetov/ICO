@@ -48,7 +48,7 @@ class AuthController extends Controller
     
             $accessToken = $user->createToken('authToken')->accessToken;
     
-            Registered:dispatch($user);
+            event(new Registered($user));
 
             DB::commit();
             
