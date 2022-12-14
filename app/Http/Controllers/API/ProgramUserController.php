@@ -76,6 +76,7 @@ class ProgramUserController extends Controller
         $validated = $request->validated();
 
         $validated['organization_id'] = $organization->id;
+        $validated['email_verified_at'] = now();
         $user = User::createAccount( $validated );
 
         if( $user ) {
