@@ -37,9 +37,8 @@ class PasswordController extends Controller
             'email' => 'required|email',
             'password' => 'required|confirmed'
         ]);
-
         $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation'),
+            $request->only('email', 'password', 'password_confirmation', 'token'),
             function ($user) use ($request) {
                 $user->forceFill([
                     'password' => $request->password,
