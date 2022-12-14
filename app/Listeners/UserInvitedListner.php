@@ -33,7 +33,7 @@ class UserInvitedListner
     {
         $superAdmins = $this->userService->getSuperAdmins();
         Notification::send($superAdmins, new UserInvitedNotifyAdmin( $event->sender, $event->recepient, $event->program ));
-        
+
         Notification::send($event->recepient, new UserInvitedNotifyUser( $event->sender, $event->recepient, $event->program, $event->token ));
     }
 }

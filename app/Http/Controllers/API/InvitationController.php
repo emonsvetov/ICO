@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Notifications\UserInvitedNotifyUser;
+use App\Services\UserService;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -17,11 +20,12 @@ use App\Events\UserInvited;
 use App\Models\Program;
 use App\Models\User;
 use App\Models\Role;
+use stdClass;
 
 class InvitationController extends Controller
 {
     /**
-     * Participant Invitation 
+     * Participant Invitation
      */
     public function invite(InvitationRequest $request, Organization $organization, Program $program)
     {
