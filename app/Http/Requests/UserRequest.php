@@ -56,7 +56,7 @@ class UserRequest extends FormRequest
             'update_id'=> 'nullable|integer',
             'roles' => 'sometimes|required|array', // program specific roles
             'roles.*' => 'sometimes|required|integer',
-            'avatar' => 'sometimes|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
         ];
     }
 
