@@ -109,6 +109,7 @@ class PermissionSeeder extends Seeder
             'user-program-roles',
             'user-status-list',
             'user-status-update',
+            'status-list',
 			'can-invite',
 			'can-invite-resend',
             'program-event-list',
