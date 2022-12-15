@@ -19,7 +19,7 @@ class ProgramsEmailTemplatesTable extends Migration
             $table->string('external_id', 255);
             $table->string('name', 45);
             $table->integer('email_template_type_id');
-            $table->integer('program_account_holder_id');
+            $table->unsignedBigInteger('program_id');
             $table->boolean('default'); //tinyInteger length 1
             $table->integer('email_template_provider'); //tinyint length 4
             $table->string('external_sendgrid_id', 255)->nullable();

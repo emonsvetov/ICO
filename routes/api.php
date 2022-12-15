@@ -281,6 +281,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //EmailTemplate
 
     Route::get('/v1/emailtemplate',[App\Http\Controllers\API\EmailTemplateController::class, 'index'])->middleware('can:viewAny,App\EmailTemplate');
+
     //Award
 
     Route::post('/v1/organization/{organization}/program/{program}/award',[App\Http\Controllers\API\AwardController::class, 'store'])->middleware('can:create,App\Award,organization,program');
@@ -337,7 +338,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::patch('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/event',[App\Http\Controllers\API\LeaderboardEventController::class, 'assign'])->middleware('can:assign,App\LeaderboardEvent,organization,program,leaderboard');
    
     Route::get('/v1/goalplantype',[App\Http\Controllers\API\GoalPlanTypeController::class, 'index'])->middleware('can:viewAny,App\GoalPlanType');
-      //Goal plans
+
+    // Goal plans
+
    Route::post('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'store'])->middleware('can:create,App\GoalPlan,organization,program');
     //->name('api.v1.organization.program.goalplan.store')
    Route::get('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'index'])->name('api.v1.organization.program.goalplan.index')->middleware('can:viewAny,App\GoalPlan,organization,program');
@@ -346,9 +349,14 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
    Route::put('/v1/organization/{organization}/program/{program}/goalplan/{goalplan}', [App\Http\Controllers\API\GoalPlanController::class, 'update'])->name('api.v1.organization.program.goalplan.update')->middleware('can:update,App\GoalPlan,organization,program,goalplan');
    
-   //Route::delete('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}',[App\Http\Controllers\API\LeaderboardController::class, 'delete'])->middleware('can:delete,App\Leaderboard,organization,program,leaderboard');
    Route::delete('/v1/organization/{organization}/program/{program}/goalplan/{goalplan}', [App\Http\Controllers\API\GoalPlanController::class, 'destroy'])->middleware('can:delete,App\GoalPlan,organization,program,goalplan');
+
+    // Program Email templates
+
+    Route::get('/v1/organization/{organization}/program/{program}/programemailtemplate', [App\Http\Controllers\API\ProgramEmailTemplateController::class, 'index'])->name('api.v1.organization.program.programemailtemplate.viewAny')->middleware('can:viewAny,App\ProgramEmailTemplate,organization,program');
+
     // Expiration rules
+
     Route::get('/v1/expirationrule',[App\Http\Controllers\API\ExpirationRuleController::class, 'index'])->middleware('can:viewAny,App\ExpirationRule');
 
     // Invoice
