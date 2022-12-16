@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
 use App\Services\DomainService;
 use App\Models\Organization;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 use App\Models\Domain;
 Use Exception;
@@ -147,5 +148,19 @@ class DomainController extends Controller
 
         return response( ['domain' => $domain, 'program' => $program] );
 
+    }
+
+    public function checkStatus(Organization $organization, Domain $domain )
+    {
+        $args = [
+            'HostedZoneId' => env('AWS_INCENTCO_HOSTED_ZONE_ID'),
+            'StartRecordName' => $domain->name,
+            'MaxItems' => '1'
+        ];
+        $route53Client = App::make('aws')->createClient('Route53');
+        $result = $route53Client->listResourceRecordSets($args)->get('ResourceRecordSets');
+
+
+        return response(['result' => $result]);
     }
 }
