@@ -19,9 +19,9 @@ class ProgramEmailTemplateController extends Controller
      */
     public function index(Organization $organization, Program $program, ProgramEmailTemplateService $programEmailTemplateService)
     {
-        $type = request()->get('type');
+       $type = request()->get('type');
        $programEmailTemplates = $programEmailTemplateService->read_list_program_email_templates_by_type($program, $type);
-       if ( sizeof($programEmailTemplates) > 0 )
+       if (!empty($programEmailTemplates) && sizeof($programEmailTemplates) > 0 )
        {
            return response( $programEmailTemplates );
        }

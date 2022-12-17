@@ -16,10 +16,12 @@ class ProgramEmailTemplateService
     ) {
         $this->programService = $programService;
     }
-
+      /**
+     * @param array $read_list_program_email_templates_by_type
+     * @return array
+     */
     public function read_list_program_email_templates_by_type($program, $type = '') {
-        $offset = 0;
-        $limit = 99999;
+        $offset = 0; $limit = 99999;
 		$params=['program_id'=>$program->id, 'type'=>$type,'offset'=>$offset,'limit'=>$limit];
 		// build the query statement to check if we have this program_account_holder_id
 		$sql = "
@@ -29,11 +31,12 @@ class ProgramEmailTemplateService
         } catch (Exception $e) {
             throw new Exception ( 'Could not get email templates. DB query failed with error:' . $e->getMessage(), 400 );
         }
+        //pr($result); die;
 		if (sizeof ( $result ) == 0) {
 			// scan up the heirarchy to see if we can find a match for this email template.
             $parent_program = $program->parent;
             if (!empty($program->parent)) {
-                return $this->read_list_program_email_templates_by_type ( $program->parent, $type);
+                return $this->read_list_program_email_templates_by_type( $program->parent, $type);
             } else {
                 return false;
             }

@@ -22,12 +22,10 @@ class GoalPlanService
 {
 
     public function __construct(
-        ProgramService $programService,
-		EmailTemplateService $emailTemplate
+        ProgramService $programService
         )
 	{
         $this->programService = $programService;
-		$this->emailTemplateService = $emailTemplate;
     }
 	public function add_goal_plan($data, $organization, $program)
     {   /*
@@ -72,7 +70,7 @@ class GoalPlanService
         [
             'organization_id' => $organization->id,
             'program_id' => $program->id, 
-            'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
+            //'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
             'created_by'=>auth()->user()->id,
         ] );
      	//pr($new_goal_plan);

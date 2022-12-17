@@ -11,7 +11,6 @@ use App\Services\ProgramService;
 use App\Services\GoalPlanService;
 use App\Models\User;
 use App\Models\UserGoal;
-//use App\Models\EmailTemplate;
 //use App\Models\User;
 //use App\Models\Role;
 use DB;
@@ -26,6 +25,9 @@ class GoalPlanController extends Controller
 		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
             return response(['errors' => "You can't add goal plan in this program."], 422);
         }
+        //$request->created_by = auth()->user()->id;
+        //pr($request); die;
+       //'created_by'=>auth()->user()->id,
         $data = $request->validated();
         //$response=[];
         try{

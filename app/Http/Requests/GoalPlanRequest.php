@@ -57,7 +57,7 @@ class GoalPlanRequest extends FormRequest
             'award_per_progress'=>'sometimes|boolean',
             'award_email_per_progress'=>'sometimes|boolean',
             'progress_requires_unique_ref_num'=>'sometimes|boolean',
-            'progress_notification_email_id'=>'required|integer',
+            //'progress_notification_email_id'=>'required|integer',
             //'progress_email_template_id'=>'required|integer',
             'assign_goal_all_participants_default'=>'sometimes|boolean',
             'created_by'=>'required|integer',

@@ -20,7 +20,6 @@ class ProgramEmailTemplatePolicy
     }
     public function viewAny(User $authUser, Organization $organization, Program $program)
     {
-        return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
