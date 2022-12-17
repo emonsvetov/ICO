@@ -109,7 +109,6 @@ class PermissionSeeder extends Seeder
             'user-program-roles',
             'user-status-list',
             'user-status-update',
-            'status-list',
 			'can-invite',
 			'can-invite-resend',
             'program-event-list',
@@ -132,6 +131,8 @@ class PermissionSeeder extends Seeder
             'program-social-wall-post-create',
             'program-social-wall-post-update',
             'program-social-wall-post-delete',
+            'program-list-status',
+            'program-update-status',
         ];
 
         foreach ($permissions as $permission) {

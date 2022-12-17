@@ -4,19 +4,12 @@ namespace App\Services;
 
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
-use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\IdExtractor;
-use App\Models\Traits\Filterable;
-use App\Models\JournalEventType;
-use App\Services\InvoiceService;
 use App\Services\UserService;
-use App\Models\JournalEvent;
 use App\Models\Account;
+use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
-use App\Models\Posting;
-use App\Models\Role;
-use App\Models\User;
 use DB;
 
 class ProgramService
@@ -93,10 +86,6 @@ class ProgramService
 
         $where = [];
 
-        if ($status) {
-            $where[] = ['status', $status];
-        }
-
         if ($sortby == "name") {
             $collation = "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
             $orderByRaw = "{$sortby} {$collation} {$direction}";
@@ -106,8 +95,19 @@ class ProgramService
 
         $query = Program::where($where);
 
-        if ($status && strtolower($status) == 'deleted') {
-            $query = $query->withTrashed();
+        if ($status) {
+            $statuses = explode(',', $status);
+            $statusIds = [];
+            foreach ($statuses as $s){
+                $statusIds[] = Program::getStatusIdByName($s);
+            }
+            $query->whereIn('status_id', $statusIds);
+            $statusIdDeleted = Program::getIdStatusDeleted();
+
+            if( in_array($statusIdDeleted, $statusIds))
+            {
+                $query = $query->withTrashed();
+            }
         }
 
         if ($keyword) {
@@ -144,11 +144,19 @@ class ProgramService
                         if ($notIn) {
                             $subquery = $subquery->whereNotIn('id', $notIn);
                         }
+                        $subquery->with(['status']);
                         return $subquery;
-                    }
+                    },
+                    'status'
                 ]);
             } else {
-                $subquery = $query->with('children');
+                $subquery = $query->with([
+                    'children' => function ($query) {
+                        $query->with(['status']);
+                        return $query;
+                    },
+                    'status'
+                ]);
                 if ($notIn) {
                     $subquery = $subquery->whereNotIn('id', $notIn);
                 }
@@ -542,5 +550,15 @@ class ProgramService
 			}
         }
         return $billable_programs;
+    }
+
+    public function listStatus()
+    {
+        return Status::where('context', 'Programs')->get();
+    }
+
+    public function updateStatus($validated, $program)
+    {
+        return $program->update( ['status_id' => $validated['program_status_id']] );
     }
 }

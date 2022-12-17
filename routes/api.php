@@ -129,8 +129,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/userstatus', [App\Http\Controllers\API\UserStatusController::class, 'index'])->middleware('can:viewAny,App\UserStatus,organization');
     Route::patch('/v1/organization/{organization}/user/{user}/status', [App\Http\Controllers\API\UserStatusController::class, 'update'])->middleware('can:update,App\UserStatus,organization,user');
 
-    //Status
-    Route::get('/v1/organization/{organization}/programstatus', [App\Http\Controllers\API\StatusController::class, 'listProgramStatus'])->middleware('can:viewAny,App\Status,organization');
+    // Program Status
+    Route::get('/v1/organization/{organization}/programstatus', [App\Http\Controllers\API\ProgramStatusController::class, 'index'])->middleware('can:listStatus,App\Program,organization');
+    Route::patch('/v1/organization/{organization}/program/{program}/status', [App\Http\Controllers\API\ProgramStatusController::class, 'update'])->middleware('can:updateStatus,App\Program,organization,program');
 
     Route::get('/v1/organization', [App\Http\Controllers\API\OrganizationController::class, 'index'])->middleware('can:viewAny,App\Organization');
     Route::get('/v1/organization/{organization}', [App\Http\Controllers\API\OrganizationController::class, 'show'])->name('api.v1.organization.show')->middleware('can:view,organization');
