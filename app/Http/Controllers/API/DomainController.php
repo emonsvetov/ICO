@@ -25,7 +25,7 @@ class DomainController extends Controller
         {
             $where[] = ['status', $status];
         }
-        
+
         if( $sortby == 'name' )
         {
             $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
@@ -47,18 +47,18 @@ class DomainController extends Controller
         }
 
         $query = $query->orderByRaw($orderByRaw);
-        
+
         if ( request()->has('minimal') )
         {
             $domains = $query->select('id', 'name')->withOrganization($organization)->get();
         }
-        else 
+        else
         {
             $domains = $query->withOrganization($organization)->paginate(request()->get('limit', 10));
         }
 
-        if ( $domains->isNotEmpty() ) 
-        { 
+        if ( $domains->isNotEmpty() )
+        {
             return response( $domains );
         }
 
@@ -67,8 +67,8 @@ class DomainController extends Controller
 
     public function store(DomainRequest $request, Organization $organization )
     {
-        $newDomain = Domain::create( 
-            $request->validated() + 
+        $newDomain = Domain::create(
+            $request->validated() +
             [
                 'organization_id' => $organization->id
             ]
@@ -85,8 +85,9 @@ class DomainController extends Controller
     public function show( Organization $organization, Domain $domain )
     {
         $domain->domain_ips; //trigger association
+        $domain->getPartOfSecretKey();
 
-        if ( $domain ) 
+        if ( $domain )
         {
             return response( $domain );
         }

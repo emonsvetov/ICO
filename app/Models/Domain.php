@@ -12,13 +12,13 @@ class Domain extends BaseModel
     use HasFactory;
     use SoftDeletes;
     use WithOrganizationScope;
-    
+
     protected $guarded = [];
     protected $hidden = [
         'secret_key',
-        'created_at', 
-        'updated_at', 
-        'deleted_at', 
+        'created_at',
+        'updated_at',
+        'deleted_at',
         'deleted'
     ];
 
@@ -35,5 +35,14 @@ class Domain extends BaseModel
     public function domain_ips()
     {
         return $this->hasMany(DomainIP::class);
+    }
+
+    public function getPartOfSecretKey()
+    {
+        $this->makeVisible(['secret_key']);
+        $len = strlen($this->secret_key);
+        $this->secret_key = substr($this->secret_key, 0, 2)
+            . str_repeat('*', 6)
+            . substr($this->secret_key,$len - 2, 2);
     }
 }
