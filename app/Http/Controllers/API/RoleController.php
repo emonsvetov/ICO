@@ -28,6 +28,7 @@ class RoleController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
         $is_program_role = request()->get('is_program_role');
+        $getBackendRoles = request()->get('getBackendRoles');
         $user = auth()->user();
 
         $orWhere = ['organization_id' => $organization->id, 'organization_id' => null];
@@ -43,9 +44,9 @@ class RoleController extends Controller
             });
         }
 
-        if( !is_null($is_program_role) )  {
-            $query->where('is_program_role', $is_program_role);
-        }
+        // if( !is_null($is_program_role) )  {
+        //     $query->where('is_program_role', $is_program_role);
+        // }
 
         if( !$user->isSuperAdmin() ) {
             $query->where('name', '!=', config('roles.super_admin'));

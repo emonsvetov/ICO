@@ -9,7 +9,11 @@ class HostService
 
     public function __construct()
     {
-        $this->setReferer(request()->headers->get('referer'));
+        $referer = request()->headers->get('referer');
+        if( $referer )
+        {
+            $this->setReferer( $referer );
+        }
     }
 
     private function setReferer($referer)

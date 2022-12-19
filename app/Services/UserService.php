@@ -29,6 +29,68 @@ class UserService
         $this->accountService = $accountService;
     }
 
+    public function getIndexData($organization)
+    {
+        $sortby = request()->get('sortby', 'id');
+        $keyword = request()->get('keyword');
+        $direction = request()->get('direction', 'asc');
+        $status = request()->get('status', '');
+        $orgId = request()->get('orgId', '');
+
+        $where = [];
+
+        $query = User::where($where)->withOrganization($organization);
+
+        if( $keyword )
+        {
+            $query = $query->where(function($query1) use($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                ->orWhere('email', 'LIKE', "%{$keyword}%")
+                ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%");
+            });
+        }
+
+        if( $orgId )
+        {
+            $orgIds = explode(',', $orgId);
+            $query->whereIn('organization_id', $orgIds);
+        }
+
+        if ( $status ){
+            $statuses = explode(',', $status);
+            $statusIds = [];
+            foreach ($statuses as $status){
+                $statusIds[] = User::getStatusIdByName($status);
+            }
+            $query->whereIn('user_status_id', $statusIds);
+        }
+
+        if( $sortby == 'name' )
+        {
+            $orderByRaw = "first_name $direction, last_name $direction";
+        }
+        else
+        {
+            $orderByRaw = "$sortby $direction";
+        }
+
+        $query = $query->orderByRaw($orderByRaw);
+
+        if ( request()->has('minimal') )
+        {
+            $users = $query->select('id', 'first_name', 'last_name')->with(['roles', 'status'])->get();
+        } else {
+            $users = $query->with(['roles', 'status'])->paginate(request()->get('limit', 10));
+        }
+
+        if ( $users->isNotEmpty() )
+        {
+            return $users ;
+        }
+
+        return [];
+    }
+
     public function getSuperAdmins($paginate = false)
     {
         $query = User::whereHas('roles', function (Builder $query) {
