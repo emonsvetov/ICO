@@ -32,7 +32,6 @@ class RoleController extends Controller
         $is_backend_role = request()->get('is_backend_role');
         $user = auth()->user();
 
-        // $orWhere = ['organization_id' => $organization->id];
         $where = [];
 
         DB::enableQueryLog();
