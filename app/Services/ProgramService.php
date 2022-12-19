@@ -371,6 +371,11 @@ class ProgramService
             $data['status_id'] = Program::getStatusIdByName($data['status']); 
             unset($data['status']);
         }
+        else if(empty($data['status_id'])) //if, the status_id also not set
+        {
+            //Set default status
+            $data['status_id'] = Program::getIdStatusActive(); 
+        }
         return Program::createAccount($data);
     }
 
