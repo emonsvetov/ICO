@@ -31,6 +31,7 @@ class AuthServiceProvider extends ServiceProvider
         'App\UserProgram' => 'App\Policies\UserProgramPolicy',
         'App\EventType' => 'App\Policies\EventTypePolicy',
         'App\EmailTemplate' => 'App\Policies\EmailTemplatePolicy',
+        'App\Invitation' => 'App\Policies\InvitationPolicy',
     ];
 
     /**

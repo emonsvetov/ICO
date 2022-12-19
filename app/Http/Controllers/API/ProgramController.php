@@ -20,9 +20,9 @@ use DB;
 
 class ProgramController extends Controller
 {
-    public function index( Organization $organization, ProgramService $programService)
+    public function index( Organization $organization, ProgramService $programService, Request $request)
     {
-        $programs = $programService->index( $organization );
+        $programs = $programService->index( $organization, $request->all() );
 
         if ( $programs->isNotEmpty() )
         {

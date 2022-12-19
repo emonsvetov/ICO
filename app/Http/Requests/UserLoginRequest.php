@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 use App\Services\DomainService;
-use App\Models\User;
 
 class UserLoginRequest extends FormRequest
 {
@@ -23,21 +22,20 @@ class UserLoginRequest extends FormRequest
         return true;
     }
 
-    public function __validateDomainRequest()
-    {
-        return $this->domainService->validateDomainRequest();
-    }
-
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
             try {
-                if( !$this->__validateDomainRequest() )
+                if( !$this->domainService->isAdminAppDomain() )
                 {
-                    $validator->errors()->add('validationError', 'Invalid domain or account');
+                    $isValidDomain = $this->domainService->isValidDomain();
+                    if(is_bool($isValidDomain) && !$isValidDomain)
+                    {
+                        $validator->errors()->add('domain', 'Invalid host, domain or domainKey');
+                    }
                 }
             } catch (\Exception $e) {
-                $validator->errors()->add('validationError', sprintf("%s", $e->getMessage()));
+                $validator->errors()->add('domain', sprintf("%s", $e->getMessage()));
             }
         });
     }
@@ -52,10 +50,7 @@ class UserLoginRequest extends FormRequest
         return [
             'email' => 'required|email',
             'password' => 'required',
-            // 'domain' => [
-            //     "sometimes",
-            //     "regex:/^(?!\-)(?:(?:[a-zA-Z\d][a-zA-Z\d\-]{0,61})?[a-zA-Z\d]\.){1,126}(?!\d+)[a-zA-Z\d]{1,63}$/"
-            // ],
+            'domainKey' => 'sometimes|string'
         ];
     }
 }

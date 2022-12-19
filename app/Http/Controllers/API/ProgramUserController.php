@@ -59,7 +59,7 @@ class ProgramUserController extends Controller
         else {
             $users = $query->with(['roles' => function ($query) use($program) {
                 $query->wherePivot('program_id', '=', $program->id);
-            }])->paginate(request()->get('limit', 20));
+            }, 'status'])->paginate(request()->get('limit', 20));
         }
 
         if ( $users->isNotEmpty() )
@@ -76,6 +76,7 @@ class ProgramUserController extends Controller
         $validated = $request->validated();
 
         $validated['organization_id'] = $organization->id;
+        $validated['email_verified_at'] = now();
         $user = User::createAccount( $validated );
 
         if( $user ) {
@@ -117,7 +118,6 @@ class ProgramUserController extends Controller
 
         return response([ 'success' => true ]);
     }
-
 
     public function readBalance(Organization $organization, Program $program, User $user, UserService $userService)
     {

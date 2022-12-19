@@ -14,6 +14,13 @@ class Domain extends BaseModel
     use WithOrganizationScope;
     
     protected $guarded = [];
+    protected $hidden = [
+        'secret_key',
+        'created_at', 
+        'updated_at', 
+        'deleted_at', 
+        'deleted'
+    ];
 
     public function programs()
     {

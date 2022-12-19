@@ -8,7 +8,7 @@ use http\Exception\RuntimeException;
 class ReportFactory
 {
 
-    public static function build(string $title = '', array $params = [])
+    public function build(string $title = '', array $params = [])
     {
         $programs = isset($params['programs']) ? $params['programs'] : null;
         $programs = $programs ? explode(',', $programs) : [];

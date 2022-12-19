@@ -107,6 +107,8 @@ class PermissionSeeder extends Seeder
             'user-program-add',
             'user-program-remove',
             'user-program-roles',
+            'user-status-list',
+            'user-status-update',
 			'can-invite',
 			'can-invite-resend',
             'program-event-list',
