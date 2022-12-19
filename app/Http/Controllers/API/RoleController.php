@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\API;
+use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RoleRequest;
@@ -28,13 +29,20 @@ class RoleController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
         $is_program_role = request()->get('is_program_role');
-        $getBackendRoles = request()->get('getBackendRoles');
+        $is_backend_role = request()->get('is_backend_role');
         $user = auth()->user();
 
-        $orWhere = ['organization_id' => $organization->id, 'organization_id' => null];
-        // $where = [];
+        // $orWhere = ['organization_id' => $organization->id];
+        $where = [];
 
-        $query = Role::where( $orWhere );
+        DB::enableQueryLog();
+
+        $query = Role::where( $where );
+
+        $query = $query->where(function($query1) use($organization) {
+            $query1->orWhere('organization_id', $organization->id)
+            ->orWhere('organization_id', null);
+        });
 
         if( $keyword )
         {
@@ -44,9 +52,13 @@ class RoleController extends Controller
             });
         }
 
-        // if( !is_null($is_program_role) )  {
-        //     $query->where('is_program_role', $is_program_role);
-        // }
+        if( !is_null($is_program_role) )  {
+            $query->where('is_program_role', $is_program_role ? 1 : 0);
+        }
+
+        if( !is_null($is_backend_role) )  {
+            $query->where('is_backend_role', $is_backend_role ? 1 : 0);
+        }
 
         if( !$user->isSuperAdmin() ) {
             $query->where('name', '!=', config('roles.super_admin'));
@@ -70,6 +82,8 @@ class RoleController extends Controller
         } else {
             $roles = $query->paginate(request()->get('limit', 20));
         }
+
+        // dd(DB::getQueryLog());
 
         if ( $roles->isNotEmpty() )
         {
