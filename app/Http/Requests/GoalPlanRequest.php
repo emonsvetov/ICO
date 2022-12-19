@@ -60,7 +60,7 @@ class GoalPlanRequest extends FormRequest
             //'progress_notification_email_id'=>'required|integer',
             //'progress_email_template_id'=>'required|integer',
             'assign_goal_all_participants_default'=>'sometimes|boolean',
-            'created_by'=>'required|integer',
+            //'created_by'=>'required|integer',
              'modified_by'=>'integer',
              'expired',
         ];
