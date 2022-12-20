@@ -84,7 +84,7 @@ class DomainController extends Controller
 
     public function show( Organization $organization, Domain $domain )
     {
-        $domain->domain_ips; //trigger association
+        $domain->load(['domain_ips'])->makeVisible(['secret_key']);
 
         if ( $domain ) 
         {
