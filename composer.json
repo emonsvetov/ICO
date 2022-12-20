@@ -6,6 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^7.4|^8.0",
+        "aws/aws-sdk-php-laravel": "^3.7",
         "barryvdh/laravel-dompdf": "^2.0",
         "buildrr/tango-raas-api": "^1.0",
         "doctrine/dbal": "^3.3",
