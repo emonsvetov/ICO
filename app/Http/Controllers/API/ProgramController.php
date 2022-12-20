@@ -32,11 +32,11 @@ class ProgramController extends Controller
         return response( [] );
     }
 
-    public function store(ProgramRequest $request, Organization $organization)
+    public function store(ProgramRequest $request, Organization $organization, ProgramService $programService)
     {
         if ( $organization )
         {
-            $newProgram = Program::createAccount(
+            $newProgram = $programService->create(
                 $request->validated() +
                 ['organization_id' => $organization->id]
             );
@@ -61,7 +61,7 @@ class ProgramController extends Controller
 
         if ( $program )
         {
-            $program->load(['domains', 'merchants', 'template', 'organization', 'address']);
+            $program->load(['domains', 'merchants', 'template', 'organization', 'address', 'status']);
             return response( $program );
         }
 

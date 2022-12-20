@@ -28,6 +28,10 @@ class Program extends BaseModel
 
     protected $guarded = [];
 
+    const STATUS_ACTIVE = 'Active';
+    const STATUS_DELETED = 'Deleted';
+    const STATUS_LOCKED = 'Locked';
+
     public function resolveSoftDeletableRouteBinding($value, $field = null)
     {
         return parent::resolveSoftDeletableRouteBinding($value, $field);
@@ -45,7 +49,7 @@ class Program extends BaseModel
 
     public function children()
     {
-        return $this->hasMany(Program::class, 'parent_id')->with('children');
+        return $this->hasMany(Program::class, 'parent_id')->with(['children', 'status']);
     }
 
     public function events()
@@ -302,5 +306,48 @@ class Program extends BaseModel
     public static function getFlatTree(): Collection
     {
         return self::tree()->depthFirst()->get();
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class, 'status_id');
+    }
+
+    public static function getStatusByName( $status ) {
+        return Status::getByNameAndContext($status, 'Programs');
+    }
+
+    public static function getStatusIdByName( $status ) {
+        return self::getStatusByName($status)->id;
+    }
+
+    public static function getStatusActive()
+    {
+        return self::getStatusByName(self::STATUS_ACTIVE);
+    }
+
+    public static function getIdStatusActive()
+    {
+        return self::getStatusActive()->id;
+    }
+
+    public static function getStatusDeleted()
+    {
+        return self::getStatusByName(self::STATUS_DELETED);
+    }
+
+    public static function getIdStatusDeleted()
+    {
+        return self::getStatusDeleted()->id;
+    }
+
+    public static function getStatusLocked()
+    {
+        return self::getStatusByName(self::STATUS_LOCKED);
+    }
+
+    public static function getIdStatusLocked()
+    {
+        return self::getStatusLocked()->id;
     }
 }
