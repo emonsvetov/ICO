@@ -14,9 +14,7 @@ class OrganizationController extends Controller
 {
     public function index()
     {
-        
-        $organization = Organization::orderBy('name')
-                                    ->get();
+        $organization = Organization::orderBy('name')->get();
 
         if ( $organization->isNotEmpty() ) 
         { 

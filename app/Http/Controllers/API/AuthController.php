@@ -102,7 +102,7 @@ class AuthController extends Controller
                 }
             }
 
-            throw new \Exception ('Unknow error: Invalid domain or user');
+            throw new \Exception ('Unknown error: Invalid domain or user');
         }
         catch(\Exception $e)
         {

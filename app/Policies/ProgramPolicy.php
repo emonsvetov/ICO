@@ -108,5 +108,19 @@ class ProgramPolicy
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
         return $user->can('program-transfer-monies');
+    }    
+    
+    public function listStatus(User $user, Organization $organization)
+    {
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-list-status');
+    }
+
+    public function updateStatus(User $user, Organization $organization, Program $program)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-update-status');
     }
 }
