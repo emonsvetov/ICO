@@ -246,6 +246,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/program/{program}/user/{user}',
     [App\Http\Controllers\API\ProgramUserController::class, 'delete'])->middleware('can:remove,App\ProgramUser,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/userToAssign', [App\Http\Controllers\API\ProgramUserController::class, 'userToAssign'])->middleware('can:viewAny,App\ProgramUser,organization,program');
+
+    Route::patch('/v1/organization/{organization}/program/{program}/user/{user}/assignRole', [App\Http\Controllers\API\ProgramUserController::class, 'assignRole'])->middleware('can:assignRole,App\ProgramUser,organization,program,user');
+
     //UserProgram routes
 
     Route::get('/v1/organization/{organization}/user/{user}/program', [App\Http\Controllers\API\UserProgramController::class, 'index'])->middleware('can:viewAny,App\UserProgram,organization,user');
