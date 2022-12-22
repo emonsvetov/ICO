@@ -14,7 +14,6 @@ class CreateProcedureGetRoot extends Migration
      */
     public function up()
     {
-        DB::unprepared('DROP PROCEDURE IF EXISTS `getProgramRoot`');
         DB::unprepared(
             '
                 CREATE PROCEDURE `getProgramRoot`(
@@ -32,7 +31,6 @@ class CreateProcedureGetRoot extends Migration
                 END
         ');
 
-        DB::unprepared('DROP FUNCTION IF EXISTS `getProgramRoot`');
         DB::unprepared(
     '
             CREATE FUNCTION `getProgramRoot`(`uid` BIGINT)
