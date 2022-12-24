@@ -86,6 +86,7 @@ class PermissionSeeder extends Seeder
             'program-user-update',
             'program-user-remove',
             'program-user-readbalance',
+            'program-user-assign-role',
             'role-list',
             'role-view',
             'role-create',
