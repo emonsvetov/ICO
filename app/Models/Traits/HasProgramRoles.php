@@ -6,6 +6,7 @@ use App\Models\Domain;
 use App\Models\Role;
 use App\Models\User;
 use DB;
+use Hamcrest\Type\IsBoolean;
 
 trait HasProgramRoles
 {
@@ -283,14 +284,20 @@ trait HasProgramRoles
         if( $withPermission ) return $this->can( $withPermission );
         return false;
     }
-    public function syncProgramRoles($programId, array $roles ) {
-        if( !$programId || !$roles ) return;
-        $newRoles = [];
-        $columns = ['program_id' => $programId];
-        $this->roles()->wherePivot('program_id','=',$programId)->detach();
-        foreach($roles as $role_id)    {
-            $newRoles[$role_id] = $columns;
-        }
-        $this->roles()->attach( $newRoles );
+    public function syncProgramRoles($programId, array $roles, bool $allowEmpty = false ) {
+        if( !$programId ) return;
+        if( !$allowEmpty && !$roles ) return;
+
+        $this->roles()->wherePivot('program_id', '=', $programId)->detach();
+
+        if( $roles )
+        {
+            $newRoles = [];
+            $columns = ['program_id' => $programId];
+            foreach($roles as $role_id)    {
+                $newRoles[$role_id] = $columns;
+            }
+            $this->roles()->attach( $newRoles );
+        } 
     }
 }
