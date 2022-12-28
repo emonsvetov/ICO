@@ -30,7 +30,8 @@ class CsvImport extends BaseModel
 
     public function createCsvImport($fileUpload)
     {
-        $path = Storage::disk('s3')->put($fileUpload['organization_id'] . '/uploads', $fileUpload['upload-file']);
+        $disk = config('app.env') == 'local' ? 'local' : 's3';
+        $path = Storage::disk($disk)->put($fileUpload['organization_id'] . '/uploads', $fileUpload['upload-file']);
 
         $csv = [
             'organization_id'       => $fileUpload['organization_id'],

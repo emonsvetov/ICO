@@ -80,23 +80,24 @@ class EventImportController extends Controller
             'csv_import_type_id'    => CsvImportType::getIdByType('add_events')
         ]);
 
-        ImportEventValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants);
+        // ImportEventValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants);
+        // // Add a useful message. Not sure how to handle the completion of the job
+        // return response(['csvImport' => $newCsvImport]);
 
-        // $csvService = new CSVimportService;
+        $csvService = new CSVimportService;
+
         // $importData =  $csvService->importFile($request->file('upload-file'), $request->fieldsToMap, $supplied_constants);
+        $importData =  $csvService->importFile($newCsvImport, $request->fieldsToMap, $supplied_constants);
         // return $importData;
 
-        /*
         if ( empty($importData['errors']) )
         {
             //import data
             try
             {
                 $eventIds = DB::transaction(function() use ($importData, $supplied_constants) {
-                
                     $createdEventIds = [];
                     $event = new Event;
-
                     foreach ($importData['EventRequest'] as $key => $eventData) 
                     {    
                         $newEvent = $event->create($eventData + [
@@ -105,24 +106,22 @@ class EventImportController extends Controller
                         ]);
                         $createdEventIds[] = $newEvent->id;
                     }
-                });  
+                    return $createdEventIds;
+                });
             }
             catch (\Throwable $e)
             {
                 $errors = ['errors' => 'ImportEventForProgramJob with error: ' . $e->getMessage() . ' in line ' . $e->getLine()];
                 Log::error($errors);
                 return $errors;
-            } 
-            // return $createdUserIds;
-              
+            }
+            return response(['csvImport' => $newCsvImport, 'importIds' => $eventIds]);
         }
         else {
             Log::error(json_encode($importData));
-            return $importData;
+            return response(['message'=>'Errors while validating import data', 'errors' => $importData['errors']], 422);
             //return errors via notifications
         }
-        */
-
     }
 
 }
