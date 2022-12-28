@@ -19,11 +19,20 @@ class ProgramTemplateService
      */
     public function create(ProgramTemplateRequest $request, Program $program): ?ProgramTemplate
     {
+        $validated = $request->validated();
+        $fieldsToCreate = [
+            'welcome_message' => isset($validated['welcome_message']) && $validated['welcome_message'] == 'null' ? null : $validated['welcome_message'] ?? null,
+            'button_color' => isset($validated['button_color']) &&  $validated['button_color'] == 'null' ? null : $validated['button_color'] ?? null,
+            'button_bg_color' => isset($validated['button_bg_color']) &&  $validated['button_bg_color'] == 'null' ? null : $validated['button_bg_color'] ?? null,
+            'button_corner' => $validated['button_corner'],
+            'font_family' => isset($validated['font_family']) &&  $validated['font_family'] == 'null' ? null : $validated['font_family'] ?? null,
+            'name' => $validated['name'],
+        ];
         $newProgramTemplate = ProgramTemplate::create(
-            ['program_id' => $program->id] + $request->validated()
+            ['program_id' => $program->id] + $fieldsToCreate
         );
 
-        $uploads = $this->handleProgramTemplateMediaUpload($request, $program);
+        $uploads = $this->handleProgramTemplateMediaUpload($request, $program, $newProgramTemplate);
 
         if ($uploads) {
             $newProgramTemplate->update($uploads);
@@ -59,11 +68,11 @@ class ProgramTemplateService
         } else {
             $validated = $request->validated();
             $fieldsToUpdate = [
-                'welcome_message' => $validated['welcome_message'] == 'null' ? null : $validated['welcome_message'],
-                'button_color' => $validated['button_color'],
-                'button_bg_color' => $validated['button_bg_color'],
+                'welcome_message' => isset($validated['welcome_message']) && $validated['welcome_message'] == 'null' ? null : $validated['welcome_message'] ?? null,
+                'button_color' => isset($validated['button_color']) &&  $validated['button_color'] == 'null' ? null : $validated['button_color'] ?? null,
+                'button_bg_color' => isset($validated['button_bg_color']) &&  $validated['button_bg_color'] == 'null' ? null : $validated['button_bg_color'] ?? null,
                 'button_corner' => $validated['button_corner'],
-                'font_family' => $validated['font_family'] == 'null' ? null : $validated['font_family'],
+                'font_family' => isset($validated['font_family']) &&  $validated['font_family'] == 'null' ? null : $validated['font_family'] ?? null,
                 'name' => $validated['name'],
             ];
 
