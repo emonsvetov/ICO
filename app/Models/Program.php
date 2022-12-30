@@ -108,6 +108,14 @@ class Program extends BaseModel
         if(!isset($data['expiration_rule_id']))   {
             $data['expiration_rule_id'] = 3; //End of Next Year
         }
+        if (!empty($data['status'])) { //If status present in string format
+            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : self::getStatusIdByName($data['status']);
+            unset($data['status']);
+        }
+        if( empty($data['status_id']) )
+        {   //set default status to "Active"
+            $data['status_id'] = self::getIdStatusActive(); 
+        }
         $program = parent::create($data + ['account_holder_id' => $program_account_holder_id]);
         $liability = FinanceType::getIdByName('Liability');
         $asset = FinanceType::getIdByName('Asset', true);

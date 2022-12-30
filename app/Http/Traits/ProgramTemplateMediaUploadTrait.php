@@ -5,7 +5,7 @@ use App\Models\ProgramTemplate;
 use Illuminate\Support\Facades\Storage;
 
 trait ProgramTemplateMediaUploadTrait {
-    public function handleProgramTemplateMediaUpload( $request, $program, $updating = false ) {
+    public function handleProgramTemplateMediaUpload( $request, $program, $programTemplate, $updating = false ) {
         $uploads = [];
         foreach( ProgramTemplate::IMAGE_FIELDS as $field ) {
             if($request->hasFile($field)) {
@@ -14,7 +14,7 @@ trait ProgramTemplateMediaUploadTrait {
                     $uploads[$field] = $logo->store('programs/' . $program['id']);
                     //try to find and delete old file
                     if( $updating ) {
-                        $oldFile = $program[$field];
+                        $oldFile = $programTemplate[$field];
                         if( $oldFile )  {
                             Storage::delete( $oldFile );
                         }

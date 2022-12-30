@@ -14,9 +14,8 @@ class EventRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+      return true;
     }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -44,7 +43,7 @@ class EventRequest extends FormRequest
             'email_template'=> 'required_if:custom_email_template,true|string',
         ];
     }
-    
+
     public function importRules()
     {
         return [

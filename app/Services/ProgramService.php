@@ -389,9 +389,13 @@ class ProgramService
             }
             unset($data['address']);
         }
-        if (isset($data['status'])) { //If status present in string format
-            $data['status_id'] = Program::getStatusIdByName($data['status']); 
+        if (!empty($data['status'])) { //If status present in string format
+            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : Program::getStatusIdByName($data['status']);
             unset($data['status']);
+        }
+        if( empty($data['status_id']) )
+        {   //set default status to "Active"
+            $data['status_id'] = Program::getIdStatusActive(); 
         }
         if($program->update($data)) {
             if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
