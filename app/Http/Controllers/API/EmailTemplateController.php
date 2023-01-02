@@ -19,7 +19,12 @@ class EmailTemplateController extends Controller
     {
         //
         $type = request()->get('type');
-        $emailTemplates = EmailTemplate::where('type', $type)->get();
+        $where = [
+            'type' => $type,
+            'organization_id' => $organization->id,
+            'program_id' => $program->id,
+        ];
+        $emailTemplates = EmailTemplate::where($where)->get();
 
         if ( $emailTemplates->isNotEmpty() )
         {
