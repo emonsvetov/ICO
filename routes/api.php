@@ -293,7 +293,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //EmailTemplate
 
-    Route::get('/v1/emailtemplate',[App\Http\Controllers\API\EmailTemplateController::class, 'index'])->middleware('can:viewAny,App\EmailTemplate');
+    Route::get('/v1/organization/{organization}/program/{program}/emailtemplate',[App\Http\Controllers\API\EmailTemplateController::class, 'index'])->middleware('can:viewAny,App\EmailTemplate,organization,program');
     //Award
 
     Route::post('/v1/organization/{organization}/program/{program}/award',[App\Http\Controllers\API\AwardController::class, 'store'])->middleware('can:create,App\Award,organization,program');

@@ -4,7 +4,9 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
-use Illuminate\Http\Request;
+
+use App\Models\Program;
+use App\Models\Organization;
 
 class EmailTemplateController extends Controller
 {
@@ -13,12 +15,11 @@ class EmailTemplateController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Organization $organization, Program $program)
     {
         //
         $type = request()->get('type');
-        $emailTemplates = EmailTemplate::where('type', $type)
-                        ->get();
+        $emailTemplates = EmailTemplate::where('type', $type)->get();
 
         if ( $emailTemplates->isNotEmpty() )
         {
