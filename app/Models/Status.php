@@ -9,6 +9,7 @@ class Status extends Model
 {
     use HasFactory;
     protected $guarded = [];
+    protected $hidden = ['created_at', 'updated_at', 'context'];
 
     public static function getSetByContextAndName( $context, $name, $insert = true ) {
         if( !$context || !$name) return;

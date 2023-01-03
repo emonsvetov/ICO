@@ -129,6 +129,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/userstatus', [App\Http\Controllers\API\UserStatusController::class, 'index'])->middleware('can:viewAny,App\UserStatus,organization');
     Route::patch('/v1/organization/{organization}/user/{user}/status', [App\Http\Controllers\API\UserStatusController::class, 'update'])->middleware('can:update,App\UserStatus,organization,user');
 
+    // Program Status
+    Route::get('/v1/organization/{organization}/programstatus', [App\Http\Controllers\API\ProgramStatusController::class, 'index'])->middleware('can:listStatus,App\Program,organization');
+    Route::patch('/v1/organization/{organization}/program/{program}/status', [App\Http\Controllers\API\ProgramStatusController::class, 'update'])->middleware('can:updateStatus,App\Program,organization,program');
+
     Route::get('/v1/organization', [App\Http\Controllers\API\OrganizationController::class, 'index'])->middleware('can:viewAny,App\Organization');
     Route::get('/v1/organization/{organization}', [App\Http\Controllers\API\OrganizationController::class, 'show'])->name('api.v1.organization.show')->middleware('can:view,organization');
     Route::post('/v1/organization', [App\Http\Controllers\API\OrganizationController::class, 'store'])->name('api.v1.organization.store')->middleware('can:create,App\Organization');
@@ -171,6 +175,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     [App\Http\Controllers\API\DomainIPController::class, 'store'])->name('api.v1.domain_ip.store')->middleware('can:addIp,App\Domain,organization,domain');
     Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}',
     [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.delete')->middleware('can:deleteIp,App\Domain,organization,domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}/check-status',
+        [App\Http\Controllers\API\DomainController::class, 'checkStatus'])->name('api.v1.domain.generateSecretKey')->middleware('can:checkStatus,App\Domain,organization,domain');
 
     //DomainProgram routes
 
@@ -239,6 +245,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::delete('/v1/organization/{organization}/program/{program}/user/{user}',
     [App\Http\Controllers\API\ProgramUserController::class, 'delete'])->middleware('can:remove,App\ProgramUser,organization,program,user');
+
+    Route::get('/v1/organization/{organization}/program/{program}/userToAssign', [App\Http\Controllers\API\ProgramUserController::class, 'userToAssign'])->middleware('can:viewAny,App\ProgramUser,organization,program');
+
+    Route::patch('/v1/organization/{organization}/program/{program}/user/{user}/assignRole', [App\Http\Controllers\API\ProgramUserController::class, 'assignRole'])->middleware('can:assignRole,App\ProgramUser,organization,program,user');
 
     //UserProgram routes
 
@@ -314,7 +324,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'update'])->middleware('can:update,App\ProgramTemplate,organization,program');
 
     Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
-    Route::post('/v1/organization/{organization}/program/{program}/inviteResend', [App\Http\Controllers\API\InvitationController::class, 'resend'])->middleware('can:resend,App\Invitation,organization,program');    
+    Route::post('/v1/organization/{organization}/program/{program}/inviteResend', [App\Http\Controllers\API\InvitationController::class, 'resend'])->middleware('can:resend,App\Invitation,organization,program');
 
     // Leaderboard
 
@@ -390,7 +400,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'getTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'submitTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
-    
+
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);
 

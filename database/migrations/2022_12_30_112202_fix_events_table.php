@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class ChangeIsDemoFieldInProgramsTable extends Migration
+class FixEventsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class ChangeIsDemoFieldInProgramsTable extends Migration
      */
     public function up()
     {
-        Schema::table('programs', function (Blueprint $table) {
-            $table->boolean('is_demo')->nullable(true)->default(0)->change();
+        Schema::table('events', function (Blueprint $table) {
+            $table->boolean('post_to_social_wall')->default(0)->nullable()->change();
         });
     }
 
@@ -25,8 +25,8 @@ class ChangeIsDemoFieldInProgramsTable extends Migration
      */
     public function down()
     {
-        Schema::table('programs', function (Blueprint $table) {
-            $table->boolean('is_demo')->nullable(false)->default(null)->change();
+        Schema::table('events', function (Blueprint $table) {
+            $table->boolean('post_to_social_wall')->default(0)->nullable()->change();
         });
     }
 }

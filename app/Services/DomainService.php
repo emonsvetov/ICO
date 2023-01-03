@@ -150,7 +150,13 @@ class DomainService
     public function makeUrl()
     {
         $domain = $this->getDomain();
-        if( !$domain ) return null;
+        if( !$domain ) {
+            if( $this->isAdminAppDomain() )
+            {
+                return $this->hostService->getReferer();
+            }
+            return null;
+        }
         $host = $this->getDomainHost();
         $port = $this->getDomainPort();
         $scheme = !empty($domain['scheme']) ? $domain['scheme'] : 'http';
@@ -188,6 +194,11 @@ class DomainService
             return true;
         }
         return false;
+    }
+
+    public function getRequestHostName()
+    {
+        return $this->hostService->getRequestHostName();
     }
 
     // public function isValidSystemDomain( $domainName = null ) //is valid system domain

@@ -28,6 +28,10 @@ class Program extends BaseModel
 
     protected $guarded = [];
 
+    const STATUS_ACTIVE = 'Active';
+    const STATUS_DELETED = 'Deleted';
+    const STATUS_LOCKED = 'Locked';
+
     public function resolveSoftDeletableRouteBinding($value, $field = null)
     {
         return parent::resolveSoftDeletableRouteBinding($value, $field);
@@ -45,7 +49,7 @@ class Program extends BaseModel
 
     public function children()
     {
-        return $this->hasMany(Program::class, 'parent_id')->with('children');
+        return $this->hasMany(Program::class, 'parent_id')->with(['children', 'status']);
     }
 
     public function events()
@@ -103,6 +107,14 @@ class Program extends BaseModel
         }
         if(!isset($data['expiration_rule_id']))   {
             $data['expiration_rule_id'] = 3; //End of Next Year
+        }
+        if (!empty($data['status'])) { //If status present in string format
+            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : self::getStatusIdByName($data['status']);
+            unset($data['status']);
+        }
+        if( empty($data['status_id']) )
+        {   //set default status to "Active"
+            $data['status_id'] = self::getIdStatusActive(); 
         }
         $program = parent::create($data + ['account_holder_id' => $program_account_holder_id]);
         $liability = FinanceType::getIdByName('Liability');
@@ -302,5 +314,48 @@ class Program extends BaseModel
     public static function getFlatTree(): Collection
     {
         return self::tree()->depthFirst()->get();
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class, 'status_id');
+    }
+
+    public static function getStatusByName( $status ) {
+        return Status::getByNameAndContext($status, 'Programs');
+    }
+
+    public static function getStatusIdByName( $status ) {
+        return self::getStatusByName($status)->id;
+    }
+
+    public static function getStatusActive()
+    {
+        return self::getStatusByName(self::STATUS_ACTIVE);
+    }
+
+    public static function getIdStatusActive()
+    {
+        return self::getStatusActive()->id;
+    }
+
+    public static function getStatusDeleted()
+    {
+        return self::getStatusByName(self::STATUS_DELETED);
+    }
+
+    public static function getIdStatusDeleted()
+    {
+        return self::getStatusDeleted()->id;
+    }
+
+    public static function getStatusLocked()
+    {
+        return self::getStatusByName(self::STATUS_LOCKED);
+    }
+
+    public static function getIdStatusLocked()
+    {
+        return self::getStatusLocked()->id;
     }
 }

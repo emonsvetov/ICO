@@ -20,15 +20,15 @@ use Illuminate\Support\Collection;
 // use Aws\S3\S3Client;
 
 // Remove after test
-// use App\Models\User;
-// use App\Models\Program;
+use App\Models\User;
+use App\Models\Program;
 
-// use DB;
-// use Mail;
-// use DateTime;
+use DB;
+use Mail;
+use DateTime;
 // use Illuminate\Support\Facades\Notification;
-// use App\Notifications\CSVImportNotification;
-// use App\Mail\templates\WelcomeEmail;
+use App\Notifications\CSVImportNotification;
+use App\Mail\templates\WelcomeEmail;
 
 class UserImportController extends Controller
 {
@@ -108,15 +108,13 @@ class UserImportController extends Controller
             'csv_import_type_id'    => $type
         ]);
 
-        ImportUserForProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants, $validated['setups']);
-
+        // ImportUserForProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants, $validated['setups']);
         
         // remove after test
-        // $csvService = new CSVimportService;
-        // $importData =  $csvService->importFile($newCsvImport, $request->fieldsToMap, $supplied_constants, $request->setups);
+        $csvService = new CSVimportService;
+        $importData =  $csvService->importFile($newCsvImport, $request->fieldsToMap, $supplied_constants, $request->setups);
         // return $importData;
 
-        /*
         if ( empty($importData['errors']) )
         {
             //import data
@@ -184,19 +182,21 @@ class UserImportController extends Controller
                             }
                         }
                     }
-                // WHAT MUST WE DO WITH USER ROLES
+                    // WHAT MUST WE DO WITH USER ROLES
+                    return $createdUserIds;
                 });  
             }
             catch (\Throwable $e)
             {
                 $errors = ['errors' => 'ImportUserForProgramJob with error: ' . $e->getMessage() . ' in line ' . $e->getLine()];
-                return $e;
-            } 
-            // return $createdUserIds;
-              
+                return $errors;
+            }
+            return response(['csvImport' => $newCsvImport, 'importIds' => $userIds]);   
         }
-        else {
+        else 
+        {
             // return $importData;
+            return response(['message'=>'Errors while validating import data', 'errors' => $importData['errors']], 422);
 
             $notifData = [
                 'csv_import_id' => $csvImportId,
@@ -209,7 +209,6 @@ class UserImportController extends Controller
 
             //return errors via notifications
         }
-        */
         
         //$file->getRealPath();
     }

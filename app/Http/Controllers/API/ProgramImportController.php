@@ -14,6 +14,7 @@ use App\Models\CsvImport;
 use App\Models\CsvImportType;
 
 use App\Jobs\ImportProgramValidationJob;
+use App\Jobs\ImportProgramJob;
 
 class ProgramImportController extends Controller
 {
@@ -74,6 +75,30 @@ class ProgramImportController extends Controller
             'csv_import_type_id'    => CsvImportType::getIdByType('add_programs')
         ]);
 
-        ImportProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants);
+        // ImportProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants);
+
+        //Remove after testing!
+        //May need to know validation errors? may be not! If supplied to ImportProgramValidationJob is the import task done for frontend even if there will be validation errors. With thousands of records waiting for validation errors is not logical I think so I will go with Udo on this. So lets remove it after testing.
+
+        try{
+
+            $csvService = new CSVimportService;
+    
+            $importData = $csvService->importFile( $newCsvImport, $validated['fieldsToMap'], $supplied_constants );
+                    
+            if ( !empty($importData['errors']) )
+            {
+                return response(['message'=>'Errors while validating import data', 'errors' => $importData['errors']], 422);
+            }
+
+            ImportProgramJob::dispatch($newCsvImport, $importData, $supplied_constants);
+            
+            return response(['csvImport'=> $newCsvImport]);
+        }
+        catch (\Throwable $e) 
+        {
+            $errors = 'ProgramImportController error: ' . $e->getMessage() . ' in line ' . $e->getLine();
+            return response(['errors'=> 'Error Importing Programs' ,'e' => $errors], 422);
+        }
     }
 }

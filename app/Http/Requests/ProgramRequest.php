@@ -27,7 +27,8 @@ class ProgramRequest extends FormRequest
             'parent_id'            => 'nullable|integer',
             'name'                  => 'required|string',
             'type'                  => 'required|string',
-            'status'                => 'nullable|string',
+            // 'status'                => 'sometimes|nullable|string', //(to be removed)
+            'status_id'                => 'nullable|integer',
             'setup_fee'             => 'required|numeric',
             'is_demo'             => 'boolean|nullable',
             'factor_valuation'=>'required|integer',
@@ -170,7 +171,7 @@ class ProgramRequest extends FormRequest
     {
         return [
             'type'                  => 'mustComeFromList:default,employee,resident,shell',
-            'status'                => 'mustComeFromList:active,deleted,locked',
+            'status_id' => 'mustComeFromModel:Status|matchWith:status|use:id|filter:context,=,Programs',
         ];
     }
 }

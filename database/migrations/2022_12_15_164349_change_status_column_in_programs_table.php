@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class ChangeIsDemoFieldInProgramsTable extends Migration
+class ChangeStatusColumnInProgramsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -14,7 +14,9 @@ class ChangeIsDemoFieldInProgramsTable extends Migration
     public function up()
     {
         Schema::table('programs', function (Blueprint $table) {
-            $table->boolean('is_demo')->nullable(true)->default(0)->change();
+            $table->dropColumn('status');
+            $table->unsignedBigInteger('status_id')->after('type')->nullable();
+            $table->foreign('status_id')->references('id')->on('statuses');
         });
     }
 
@@ -26,7 +28,8 @@ class ChangeIsDemoFieldInProgramsTable extends Migration
     public function down()
     {
         Schema::table('programs', function (Blueprint $table) {
-            $table->boolean('is_demo')->nullable(false)->default(null)->change();
+            $table->dropColumn('status_id');
+            $table->enum('status', ['active', 'deleted', 'locked'])->after('type')->default('active');
         });
     }
 }

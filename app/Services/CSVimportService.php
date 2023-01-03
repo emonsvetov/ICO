@@ -30,26 +30,42 @@ class CSVimportService
         //To detect Mac line endings
         ini_set('auto_detect_line_endings',TRUE);
 
-        //$filepath = $file->getRealPath();
-        //$filepath = $file['path'];
-        // $handle = fopen($filepath, 'r');
+        if ( $file instanceof \Illuminate\Http\UploadedFile )
+        {
+            $filepath = $file->getRealPath();
+        }
+        else if ( $file instanceof \App\Models\CsvImport )
+        {
+            $filepath = $file['path'];
+            if ( config('app.env') == 'local' )
+            {
+                $filepath = '../storage/app/' . $filepath;
+            }
+        }
 
-        $client = new S3Client([
-            'credentials' => [
-                'key'    =>  env('AWS_ACCESS_KEY_ID'),
-                'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            ],
-            'region' => env('AWS_DEFAULT_REGION'),
-            'version' => 'latest',
-        ]);
+        if(config('app.env') == 'local')
+        {
+            $handle = fopen($filepath, 'r');
+        }
+        else 
+        {
+            $client = new S3Client([
+                'credentials' => [
+                    'key'    =>  env('AWS_ACCESS_KEY_ID'),
+                    'secret' => env('AWS_SECRET_ACCESS_KEY'),
+                ],
+                'region' => env('AWS_DEFAULT_REGION'),
+                'version' => 'latest',
+            ]);
 
-        // Register the stream wrapper from an S3Client object
-        $client->registerStreamWrapper();
+            // Register the stream wrapper from an S3Client object
+            $client->registerStreamWrapper();
 
-        $bucket = env('AWS_BUCKET');
-        $key = $file['path'];
+            $bucket = env('AWS_BUCKET');
+            $key = $file['path'];
 
-        $handle = fopen("s3://{$bucket}/{$key}", 'r');
+            $handle = fopen("s3://{$bucket}/{$key}", 'r');
+        }
         
         $line = 0;
         $saveData = [];
@@ -84,10 +100,16 @@ class CSVimportService
 
                             $fieldsWithImportRules = $formRequestClass->importRules();
                         }
+
+                        //Initialize to avoid "Undefined array key" below (line 136, may change)
+                        if( !isset( $saveData[$formRequest][$line] ) )
+                        {
+                            $saveData[$formRequest][$line] = [];
+                        }
                         
                         foreach ($fieldsToMap as $dbField => $csvField)
                         {                    
-                            $csvFieldValue = isset($headers[$csvField]) ? trim($filedata[$headers[$csvField]]) : NULL;                        
+                            $csvFieldValue = isset($headers[$csvField]) ? trim($filedata[$headers[$csvField]]) : NULL;
 
                             if ( !empty( $fieldsWithImportRules[$dbField] ) )
                             {

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class ChangeIsDemoFieldInProgramsTable extends Migration
+class AddColumnNameToProgramTemplates extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,8 @@ class ChangeIsDemoFieldInProgramsTable extends Migration
      */
     public function up()
     {
-        Schema::table('programs', function (Blueprint $table) {
-            $table->boolean('is_demo')->nullable(true)->default(0)->change();
+        Schema::table('program_templates', function (Blueprint $table) {
+            $table->string('name')->nullable()->default('Original')->after('id');
         });
     }
 
@@ -25,8 +25,8 @@ class ChangeIsDemoFieldInProgramsTable extends Migration
      */
     public function down()
     {
-        Schema::table('programs', function (Blueprint $table) {
-            $table->boolean('is_demo')->nullable(false)->default(null)->change();
+        Schema::table('program_templates', function (Blueprint $table) {
+            $table->dropColumn('name');
         });
     }
 }

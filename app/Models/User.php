@@ -217,6 +217,10 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return Status::getByNameAndContext($status, 'Users');
     }
 
+    public static function getStatusIdByName( $status ) {
+        return self::getStatusByName($status)->id;
+    }
+
     public static function getIdStatusActive()
     {
         return self::getStatusActive()->id;

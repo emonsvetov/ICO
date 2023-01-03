@@ -5,7 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-class CreateProcedureGetRoot extends Migration
+class CreateProcedureGetRootV2 extends Migration
 {
     /**
      * Run the migrations.
@@ -14,9 +14,11 @@ class CreateProcedureGetRoot extends Migration
      */
     public function up()
     {
+        DB::unprepared('DROP PROCEDURE IF EXISTS `getProgramRoot`');
+        DB::unprepared('DROP FUNCTION IF EXISTS `getProgramRoot`');
         DB::unprepared(
             '
-                CREATE PROCEDURE `getProgramRoot`(
+             CREATE PROCEDURE `getProgramRoot`(
                     IN `uid` BIGINT,
                     OUT `resultId` BIGINT
                 ) NOT DETERMINISTIC CONTAINS SQL
@@ -30,9 +32,8 @@ class CreateProcedureGetRoot extends Migration
                     SELECT SUBSTRING_INDEX(path, ",", 1) as root_id FROM tree WHERE id = uid INTO resultId;
                 END
         ');
-
         DB::unprepared(
-    '
+            "
             CREATE FUNCTION `getProgramRoot`(`uid` BIGINT)
             RETURNS INT DETERMINISTIC CONTAINS SQL
             BEGIN
@@ -40,7 +41,7 @@ class CreateProcedureGetRoot extends Migration
                 CALL getProgramRoot(uid, resultId);
                 RETURN resultId;
             END
-        ');
+        ");
     }
 
     /**
@@ -50,12 +51,7 @@ class CreateProcedureGetRoot extends Migration
      */
     public function down()
     {
-        DB::unprepared(
-            '
-                DROP PROCEDURE IF EXISTS `getProgramRoot`;
-                DROP FUNCTION IF EXISTS `getProgramRoot`;
-            '
-        );
-
+        DB::unprepared('DROP PROCEDURE IF EXISTS `getProgramRoot`');
+        DB::unprepared('DROP FUNCTION IF EXISTS `getProgramRoot`');
     }
 }
