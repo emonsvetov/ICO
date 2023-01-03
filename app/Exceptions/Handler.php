@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Http\Exceptions\PostTooLargeException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -34,6 +35,26 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
+
+        $this->renderable(function (Throwable $e, $request) {
+            if ($request->is('api/*')) {
+
+                if($e instanceof PostTooLargeException){
+                    return response()->json([
+                        "errors" => "Size of attached file should be less ".ini_get("upload_max_filesize")."b",
+                        'code' => 413
+                    ], 413);
+                }
+
+                $code = $e->getCode();
+                $code = $code ?: 500;
+                return response()->json([
+                    'errors' => isset($e->validator) && $e->validator ? $e->validator->getMessageBag() : $e->getMessage(),
+                    'code' => $code
+                ], $code);
+            }
+        });
+
         $this->reportable(function (Throwable $e) {
             //
         });
