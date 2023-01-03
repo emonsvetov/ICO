@@ -32,17 +32,22 @@ class EventIconController extends Controller
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
-        $icons = [];
-        if($request->has('icon')) {
-            foreach($request->file('icon') as $icon) {
-                $path = $icon->store('eventIcons');
-                $icons[] = $created = EventIcon::create([
-                    "name" => $icon->getClientOriginalName(),
-                    "path" => $path,
-                    "organization_id" => $organization->id
-                ]);
+        try {
+            $icons = [];
+            if($request->has('image')) {
+                foreach($request->file('image') as $icon) {
+                    $path = $icon->store('eventIcons');
+                    $icons[] = $created = EventIcon::create([
+                        "name" => $icon->getClientOriginalName(),
+                        "path" => $path,
+                        "organization_id" => $organization->id
+                    ]);
+                }
             }
+        } catch (\Exception $e )    {
+            return response(['errors' => $e->getMessage()], 422);
         }
+
         return response()->json($icons);
     }
 
