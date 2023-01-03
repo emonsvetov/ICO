@@ -26,9 +26,7 @@ class EmailTemplateRequest extends FormRequest
             'name' => 'required|string',
             'content'=> 'required|string',
             'type'=> 'required|string',
-            'is_default'=> 'boolean|nullable',
-            'organization_id'=> 'required|integer',
-            'program_id'=> 'required|integer'
+            'is_default'=> 'boolean|nullable'
         ];
     }
 
