@@ -7,12 +7,9 @@ use Illuminate\Http\Request;
 
 use App\Services\ProgramEventService;
 use App\Http\Requests\EventRequest;
-use App\Models\ParticipantGroup;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Event;
-use App\Models\EmailTemplate;
-use DB;
 
 class EventController extends Controller
 {

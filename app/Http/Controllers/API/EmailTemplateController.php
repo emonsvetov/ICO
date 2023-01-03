@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\EmailTemplateRequest;
+use App\Services\EmailTemplateService;
 use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
 
@@ -18,12 +20,15 @@ class EmailTemplateController extends Controller
     public function index(Organization $organization, Program $program)
     {
         //
-        $type = request()->get('type');
         $where = [
-            'type' => $type,
             'organization_id' => $organization->id,
             'program_id' => $program->id,
         ];
+        $type = request()->get('type');
+        if( $type )
+        {
+            $where['type'] = $type;
+        }
         $emailTemplates = EmailTemplate::where($where)->get();
 
         if ( $emailTemplates->isNotEmpty() )
@@ -33,4 +38,15 @@ class EmailTemplateController extends Controller
         return response( [] );
     }
 
+    public function update(EmailTemplateRequest $request, Organization $organization, Program $program, EmailTemplate $emailTemplate, EmailTemplateService $emailTemplateService )
+    {
+        $validated = $request->validated();
+        try {
+            return response(['emailTemplate' => $emailTemplateService->update($emailTemplate, $validated)]);
+        }
+        catch(\Throwable $e)
+        {
+            return response(['errors' => 'Error updating email template', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
+        }
+    }
 }
