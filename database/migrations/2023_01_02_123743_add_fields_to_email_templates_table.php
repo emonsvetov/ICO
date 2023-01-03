@@ -14,8 +14,8 @@ class AddFieldsToEmailTemplatesTable extends Migration
     public function up()
     {
         Schema::table('email_templates', function (Blueprint $table) {
-            $table->foreignId('organization_id')->nullable()->constrained()->onDelete('cascade');
-            $table->foreignId('program_id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('organization_id')->after('id')->nullable()->constrained()->onDelete('cascade');
+            $table->foreignId('program_id')->after('organization_id')->nullable()->constrained()->onDelete('cascade');
         });
     }
 

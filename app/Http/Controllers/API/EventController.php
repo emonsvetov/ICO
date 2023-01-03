@@ -59,7 +59,10 @@ class EventController extends Controller
     {
         $validated = $request->validated();
         try {
-            return response(['event' => $programEventService->update($event, $validated + ['organization_id' => $organization->id])]);
+            return response(['event' => $programEventService->update($event, $validated + [
+                'organization_id' => $organization->id, 
+                'program_id' => $program->id
+            ])]);
         }
         catch(\Throwable $e)
         {
