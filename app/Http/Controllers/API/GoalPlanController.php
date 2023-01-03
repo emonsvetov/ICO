@@ -21,29 +21,18 @@ class GoalPlanController extends Controller
     public function store(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlanService $goalplanservice)
     {
         //pr($request->all()); die;
-        //pr('test');
-       // pr($request); die;
-        $response=[];
+       // $response=[];
 		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
             return response(['errors' => "You can't add goal plan in this program."], 422);
         }
-        //$request->created_by = auth()->user()->id;
-        //pr($request); die;
-       //'created_by'=>auth()->user()->id,
         $data = $request->validated();
-        //$response=[];
         try{
-            $new_goal_plan= $goalplanservice->add_goal_plan($data,$organization,$program);
-            if(!empty($new_goal_plan['goal_plan'])) {
-               return $new_goal_plan;
-            } else {
-                return $response(['errors' => "Goal plan Creation failed"], 422);
-            }   
+            $response= $goalplanservice->add_goal_plan($data,$organization,$program);
+            return response($response);
 
         } catch (\Exception $e )    {
-            return response(['errors' => $e->getMessage()], 422);
+            return response(['errors' => 'Goal plan Creation failed','e'=>$e->getMessage()], 422);
         }
-        return $new_goal_plan;
 	}
 
     public function index( Organization $organization, Program $program )

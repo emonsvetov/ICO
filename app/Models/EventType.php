@@ -13,6 +13,8 @@ class EventType extends Model
         'updated_at',
         'deleted',
     ];
+    const EVENT_TYPE_STANDARD = 'Standard';
+    const EVENT_TYPE_BADGE = 'Badge';
 
     /**
      * @param string $type
@@ -52,5 +54,17 @@ class EventType extends Model
     {
         return self::getIdByType(self::getEventTypePeer2PeerAllocation());
     }
+    public static function getIdByName( $name)   {
+        $row = self::where('name', $name)->first();
+        $id = $row->id ?? null;
+        return $id;
+    }    
+
+    public static function getIdByTypeStandard( $insert = false)   {
+        return self::getIdByName(self::EVENT_TYPE_STANDARD);
+    } 
+    public static function getIdByTypeBadge( $insert = false)   {
+        return self::getIdByName(self::EVENT_TYPE_BADGE);
+    }   
 
 }

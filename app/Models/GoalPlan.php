@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Status;
+use App\Models\GoalPlanType;
+use Illuminate\Validation\ValidationException;
 
 class GoalPlan extends BaseModel
 {

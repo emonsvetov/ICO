@@ -12,6 +12,8 @@ use App\Models\Program;
 use App\Services\ProgramService;
 use App\Models\User;
 use App\Models\UserGoal;
+use App\Models\Event;
+use App\Models\EventType;
 use App\Models\GoalPlanType;
 use App\Models\ExternalCallback;
 use App\Models\EmailTemplate;
@@ -27,8 +29,11 @@ class GoalPlanService
 	{
         $this->programService = $programService;
     }
-	public function add_goal_plan($data, $organization, $program)
-    {   /*
+	public function add_goal_plan( $data, $organization, $program)
+
+    {   
+		//pr($data); die;
+		/*
 		//TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		//CALLBACK_TYPE_GOAL_MET=Goal Met 
 		 // If the program does not allow goals, kick them out
@@ -45,27 +50,29 @@ class GoalPlanService
         array_unshift($goal_exceeded_program_callbacks, $empty_callback);
         */
 		//CALLBACK_TYPE_GOAL_MET = Goal Met
-		$goal_met_program_callbacks = ExternalCallback::read_list_by_type($program->account_holder_id,'Goal Met');
-		//pr($email_templates); die;
-		if( empty($data['date_begin']) )   {
-            $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
-         }
-		// Default custom expire date to 1 year from today
-         if( empty($data['date_end']) )   { //default custom expire date to 1 year from today
-            $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
-         }
+		//$goal_met_program_callbacks = ExternalCallback::read_list_by_type($program->account_holder_id,'Goal Met');
         //$request->goal_measurement_label = '$';
-         $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+        // $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		 //--TO DO
          // All goal plans use standard events except recognition goal
-         $event_type_needed = 1;//standard
+         $event_type_needed = EventType::getIdByTypeStandard();//standard
          //if Recognition Goal selected then set 
-         if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::GOAL_PLAN_TYPE_RECOGNITION)) {
-            $event_type_needed = 5; // Badge event type; - TO DO need some constant here
+         if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::getIdByTypeRecognition())) {
+            $event_type_needed = EventType::getIdByTypeBadge(); // Badge event type; - TO DO need some constant here
          }
+		 //TO DO
+		 /*if ($this->programs_model->is_shell_program ( $program_account_holder_id )) {
+			throw new InvalidArgumentException ( 'Invalid "program_account_holder_id" passed, you cannot create a goal plan in a shell program', 400 );
+		}
+		if (! isset ( $goal_plan->goal_measurement_label )) {
+			$goal_plan->goal_measurement_label = '';
+		}*/
+		  //--TO DO
         /* TO DO - Get the appropriate events for this goal plan type - this is old site code - TO DO
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
         // ), 0, 9999);*/
+		//throw new RuntimeException ( "Invalid Goal Plan Type: " . $goal_plan_type->type . ".", 400 );*/
         $new_goal_plan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
@@ -95,15 +102,15 @@ class GoalPlanService
     {
 		$response=[];
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
-		if( empty($data['date_begin']) )   {
+		/*if( empty($data['date_begin']) )   {
             $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
          }
 		// Default custom expire date to 1 year from today
          if( empty($data['date_end']) )   { //default custom expire date to 1 year from today
             $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
-         }
+         }*/
         //$request->goal_measurement_label = '$';
-         $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+         //$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
          // All goal plans use standard events except recognition goal
          $event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
@@ -145,7 +152,9 @@ class GoalPlanService
 		//pr($program);
 		$response=[];
         $users =  $this->programService->getParticipants($program, true);
-        $users->load('status');
+		if(!empty($users)) {
+        	$users->load('status');
+		}
        //TO DO to implement this large function 
 	   //$data = $this->users_model->readParticipantListWithProgramAwardLevelObject((int) $account_holder_id, 0, '', 0, $max, 'last_name', 'asc', array());
 	    $available_statuses = array("Active","TO DO Activation","New");
