@@ -44,6 +44,8 @@ class ProgramEventService
             $template['name']  = $data['template_name'];
             $template['content']= $data['email_template'];
             $template['type']= 'program_event';
+            $template['organization_id']= $data['organization_id'];
+            $template['program_id']= $data['program_id'];
             $data['email_template_id'] = EmailTemplate::insertGetId( $template);
             unset($data['custom_email_template']);
             unset($data['template_name']);

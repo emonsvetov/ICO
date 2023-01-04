@@ -31,6 +31,7 @@ class PermissionSeeder extends Seeder
             'domain-delete-program',
             'domain-listAvailableProgramsToAdd',
             'emailtemplate-list',
+            'emailtemplate-edit',
             'event-list',
             'event-view',
             'event-create',
