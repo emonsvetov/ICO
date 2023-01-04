@@ -25,6 +25,10 @@ class GoalPlanController extends Controller
 		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
             return response(['errors' => "You can't add goal plan in this program."], 422);
         }
+        if ($program->isShellProgram()) {
+            return response(['errors' => "Invalid program id passed, you cannot create a goal plan in a shell program"], 422);
+        }
+        
         $data = $request->validated();
         try{
             $response= $goalplanservice->add_goal_plan($data,$organization,$program);

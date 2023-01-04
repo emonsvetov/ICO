@@ -92,7 +92,9 @@ class GoalPlanRequest extends FormRequest
             $request['date_end'] = date('Y-m-d', strtotime('+1 year'));
          }
         //$request->goal_measurement_label = '$';
+        //pr($request); die;
          $request['state_type_id'] = GoalPlan::calculateStatusId($request['date_begin'], $request['date_end']);
+        // $request['state_type_id']=1;
          $archived_event = Event::getEvent($request['achieved_event_id']);
 		if(!empty($archived_event)) 
 		$archived_event->load('eventType');
