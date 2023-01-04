@@ -49,8 +49,9 @@ class Handler extends ExceptionHandler
                 $code = $e->getCode();
                 $code = $code ?: 500;
                 return response()->json([
-                    'errors' => isset($e->validator) && $e->validator ? $e->validator->getMessageBag() : $e->getMessage(),
-                    'code' => $code
+                    'errors' => isset($e->validator) && $e->validator ? $e->validator->getMessageBag() : $e->getMessage() . (env('APP_ENV') != 'production' ? sprintf(' in line: %d of file: %s', $e->getLine(), $e->getFile()): ''),
+                    'code' => $code,
+                    'trace' => env('APP_ENV') != 'production' ? $e->getTrace() : ''
                 ], $code);
             }
         });
