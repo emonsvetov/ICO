@@ -22,7 +22,7 @@ class BaseModel extends Model
         return $id;
     }
 
-    public function getByNameAndContext( $name, $context ) {
+    public static function getByNameAndContext( $name, $context ) {
         return Status::getByNameAndContext($name, $context);
     }
 }
