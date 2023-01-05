@@ -148,7 +148,7 @@ class ProgramUserController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        $where = ['organization_id' => $organization->id];
+        $where = ['organization_id' => $program->organization_id]; //Only users from same organization can be assigned to a program
 
         $query = User::where($where);
 
