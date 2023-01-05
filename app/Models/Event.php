@@ -49,6 +49,13 @@ class Event extends Model
         $query = self::where('organization_id', $organization->id)
             ->where('program_id', $program->id);
 
+        $include_disabled = request()->get('disabled', false);
+
+        if( !$include_disabled )
+        {
+            $query->where('enable', true);
+        }
+
         if (isset($params['type'])){
             $types = explode(',', $params['type']);
             $typeIds = [];
