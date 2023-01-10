@@ -5,11 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Status;
+use App\Models\GoalPlanType;
+use Illuminate\Validation\ValidationException;
 
 class GoalPlan extends BaseModel
 {
     use HasFactory;
     protected $guarded = [];
+    const CONFIG_PROGRAM_USES_GOAL_TRACKER = 1;
 
     public function goalPlanType()
     {
@@ -18,26 +21,26 @@ class GoalPlan extends BaseModel
     public function status()    {
         return $this->belongsTo(Status::class,'state_type_id');
     }
-    public function getStatusByName( $status ) {
+    public static function getStatusByName( $status ) {
         return self::getByNameAndContext($status, 'Goals');
     }   
     
-    public function getActiveStatusId() {
+    public static function getActiveStatusId() {
         $status = self::getByNameAndContext('Active', 'Goals');
         if( $status->exists()) return  $status->id;
         return null;
     }
-    public function getFutureStatusId() {
+    public static function getFutureStatusId() {
         $status = self::getByNameAndContext('Future', 'Goals');
         if( $status->exists()) return  $status->id;
         return null;
     }
-    public function getExpiredStatusId() {
+    public static function getExpiredStatusId() {
         $status = self::getByNameAndContext('Expired', 'Goals');
         if( $status->exists()) return  $status->id;
         return null;
     }
-    public function calculateStatusId($date_begin, $date_end) {
+    public static function calculateStatusId($date_begin, $date_end) {
         $today = today()->format('Y-m-d');
         if($date_end < $today)
             $status_id = self::getExpiredStatusId();

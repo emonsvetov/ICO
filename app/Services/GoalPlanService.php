@@ -12,7 +12,12 @@ use App\Models\Program;
 use App\Services\ProgramService;
 use App\Models\User;
 use App\Models\UserGoal;
+use App\Models\Event;
+use App\Models\EventType;
 use App\Models\GoalPlanType;
+use App\Models\ExternalCallback;
+use App\Models\EmailTemplate;
+//use App\Services\EmailTemplateService;
 use DateTime;
 
 class GoalPlanService 
@@ -24,51 +29,42 @@ class GoalPlanService
 	{
         $this->programService = $programService;
     }
-	public function add_goal_plan($data, $organization, $program)
-    {
-		$response=[];
-		
-        //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
-		//CALLBACK_TYPE_GOAL_MET=Goal Met 
-        /*
-		 // If the program does not allow goals, kick them out
-        if (!$this->config_fields[CONFIG_PROGRAM_USES_GOAL_TRACKER]->value) {
-            redirect('/manager/program-settings');
-        }
-		$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET);
+	public function add_goal_plan( $data, $organization, $program)
+    {   
+		/* TO DO
+		$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET); //CALLBACK_TYPE_GOAL_MET = Goal Met
         $goal_exceeded_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_EXCEEDED);
-        $email_templates = $this->email_templates_model->read_list_program_email_templates_by_type((int) $this->program->account_holder_id, "Goal Progress", 0, 9999);
         $empty_callback = new stdClass();
         $empty_callback->id = 0;
         $empty_callback->name = $this->lang->line('txt_none');
         array_unshift($goal_met_program_callbacks, $empty_callback);
         array_unshift($goal_exceeded_program_callbacks, $empty_callback);
         */
-		if( empty($data['date_begin']) )   {
-            $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
-         }
-		// Default custom expire date to 1 year from today
-         if( empty($data['date_end']) )   { //default custom expire date to 1 year from today
-            $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
-         }
-        //$request->goal_measurement_label = '$';
-         $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		 /* TO DO
          // All goal plans use standard events except recognition goal
-         $event_type_needed = 1;//standard
+         $event_type_needed = EventType::getIdByTypeStandard();//standard
          //if Recognition Goal selected then set 
-         if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::GOAL_PLAN_TYPE_RECOGNITION)) {
-            $event_type_needed = 5; // Badge event type; - TO DO need some constant here
+         if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::getIdByTypeRecognition())) {
+            $event_type_needed = EventType::getIdByTypeBadge(); // Badge event type; - TO DO need some constant here
          }
-        /* TO DO - Get the appropriate events for this goal plan type - this is old site code - TO DO
-        //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
-        // $event_type_needed,
-        // ), 0, 9999);*/
+		 // Get the appropriate events for this goal plan type
+        $events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
+            $event_type_needed,
+        ), 0, 9999);
+		 */
+		 //TO DO
+		 /*if ($this->programs_model->is_shell_program ( $program_account_holder_id )) {
+			throw new InvalidArgumentException ( 'Invalid "program_account_holder_id" passed, you cannot create a goal plan in a shell program', 400 );
+		}
+		if (! isset ( $goal_plan->goal_measurement_label )) {
+			$goal_plan->goal_measurement_label = '';
+		}*/
+		
         $new_goal_plan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
-            //'state_type_id'=>1, //TO DO - not found in create function of old system
             'program_id' => $program->id, 
-            'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
+            //'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
             'created_by'=>auth()->user()->id,
         ] );
      	//pr($new_goal_plan);
@@ -76,7 +72,7 @@ class GoalPlanService
         if (!empty($new_goal_plan->id)) {
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
-            if($data['assign_goal_all_participants_default']==1)	{
+			if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
                 //$new_goal_plan->id = $result;
                 $assign_response =self::assign_all_participants_now($new_goal_plan, $program);
 				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
@@ -93,15 +89,15 @@ class GoalPlanService
     {
 		$response=[];
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
-		if( empty($data['date_begin']) )   {
+		/*if( empty($data['date_begin']) )   {
             $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
          }
 		// Default custom expire date to 1 year from today
          if( empty($data['date_end']) )   { //default custom expire date to 1 year from today
             $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
-         }
+         }*/
         //$request->goal_measurement_label = '$';
-         $data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+         //$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
          // All goal plans use standard events except recognition goal
          $event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
@@ -118,7 +114,7 @@ class GoalPlanService
         if (!empty($updated_goal_plan)) {
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
-            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'] == 1)	{
+            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
                 $assign_response =self::assign_all_participants_now($goalplan, $program);
 				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
             }
@@ -140,9 +136,12 @@ class GoalPlanService
 	    //$max = 50000;
         //This is temporary solution - TO DO implemntation of original function
         //pr($goal_plan);
+		//pr($program);
 		$response=[];
         $users =  $this->programService->getParticipants($program, true);
-        $users->load('status');
+		if(!empty($users)) {
+        	$users->load('status');
+		}
        //TO DO to implement this large function 
 	   //$data = $this->users_model->readParticipantListWithProgramAwardLevelObject((int) $account_holder_id, 0, '', 0, $max, 'last_name', 'asc', array());
 	    $available_statuses = array("Active","TO DO Activation","New");
@@ -181,6 +180,7 @@ class GoalPlanService
 				
 				$date_begin = new DateTime ( $user_goal['date_begin'] );
 				$date_end = new DateTime ( $user_goal['date_end'] );
+
 				if ($date_end < $date_begin) {
 					//no need to loop other users and stop it here because goal plan data is same for all
 					//it should be in validation code -TO DO
@@ -191,7 +191,6 @@ class GoalPlanService
 				unset($user_goal['date_end']);
 
 				$response = self::add_user_goal($goal_plan, $user_goal);
-	
 				if(isset($response['already_assigned'])) {
 					$already_assigned[]=$user_id; // User is already assigned to this goal plan
 					continue;
@@ -294,7 +293,7 @@ class GoalPlanService
 			$future_ugp['target_value'] = $future_goal_plan->default_target;
 		}
 		if ($user_goal->factor_before == $goal_plan->factor_before) {
-			$future_ugp['factor_before'] = $future_goal_plan->factor_before;
+ 			$future_ugp['factor_before'] = $future_goal_plan->factor_before;
 		}
 		if ($user_goal->factor_after == $goal_plan->factor_after) {
 			$future_ugp['factor_after'] = $future_goal_plan->factor_after;

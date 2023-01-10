@@ -582,7 +582,6 @@ class ProgramService
         }
         return $billable_programs;
     }
-
     public function listStatus()
     {
         return Status::where('context', 'Programs')->get();
@@ -591,5 +590,15 @@ class ProgramService
     public function updateStatus($validated, $program)
     {
         return $program->update( ['status_id' => $validated['program_status_id']] );
+    }
+
+    public function get_parent_program_by_account($program_account_holder_id)  {
+        $program = Program::where('account_holder_id', $program_account_holder_id)->select(['id', 'account_holder_id','parent_id'])->get()->first();
+        $program->load('parent');
+        if(!empty($program->parent)) {
+            return $program->parent;
+        } else {
+            return false;
+        }
     }
 }

@@ -78,4 +78,10 @@ class Event extends Model
             ->get();
     }
 
+    public static function getEvent($id)
+    {
+        $event = Event::find($id);  
+        return $event; 
+    }
+
 }
