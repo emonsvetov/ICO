@@ -14,9 +14,8 @@ class EventRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+      return true;
     }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -26,32 +25,32 @@ class EventRequest extends FormRequest
     {
         return [
             'name' => 'required|string',
-			'enable'=> 'sometimes|boolean|nullable',
-			'event_type_id'=> 'required|numeric',
-			'event_icon_id'=> 'sometimes|integer',
-			'max_awardable_amount'=> ['required', new Decimal82()],
-			'email_template_id'=> 'sometimes|integer',
-			'post_to_social_wall'=> 'nullable|boolean',
-			'message'=> 'required|string',
-			'include_in_budget'=> 'boolean|nullable',
-			'enable_schedule_award'=> 'boolean|nullable',
-			'is_birthday_award'=> 'boolean|nullable',
-			'is_anniversary_award'=> 'boolean|nullable',
-			'award_message_editable'=> 'boolean|nullable',
-			'ledger_code'=> 'numeric|nullable',
+            'enable'=> 'sometimes|boolean|nullable',
+            'event_type_id'=> 'required|numeric',
+            'event_icon_id'=> 'sometimes|integer',
+            'max_awardable_amount'=> ['required', new Decimal82()],
+            'post_to_social_wall'=> 'nullable|boolean',
+            'message'=> 'required|string',
+            'include_in_budget'=> 'boolean|nullable',
+            'enable_schedule_award'=> 'boolean|nullable',
+            'is_birthday_award'=> 'boolean|nullable',
+            'is_anniversary_award'=> 'boolean|nullable',
+            'award_message_editable'=> 'boolean|nullable',
+            'ledger_code'=> 'numeric|nullable',
+            'email_template_id'=> 'sometimes|integer',
             'custom_email_template' =>'sometimes|boolean',
-            // 'template_name'=> 'required |string',
-            // 'email_template'=> 'required |string',
+            'template_name'=> 'required_if:custom_email_template,true|string',
+            'email_template'=> 'required_if:custom_email_template,true|string',
         ];
     }
-    
+
     public function importRules()
     {
         return [
             'organization_id'=> 'mustExistInModel:Organization|use:id|hide:true|provided:true',
-			'event_type_id'=> 'mustComeFromModel:EventType|matchWith:type|use:id',
-			'event_icon_id'=> 'mustComeFromModel:EventIcon|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
-			'email_template_id'=> 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
+            'event_type_id'=> 'mustComeFromModel:EventType|matchWith:type|use:id',
+            'event_icon_id'=> 'mustComeFromModel:EventIcon|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
+            'email_template_id'=> 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
             'post_to_social_wall'=> 'required|boolean',
             'custom_email_template' =>'hide:true',
         ];

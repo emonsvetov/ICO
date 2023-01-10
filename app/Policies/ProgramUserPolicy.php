@@ -85,4 +85,15 @@ class ProgramUserPolicy
         if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;
         return $user->can('program-user-readbalance');
     }
+
+    public function assignRole(User $authUser, Organization $organization, Program $program, User $user)
+    {
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+
+        if($authUser->isAdmin()) return true;
+        return $user->can('program-user-assign-role');
+    }
 }

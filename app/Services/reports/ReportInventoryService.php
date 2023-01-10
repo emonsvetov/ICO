@@ -90,6 +90,68 @@ class ReportInventoryService extends ReportServiceAbstract
         return $this->table;
     }
 
+    protected function getReportForCSV(): array
+    {
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data = $this->getTable();
+        $tmpData = [];
+        $tmpRow = [];
+//        print_r($data);
+//        die;
+        foreach ($data['data']['report'] as $merchant_id => $inventory_data) {
+            $tmpRow = [];
+            $tmpRow[] = $inventory_data->name;
+            foreach ($data['data']['skuValues'] as $sku_value) {
+                $value = '-';
+                $sku_value_amount = number_format($sku_value, 2, '.',
+                    ''); // Get rid of commas and set to 2 decimal places
+                if (isset ($inventory_data->on_hand [$sku_value_amount]) && $inventory_data->on_hand [$sku_value_amount] != 'na') {
+                    $value = $inventory_data->on_hand[$sku_value_amount];
+                }
+                $tmpRow[] = $value;
+            }
+            foreach ($data['data']['skuValues'] as $sku_value) {
+                $value = '-';
+                $sku_value_amount = number_format($sku_value, 2, '.',
+                    ''); // Get rid of commas and set to 2 decimal places
+                if (isset ($inventory_data->optimal_values [$sku_value_amount]) && $inventory_data->optimal_values [$sku_value_amount] != 'na') {
+                    $value = $inventory_data->optimal_values[$sku_value_amount];
+                }
+                $tmpRow[] = $value;
+            }
+            foreach ($data['data']['skuValues'] as $sku_value) {
+                $value = '-';
+                $sku_value_amount = number_format($sku_value, 2, '.', '');
+                if (isset ($inventory_data->percent_remaining [$sku_value_amount])) {
+                    if (( string )$inventory_data->percent_remaining [$sku_value_amount] == "^") {
+                        $value = '^';
+                    } else {
+                        if ($inventory_data->percent_remaining [$sku_value_amount] != 'na') {
+                            $value = number_format($inventory_data->percent_remaining [$sku_value_amount] * 100, 0, '.',
+                                    '') . "%";
+                        }
+                    }
+                }
+                $tmpRow[] = $value;
+            }
+            $value = '-';
+            if ($inventory_data->cost_basis == "^") {
+                $value = '^';
+            } else if ($inventory_data->cost_basis != '0') {
+                $value = '$' . number_format ( $inventory_data->cost_basis, 2, '.', '' );
+            }
+            $tmpRow[] = $value;
+            $tmpData[] = $tmpRow;
+        }
+
+        $result = [
+            'data' => $tmpData,
+            'headers' => [] // $this->getCsvHeaders(),
+            ];
+        return $result;
+    }
+
     public function getCsvHeaders(): array
     {
         return [

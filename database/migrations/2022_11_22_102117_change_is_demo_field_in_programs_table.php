@@ -13,9 +13,9 @@ class ChangeIsDemoFieldInProgramsTable extends Migration
      */
     public function up()
     {
-Schema::table('programs', function (Blueprint $table) {
-    $table->boolean('is_demo')->nullable(true)->default(0)->change();
-});
+        Schema::table('programs', function (Blueprint $table) {
+            $table->boolean('is_demo')->nullable(true)->default(0)->change();
+        });
     }
 
     /**

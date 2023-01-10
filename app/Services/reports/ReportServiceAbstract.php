@@ -2,6 +2,7 @@
 
 namespace App\Services\reports;
 
+use App\Services\UserService;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -25,8 +26,12 @@ abstract class ReportServiceAbstract
 
     protected array $params;
     protected array $table = [];
+    /**
+     * @var ReportHelper|null
+     */
+    protected $reportHelper;
 
-    public function __construct(array $params = [])
+    public function __construct(array $params = [], array $services = [])
     {
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
@@ -35,6 +40,8 @@ abstract class ReportServiceAbstract
         $this->params[self::SQL_OFFSET] = $params[self::SQL_OFFSET] ?? null;
         $this->params[self::EXPORT_CSV] = $params[self::EXPORT_CSV] ?? null;
         $this->params[self::MERCHANTS] = isset($params[self::MERCHANTS]) && is_array($params[self::MERCHANTS]) ? $params[self::MERCHANTS] : [];
+
+        $this->reportHelper = new ReportHelper() ?? null;
     }
 
     /**

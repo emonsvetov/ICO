@@ -3,60 +3,34 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Services\ProgramService;
 use Illuminate\Http\Request;
 
+use App\Services\ProgramEventService;
 use App\Http\Requests\EventRequest;
-use App\Models\ParticipantGroup;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Event;
-use App\Models\EmailTemplate;
-use DB;
 
 class EventController extends Controller
 {
-
     public function index( Organization $organization, Program $program, Request $request )
     {
         return response(Event::getIndexData($organization, $program, $request->all()) ?? []);
     }
 
-    public function store(EventRequest $request, Organization $organization, Program $program)
+    public function store(EventRequest $request, Organization $organization, Program $program, ProgramEventService $programEventService)
     {
         $validated = $request->validated();
-        if(isset($validated['custom_email_template'])){
-            $template['name']  = $validated['template_name'];
-            $template['content']= $validated['email_template'];
-            $template['type']= 'program_event';
-            $newTemplate = EmailTemplate::create( $template);
-            if ( !$newTemplate )
-            {
-                return response(['errors' => 'Email Template Creation failed'], 422);
-            }
-            $validated['email_template_id'] = $newTemplate->id;
+        try {
+            return response(['event' => $programEventService->create($validated + [
+                'organization_id' => $organization->id,
+                'program_id' => $program->id
+            ])]);
         }
-
-        unset($validated['custom_email_template']);
-        unset($validated['template_name']);
-        unset($validated['email_template']);
-
-        $newEvent = Event::create(
-                                    $validated +
-                                    [
-                                        'organization_id' => $organization->id,
-                                        'program_id' => $program->id
-                                    ]
-                                );
-
-        if ( !$newEvent )
+        catch(\Throwable $e)
         {
-            return response(['errors' => 'Event Creation failed'], 422);
+            return response(['errors' => 'Event Creation failed', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
         }
-
-
-
-        return response([ 'event' => $newEvent ]);
     }
 
     public function show( Organization $organization, Program $program, Event $event )
@@ -77,36 +51,31 @@ class EventController extends Controller
         return response( [] );
     }
 
-    public function update(EventRequest $request, Organization $organization, Program $program, Event $event )
+    public function update(EventRequest $request, Organization $organization, Program $program, Event $event, ProgramEventService $programEventService )
     {
-        if ( !( $organization->id == $program->organization_id && $program->id == $event->program_id ) )
-        {
-            return response(['errors' => 'Invalid Organization or Program'], 422);
-        }
-
-        if ( $event->organization_id != $organization->id )
-        {
-            return response(['errors' => 'No Program Found'], 404);
-        }
-
         $validated = $request->validated();
-        if(isset($validated['custom_email_template'])){
-            $template['name']  = $validated['template_name'];
-            $template['content']= $validated['email_template'];
-            $template['type']= 'program_event';
-            $newTemplate = EmailTemplate::create( $template);
-            if ( !$newTemplate )
-            {
-                return response(['errors' => 'Email Template Creation failed'], 422);
-            }
-            $validated['email_template_id'] = $newTemplate->id;
+        try {
+            return response(['event' => $programEventService->update($event, $validated + [
+                'organization_id' => $organization->id, 
+                'program_id' => $program->id
+            ])]);
         }
+        catch(\Throwable $e)
+        {
+            return response(['errors' => 'Error updating program event', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
+        }
+    }
 
-        unset($validated['custom_email_template']);
-        unset($validated['template_name']);
-        unset($validated['email_template']);
-        $event->update( $validated );
-
-        return response([ 'event' => $event ]);
+    public function delete(Organization $organization, Program $program, Event $event )
+    {
+        try {
+            $deleted = ['deleted' => 1];
+            $event->delete();
+            return response( $deleted );
+        }
+        catch(\Throwable $e)
+        {
+            return response(['errors' => 'Error deleting program event', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
+        }
     }
 }

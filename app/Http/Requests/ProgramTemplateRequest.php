@@ -24,6 +24,7 @@ class ProgramTemplateRequest extends FormRequest
     public function rules()
     {
         return [
+            'name' => 'string|required',
             'small_logo' => 'sometimes|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
             'big_logo' => 'sometimes|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
             'hero_banner' => 'sometimes|image|mimes:jpeg,png,jpg,gif,ico|max:2048',

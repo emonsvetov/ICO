@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use \Staudenmeir\LaravelAdjacencyList\Eloquent\HasRecursiveRelationships;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -27,6 +28,10 @@ class Program extends BaseModel
 
     protected $guarded = [];
 
+    const STATUS_ACTIVE = 'Active';
+    const STATUS_DELETED = 'Deleted';
+    const STATUS_LOCKED = 'Locked';
+
     public function resolveSoftDeletableRouteBinding($value, $field = null)
     {
         return parent::resolveSoftDeletableRouteBinding($value, $field);
@@ -44,7 +49,7 @@ class Program extends BaseModel
 
     public function children()
     {
-        return $this->hasMany(Program::class, 'parent_id')->with('children');
+        return $this->hasMany(Program::class, 'parent_id')->with(['children', 'status']);
     }
 
     public function events()
@@ -103,6 +108,14 @@ class Program extends BaseModel
         if(!isset($data['expiration_rule_id']))   {
             $data['expiration_rule_id'] = 3; //End of Next Year
         }
+        if (!empty($data['status'])) { //If status present in string format
+            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : self::getStatusIdByName($data['status']);
+            unset($data['status']);
+        }
+        if( empty($data['status_id']) )
+        {   //set default status to "Active"
+            $data['status_id'] = self::getIdStatusActive(); 
+        }
         $program = parent::create($data + ['account_holder_id' => $program_account_holder_id]);
         $liability = FinanceType::getIdByName('Liability');
         $asset = FinanceType::getIdByName('Asset', true);
@@ -146,13 +159,13 @@ class Program extends BaseModel
         );
 
         Account::create_multi_accounts ( $program_account_holder_id, $default_accounts );
-        
+
         //TODO ??
         // $this->tie_sub_program ( $program_account_holder_id, $program_account_holder_id );
 
         // $default_participant_role_id = Role::getIdByNameAndOrg("Participant", $program->organization_id);
 
-        // $this->award_levels_model->create ( $program_account_holder_id, 'default' ); 
+        // $this->award_levels_model->create ( $program_account_holder_id, 'default' );
 
         $program->create_setup_fee_account();
 
@@ -199,7 +212,7 @@ class Program extends BaseModel
             $currency_id
         );
     }
-    
+
     public function programIsInvoiceForAwards(): bool
     {
         if ($this->invoice_for_awards || $this->factor_valuation != 1) {
@@ -270,7 +283,7 @@ class Program extends BaseModel
      * If no domain found for a program, then try to get parent program's domain;
      * TODO: Discuss "get domain" approach with team.
      */
-    public function getDomain() 
+    public function getDomain()
     {
         if( $this->domains->isNotEmpty())   {
             return $this->domains->first();
@@ -296,5 +309,53 @@ class Program extends BaseModel
             return $domain->name;
         }
         return null;
+    }
+
+    public static function getFlatTree(): Collection
+    {
+        return self::tree()->depthFirst()->get();
+    }
+
+    public function status()
+    {
+        return $this->belongsTo(Status::class, 'status_id');
+    }
+
+    public static function getStatusByName( $status ) {
+        return Status::getByNameAndContext($status, 'Programs');
+    }
+
+    public static function getStatusIdByName( $status ) {
+        return self::getStatusByName($status)->id;
+    }
+
+    public static function getStatusActive()
+    {
+        return self::getStatusByName(self::STATUS_ACTIVE);
+    }
+
+    public static function getIdStatusActive()
+    {
+        return self::getStatusActive()->id;
+    }
+
+    public static function getStatusDeleted()
+    {
+        return self::getStatusByName(self::STATUS_DELETED);
+    }
+
+    public static function getIdStatusDeleted()
+    {
+        return self::getStatusDeleted()->id;
+    }
+
+    public static function getStatusLocked()
+    {
+        return self::getStatusByName(self::STATUS_LOCKED);
+    }
+
+    public static function getIdStatusLocked()
+    {
+        return self::getStatusLocked()->id;
     }
 }

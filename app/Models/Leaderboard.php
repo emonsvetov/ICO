@@ -17,7 +17,7 @@ class Leaderboard extends BaseModel
         return self::getByNameAndContext($status, 'Leaderboards');
     }   
     
-    public function getActiveStatusId() {
+    public static function getActiveStatusId() {
         $status = self::getByNameAndContext('Active', 'Leaderboards');
         if( $status->exists()) return  $status->id;
         return null;

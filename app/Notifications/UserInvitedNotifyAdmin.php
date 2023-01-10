@@ -43,7 +43,10 @@ class UserInvitedNotifyAdmin extends Notification
      */
     public function toMail($notifiable)
     {
+        $address = env("MAIL_FROM_ADDRESS");
+        $name = env("MAIL_FROM_NAME");
         return (new MailMessage)
+            ->from($address, $name)
             ->line(sprintf('%s has invited new user %s as a %s to the program %s(%d)', $this->sender->name, $this->recepient->name, $this->recepient->roles()->first()->name, $this->program->name, $this->program->id))
             ->action('Go to the App', url('/'))
             ->line('Thank you!');

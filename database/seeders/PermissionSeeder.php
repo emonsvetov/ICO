@@ -31,6 +31,7 @@ class PermissionSeeder extends Seeder
             'domain-delete-program',
             'domain-listAvailableProgramsToAdd',
             'emailtemplate-list',
+            'emailtemplate-edit',
             'event-list',
             'event-view',
             'event-create',
@@ -86,6 +87,7 @@ class PermissionSeeder extends Seeder
             'program-user-update',
             'program-user-remove',
             'program-user-readbalance',
+            'program-user-assign-role',
             'role-list',
             'role-view',
             'role-create',
@@ -107,6 +109,8 @@ class PermissionSeeder extends Seeder
             'user-program-add',
             'user-program-remove',
             'user-program-roles',
+            'user-status-list',
+            'user-status-update',
 			'can-invite',
 			'can-invite-resend',
             'program-event-list',
@@ -135,7 +139,9 @@ class PermissionSeeder extends Seeder
             'goal-plan-update',
             'goal-plan-delete',
             'goal-plan-type-list',
-            'expiration-rule-list'
+            'expiration-rule-list',
+            'program-list-status',
+            'program-update-status',
         ];
 
         foreach ($permissions as $permission) {

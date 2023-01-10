@@ -4,19 +4,12 @@ namespace App\Services;
 
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
-use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\IdExtractor;
-use App\Models\Traits\Filterable;
-use App\Models\JournalEventType;
-use App\Services\InvoiceService;
 use App\Services\UserService;
-use App\Models\JournalEvent;
 use App\Models\Account;
+use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
-use App\Models\Posting;
-use App\Models\Role;
-use App\Models\User;
 use DB;
 
 class ProgramService
@@ -45,6 +38,7 @@ class ProgramService
     }
 
     const DEFAULT_PARAMS = [
+        'orgId' => '', //array of organization ids in comma separated
         'status' => '',
         'keyword' => '',
         'sortby' => 'id',
@@ -60,6 +54,7 @@ class ProgramService
     {
         // pr($override);
         $params = [];
+        $orgId = ! empty($override['orgId']) ? $override['orgId'] : request()->get('orgId', '');
         $status = ! empty($override['status']) ? $override['status'] : request()->get('status', '');
         $keyword = ! empty($override['keyword']) ? $override['keyword'] : request()->get('keyword', '');
         $sortby = ! empty($override['sortby']) ? $override['sortby'] : request()->get('sortby', 'id');
@@ -70,6 +65,7 @@ class ProgramService
         $except = ! empty($override['except']) ? $override['except'] : request()->get('except', '');
         $limit = ! empty($override['limit']) ? $override['limit'] : request()->get('limit', 10);
         $paginate = ! empty($override['paginate']) ? $override['paginate'] : request()->get('paginate', true);
+        $params['orgId'] = $orgId;
         $params['status'] = $status;
         $params['keyword'] = $keyword;
         $params['sortby'] = $sortby;
@@ -93,10 +89,6 @@ class ProgramService
 
         $where = [];
 
-        if ($status) {
-            $where[] = ['status', $status];
-        }
-
         if ($sortby == "name") {
             $collation = "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
             $orderByRaw = "{$sortby} {$collation} {$direction}";
@@ -106,8 +98,25 @@ class ProgramService
 
         $query = Program::where($where);
 
-        if ($status && strtolower($status) == 'deleted') {
-            $query = $query->withTrashed();
+        if( $orgId )
+        {
+            $orgIds = explode(',', $orgId);
+            $query->whereIn('organization_id', $orgIds);
+        }
+
+        if ($status) {
+            $statuses = explode(',', $status);
+            $statusIds = [];
+            foreach ($statuses as $s){
+                $statusIds[] = Program::getStatusIdByName($s);
+            }
+            $query->whereIn('status_id', $statusIds);
+            $statusIdDeleted = Program::getIdStatusDeleted();
+
+            if( in_array($statusIdDeleted, $statusIds))
+            {
+                $query = $query->withTrashed();
+            }
         }
 
         if ($keyword) {
@@ -144,11 +153,19 @@ class ProgramService
                         if ($notIn) {
                             $subquery = $subquery->whereNotIn('id', $notIn);
                         }
+                        $subquery->with(['status']);
                         return $subquery;
-                    }
+                    },
+                    'status'
                 ]);
             } else {
-                $subquery = $query->with('children');
+                $subquery = $query->with([
+                    'children' => function ($query) {
+                        $query->with(['status']);
+                        return $query;
+                    },
+                    'status'
+                ]);
                 if ($notIn) {
                     $subquery = $subquery->whereNotIn('id', $notIn);
                 }
@@ -164,10 +181,13 @@ class ProgramService
 
     public function index($organization, $params = [])
     {
+        $all = $params['all'] ?? false;
         $params = array_merge($this->_buildParams(), $params);
-        $query = $this->_buildQuery($organization, $params)
-            ->whereNull('parent_id')
-            ->withOrganization($organization);
+        $query = $this->_buildQuery($organization, $params);
+        if (!$all) {
+            $query->whereNull('parent_id');
+        }
+        $query->withOrganization($organization);
 
         if ($params['minimal']) {
             $results = $query->get();
@@ -345,6 +365,20 @@ class ProgramService
         return $program->descendants()->get()->toTree();
     }
 
+    public function create($data)
+    {
+        if (isset($data['status'])) { //If status present in "string" format
+            $data['status_id'] = Program::getStatusIdByName($data['status']); 
+            unset($data['status']);
+        }
+        else if(empty($data['status_id'])) //if, the status_id also not set
+        {
+            //Set default status
+            $data['status_id'] = Program::getIdStatusActive(); 
+        }
+        return Program::createAccount($data);
+    }
+
     public function update($program, $data)
     {
         if (isset($data['address'])) {
@@ -354,6 +388,14 @@ class ProgramService
                 $program->address()->create($data['address']);
             }
             unset($data['address']);
+        }
+        if (!empty($data['status'])) { //If status present in string format
+            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : Program::getStatusIdByName($data['status']);
+            unset($data['status']);
+        }
+        if( empty($data['status_id']) )
+        {   //set default status to "Active"
+            $data['status_id'] = Program::getIdStatusActive(); 
         }
         if($program->update($data)) {
             if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
@@ -381,7 +423,7 @@ class ProgramService
         DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
 
         $qry_statement = "
-        SELECT 
+        SELECT
             posts.*,
             posts.created_at as posting_timestamp,
             jet.type as journal_event_type
@@ -401,7 +443,7 @@ class ProgramService
         ORDER BY
             journal_event_type, posting_timestamp ASC;
         ";
-		
+
         try {
 			$result = DB::select( DB::raw($qry_statement), array(
 				'journal_event_type' => 'Charge setup fee to program',
@@ -422,7 +464,7 @@ class ProgramService
         }
         $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
         $balance = Account::read_available_balance_for_program ( $program );
-        return 
+        return
             [
                 'program' => $program,
                 'programs' => $programs,
@@ -539,5 +581,15 @@ class ProgramService
 			}
         }
         return $billable_programs;
+    }
+
+    public function listStatus()
+    {
+        return Status::where('context', 'Programs')->get();
+    }
+
+    public function updateStatus($validated, $program)
+    {
+        return $program->update( ['status_id' => $validated['program_status_id']] );
     }
 }
