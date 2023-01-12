@@ -1,6 +1,9 @@
 <?php
 
 namespace App\Http\Controllers\API;
+
+use App\Services\AccountService;
+use App\Services\AwardService;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\ProgramUserAssignRoleRequest;
@@ -11,14 +14,16 @@ use App\Models\Organization;
 use App\Models\User;
 use App\Models\Program;
 use App\Services\UserService;
-Use Exception;
+use Exception;
 
 class ProgramUserController extends Controller
 {
-    public function index( Organization $organization, Program $program )
+    public function index(Organization $organization, Program $program)
     {
 
-        if( !$program->users->isNotEmpty() ) return response( [] );
+        if ( ! $program->users->isNotEmpty()) {
+            return response([]);
+        }
 
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
@@ -27,114 +32,136 @@ class ProgramUserController extends Controller
         $userIds = [];
         $where = ['organization_id' => $organization->id];
 
-        foreach($program->users as $user)    {
+        foreach ($program->users as $user) {
             $userIds[] = $user->id;
         }
 
         $query = User::whereIn('id', $userIds)
-                    ->where($where);
+            ->where($where);
 
-        if( $sortby == 'name' )
-        {
+        if ($sortby == 'name') {
             $orderByRaw = "first_name $direction, last_name $direction";
-        }
-        else
-        {
+        } else {
             $orderByRaw = "$sortby $direction";
         }
 
-        if( $keyword )
-        {
-            $query = $query->where(function($query1) use($keyword) {
+        if ($keyword) {
+            $query = $query->where(function ($query1) use ($keyword) {
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                ->orWhere('email', 'LIKE', "%{$keyword}%")
-                ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%")
-                ->orWhere(DB::raw("CONCAT(last_name, ' ', first_name)"), 'LIKE', "%{$keyword}%")
-                ;
+                    ->orWhere('email', 'LIKE', "%{$keyword}%")
+                    ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%")
+                    ->orWhere(DB::raw("CONCAT(last_name, ' ', first_name)"), 'LIKE', "%{$keyword}%");
             });
         }
 
         $query = $query->orderByRaw($orderByRaw);
 
-        if ( request()->has('minimal') )
-        {
+        if (request()->has('minimal')) {
             $users = $query->select('id', 'name')->get();
-        }
-        else {
-            $users = $query->with(['roles' => function ($query) use($program) {
-                $query->wherePivot('program_id', '=', $program->id);
-            }, 'status'])->paginate(request()->get('limit', 20));
-        }
-
-        if ( $users->isNotEmpty() )
-        {
-            return response( $users );
+        } else {
+            $users = $query->with([
+                'roles' => function ($query) use ($program) {
+                    $query->wherePivot('program_id', '=', $program->id);
+                },
+                'status'
+            ])->paginate(request()->get('limit', 20));
         }
 
-        return response( [] );
+        if ($users->isNotEmpty()) {
+            return response($users);
+        }
+
+        return response([]);
     }
 
-    public function store( UserRequest $request, Organization $organization, Program $program )
+    public function store(UserRequest $request, Organization $organization, Program $program)
     {
 
         $validated = $request->validated();
 
         $validated['organization_id'] = $organization->id;
         $validated['email_verified_at'] = now();
-        $user = User::createAccount( $validated );
+        $user = User::createAccount($validated);
 
-        if( $user ) {
-            $program->users()->sync( [ $user->id ], false );
-            if( isset($validated['roles']) ) {
+        if ($user) {
+            $program->users()->sync([$user->id], false);
+            if (isset($validated['roles'])) {
                 $user->syncProgramRoles($program->id, $validated['roles']);
             }
         }
 
-        return response([ 'user' => $user ]);
+        return response(['user' => $user]);
     }
 
-    public function show( Organization $organization, Program $program, User $user ): UserResource
+    public function show(Organization $organization, Program $program, User $user): UserResource
     {
         return $this->UserResponse($user);
     }
 
-    public function update( UserRequest $request, Organization $organization, Program $program, User $user)
+    public function update(UserRequest $request, Organization $organization, Program $program, User $user)
     {
 
         $validated = $request->validated();
-        $user->update( $validated );
+        $user->update($validated);
 
-        if( !empty($validated['roles']) )   {
+        if ( ! empty($validated['roles'])) {
             $user->syncProgramRoles($program->id, $validated['roles']);
         }
 
-        return response([ 'user' => $user ]);
+        return response(['user' => $user]);
     }
 
-    public function delete(Organization $organization, Program $program, User $user )
+    public function delete(Organization $organization, Program $program, User $user)
     {
 
-        try{
-            $program->users()->detach( $user );
-        }   catch( Exception $e) {
+        try {
+            $program->users()->detach($user);
+        } catch (Exception $e) {
             return response(['errors' => 'User removal failed', 'e' => $e->getMessage()], 422);
         }
 
-        return response([ 'success' => true ]);
+        return response(['success' => true]);
     }
 
-    public function readBalance(Organization $organization, Program $program, User $user, UserService $userService)
-    {
-        $amount_balance = $user->readAvailableBalance( $program, $user);
+    public function readBalance(
+        Organization $organization,
+        Program $program,
+        User $user,
+        UserService $userService,
+        AccountService $accountService
+    ) {
+        $amount_balance = $user->readAvailableBalance($program, $user);
         $factor_valuation = $program->factor_valuation;
         $points_balance = $amount_balance * $program->factor_valuation;
         $peerBalance = $userService->readAvailablePeerBalance($user, $program);
+        $expiredBalance = $accountService->readExpiredBalance($user->account_holder_id, $program);
+        $redeemedBalance = $accountService->readRedeemedBalance($user->account_holder_id, $program);
         return response([
             'points' => $points_balance,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
-            'peerBalance' => $peerBalance
+            'peerBalance' => $peerBalance,
+            'redeemedBalance' => $redeemedBalance,
+            'expiredBalance' => $expiredBalance,
         ]);
+    }
+
+    public function readEventHistory(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AwardService $awardService
+    ) {
+        $limit = request()->get('pageSize', 10);
+        $page = request()->get('page', 1);
+        $offset = ($page - 1) * $limit;
+
+        return response($awardService->readEventHistoryByProgramAndParticipant(
+            $program->account_holder_id,
+            $user->account_holder_id,
+            $limit,
+            $offset
+        ));
     }
 
     protected function userResponse(User $user): UserResource
@@ -142,7 +169,7 @@ class ProgramUserController extends Controller
         return new UserResource($user->load('roles'));
     }
 
-    public function userToAssign( Organization $organization, Program $program )
+    public function userToAssign(Organization $organization, Program $program)
     {
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
@@ -152,54 +179,53 @@ class ProgramUserController extends Controller
 
         $query = User::where($where);
 
-        if( $sortby == 'name' )
-        {
+        if ($sortby == 'name') {
             $orderByRaw = "first_name $direction, last_name $direction";
-        }
-        else
-        {
+        } else {
             $orderByRaw = "$sortby $direction";
         }
 
-        if( $keyword )
-        {
-            $query = $query->where(function($query1) use($keyword) {
+        if ($keyword) {
+            $query = $query->where(function ($query1) use ($keyword) {
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                ->orWhere('email', 'LIKE', "%{$keyword}%")
-                ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%")
-                ->orWhere(DB::raw("CONCAT(last_name, ' ', first_name)"), 'LIKE', "%{$keyword}%")
-                ;
+                    ->orWhere('email', 'LIKE', "%{$keyword}%")
+                    ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%")
+                    ->orWhere(DB::raw("CONCAT(last_name, ' ', first_name)"), 'LIKE', "%{$keyword}%");
             });
         }
 
         $query = $query->orderByRaw($orderByRaw);
 
-        $users = $query->with(['roles' => function ($query) use($program) {
-            $query->wherePivot('program_id', '=', $program->id);
-        }, 'status'])->paginate(request()->get('limit', 1000));
+        $users = $query->with([
+            'roles' => function ($query) use ($program) {
+                $query->wherePivot('program_id', '=', $program->id);
+            },
+            'status'
+        ])->paginate(request()->get('limit', 1000));
 
-        if ( $users->isNotEmpty() )
-        {
-            return response( $users );
+        if ($users->isNotEmpty()) {
+            return response($users);
         }
 
-        return response( [] );
+        return response([]);
     }
 
-    public function assignRole(ProgramUserAssignRoleRequest $request, Organization $organization, Program $program, User $user)
-    {
+    public function assignRole(
+        ProgramUserAssignRoleRequest $request,
+        Organization $organization,
+        Program $program,
+        User $user
+    ) {
         $validated = $request->validated();
 
         DB::beginTransaction();
 
-        try{
-            $program->users()->sync( [ $user->id ], false );
+        try {
+            $program->users()->sync([$user->id], false);
             $user->syncProgramRoles($program->id, $validated['roles']);
             DB::commit();
-            return response([ 'success' => true ]);
-        }
-        catch( Exception $e )
-        {
+            return response(['success' => true]);
+        } catch (Exception $e) {
             DB::rollBack();
             return response(['errors' => 'Program User Role assignment failed', 'e' => $e->getMessage()], 422);
         }
