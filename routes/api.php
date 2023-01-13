@@ -62,6 +62,7 @@ Route::group([
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
         Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
 });
 

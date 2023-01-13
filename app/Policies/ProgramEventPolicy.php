@@ -51,11 +51,19 @@ class ProgramEventPolicy
         return $user->can('program-event-create');
     }
 
-    public function update(User $user, Organization $organization, Program $program)
+    public function update(User $user, Organization $organization, Program $program, Event $event)
     {
-        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( !$this->__preAuthCheck($user, $organization, $program, $event) ) return false;
         if( $user->isAdmin() ) return true;
         if( $user->isManagerToProgram( $program )) return true;
         return $user->can('program-event-update');
+    }
+
+    public function delete(User $user, Organization $organization, Program $program, Event $event)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program, $event) ) return false;
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('program-event-delete');
     }
 }
