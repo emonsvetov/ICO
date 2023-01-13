@@ -86,6 +86,17 @@ class ProgramUserPolicy
         return $user->can('program-user-readbalance');
     }
 
+    public function readEventHistory(User $authUser, Organization $organization, Program $program, User $user)
+    {
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+
+        if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;
+        return $user->can('program-user-read-event-history');
+    }
+
     public function assignRole(User $authUser, Organization $organization, Program $program, User $user)
     {
         if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
