@@ -32,8 +32,7 @@ class AwardService
         JournalEventService $journalEventService,
         AccountService $accountService,
         UserService $userService
-    )
-    {
+    ) {
         $this->programService = $programService;
         $this->eventXmlDataService = $eventXmlDataService;
         $this->journalEventService = $journalEventService;
@@ -56,20 +55,20 @@ class AwardService
         /** @var EventType $eventType */
         $eventType = $event->eventType()->firstOrFail();
 
-        if($eventType->isEventTypePeer2PeerAllocation()){
+        if ($eventType->isEventTypePeer2PeerAllocation()) {
             $newAward = $this->allocatePeer2Peer($program, $currentUser, $data);
         } else {
-            if ( $eventType->isEventTypePeer2Peer() ) {
+            if ($eventType->isEventTypePeer2Peer()) {
                 $amount = $data['override_cash_value'] ?? 0;
                 $users = $data['user_id'] ?? [];
-                if (!$this->canPeerPayForAwards($program, $currentUser, (float)$amount, $users)) {
+                if ( ! $this->canPeerPayForAwards($program, $currentUser, (float)$amount, $users)) {
                     throw new Exception('Your account balance is too low.');
                 }
             }
 
 
             $newAward = Award::create(
-                (object) ($data +
+                (object)($data +
                     [
                         'organization_id' => $organization->id,
                         'program_id' => $program->id
@@ -81,6 +80,7 @@ class AwardService
 
         return $newAward;
     }
+
     /**
      * Allocate Peer 2 Peer
      *
@@ -135,7 +135,7 @@ class AwardService
         DB::beginTransaction();
         try {
             $users = User::whereIn('id', $userIds)->select(['id', 'account_holder_id'])->get();
-            foreach( $users as $user)    {
+            foreach ($users as $user) {
                 $userId = $user->id;
                 $userAccountHolderId = $user->account_holder_id;
 
@@ -210,5 +210,59 @@ class AwardService
             return false;
         }
         return true;
+    }
+
+    public function readEventHistoryByProgramAndParticipant(
+        int $program_account_holder_id,
+        int $participant_account_holder_id,
+        int $limit = 0,
+        int $offset = 0,
+        string $order_column = 'journal_event_timestamp',
+        string $order_direction = 'desc',
+        $extraArgs = []
+    ) {
+        $query = DB::table('accounts');
+        $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+
+        $query->addSelect(
+            DB::raw("
+            if(`event_xml_data`.name is null, `journal_event_types`.type, `event_xml_data`.name) AS name,
+				`accounts`.id AS account_id,
+				`journal_events`.id AS journal_event_id,
+				`journal_events`.event_xml_data_id,
+				`event_xml_data`.icon,
+				if(is_credit = 1, `postings`.posting_amount, -`postings`.posting_amount) AS amount ,
+				`event_xml_data`.award_level_name ,
+				if(`event_xml_data`.notes is null, `journal_events`.notes, `event_xml_data`.notes) AS notes,
+				`journal_events`.created_at as 'journal_event_timestamp',
+				`event_xml_data`.referrer,
+				`event_xml_data`.lease_number,
+				`event_xml_data`.token,
+				`event_xml_data`.notification_body,
+                `event_xml_data`.xml,
+                `event_xml_data`.email_template_id
+            ")
+        );
+
+        $query->where('users.account_holder_id', '=', $participant_account_holder_id);
+        $query->whereIn('account_types.name', [AccountType::ACCOUNT_TYPE_POINTS_AWARDED,AccountType::ACCOUNT_TYPE_MONIES_AWARDED]);
+        if (isset($extraArgs['onlyAwards']) && $extraArgs['onlyAwards'] == 1) {
+            $query->whereNotNull('event_xml_data.id');
+        }
+        $query->orderBy($order_column,$order_direction);
+
+        try {
+            return [
+                'data' => $query->limit($limit)->offset($offset)->get(),
+                'total' => $query->count()
+            ];
+        } catch (Exception $e) {
+            throw new Exception('DB query failed.', 500);
+        }
     }
 }
