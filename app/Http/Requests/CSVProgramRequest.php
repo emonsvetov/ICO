@@ -170,7 +170,11 @@ class CSVProgramRequest extends FormRequest
             //Goal Tracker
             'uses_goal_tracker'=>'nullable|boolean',
             'country'=>'nullable|string',
-            'transaction_fee'=>'nullable|numeric',*/
+            'transaction_fee'=>'nullable|numeric',
+            'allow_award_peers_not_logged_into'=>'nullable|boolean',
+            'allow_search_peers_not_logged_into'=>'nullable|boolean',
+            'allow_view_leaderboards_not_logged_into'=>'nullable|boolean',
+            */
         ];
     }
 }
