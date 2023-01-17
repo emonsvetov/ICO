@@ -66,7 +66,6 @@ class AwardService
                 }
             }
 
-
             $newAward = Award::create(
                 (object)($data +
                     [
@@ -264,5 +263,213 @@ class AwardService
         } catch (Exception $e) {
             throw new Exception('DB query failed.', 500);
         }
+    }
+
+    public function readListExpireFuture(Program $program, User $user)
+    {
+		// $program = $this->programs_model->get_program_info ( $program_account_holder_id );
+
+		// $rule = $this->expiration_rules_model->read ( $program->account_holder_id, $program->expiration_rule_id );
+		// $end_date_sql = $this->expiration_rules_model->get_embeddable_sql ( $rule, POSTINGS . ".posting_timestamp", null, $program->custom_expire_offset, $program->custom_expire_units, $program->annual_expire_month, $program->annual_expire_day );
+        $end_date_sql = '2023-12-31'; //need to get this date TODO
+
+		// build and run the query and store it into the $query variable for
+		// later use and validation of the $query object
+
+		$reclaim_jet = [];
+		if ( $program->programIsInvoiceForAwards() ) 
+        {
+		    $account_name = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
+		    $reclaim_jet[] = "Reclaim points";
+		    $reclaim_jet[] = "Award credit reclaim points";
+		}
+        else
+        {
+		    $account_name = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
+			$reclaim_jet[] = "Reclaim monies";
+			$reclaim_jet[] = "Award credit reclaim monies";
+        }
+		// Get's the full list of points awarded and their expiration dates
+		// Note, we must get the full list awards to the user so we don't need to join back to the
+		// roles or programs this way. However, we do need to join back to the AWARDING program via the journal
+		// event so that we can tell where this award originated from
+
+        $query = DB::table('users');
+
+        $query->addSelect(
+            DB::raw("DISTINCT postings.id")
+        );
+
+        $query->addSelect([
+            'users.account_holder_id AS user_account_holder_id',
+            'users.email AS user_email',
+            'postings.posting_amount AS amount',
+            'postings.created_at AS awarded',
+            'journal_events.id as journal_event_id',
+            'journal_events.prime_account_holder_id as manager_id',
+            'u2.email as manager_email',
+            'event_xml_data.name as event_name',
+            'event_xml_data.id as event_xml_data_id',
+            'event_xml_data.event_template_id',
+            'programs.account_holder_id as program_id',
+            'programs.name as program_name',
+        ]);
+
+        $query->addSelect(
+            DB::raw("
+                CAST(
+                    IF (
+                        statuses.status = '" . User::STATUS_PENDING_DEACTIVATION . "' AND users.deactivated < {$end_date_sql},
+                       users.deactivated,
+                        {$end_date_sql}
+                    ) AS DATETIME
+                ) AS expiration
+            ")
+        );
+
+        // $query->addSelect(['evetns.award_credit']); //This field is missing right now! TODO
+
+        $query->leftJoin('statuses', 'statuses.id', '=', 'users.user_status_id');
+        $query->leftJoin('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
+        $query->leftJoin('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->leftJoin('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->leftJoin('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->leftJoin('events', 'events.id', '=', 'event_xml_data.event_template_id');
+        $query->leftJoin('postings AS program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->leftJoin('accounts AS program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('programs', 'programs.account_holder_id', '=', 'program_accounts.account_holder_id');
+        $query->leftJoin('users as u2', 'u2.account_holder_id', '=', 'journal_events.prime_account_holder_id');
+
+        $query->where('users.account_holder_id', '=', $user->account_holder_id);
+        $query->where('account_types.name', '=', $account_name);
+        $query->where('postings.is_credit', '=', 1);
+
+        $query->orderBy('postings.created_at', 'ASC');
+
+        try {
+            $result = $query->get();
+            
+            if( $result->isNotEmpty() )
+            {
+                // Get the points redeemed and expired
+                $points_redeemed = $this->accountService->readRedeemedTotalForParticipant ( $program, $user );
+                $points_expired = $this->accountService->readExpiredTotalForParticipant ( $program, $user );
+                
+                // // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successful
+                $points_reclaimed = $this->accountService->readReclaimedTotalForParticipant ( $program, $user );
+
+                pr($points_reclaimed);
+                // pr($points_expired);
+                
+                // $points_reclaimed = $this->account_model->read_reclaimed_total_for_participant ( $program_account_holder_id, $user_account_holder_id );
+                // // Get the full list of reclaims, we need to do a "smart" whittle on these so that we
+                // $points_reclaimed_list = $this->account_model->read_list_participant_postings_by_account_and_journal_events ( $user_account_holder_id, $account_name, $reclaim_jet, 0 );
+            }
+
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+
+        return;
+
+		$result = $query->result ();
+		if (is_array ( $result ) && count ( $result ) > 0) {
+
+			// "Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
+			if (is_array ( $points_reclaimed_list ) && count ( $points_reclaimed_list ) > 0) {
+				foreach ( $points_reclaimed_list as $reclaim_posting ) {
+					if ($points_reclaimed <= 0) {
+						break;
+					}
+					foreach ( $result as &$point_award3 ) {
+						if ($points_reclaimed <= 0) {
+							break;
+						}
+						if ($reclaim_posting->posting_amount_total <= 0) {
+							break;
+						}
+						if ($point_award3->amount <= 0) {
+							continue;
+						}
+						// If the program id does not match where the reclaim happened, skip it
+						if ($point_award3->program_id != $reclaim_posting->program_id) {
+							continue;
+						}
+						if ($point_award3->journal_event_id != $reclaim_posting->parent_journal_event_id) {
+							continue;
+						}
+						if ($reclaim_posting->posting_amount_total <= $point_award3->amount) {
+							$point_award3->amount -= $reclaim_posting->posting_amount_total;
+							$points_reclaimed -= $reclaim_posting->posting_amount_total;
+							$reclaim_posting->posting_amount_total = 0;
+						} else {
+							$reclaim_posting->posting_amount_total -= $point_award3->amount;
+							$points_reclaimed -= $point_award3->amount;
+							$point_award3->amount = 0;
+						}
+					}
+				}
+			}
+			// Finish the reclaim whittle using the regular method in case of errors
+			foreach ( $result as &$point_award4 ) {
+				if ($points_reclaimed <= 0) {
+					break;
+				}
+				if ($point_award4->amount <= 0) {
+					continue;
+				}
+				if ($points_reclaimed <= $point_award4->amount) {
+					$point_award4->amount -= $points_reclaimed;
+                    $point_award4->amount = round($point_award4->amount, 4, PHP_ROUND_HALF_DOWN);
+					$points_reclaimed = 0;
+				} else {
+					$points_reclaimed -= $point_award4->amount;
+					$point_award4->amount = 0;
+				}
+			}
+			// Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
+			// take away points that have been redeemed since we care about
+			foreach ( $result as &$point_award ) {
+				if ($points_redeemed <= 0) {
+					break;
+				}
+				if ($point_award->amount <= 0) {
+					continue;
+				}
+				if ($points_redeemed <= $point_award->amount) {
+					$point_award->amount -= $points_redeemed;
+                    $point_award->amount = round($point_award->amount, 4, PHP_ROUND_HALF_DOWN);
+					$points_redeemed = 0;
+				} else {
+					$points_redeemed -= $point_award->amount;
+					$point_award->amount = 0;
+				}
+			}
+			// take away points that have expired
+			foreach ( $result as &$point_award2 ) {
+				if ($points_expired <= 0) {
+					break;
+				}
+				if ($point_award2->amount <= 0) {
+					continue;
+				}
+				if ($points_expired <= $point_award2->amount) {
+					$point_award2->amount -= $points_expired;
+                    $point_award2->amount = round($point_award2->amount, 4, PHP_ROUND_HALF_DOWN);
+					$points_expired = 0;
+				} else {
+					$points_expired -= $point_award2->amount;
+					$point_award2->amount = 0;
+				}
+			}
+			// Remove any point awards that are now at 0
+			for($i = count ( $result ) - 1; $i >= 0; -- $i) {
+				if ($result [$i]->amount <= 0) {
+					unset ( $result [$i] );
+				}
+			}
+		}
+		return array_values ( array_reverse( $result) );
     }
 }
