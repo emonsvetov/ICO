@@ -13,7 +13,7 @@ class LeaderboardController extends Controller
     public function index( Organization $organization, Program $program )
     {
         $where = ['organization_id' => $organization->id, 'program_id' => $program->id];
-        $leaderboards = Leaderboard::where($where)->get();
+        $leaderboards = Leaderboard::where($where)->with('leaderboard_type')->get();
         if( $leaderboards->isNotEmpty() ) {
             return response( $leaderboards );
         }
