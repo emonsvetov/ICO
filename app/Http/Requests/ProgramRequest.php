@@ -164,6 +164,9 @@ class ProgramRequest extends FormRequest
             'uses_goal_tracker'=>'nullable|boolean',
             'transaction_fee'=>'nullable|numeric',
             'create_setup_fee_account'=>'nullable|boolean',
+            'allow_award_peers_not_logged_into'=>'nullable|boolean',
+            'allow_search_peers_not_logged_into'=>'nullable|boolean',
+            'allow_view_leaderboards_not_logged_into'=>'nullable|boolean',
         ];
     }
 
