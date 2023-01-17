@@ -142,6 +142,7 @@ class PermissionSeeder extends Seeder
             'expiration-rule-list',
             'program-list-status',
             'program-update-status',
+            'program-email-template-list',
         ];
 
         foreach ($permissions as $permission) {

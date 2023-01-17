@@ -32,6 +32,12 @@ class GoalPlanService
 	public function add_goal_plan( $data, $organization, $program)
     {   
 		/* TO DO
+		// check if we have a valid $goal_plan->name format and that it is unique
+		if ($this->is_valid_goal_plan_by_name ( $program_account_holder_id, $goal_plan->name )) {
+			throw new InvalidArgumentException ( 'Invalid "goal_plan->name" passed, goal_plan->name = ' . $goal_plan->name . ' is already taken', 400 );
+		}
+		*/
+		/* TO DO
 		$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET); //CALLBACK_TYPE_GOAL_MET = Goal Met
         $goal_exceeded_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_EXCEEDED);
         $empty_callback = new stdClass();
@@ -82,7 +88,6 @@ class GoalPlanService
 		}
 			return $response;
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
-		//after this code TO DO
 		// unset($validated['custom_email_template']);
     }
 	public function update_goal_plan($data, $goalplan, $organization, $program)
@@ -96,6 +101,17 @@ class GoalPlanService
          if( empty($data['date_end']) )   { //default custom expire date to 1 year from today
             $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
          }*/
+		/*TO DO
+		$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET);
+		$goal_exceeded_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_EXCEEDED);
+		$email_templates = $this->email_templates_model->read_list_program_email_templates_by_type((int) $this->program->account_holder_id, "Goal Progress", 0, 9999);
+		$this->view_params['email_templates'] = $email_templates;
+		$empty_callback = new stdClass();
+		$empty_callback->id = 0;
+		$empty_callback->name = $this->lang->line('txt_none');
+		array_unshift($goal_met_program_callbacks, $empty_callback);
+		array_unshift($goal_exceeded_program_callbacks, $empty_callback);	 
+		*/
         //$request->goal_measurement_label = '$';
          //$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
          // All goal plans use standard events except recognition goal
