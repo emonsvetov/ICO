@@ -146,7 +146,7 @@ class ProgramRequest extends FormRequest
             //Leaderboards
             'leaderboard_seperation'=>'nullable|boolean',
             'share_siblings_leader_board'=>'nullable|boolean',
-            'uses_leaderbaords'=>'nullable|boolean',
+            'uses_leaderboards'=>'nullable|boolean',
             //Manager Settings
             'manager_can_award_all_program_participants'=>'nullable|boolean',
             'program_managers_can_invite_participants'=>'nullable|boolean',
