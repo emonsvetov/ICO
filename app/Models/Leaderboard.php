@@ -37,4 +37,8 @@ class Leaderboard extends BaseModel
     public function status()    {
         return $this->belongsTo(Status::class);
     }
+    public function leaderboard_type()
+    {
+        return $this->belongsTo(LeaderboardType::class, 'leaderboard_type_id');
+    }
 }
