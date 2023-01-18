@@ -22,6 +22,7 @@ class ProgramTemplateService
         $validated = $request->validated();
         $fieldsToCreate = [
             'welcome_message' => isset($validated['welcome_message']) && $validated['welcome_message'] == 'null' ? null : $validated['welcome_message'] ?? null,
+            'theme_color' => isset($validated['theme_color']) &&  $validated['theme_color'] == 'null' ? null : $validated['theme_color'] ?? null,
             'button_color' => isset($validated['button_color']) &&  $validated['button_color'] == 'null' ? null : $validated['button_color'] ?? null,
             'button_bg_color' => isset($validated['button_bg_color']) &&  $validated['button_bg_color'] == 'null' ? null : $validated['button_bg_color'] ?? null,
             'button_corner' => $validated['button_corner'],
@@ -69,6 +70,7 @@ class ProgramTemplateService
             $validated = $request->validated();
             $fieldsToUpdate = [
                 'welcome_message' => isset($validated['welcome_message']) && $validated['welcome_message'] == 'null' ? null : $validated['welcome_message'] ?? null,
+                'theme_color' => isset($validated['theme_color']) &&  $validated['theme_color'] == 'null' ? null : $validated['theme_color'] ?? null,
                 'button_color' => isset($validated['button_color']) &&  $validated['button_color'] == 'null' ? null : $validated['button_color'] ?? null,
                 'button_bg_color' => isset($validated['button_bg_color']) &&  $validated['button_bg_color'] == 'null' ? null : $validated['button_bg_color'] ?? null,
                 'button_corner' => $validated['button_corner'],
