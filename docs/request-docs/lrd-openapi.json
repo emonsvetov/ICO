@@ -8477,7 +8477,7 @@
                                         "nullable": true,
                                         "format": "boolean"
                                     },
-                                    "uses_leaderbaords": {
+                                    "uses_leaderboards": {
                                         "type": "boolean",
                                         "nullable": true,
                                         "format": "boolean"
@@ -9173,7 +9173,7 @@
                                         "nullable": true,
                                         "format": "boolean"
                                     },
-                                    "uses_leaderbaords": {
+                                    "uses_leaderboards": {
                                         "type": "boolean",
                                         "nullable": true,
                                         "format": "boolean"

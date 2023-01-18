@@ -38,7 +38,7 @@ class CSVProgramRequest extends FormRequest
             'program_id'    => 'required|integer',
 /*
             'program_id'            => 'nullable|integer',
-            
+
             'type'                  => 'required|string',
             'status'                => 'nullable|string',
             'setup_fee'             => 'required|numeric',
@@ -49,7 +49,7 @@ class CSVProgramRequest extends FormRequest
 			//new
             'public_contact_email'=>'nullable|string|email',
             'prefix'=>'nullable|string',
-            
+
             //'program_type_id'=>'nullable|integer', pending dropdown
             'corporate_entity'=> 'nullable|string',
             //Expiration Rule:
@@ -83,7 +83,7 @@ class CSVProgramRequest extends FormRequest
             'use_one_leaderboard'=>'nullable|boolean',
             //Approvals and Budget
             'use_cascading_approvals'=>'nullable|boolean','enable_schedule_awards'=>'nullable|boolean',
-            'use_budget_cascading'=>'nullable|boolean', 
+            'use_budget_cascading'=>'nullable|boolean',
             'budget_summary'=>'nullable|boolean',
             //Reference Document
             'enable_reference_documents'=>'nullable|boolean',
@@ -93,7 +93,7 @@ class CSVProgramRequest extends FormRequest
             'enable_global_search'=>'nullable|boolean',
             //Archive
             'archive_program'=>'nullable|boolean',
-            //Deactivate Account 
+            //Deactivate Account
             'deactivate_account'=>'nullable|boolean',
             //Billing  Information
             'is_pay_in_advance'=>'nullable|boolean',
@@ -153,7 +153,7 @@ class CSVProgramRequest extends FormRequest
             //Leaderboards
             'leaderboard_seperation'=>'nullable|boolean',
             'share_siblings_leader_board'=>'nullable|boolean',
-            'uses_leaderbaords'=>'nullable|boolean',
+            'uses_leaderboards'=>'nullable|boolean',
             //Manager Settings
             'manager_can_award_all_program_participants'=>'nullable|boolean',
             'program_managers_can_invite_participants'=>'nullable|boolean',
@@ -170,7 +170,11 @@ class CSVProgramRequest extends FormRequest
             //Goal Tracker
             'uses_goal_tracker'=>'nullable|boolean',
             'country'=>'nullable|string',
-            'transaction_fee'=>'nullable|numeric',*/
+            'transaction_fee'=>'nullable|numeric',
+            'allow_award_peers_not_logged_into'=>'nullable|boolean',
+            'allow_search_peers_not_logged_into'=>'nullable|boolean',
+            'allow_view_leaderboards_not_logged_into'=>'nullable|boolean',
+            */
         ];
     }
 }
