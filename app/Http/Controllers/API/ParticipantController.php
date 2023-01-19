@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Services\AccountService;
 use App\Services\AwardService;
 use App\Models\Organization;
 use App\Models\Program;
@@ -14,9 +15,31 @@ class ParticipantController extends Controller
         Organization $organization, 
         Program $program,
         User $user,  
-        AwardService $awardService)
+        AwardService $awardService,
+        AccountService $accountService
+    )
     {
-        $listExpireFuture = $awardService->readListExpireFuture($program, $user);
-        return response($listExpireFuture);
+        try {
+
+            $result = $awardService->readListExpireFuture($program, $user);
+
+            $points_history_count = $accountService->readEventHistoryCountByProgramByParticipant($program, $user);
+            $result['points_history_count'] = $points_history_count;
+
+            $points_history = $accountService->readEventHistoryByProgramByParticipant($program, $user);
+            $result['points_history'] = $points_history;
+
+            $points_summary = $accountService->readListEventAwardsForParticipant($program, $user);
+            $result['points_summary'] = $points_summary;
+            
+            $points_summary_for_internal_store = $accountService->readListEventAwardsWithInternalStoreForParticipant($program, $user);
+            $result['points_summary_for_internal_store'] = $points_summary_for_internal_store;
+
+            return response($result);
+        } catch (\Exception $e) {
+            return response([
+                'errors' => sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine())
+            ], 500);
+        }
     }
 }

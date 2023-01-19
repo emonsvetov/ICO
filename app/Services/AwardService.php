@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\Award;
 use App\Models\Currency;
@@ -267,8 +266,6 @@ class AwardService
 
     public function readListExpireFuture(Program $program, User $user)
     {
-		// $program = $this->programs_model->get_program_info ( $program_account_holder_id );
-
 		// $rule = $this->expiration_rules_model->read ( $program->account_holder_id, $program->expiration_rule_id );
 		// $end_date_sql = $this->expiration_rules_model->get_embeddable_sql ( $rule, POSTINGS . ".posting_timestamp", null, $program->custom_expire_offset, $program->custom_expire_units, $program->annual_expire_month, $program->annual_expire_day );
         $end_date_sql = '2023-12-31'; //need to get this date TODO
@@ -319,15 +316,15 @@ class AwardService
             DB::raw("
                 CAST(
                     IF (
-                        statuses.status = '" . User::STATUS_PENDING_DEACTIVATION . "' AND users.deactivated < {$end_date_sql},
-                       users.deactivated,
-                        {$end_date_sql}
+                        statuses.status = '" . User::STATUS_PENDING_DEACTIVATION . "' AND users.deactivated < '{$end_date_sql}',
+                        users.deactivated,
+                        '{$end_date_sql}'
                     ) AS DATETIME
                 ) AS expiration
             ")
         );
 
-        // $query->addSelect(['evetns.award_credit']); //This field is missing right now! TODO
+        // $query->addSelect(['events.award_credit']); //This field is missing right now! TODO
 
         $query->leftJoin('statuses', 'statuses.id', '=', 'users.user_status_id');
         $query->leftJoin('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
@@ -359,117 +356,115 @@ class AwardService
                 // // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successful
                 $points_reclaimed = $this->accountService->readReclaimedTotalForParticipant ( $program, $user );
 
-                pr($points_reclaimed);
+                // pr($points_reclaimed);
                 // pr($points_expired);
-                
-                // $points_reclaimed = $this->account_model->read_reclaimed_total_for_participant ( $program_account_holder_id, $user_account_holder_id );
-                // // Get the full list of reclaims, we need to do a "smart" whittle on these so that we
-                // $points_reclaimed_list = $this->account_model->read_list_participant_postings_by_account_and_journal_events ( $user_account_holder_id, $account_name, $reclaim_jet, 0 );
-            }
+                // // Get the full list of reclaims, we need to do a "smart" whittle on these so that we...
+                $points_reclaimed_list = $this->accountService->readListParticipantPostingsByAccountAndJournalEvents ( $user->account_holder_id, $account_name, $reclaim_jet, 0 );
 
+                // ..."Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
+                if ( $points_reclaimed_list->isNotEmpty() ) {
+                    foreach ( $points_reclaimed_list as $reclaim_posting ) {
+                        if ($points_reclaimed <= 0) {
+                            break;
+                        }
+                        foreach ( $result as &$point_award3 ) {
+                            if ($points_reclaimed <= 0) {
+                                break;
+                            }
+                            if ($reclaim_posting->posting_amount_total <= 0) {
+                                break;
+                            }
+                            if ($point_award3->amount <= 0) {
+                                continue;
+                            }
+                            // If the program id does not match where the reclaim happened, skip it
+                            if ($point_award3->program_id != $reclaim_posting->program_id) {
+                                continue;
+                            }
+                            if ($point_award3->journal_event_id != $reclaim_posting->parent_journal_event_id) {
+                                continue;
+                            }
+                            if ($reclaim_posting->posting_amount_total <= $point_award3->amount) {
+                                $point_award3->amount -= $reclaim_posting->posting_amount_total;
+                                $points_reclaimed -= $reclaim_posting->posting_amount_total;
+                                $reclaim_posting->posting_amount_total = 0;
+                            } else {
+                                $reclaim_posting->posting_amount_total -= $point_award3->amount;
+                                $points_reclaimed -= $point_award3->amount;
+                                $point_award3->amount = 0;
+                            }
+                        }
+                    }
+                }
+                // Finish the reclaim whittle using the regular method in case of errors
+                foreach ( $result as &$point_award4 ) {
+                    if ($points_reclaimed <= 0) {
+                        break;
+                    }
+                    if ($point_award4->amount <= 0) {
+                        continue;
+                    }
+                    if ($points_reclaimed <= $point_award4->amount) {
+                        $point_award4->amount -= $points_reclaimed;
+                        $point_award4->amount = round($point_award4->amount, 4, PHP_ROUND_HALF_DOWN);
+                        $points_reclaimed = 0;
+                    } else {
+                        $points_reclaimed -= $point_award4->amount;
+                        $point_award4->amount = 0;
+                    }
+                }
+                // Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
+                // take away points that have been redeemed since we care about
+                foreach ( $result as &$point_award ) {
+                    if ($points_redeemed <= 0) {
+                        break;
+                    }
+                    if ($point_award->amount <= 0) {
+                        continue;
+                    }
+                    if ($points_redeemed <= $point_award->amount) {
+                        $point_award->amount -= $points_redeemed;
+                        $point_award->amount = round($point_award->amount, 4, PHP_ROUND_HALF_DOWN);
+                        $points_redeemed = 0;
+                    } else {
+                        $points_redeemed -= $point_award->amount;
+                        $point_award->amount = 0;
+                    }
+                }
+                // take away points that have expired
+                foreach ( $result as &$point_award2 ) {
+                    if ($points_expired <= 0) {
+                        break;
+                    }
+                    if ($point_award2->amount <= 0) {
+                        continue;
+                    }
+                    if ($points_expired <= $point_award2->amount) {
+                        $point_award2->amount -= $points_expired;
+                        $point_award2->amount = round($point_award2->amount, 4, PHP_ROUND_HALF_DOWN);
+                        $points_expired = 0;
+                    } else {
+                        $points_expired -= $point_award2->amount;
+                        $point_award2->amount = 0;
+                    }
+                }
+                // Remove any point awards that are now at 0
+                for($i = count ( $result ) - 1; $i >= 0; -- $i) {
+                    if ($result [$i]->amount <= 0) {
+                        unset ( $result [$i] );
+                    }
+                }
+                // return array_values ( array_reverse( $result) );
+                // Returning "points" info as well so it can be used further
+                return [
+                    'expiration' => $result,
+                    'points_redeemed' => $points_redeemed,
+                    'points_expired' => $points_expired,
+                    'points_reclaimed' => $points_reclaimed,
+                ];
+            }
         } catch (Exception $e) {
             throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
-
-        return;
-
-		$result = $query->result ();
-		if (is_array ( $result ) && count ( $result ) > 0) {
-
-			// "Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
-			if (is_array ( $points_reclaimed_list ) && count ( $points_reclaimed_list ) > 0) {
-				foreach ( $points_reclaimed_list as $reclaim_posting ) {
-					if ($points_reclaimed <= 0) {
-						break;
-					}
-					foreach ( $result as &$point_award3 ) {
-						if ($points_reclaimed <= 0) {
-							break;
-						}
-						if ($reclaim_posting->posting_amount_total <= 0) {
-							break;
-						}
-						if ($point_award3->amount <= 0) {
-							continue;
-						}
-						// If the program id does not match where the reclaim happened, skip it
-						if ($point_award3->program_id != $reclaim_posting->program_id) {
-							continue;
-						}
-						if ($point_award3->journal_event_id != $reclaim_posting->parent_journal_event_id) {
-							continue;
-						}
-						if ($reclaim_posting->posting_amount_total <= $point_award3->amount) {
-							$point_award3->amount -= $reclaim_posting->posting_amount_total;
-							$points_reclaimed -= $reclaim_posting->posting_amount_total;
-							$reclaim_posting->posting_amount_total = 0;
-						} else {
-							$reclaim_posting->posting_amount_total -= $point_award3->amount;
-							$points_reclaimed -= $point_award3->amount;
-							$point_award3->amount = 0;
-						}
-					}
-				}
-			}
-			// Finish the reclaim whittle using the regular method in case of errors
-			foreach ( $result as &$point_award4 ) {
-				if ($points_reclaimed <= 0) {
-					break;
-				}
-				if ($point_award4->amount <= 0) {
-					continue;
-				}
-				if ($points_reclaimed <= $point_award4->amount) {
-					$point_award4->amount -= $points_reclaimed;
-                    $point_award4->amount = round($point_award4->amount, 4, PHP_ROUND_HALF_DOWN);
-					$points_reclaimed = 0;
-				} else {
-					$points_reclaimed -= $point_award4->amount;
-					$point_award4->amount = 0;
-				}
-			}
-			// Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
-			// take away points that have been redeemed since we care about
-			foreach ( $result as &$point_award ) {
-				if ($points_redeemed <= 0) {
-					break;
-				}
-				if ($point_award->amount <= 0) {
-					continue;
-				}
-				if ($points_redeemed <= $point_award->amount) {
-					$point_award->amount -= $points_redeemed;
-                    $point_award->amount = round($point_award->amount, 4, PHP_ROUND_HALF_DOWN);
-					$points_redeemed = 0;
-				} else {
-					$points_redeemed -= $point_award->amount;
-					$point_award->amount = 0;
-				}
-			}
-			// take away points that have expired
-			foreach ( $result as &$point_award2 ) {
-				if ($points_expired <= 0) {
-					break;
-				}
-				if ($point_award2->amount <= 0) {
-					continue;
-				}
-				if ($points_expired <= $point_award2->amount) {
-					$point_award2->amount -= $points_expired;
-                    $point_award2->amount = round($point_award2->amount, 4, PHP_ROUND_HALF_DOWN);
-					$points_expired = 0;
-				} else {
-					$points_expired -= $point_award2->amount;
-					$point_award2->amount = 0;
-				}
-			}
-			// Remove any point awards that are now at 0
-			for($i = count ( $result ) - 1; $i >= 0; -- $i) {
-				if ($result [$i]->amount <= 0) {
-					unset ( $result [$i] );
-				}
-			}
-		}
-		return array_values ( array_reverse( $result) );
     }
 }

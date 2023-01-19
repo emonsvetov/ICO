@@ -100,7 +100,7 @@ class AccountService
      */
     public function readExpiredBalance(User $user, Program $program): float
     {
-        return Account::readExpiredTotalForParticipant($program, $user);
+        return self::readExpiredTotalForParticipant($program, $user);
     }
 
     /**
@@ -254,56 +254,271 @@ class AccountService
     public static function read_available_balance_for_program( $program ) {
 		return self::readAvailableBalanceForProgram ( $program );
     }
+    /**
+     * This method returns List of Participant Postings ByAccount And Journal Events
+     *
+     * @param int $account_holder_id
+     * @param string $account_type_name
+     * @param array|string $journal_event_types
+     * @param boolean $is_credit
+     * @return EloquentCollection
+     */
+	public static function readListParticipantPostingsByAccountAndJournalEvents($account_holder_id, $account_type_name, $journal_event_types, $is_credit = 0) {
 
-	public static function readListParticipantPostingsByAccountAndJournalEvents($account_holder_id, $account_type_name, $journal_event_types, $is_credit) {
-
-        $query = DB::table('accounts a');
+        $query = DB::table('accounts AS a');
 
         $query->addSelect(
-            DB::raw("DISTINCT postings.id")
+            DB::raw("distinct posts. *")
         );
 
-		$sql = "
-            select distinct
-               posts. *,
-               `p`.`account_holder_id` as program_id,
-               posts.posting_amount * posts.qty as posting_amount_total,
-               je.parent_journal_event_id
-            from
-                accounts a 
-                join account_types at on (at.id = a.account_type_id)
-                join postings posts on (posts.account_id = a.id)
-                join journal_events je on (je.id = posts.journal_event_id)
-                join journal_event_types jet on (jet.id = je.journal_event_type_id)
-            LEFT JOIN 
-                " . POSTINGS . " `program_posting` ON `program_posting`.`journal_event_id` = je.`id`
-            INNER JOIN 
-                " . ACCOUNTS . " `program_accounts` ON `program_accounts`.`id` = `program_posting`.`account_id`
-            INNER JOIN 
-                " . PROGRAMS . " `p` ON `p`.`account_holder_id` = `program_accounts`.`account_holder_id`    
-            where
-                a.account_holder_id = " . $this->read_db->escape ( ( int ) $account_holder_id ) . "
-                and at.account_type_name = " . $this->read_db->escape ( $account_type_name ) . "
-                and posts.is_credit = " . $this->read_db->escape ( ( int ) $is_credit ) . "
-        ";
-		if (is_array ( $journal_event_types )) {
+        $query->addSelect([
+            'p.account_holder_id as program_id',
+            'je.parent_journal_event_id'
+        ]);
+
+        $query->addSelect(
+            DB::raw("posts.posting_amount * posts.qty as posting_amount_total")
+        );
+
+        $query->join('account_types AS at', 'at.id', '=', 'a.account_type_id');
+        $query->join('postings AS posts', 'posts.account_id', '=', 'a.id');
+        $query->join('journal_events AS je', 'je.id', '=', 'posts.journal_event_id');
+        $query->join('journal_event_types AS jet', 'jet.id', '=', 'je.journal_event_type_id');
+        $query->leftJoin('postings AS program_postings', 'program_postings.journal_event_id', '=', 'je.id');
+        $query->join('accounts AS program_accounts', 'program_accounts.id', '=', 'program_postings.account_id');
+        $query->join('programs AS p', 'p.account_holder_id', '=', 'program_accounts.account_holder_id');
+
+        $query->where('a.account_holder_id', '=', $account_holder_id);
+        $query->where('at.name', '=', $account_type_name);
+        $query->where('posts.is_credit', '=', $is_credit);
+
+        if (is_array ( $journal_event_types )) {
 			// this not empty check is nested on purpose, otherwise the else gets executed if the array is empty because an empty array is != ""
 			if (! empty ( $journal_event_types )) {
-				$sql = $sql . "and jet.type in ('" . implode ( "','", $journal_event_types ) . "')";
+                $query->whereIn('jet.type', $journal_event_types);
 			}
 		} else if ($journal_event_types != "") {
-			$sql = $sql . "and jet.type = " . $this->read_db->escape ( $journal_event_types );
+            $query->where('jet.type', '=', $journal_event_types);
 		}
-		// throw new RuntimeException($sql);
-		$query = $this->read_db->query ( $sql );
-		if (! $query) {
-			throw new RuntimeException ( $sql . ' Internal query failed, please contact API administrator', 500 );
-		}
-		return $query->result ();
+
+        try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
 	
 	}
-
+    /**
+     * Alias for "readListParticipantPostingsByAccountAndJournalEvents"
+     */
     public static function read_list_participant_postings_by_account_and_journal_events(){
         return self::readListParticipantPostingsByAccountAndJournalEvents();
+    }
+    /**
+     * This method returns count of Journal Events for user, not sure why program is included in the argument; copied from current application
+     *
+     * @param Program $program
+     * @param User $participant
+     * @param array $extraArgs
+     * @return integer
+     */
+    public static function readEventHistoryCountByProgramByParticipant(Program $program, User $participant, $extraArgs=[]) {
+
+        $query = DB::table('accounts');
+
+        $query->addSelect(
+            DB::raw("count(journal_events.id) AS count")
+        );
+
+        $query->join('account_types', 'accounts.account_type_id', '=', 'account_types.id');
+        $query->join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+
+        $query->where('users.account_holder_id', '=', $participant->account_holder_id);
+        $query->whereIn('account_types.name', ['Points Awarded', 'Monies Awarded']);
+
+		if (isset($extraArgs['onlyAwards']) && $extraArgs['onlyAwards'] == 1 ) {
+            $query->whereNotNull('journal_events.event_xml_data_id');
+		}
+
+		if(isset($extraArgs['entrataCurrentAcademicYear']) && $extraArgs['entrataCurrentAcademicYear']  == 1){
+            $AY = getEntrataAcademicYear();
+            $query->where('journal_events.created_at', '>=', $AY);
+        }
+        try {
+            $result = $query->count();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+    /**
+     * Alias for "readEventHistoryCountByProgramByParticipant"
+     */
+    public static function read_event_history_count_by_program_by_participant(Program $program, User $participant, $extraArgs=[]) {
+        return self::readEventHistoryCountByProgramByParticipant($program, $participant, $extraArgs);
+    }
+    /**
+     * This method returns count of Journal Events for user, not sure why program is included in the argument; copied from current application
+     *
+     * @param Program $program
+     * @param User $participant
+     * @param array $extraArgs
+     * @return integer
+     */
+    public static function readEventHistoryByProgramByParticipant(Program $program, User $participant, $extraArgs=[]) {
+
+        $query = DB::table('accounts');
+
+        $query->addSelect(
+            [
+                DB::raw("if(event_xml_data.name is null, journal_event_types.type, event_xml_data.name) AS name"),
+                'accounts.id AS account_id',
+                'journal_events.id AS journal_event_id',
+                'journal_events.event_xml_data_id',
+                'event_xml_data.icon',
+                DB::raw("if(is_credit = 1, postings.posting_amount, -postings.posting_amount) AS amount"),
+                'event_xml_data.award_level_name',
+                DB::raw("if(event_xml_data.notes is null, journal_events.notes, event_xml_data.notes) AS notes"),
+                'journal_events.created_at',
+                'event_xml_data.referrer',
+                'event_xml_data.lease_number',
+                'event_xml_data.notification_body',
+                'event_xml_data.xml',
+                'event_xml_data.token',
+                'event_xml_data.email_template_id',
+            ]
+        );
+
+        $query->join('account_types', 'accounts.account_type_id', '=', 'account_types.id');
+        $query->join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('journal_event_types', 'journal_events.journal_event_type_id', '=', 'journal_event_types.id');
+        $query->join('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+
+        $query->where('users.account_holder_id', '=', $participant->account_holder_id);
+        $query->whereIn('account_types.name', ['Points Awarded', 'Monies Awarded']);
+
+		if (isset($extraArgs['onlyAwards']) && $extraArgs['onlyAwards'] == 1 ) {
+            $query->whereNotNull('journal_events.event_xml_data_id');
+		}
+
+		if(isset($extraArgs['entrataCurrentAcademicYear']) && $extraArgs['entrataCurrentAcademicYear']  == 1){
+            $AY = getEntrataAcademicYear();
+            $query->where('journal_events.created_at', '>=', $AY);
+        }
+        try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+    /**
+     * Alias for "readEventHistoryByProgramByParticipant"
+     */
+    public static function read_event_history_by_program_by_participant(Program $program, User $participant, $extraArgs=[]) {
+        return self::readEventHistoryByProgramByParticipant($program, $participant, $extraArgs);
+    }
+    /**
+     * This method returns list of event awards for an user in a program
+     *
+     * @param Program $program
+     * @param User $user
+     * @return integer
+     */
+	public function readListEventAwardsForParticipant(Program $program, User $participant) {
+        $factor = (int) $program->factor_valuation;
+		if ($program->programIsInvoiceForAwards()) {
+			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
+		} else {
+			$account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
+		}
+        DB::statement("SET SQL_MODE=''"); //Fix for groupBy error!
+        $query = DB::table('accounts');
+
+        $query->addSelect(
+            [
+                'event_xml_data.name',
+                DB::raw('SUM(postings.posting_amount) AS amount'),
+                'postings.journal_event_id AS journal_event_id',
+                DB::raw("(postings.posting_amount * {$factor}) AS points"),
+            ]
+        );
+        $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('event_xml_data', 'journal_events.event_xml_data_id', '=', 'event_xml_data.id');
+
+        $query->where('account_types.name', '=', $account_type);
+        $query->where('postings.is_credit', '=', 1);
+        $query->where('account_holder_id', '=', $participant->account_holder_id);
+        $query->groupBy('event_xml_data.name');
+
+        try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+    /**
+     * Alias for "readListEventAwardsForParticipant"
+     */
+    public static function read_list_event_awards_for_participant(Program $program, User $participant, $extraArgs=[]) {
+        return self::readListEventAwardsForParticipant($program, $participant, $extraArgs);
+    }
+    /**
+     * This method returns list of event awards with Internal Store for an user in a program
+     *
+     * @param Program $program
+     * @param User $user
+     * @return integer
+     */
+
+	public static function readListEventAwardsWithInternalStoreForParticipant(Program $program, User $participant) {
+
+        if ($program->programIsInvoiceForAwards()) {
+			$account_type = AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS;
+		} else {
+			$account_type = 'none'; //as in old app
+		}
+
+        DB::statement("SET SQL_MODE=''"); //Fix for groupBy error!
+        $query = DB::table('accounts');
+
+        $query->addSelect(
+            [
+                'event_xml_data.name',
+                DB::raw('SUM(postings.posting_amount) AS amount'),
+                'postings.journal_event_id AS journal_event_id'
+            ]
+        );
+
+        $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('event_xml_data', 'journal_events.event_xml_data_id', '=', 'event_xml_data.id');
+
+        $query->where('account_types.name', '=', $account_type);
+        $query->where('postings.is_credit', '=', 1);
+        $query->where('account_holder_id', '=', $participant->account_holder_id);
+        $query->groupBy('event_xml_data.name');
+
+        try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+    /**
+     * Alias for "readListEventAwardsWithInternalStoreForParticipant"
+     */
+    public static function read_list_event_awards_with_internal_store_for_participant(Program $program, User $participant) {
+        return self::readListEventAwardsWithInternalStoreForParticipant($program, $participant);
     }
 }
