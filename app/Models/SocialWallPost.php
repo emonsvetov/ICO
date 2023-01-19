@@ -82,7 +82,8 @@ class SocialWallPost extends BaseModel
         $comments = SocialWallPost::selectRaw(
             'social_wall_posts.*,
             concat(u.first_name, " ", u.last_name) as fromUser,
-            DATE_FORMAT(social_wall_posts.created_at,"%m/%d/%Y %H:%i:%s") AS created_at_formated'
+            DATE_FORMAT(social_wall_posts.created_at,"%m/%d/%Y %H:%i:%s") AS created_at_formated,
+            u.avatar',
             )
             ->where('social_wall_post_id', $this->id)
             ->join('users AS u', 'u.account_holder_id', '=', 'social_wall_posts.sender_user_account_holder_id')
