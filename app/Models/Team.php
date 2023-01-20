@@ -5,13 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 
-class Team extends Model
+class Team extends BaseModel
 {
+    protected $guarded = [];
     use HasFactory;
     use SoftDeletes;
 
-    protected $guarded = [];
+    
     protected $hidden = [
         'created_at',
         'updated_at',

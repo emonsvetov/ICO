@@ -6,6 +6,7 @@ use App\Models\Program;
 use App\Models\Organization;
 use App\Models\Team;
 use Illuminate\Auth\Access\HandlesAuthorization;
+use Illuminate\Support\Facades\Gate;
 
 class TeamPolicy
 {
@@ -27,8 +28,9 @@ class TeamPolicy
      */
 	 public function create(User $authUser, Organization $organization, Program $program)
     {
-       return true;
-        //pr('ff'); die;
+        
+    //return true;
+        //pr($authUser); die;
        // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {

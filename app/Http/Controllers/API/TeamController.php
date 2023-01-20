@@ -5,8 +5,9 @@ use App\Http\Requests\TeamRequest;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Organization;
-use App\Models\Team;
 use App\Models\Program;
+use App\Models\Team;
+
 
 class TeamController extends Controller
 {
@@ -23,6 +24,7 @@ class TeamController extends Controller
 
     public function store(TeamRequest $request, Organization $organization, Program $program )
     {
+        //pr('there'); die;
         $data = $request->validated();
         $newTeam =Team::create( 
             $data + 
