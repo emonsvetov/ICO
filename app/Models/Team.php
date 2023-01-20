@@ -18,8 +18,8 @@ class Team extends Model
         'deleted_at',
     ];
 
-    public function program()
+    /*public function program()
     {
         return $this->belongsTo(Program::class);
-    }
+    }*/
 }
