@@ -98,6 +98,7 @@ class AuthController extends Controller
             {
                 if( ($user->isSuperAdmin() || $user->isAdmin()) )
                 {
+                    $response['programCount'] = $user->organization->programs()->count();
                     return response($response);
                 }
             }
