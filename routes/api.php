@@ -394,12 +394,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      Route::get('/v1/organization/{organization}/program/{program}/team',
      [App\Http\Controllers\API\TeamController::class, 'index'])->name('api.v1.team.index')->middleware('can:viewAny,App\Team,organization,program');
     
-     /*Route::get('/v1/organization/{organization}/program/{program}/team/{team}',
+     Route::get('/v1/organization/{organization}/program/{program}/team/{team}',
      [App\Http\Controllers\API\TeamController::class, 'show'])->name('api.v1.team.show')->middleware('can:view,App\Team,organization,program,team');
      Route::put('/v1/organization/{organization}/program/{program}/team/{team}',
      [App\Http\Controllers\API\TeamController::class, 'update'])->name('api.v1.team.update')->middleware('can:update,App\Team,organization,program,team');
      Route::delete('/v1/organization/{organization}/program/{program}/team/{team}',
-     [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');*/
+     [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
 
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',

@@ -42,11 +42,10 @@ class TeamController extends Controller
         return response([ 'team' => $newTeam ]);
     }
 
-    /*public function show( Organization $organization, Program $program,Team $team )
+    public function show( Organization $organization, Program $program,Team $team )
     {
         if ($team ) 
         {
-           $team->load('status');
             return response($team );
         }
 
@@ -64,5 +63,5 @@ class TeamController extends Controller
     {
         $team->delete();
         return response(['success' => true]);
-    }*/
+    }
 }

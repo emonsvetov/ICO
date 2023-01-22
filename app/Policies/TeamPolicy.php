@@ -28,10 +28,6 @@ class TeamPolicy
      */
 	 public function create(User $authUser, Organization $organization, Program $program)
     {
-       // pr($authUser); die;
-    return true;
-        //pr($authUser); die;
-       // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
@@ -70,7 +66,7 @@ class TeamPolicy
      * @param  \App\Models\Team  $team
      * @return mixed
      */
-    /*public function view(User $authUser, Organization $organization, Program $program)
+    public function view(User $authUser, Organization $organization, Program $program)
     {
         // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
@@ -81,7 +77,7 @@ class TeamPolicy
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('team-view');
-    }*/
+    }
        /**
      * Determine whether the user can update the model.
      *
@@ -91,7 +87,7 @@ class TeamPolicy
      * @param  \App\Models\Team  $team
      * @return mixed
      */
-    /*public function update(User $authUser, Organization $organization, Program $program,Team $team)
+    public function update(User $authUser, Organization $organization, Program $program,Team $team)
     {
         // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
@@ -102,7 +98,7 @@ class TeamPolicy
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('team-update');
-    }*/
+    }
      /**
      * Determine whether the user can delete the model.
      *
@@ -112,7 +108,7 @@ class TeamPolicy
      * @param  \App\Models\Team  $team
      * @return mixed
      */
-    /*public function delete(User $authUser, Organization $organization, Program $program,Team $team)
+    public function delete(User $authUser, Organization $organization, Program $program,Team $team)
     {
        
         // return true;
@@ -124,5 +120,5 @@ class TeamPolicy
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('team-delete');
-    }*/
+    }
 }

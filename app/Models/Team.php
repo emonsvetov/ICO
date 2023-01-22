@@ -12,7 +12,7 @@ class Team extends BaseModel
     protected $guarded = [];
     use HasFactory;
     use SoftDeletes;
-    protected $table = 'team';
+    //protected $table = 'team';
     
     protected $hidden = [
         'created_at',
@@ -20,8 +20,8 @@ class Team extends BaseModel
         'deleted_at',
     ];
 
-    /*public function program()
+    public function program()
     {
         return $this->belongsTo(Program::class);
-    }*/
+    }
 }
