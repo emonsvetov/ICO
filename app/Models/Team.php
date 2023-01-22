@@ -12,7 +12,7 @@ class Team extends BaseModel
     protected $guarded = [];
     use HasFactory;
     use SoftDeletes;
-
+    protected $table = 'team';
     
     protected $hidden = [
         'created_at',

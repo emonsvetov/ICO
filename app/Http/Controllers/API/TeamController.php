@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Team;
-
+use DB;
 
 class TeamController extends Controller
 {
@@ -18,7 +18,7 @@ class TeamController extends Controller
        $where = ['organization_id' => $organization->id, 'program_id' => $program->id];
        $teams = Team::where($where);
         if($teams) {
-            return response($teams );
+            return response($teams,404 );
         }
         return response( [] );
     }
