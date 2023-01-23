@@ -3,6 +3,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\TeamRequest;
 //use Illuminate\Support\Facades\Request;
+use App\Http\Traits\TeamUploadTrait;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Organization;
@@ -12,15 +13,10 @@ use DB;
 
 class TeamController extends Controller
 {
-    
-    public function index( Organization $organization, Program $program )
+    use TeamUploadTrait;
+    public function index( Organization $organization, Program $program, Request $request )
     {
-       $where = ['organization_id' => $organization->id, 'program_id' => $program->id];
-       $teams = Team::where($where);
-        if($teams) {
-            return response($teams,404 );
-        }
-        return response( [] );
+        return response(Team::getIndexData($organization, $program, $request->all()) ?? []);
     }
 
     public function store(TeamRequest $request, Organization $organization, Program $program )
@@ -38,7 +34,7 @@ class TeamController extends Controller
         {
             return response(['errors' => 'Team creation failed'], 422);
         }
-
+        $uploads = $this->handleTeamMediaUpload($request, $newTeam, true);
         return response([ 'team' => $newTeam ]);
     }
 
