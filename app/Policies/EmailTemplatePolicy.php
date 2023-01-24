@@ -42,4 +42,14 @@ class EmailTemplatePolicy
         if( $user->isManagerToProgram( $program ) ) return true;
         return $user->can('emailtemplate-edit');
     }
+    public function listType(User $user, Organization $organization, Program $program)
+    {
+        if ( !$this->__preAuthCheck($user, $organization, $program) )
+        {
+            return false;
+        }
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program ) ) return true;
+        return $user->can('emailtemplate-type-list');
+    }
 }

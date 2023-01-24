@@ -53,6 +53,7 @@ class DatabaseSeeder extends Seeder
             CsvImportTypeSeeder::class,
             Database\Seeders\InvoiceTypeSeeder::class,
             Database\Seeders\PaymentMethodSeeder::class,
+            Database\Seeders\EmailTemplateTypeSeeder::class,
         ]);
     }
 }
