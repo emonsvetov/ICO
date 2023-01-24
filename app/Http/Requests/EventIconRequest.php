@@ -28,4 +28,12 @@ class EventIconRequest extends FormRequest
             'image.*' => 'required|image|mimes:jpeg,png,jpg,gif,ico|max:2048'
         ];
     }
+
+    public function attributes()
+    {
+        return [
+            'image' => 'Image',
+            'image.*' => 'Image',
+        ];
+    }
 }
