@@ -25,7 +25,7 @@ class TeamRequest extends FormRequest
     public function rules()
     {
         return [
-            'photo' => 'nullable|string',
+            'photo' => 'nullable',
             'name' => 'required|string',
             'title' => 'nullable|string',
             'description'=> 'nullable|string',

@@ -34,7 +34,10 @@ class TeamController extends Controller
         {
             return response(['errors' => 'Team creation failed'], 422);
         }
-        $uploads = $this->handleTeamMediaUpload($request, $newTeam, true);
+        $upload = $this->handleTeamMediaUpload($request, $newTeam, true);
+        if( $upload )   {
+            $newTeam->update( $upload );
+        }
         return response([ 'team' => $newTeam ]);
     }
 
@@ -50,8 +53,20 @@ class TeamController extends Controller
 
     public function update(TeamRequest $request, Organization $organization, Program $program,Team $team )
     {
+        //return response(['team' =>$team ]);
+        //pr($request->all());
         $data = $request->validated();
-        $team->update( $data );
+        try {
+            $team->update( $data );
+            $upload = $this->handleTeamMediaUpload($request, $team, true);
+            if( $upload )   {
+                $team->update( $upload );
+            }
+        }
+        catch(\Throwable $e)
+        {
+            return response(['errors' => 'Team Creation failed', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
+        }
         return response(['team' =>$team ]);
     }
 
