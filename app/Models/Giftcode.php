@@ -146,7 +146,7 @@ class Giftcode extends Model
 		return $response;
 	}
 
-	public function getRedeemableListByMerchant($merchant, $filters = []) {
+	public static function getRedeemableListByMerchant($merchant, $filters = []) {
 		return self::_read_redeemable_list_by_merchant( $merchant, $filters );
 	}
 

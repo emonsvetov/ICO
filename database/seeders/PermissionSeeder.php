@@ -135,6 +135,7 @@ class PermissionSeeder extends Seeder
             'program-social-wall-post-delete',
             'program-list-status',
             'program-update-status',
+            'user-read-points',
         ];
 
         foreach ($permissions as $permission) {

@@ -4,16 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+
 use App\Models\JournalEventType;
 use App\Models\EventXmlData;
 use App\Models\JournalEvent;
 use App\Models\FinanceType;
+use App\Models\AccountType;
 use App\Models\MediumType;
 use App\Models\EventType;
 use App\Models\Currency;
+use App\Models\Program;
 use App\Models\Event;
 use App\Models\User;
-use DB;
 use mysql_xdevapi\Exception;
 
 class Award extends Model
@@ -24,8 +27,6 @@ class Award extends Model
 
     public static function create( $award, $program, $awarder )
     {
-//        print_r($award);
-//        throw new Exception('asd');
         $event = Event::where('id', $award->event_id)->first();
         $eventType = EventType::where('id', $event->event_type_id)->first();
         $peer2peer = null;
