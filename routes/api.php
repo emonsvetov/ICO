@@ -314,6 +314,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/event-history',[App\Http\Controllers\API\ProgramUserController::class, 'readEventHistory'])->middleware('can:readEventHistory,App\ProgramUser,organization,program,user');
 
+    // Participant
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
+
     //Statuses
 
     // Route::get('/v1/status',[App\Http\Controllers\API\StatusController::class, 'index'])->middleware('can:viewAny,App\Status');

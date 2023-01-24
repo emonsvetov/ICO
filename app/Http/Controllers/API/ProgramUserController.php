@@ -134,8 +134,8 @@ class ProgramUserController extends Controller
         $factor_valuation = $program->factor_valuation;
         $points_balance = $amount_balance * $program->factor_valuation;
         $peerBalance = $userService->readAvailablePeerBalance($user, $program);
-        $expiredBalance = $accountService->readExpiredBalance($user->account_holder_id, $program);
-        $redeemedBalance = $accountService->readRedeemedBalance($user->account_holder_id, $program);
+        $expiredBalance = $accountService->readExpiredBalance($user, $program);
+        $redeemedBalance = $accountService->readRedeemedBalance($user, $program);
         return response([
             'points' => $points_balance,
             'amount' => $amount_balance,
