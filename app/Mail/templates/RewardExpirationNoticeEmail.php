@@ -19,10 +19,13 @@ class RewardExpirationNoticeEmail extends SendgridEmail
         string $contactFirstName,
         int $pointsExpiring,
         string $pointsExpirationDate,
-        string $contactProgramHost0
+        string $contactProgramHost0,
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());
+        $programTemplate = $program->load('template');
+        $this->data['template'] =$programTemplate['template'];
     }
 
 }

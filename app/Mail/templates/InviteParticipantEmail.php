@@ -17,10 +17,13 @@ class InviteParticipantEmail extends SendgridEmail
      */
     public function __construct(
         string $contactFirstName,
-        string $contactActivationTokenUrl
+        string $contactActivationTokenUrl,
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());
+        $programTemplate = $program->load('template');
+        $this->data['template'] =$programTemplate['template'];
     }
 
 }

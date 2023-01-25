@@ -3,6 +3,7 @@
 namespace App\Mail\templates;
 
 use App\Mail\SendgridEmail;
+use App\Models\Program;
 
 class ActivationReminderEmail extends SendgridEmail
 {
@@ -17,10 +18,13 @@ class ActivationReminderEmail extends SendgridEmail
      */
     public function __construct(
         string $contactProgramHost0,
-        string $contactActivationToken
+        string $contactActivationToken,
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());
+        $programTemplate = $program->load('template');
+        $this->data['template'] =$programTemplate['template'];
     }
 
 }

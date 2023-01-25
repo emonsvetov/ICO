@@ -21,10 +21,13 @@ class PeerAwardEmail extends SendgridEmail
         string $senderLastName,
         int $awardPoints,
         int $availableAwardPoints,
-        string $contactProgramHost0
+        string $contactProgramHost0,
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());
+        $programTemplate = $program->load('template');
+        $this->data['template'] =$programTemplate['template'];
     }
 
 }
