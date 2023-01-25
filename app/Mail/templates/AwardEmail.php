@@ -24,8 +24,8 @@ class AwardEmail extends SendgridEmail
     ) {
         parent::__construct();
         $this->init(func_get_args());
-        $programTemplate = $program->load('template');
-        $this->data['template'] =$programTemplate['template'];
+//        $programTemplate = $program->load('template');
+//        $this->data['template'] =$programTemplate['template'];
     }
 
 }
