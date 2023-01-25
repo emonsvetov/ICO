@@ -27,7 +27,7 @@ class CreateProgramEmailTemplatesTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('email_template_type_id')->references('id')->on('email_template_types');
+            $table->foreign('email_template_type_id', 'email_tpl_id')->references('id')->on('email_template_types');
             $table->foreign('organization_id')->references('id')->on('organizations')->onDelete('cascade');
             $table->foreign('program_id')->references('id')->on('programs')->onDelete('cascade');
         });

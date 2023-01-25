@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateEmailTemplateExternalsTable extends Migration
+class CreateProgramEmailTemplateExternalsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,9 +13,9 @@ class CreateEmailTemplateExternalsTable extends Migration
      */
     public function up()
     {
-        Schema::create('email_template_externals', function (Blueprint $table) {
+        Schema::create('program_email_template_externals', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('email_template_id');
+            $table->unsignedBigInteger('program_email_template_id');
             $table->longText('content')->nullable();
 
             $table->string('external_name', 100)->nullable();
@@ -24,7 +24,7 @@ class CreateEmailTemplateExternalsTable extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('email_template_id')->references('id')->on('email_templates')->onDelete('cascade');
+            $table->foreign('program_email_template_id', 'prog_email_tpl_id')->references('id')->on('program_email_templates')->onDelete('cascade');
         });
     }
 
@@ -35,6 +35,6 @@ class CreateEmailTemplateExternalsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('email_template_externals');
+        Schema::dropIfExists('program_email_template_externals');
     }
 }
