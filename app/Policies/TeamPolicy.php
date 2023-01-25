@@ -47,7 +47,6 @@ class TeamPolicy
      */
     public function viewAny(User $authUser, Organization $organization, Program $program)
     {
-        //return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
@@ -68,7 +67,6 @@ class TeamPolicy
      */
     public function view(User $authUser, Organization $organization, Program $program)
     {
-        // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
@@ -89,7 +87,6 @@ class TeamPolicy
      */
     public function update(User $authUser, Organization $organization, Program $program,Team $team)
     {
-        // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
@@ -110,8 +107,6 @@ class TeamPolicy
      */
     public function delete(User $authUser, Organization $organization, Program $program,Team $team)
     {
-       
-        // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
