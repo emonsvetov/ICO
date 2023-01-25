@@ -53,8 +53,6 @@ class TeamController extends Controller
 
     public function update(TeamRequest $request, Organization $organization, Program $program,Team $team )
     {
-        //return response(['team' =>$team ]);
-        //pr($request->all());
         $data = $request->validated();
         try {
             $team->update( $data );
