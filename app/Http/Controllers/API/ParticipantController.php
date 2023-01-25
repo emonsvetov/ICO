@@ -23,6 +23,27 @@ class ParticipantController extends Controller
 
             $result = $awardService->readListExpireFuture($program, $user);
 
+            // Check for existense of required information
+            if( !isset($result['expiration']))
+            {
+                $result['expiration'] = null;
+            }
+
+            if( !isset($result['points_redeemed']))
+            {
+                $result['points_redeemed'] = $accountService->readRedeemedTotalForParticipant ( $program, $user );;
+            }
+
+            if( !isset($result['points_expired']))
+            {
+                $result['points_expired'] = $accountService->readExpiredTotalForParticipant ( $program, $user );;
+            }
+
+            if( !isset($result['points_reclaimed']))
+            {
+                $result['points_reclaimed'] = $accountService->readReclaimedTotalForParticipant ( $program, $user );;
+            }
+
             $points_history_count = $accountService->readEventHistoryCountByProgramByParticipant($program, $user);
             $result['points_history_count'] = $points_history_count;
 
