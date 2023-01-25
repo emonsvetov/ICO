@@ -135,6 +135,11 @@ class PermissionSeeder extends Seeder
             'program-social-wall-post-delete',
             'program-list-status',
             'program-update-status',
+             'team-create',
+             'team-list',
+             'team-delete',
+             'team-update',
+             'team-view',
             'user-read-points',
         ];
 
