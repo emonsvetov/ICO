@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\LeaderboardService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -119,7 +120,7 @@ class Award extends Model
                     'referrer' => $referrer,
                     'lease_number' => $lease_number,
                     'token' => $token,
-                    'email_template_id' => $award->email_template_id,
+                    'email_template_id' => $award->email_template_id ?? 1, // TODO: email templates
                     'event_type_id' => $event_type_id,
                     'icon' => 'Award', //TODO
                     'event_template_id' => $event_id, //Event > id
@@ -212,6 +213,12 @@ class Award extends Model
                 );
 
                 // print_r( $userId );
+
+                // If the program uses leaderboards get all the leaderboards that are tied to this event
+                if($program->uses_leaderboards)	{
+                    $leaderboardService = new LeaderboardService();
+                    $leaderboardService->createLeaderboardJournalEvent($event_id, $journal_event_id);
+                }
             }
             // return $award->user_id;
 
