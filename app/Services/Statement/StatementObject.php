@@ -44,6 +44,11 @@ class StatementObject {
 
     /**
      *
+     * @var int $program_id */
+    public $program_id = 0;
+
+    /**
+     *
      * @var int $program_account_holder_id */
     public $program_account_holder_id = 0;
 }

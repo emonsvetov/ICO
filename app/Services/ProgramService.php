@@ -5,8 +5,8 @@ namespace App\Services;
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
 use App\Models\Traits\IdExtractor;
+use App\Services\AccountService;
 use App\Services\UserService;
-use App\Models\Account;
 use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
@@ -23,6 +23,7 @@ class ProgramService
 
     private UserService $userService;
     private AccountService $accountService;
+    private TransferMoniesService $transferMoniesService;
     private ProgramsTransactionFeeService $programsTransactionFeeService;
 
     public function __construct(
@@ -463,7 +464,7 @@ class ProgramService
             $topLevelProgram = $program;
         }
         $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
-        $balance = Account::read_available_balance_for_program ( $program );
+        $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
         return
             [
                 'program' => $program,
@@ -477,7 +478,7 @@ class ProgramService
         if(sizeof($data["amounts"]) > 0)    {
             $result = [];
             foreach($data["amounts"] as $programId => $amount)  {
-                $balance = Account::read_available_balance_for_program ( $program );
+                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
                 if ($amount > $balance) {
                     throw new \RuntimeException ( "Account balance has insufficient funds to transfer $" . $amount, 400 );
                 }
@@ -487,7 +488,7 @@ class ProgramService
                 $result[$programId] = $this->transferMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
             }
             if( sizeof($data["amounts"]) == sizeof($result))    {
-                $balance = Account::read_available_balance_for_program ( $program );
+                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
                 return ['success'=>true, 'transferred' => $result, 'balance' => $balance];
             }
         }

@@ -12,7 +12,7 @@ use DB;
 
 trait Redeemable
 {
-	private function _read_redeemable_list_by_merchant( $merchant, $filters = [] )	{
+	private static function _read_redeemable_list_by_merchant( $merchant, $filters = [] )	{
 
 		if( !is_object($merchant) && is_numeric($merchant) )	{
 			$merchant = Merchant::find($merchant);
@@ -56,7 +56,7 @@ trait Redeemable
 		return $query->get();
 	}
 
-    private function _redeem_points_for_giftcodes_no_transaction( $params )    {
+    private static function _redeem_points_for_giftcodes_no_transaction( $params )    {
         
 		extract($params);
 
