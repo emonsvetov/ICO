@@ -24,7 +24,7 @@ class AwardRequest extends FormRequest
     public function rules()
     {
         return [
-            'email_template_id' => 'required|integer',
+            'email_template_id' => 'nullable|integer', // TODO: email templates
             'event_id' => 'required|integer',
             'message' => 'required|string',
             'notes' => 'nullable|string',
