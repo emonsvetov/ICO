@@ -18,7 +18,8 @@ class InviteManagerEmail extends SendgridEmail
     public function __construct(
         string $contactFirstName,
         string $contactProgramHost0,
-        string $contactActivationToken
+        string $contactActivationToken,
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());
