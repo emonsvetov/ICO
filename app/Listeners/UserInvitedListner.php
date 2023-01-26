@@ -13,6 +13,7 @@ use Illuminate\Queue\InteractsWithQueue;
 
 class UserInvitedListner
 {
+    private UserService $userService;
     /**
      * Create the event listener.
      *
