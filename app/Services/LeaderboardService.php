@@ -93,6 +93,7 @@ class LeaderboardService
             $subQuery->addSelect(
                 DB::raw("
                         users.account_holder_id as user_id,
+                        users.avatar as avatar,
                         concat (users.first_name, ' ', users.last_name) as `display_name`,
                         sum(postings.posting_amount) - sum(ifnull(reclaimed_postings.posting_amount, 0)) as `total`
                     ")
@@ -105,17 +106,18 @@ class LeaderboardService
                 JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD,
                 JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE,
             ]);
-            $subQuery->groupBy(['user_id', 'display_name']);
+            $subQuery->groupBy(['user_id', 'display_name', 'avatar']);
         }, 'subQuery')
             ->select(
                 DB::raw("
                         user_id,
                         display_name,
-                        total,
+                        avatar,
+                        TRUNCATE(total, 1) as total,
                         (@i:= ifnull(@i, 1) + (if(ifnull(@val, 0) = total, 0, 1))) as ranking,
                         @val:= total
                 ")
-            )->groupBy(['user_id', 'display_name', 'total'])
+            )->groupBy(['user_id', 'display_name', 'avatar', 'total'])
             ->orderBy('total', 'DESC')
             ->orderBy('display_name', 'ASC');
 
@@ -159,6 +161,7 @@ class LeaderboardService
             $subQuery->addSelect(
                 DB::raw("
                         users.account_holder_id as user_id,
+                        users.avatar as avatar,
                         concat (users.first_name, ' ', users.last_name) as `display_name`,
                         count(0) as `count`
                     ")
@@ -177,17 +180,18 @@ class LeaderboardService
                 AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS,
                 AccountType::ACCOUNT_TYPE_PROMOTIONAL_POINTS,
             ]);
-            $subQuery->groupBy(['user_id', 'display_name']);
+            $subQuery->groupBy(['user_id', 'display_name', 'avatar']);
         }, 'subQuery')
             ->select(
                 DB::raw("
                         user_id,
                         display_name,
-                        `count` as total,
+                        avatar,
+                        TRUNCATE(`count`, 1) as total,
                         (@i:= ifnull(@i, 1) + (if(ifnull(@val, 0) = count, 0, 1))) as ranking,
                         @val:= count
                 ")
-            )->groupBy(['user_id', 'display_name', 'total'])
+            )->groupBy(['user_id', 'display_name', 'avatar', 'total'])
             ->orderBy('total', 'DESC')
             ->orderBy('display_name', 'ASC');
 
@@ -218,25 +222,27 @@ class LeaderboardService
                 DB::raw("
                         users.account_holder_id as user_id,
                         concat (users.first_name, ' ', users.last_name) as `display_name`,
+                        users.avatar as avatar,
                         sum(user_goal_progress.progress_value) as progress,
                         user_goal.target_value as target,
                         round(100 * (sum(user_goal_progress.progress_value) / user_goal.target_value	), 2) as pcnt_progress
                     ")
             );
             $subQuery->where('leaderboards.id', '=', $leaderboardId);
-            $subQuery->groupBy(['user_id', 'display_name', 'user_goal.target_value']);
+            $subQuery->groupBy(['user_id', 'display_name', 'avatar', 'user_goal.target_value']);
         }, 'subQuery')
             ->select(
                 DB::raw("
                         user_id,
                         display_name,
-                        progress,
+                        avatar,
+                        progress as total,
                         target,
                         pcnt_progress,
                         (@i:= ifnull(@i, 0) + (if(round(ifnull(@val, 0),2) = round(pcnt_progress, 2), 0, 1))) as ranking,
                         @val:= pcnt_progress
                 ")
-            )->groupBy(['user_id', 'display_name', 'progress', 'target', 'pcnt_progress'])
+            )->groupBy(['user_id', 'display_name', 'avatar', 'progress', 'target', 'pcnt_progress'])
             ->orderBy('pcnt_progress', 'DESC')
             ->orderBy('display_name', 'ASC');
 
