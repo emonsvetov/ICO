@@ -17,75 +17,51 @@ class EmailTemplateTypeSeeder extends Seeder
         EmailTemplateType::insert([
             [
                 "id" => 1,
-                "type" => "Invite Participant"
+                "type" => "Activation Reminder"
             ],
             [
                 "id" => 2,
-                "name" => "Invite Manager"
-            ],
-            [
-                "id" => 3,
-                "name" => "Welcome"
-            ],
-            [
-                "id" => 4,
-                "name" => "Password Reset"
-            ],
-            [
-                "id" => 5,
-                "name" => "Activation Reminder"
-            ],
-            [
-                "id" => 6,
                 "name" => "Award"
             ],
             [
-                "id" => 7,
-                "name" => "Gift Code"
-            ],
-            [
-                "id" => 8,
-                "name" => "Goal Progress"
-            ],
-            [
-                "id" => 9,
-                "name" => "Points Expiration"
-            ],
-            [
-                "id" => 10,
-                "name" => "Allocate Peer to Peer"
-            ],
-            [
-                "id" => 11,
+                "id" => 3,
                 "name" => "Award Badge"
             ],
             [
+                "id" => 4,
+                "name" => "Gift Code"
+            ],
+            [
+                "id" => 5,
+                "name" => "Goal Status"
+            ],
+            [
+                "id" => 6,
+                "name" => "Invite Manager"
+            ],
+            [
+                "id" => 7,
+                "name" => "Invite Participant"
+            ],
+            [
+                "id" => 8,
+                "name" => "Password Reset"
+            ],
+            [
+                "id" => 9,
+                "name" => "Peer Allocation"
+            ],
+            [
+                "id" => 10,
+                "name" => "Peer Award"
+            ],
+            [
+                "id" => 11,
+                "name" => "Reward Expiration Notice"
+            ],
+            [
                 "id" => 12,
-                "name" => "Award Approved"
-            ],
-            [
-                "id" => 13,
-                "name" => "Award Approval"
-            ],
-            [
-                "id" => 14,
-                "name" => "Budget Approved"
-            ],
-            [
-                "id" => 15,
-                "name" => "Budget Approval"
-            ],
-            [
-                "id" => 16,
-                "name" => "Budget Denied"
-            ],
-            [
-                "id" => 17,
-                "name" => "Budget Approved Edited"
-            ],
-            [
-                "id" => 18,
-                "name" => "Program Closing Notice"
+                "name" => "Welcome"
             ]
         ]);
     }

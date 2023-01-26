@@ -15,7 +15,7 @@ class AddDisabledFieldToEmailTemplateTypesTable extends Migration
     {
         Schema::table('email_template_types', function (Blueprint $table) {
             $table->string('class_path')->nullable();
-            $table->tinyInteger('default_provider_id')->default(1);
+            $table->tinyInteger('default_provider_id')->default(1)->comment('This is proposed email provider id such as local, infusionsoft, sendgrid. Defaults to 1=local');
             $table->timestamps();
             $table->softDeletes();
         });

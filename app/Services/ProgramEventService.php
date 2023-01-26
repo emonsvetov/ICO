@@ -49,7 +49,7 @@ class ProgramEventService
 
             if( $eventType->type == EventType::EVENT_TYPE_PEER2PEER_ALLOCATION )
             {
-                $emailTemplateType_type = EmailTemplateType::EMAIL_TEMPLATE_TYPE_ALLOCATE_PEER_TO_PEER;
+                $emailTemplateType_type = EmailTemplateType::EMAIL_TEMPLATE_TYPE_PEER_ALLOCATION;
             }
             if( $eventType->type == EventType::EVENT_TYPE_BADGE )
             {
