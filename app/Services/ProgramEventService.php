@@ -3,7 +3,8 @@
 namespace App\Services;
 
 use App\Models\Event;
-use App\Models\EmailTemplate;
+use App\Models\EventType;
+use App\Models\EmailTemplateType;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
@@ -40,16 +41,26 @@ class ProgramEventService
 
     private function _handleEmailTemplateData(array $data): array
     {
-        if(!empty($data['custom_email_template'])) {
-            $template['name']  = $data['template_name'];
-            $template['content']= $data['email_template'];
-            $template['type']= 'program_event';
-            $template['organization_id']= $data['organization_id'];
-            $template['program_id']= $data['program_id'];
-            $data['email_template_id'] = EmailTemplate::insertGetId( $template);
-            unset($data['custom_email_template']);
-            unset($data['template_name']);
-            unset($data['email_template']);
+        if( empty($data['email_template_type_id']) ) {
+
+            $emailTemplateType_type = EmailTemplateType::EMAIL_TEMPLATE_TYPE_AWARD;
+
+            $eventType = EventType::find($data['event_type_id']);
+
+            if( $eventType->type == EventType::EVENT_TYPE_PEER2PEER_ALLOCATION )
+            {
+                $emailTemplateType_type = EmailTemplateType::EMAIL_TEMPLATE_TYPE_ALLOCATE_PEER_TO_PEER;
+            }
+            if( $eventType->type == EventType::EVENT_TYPE_BADGE )
+            {
+                $emailTemplateType_type = EmailTemplateType::EMAIL_TEMPLATE_TYPE_AWARD_BADGE;
+            }
+            if( $eventType->type == EventType::EVENT_TYPE_PEER2PEER_BADGE )
+            {
+                $emailTemplateType_type = EmailTemplateType::EMAIL_TEMPLATE_TYPE_AWARD_BADGE;
+            }
+
+            $data['email_template_type_id'] = EmailTemplateType::getIdByType($emailTemplateType_type);
         }
         return $data;
     }
