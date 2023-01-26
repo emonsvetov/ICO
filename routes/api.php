@@ -296,6 +296,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/emailtemplate/{emailTemplate}',[App\Http\Controllers\API\EmailTemplateController::class, 'update'])->middleware('can:update,App\EmailTemplate,organization,program,emailTemplate');
 
+    Route::get('/v1/organization/{organization}/program/{program}/emailtemplate/typeList',[App\Http\Controllers\API\EmailTemplateController::class, 'typeList'])->middleware('can:listType,App\EmailTemplate,organization,program');
+
     //Award
 
     Route::post('/v1/organization/{organization}/program/{program}/award',[App\Http\Controllers\API\AwardController::class, 'store'])->middleware('can:create,App\Award,organization,program');

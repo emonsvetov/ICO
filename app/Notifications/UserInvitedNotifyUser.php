@@ -12,8 +12,10 @@ use App\Mail\templates\InviteParticipantEmail;
 class UserInvitedNotifyUser extends Notification
 {
     // use Queueable;
-    public $data;
+    public $sender;
+    public $recepient;
     public $token;
+    public $program;
 
     /**
      * Create a new notification instance.
@@ -24,8 +26,8 @@ class UserInvitedNotifyUser extends Notification
     {
         $this->sender = $sender;
         $this->recepient = $recepient;
-        $this->program = $program;
         $this->token = $token;
+        $this->program = $program;
     }
 
     /**
@@ -51,7 +53,7 @@ class UserInvitedNotifyUser extends Notification
         $url = app()->call('App\Services\DomainService@makeUrl');
         $tokenUrl = $url . '/invitation?token=' . $this->token;
 
-        return (new InviteParticipantEmail($this->recepient->name, $tokenUrl))->convertToMailMessage();
+        return (new InviteParticipantEmail($this->recepient->name, $tokenUrl, $this->program))->convertToMailMessage();
     }
 
     /**

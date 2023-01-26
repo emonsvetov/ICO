@@ -92,7 +92,7 @@ class Merchant extends Model
         return $merchant;
     }
 
-    public function readListByProgram( $program ) {
+    public static function readListByProgram( $program ) {
         if( count($program->merchants) )    {
             return $program->merchants;
         }
@@ -105,7 +105,7 @@ class Merchant extends Model
         return [];
     }
 
-    public function get_top_level_merchant( $merchant )    {
+    public static function get_top_level_merchant( $merchant )    {
         if(is_numeric($merchant))   {
             $merchant = self::find($merchant);
         }

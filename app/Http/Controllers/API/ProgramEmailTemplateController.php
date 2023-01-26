@@ -10,7 +10,7 @@ use App\Models\EmailTemplateType;
 use App\Models\Program;
 use App\Models\Organization;
 
-class EmailTemplateController extends Controller
+class ProgramEmailTemplateController extends Controller
 {
     /**
      * Display a listing of the resource.
