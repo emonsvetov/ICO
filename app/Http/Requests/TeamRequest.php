@@ -3,8 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class EventIconRequest extends FormRequest
+class TeamRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,16 +25,13 @@ class EventIconRequest extends FormRequest
     public function rules()
     {
         return [
-            'image' => 'required|array|max:5',
-            'image.*' => 'required|image|mimes:jpeg,png,jpg,gif,ico|max:2048'
+            'photo' => 'nullable',
+            'name' => 'required|string',
+            'title' => 'nullable|string',
+            'description'=> 'nullable|string',
+            'contact_phone'=> 'nullable|string',
+            'contact_email'=> 'nullable|string',
+            'deleted'=> 'boolean|nullable',
         ];
     }
-
-    public function attributes()
-    {
-        return [
-            'image' => 'Image',
-            'image.*' => 'Image',
-        ];
-    }
-}
+} 

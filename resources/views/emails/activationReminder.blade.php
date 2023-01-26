@@ -10,6 +10,13 @@ border-left:solid 1px;
         <tbody>
         <tr>
             <td width="600">
+                <div style="width:600px; height:312px; background-color: rgb(241,233,227); text-align: center;">
+                    <img style="margin: 25px;max-height: 80px;" src="{{ url( '/storage/' . $template['small_logo'])}}"
+                         border="0"><br>
+                    <span style="font-size:60px; font-weight: bold; color: #333333;">WELCOME</span><br>
+                    <span style=" font-weight: bold; color: #333333;">YOUR ACCOUNT IS ACTIVE</span>
+                    <hr style="border-top: 4px dashed {{ $template['theme_color'] }}; margin:40px;">
+                </div>
                 <img src="{{ $imagePath }}nk110-a857a6f7-849f-4517-a2cf-9ecc53cdc8f4-v2.jpeg">
                 <p width="600px" style="margin-left:20px;
                             margin-right:20px;font-size:15px;">

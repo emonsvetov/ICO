@@ -4,10 +4,17 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\Decimal82;
-use App\Models\Account;
+
+use App\Services\AccountService;
 
 class ProgramTransferMoniesRequest extends FormRequest
 {
+    private AccountService $accountService;
+    public function __construct(
+        AccountService $accountService,
+    ) {
+        $this->accountService = $accountService;
+    }
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
@@ -28,7 +35,7 @@ class ProgramTransferMoniesRequest extends FormRequest
                 }
             }
             if( !$invalid_programs )    {
-                $balance = Account::read_available_balance_for_program ( $this->program );
+                $balance = $this->accountService->readAvailableBalanceForProgram ( $this->program );
                 if(array_sum($this->amounts) > $balance)   {
                     $validator->errors()->add('balance', 'Insufficient balance to transfer monies');
                 }

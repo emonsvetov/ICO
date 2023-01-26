@@ -85,7 +85,6 @@ class StatementService
             sum(posts.qty * posts.posting_amount) as amount,
             exml.name as event_name,
             posts.created_at
-        		
         FROM " . PROGRAMS . " p
             INNER JOIN " . ACCOUNTS . " a ON a.account_holder_id = p.account_holder_id
             INNER JOIN " . ACCOUNT_TYPES . " atypes ON atypes.id = a.account_type_id
@@ -425,7 +424,7 @@ class StatementService
                 " . ACCOUNTS . ".account_holder_id = :program_account_holder_id
 	                AND " . ACCOUNT_TYPES . ".name = 'Monies Due to Owner'
                 AND " . POSTINGS . ".created_at >= DATE(:start_date)
-	                AND " . POSTINGS . ".created_at < DATE_ADD(DATE(:end_date), INTERVAL 1 DAY)
+	                AND " . POSTINGS . ".created_at <= DATE_ADD(DATE(:end_date), INTERVAL 1 DAY)
 	                ";
 		if (! $program->program_is_invoice_for_awards ()) {
 			$sql = $sql . "
