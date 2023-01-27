@@ -457,7 +457,7 @@ class AwardService
                 // return array_values ( array_reverse( $result) );
                 // Returning "points" info as well so it can be used further
                 return [
-                    'expiration' => $result,
+                    'expiration' => $result->toArray(),
                     'points_redeemed' => $points_redeemed,
                     'points_expired' => $points_expired,
                     'points_reclaimed' => $points_reclaimed,
