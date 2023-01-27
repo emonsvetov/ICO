@@ -52,7 +52,7 @@ class AwardService
      * @return array
      * @throws Exception
      */
-    public function create(Program $program, Organization $organization, User $currentUser, array $data): array
+    public function create(Program $program, Organization $organization, User $currentUser, array $data)
     {
         /** @var Event $event */
         $event = Event::findOrFail($data['event_id']);
@@ -103,8 +103,6 @@ class AwardService
         $awarder_account_holder_id = $awarder->account_holder_id; //user_id
         $notificationBody = $award->message; //TODO
         $notes = $award->notes ?? '';
-        $quantity = 1;
-        $medium_info_id = 0;
         $notificationType = 'Award';
 
         if( $program->program_is_invoice_for_awards() )  {
@@ -165,7 +163,7 @@ class AwardService
 
         try {
 
-            $users = User::whereIn('id', $award->user_id)->select(['id', 'account_holder_id'])->get();
+            $users = User::whereIn('id', $award->user_id)->get();
 
             foreach( $users as $user)    {
                 DB::beginTransaction();
@@ -280,7 +278,7 @@ class AwardService
                     $leaderboardService->createLeaderboardJournalEvent($event_id, $journal_event_id);
                 }
 
-                DB::commit();
+                // DB::commit();
 
                 $notification = [
                     'notificationType' => $notificationType,
@@ -297,7 +295,11 @@ class AwardService
                     $notification['availableAwardPoints'] = $user->readAvailableBalance($program);
                 }
 
+                // return $user;
+
                 $user->notify(new AwardNotification((object)$notification));
+
+                DB::rollBack();
             }
             // return $award->user_id;
 

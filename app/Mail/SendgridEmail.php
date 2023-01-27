@@ -46,11 +46,8 @@ class SendgridEmail extends Mailable
             $this->data[$parameter->name] = $argument;
 
             if($parameter->name == 'program'){
-                $programTemplate =$argument->load('template');
+                $programTemplate = $argument->load('template');
                 $this->data['template'] =$programTemplate['template'];
-            } else {
-
-                $this->data[$parameter->name] = $argument;
             }
         }
 
