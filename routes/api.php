@@ -410,6 +410,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      Route::delete('/v1/organization/{organization}/program/{program}/team/{team}',
      [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
 
+    //Get User Point Balance
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/participant-points',[App\Http\Controllers\API\ProgramUserController::class, 'readParticipantPoints'])->middleware('can:readParticipantPoints,App\ProgramUser,organization,program,user');
+
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',
     ], function ()

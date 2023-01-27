@@ -142,6 +142,7 @@ class PermissionSeeder extends Seeder
              'team-update',
              'team-view',
             'user-read-points',
+            'program-user-read-participant-points',
         ];
 
         foreach ($permissions as $permission) {
