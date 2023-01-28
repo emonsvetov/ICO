@@ -14,6 +14,6 @@ class OrganizationSeeder extends Seeder
      */
     public function run()
     {
-        Organization::create(['id' => 1, 'name' => 'Test Organization', 'created_at' => now(),  'updated_at' => now()]);
+        Organization::create(['id' => 1, 'name' => 'Incentco (default)', 'created_at' => now(),  'updated_at' => now()]);
     }
 }
