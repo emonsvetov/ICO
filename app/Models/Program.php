@@ -366,26 +366,20 @@ class Program extends BaseModel
         return self::getStatusLocked()->id;
     }
 
-    // public function load( $relations )
-    // {
-    //     $template_key = 'template';
-    //     if( (is_string($relations) && $relations == $template_key) || (is_array($relations) && sizeof($relations) > 0 && in_array($template_key, $relations)  ))
-    //     {
-    //         $this->template = "Anythings";
-    //         if(is_array($relations))
-    //         {
-    //             $key = array_search($template_key, $relations);
-    //             unset($relations[$key]);
-    //         }
-    //         if( sizeof($relations) > 0 )
-    //         {
-    //             return $this->load($relations);
-    //         }
-    //     }
-    //     else 
-    //     {
-    //         return $this->load( $relations );
-    //     }
-        
-    // }
+    public function load( $relations )
+    {
+        $template_key = 'template';
+
+        if( (is_string($relations) && $relations == $template_key) || (is_array($relations) && sizeof($relations) > 0 && in_array($template_key, $relations)  ))
+        {
+            $this->mysomstuf = "New";
+            if(is_array($relations))
+            {
+                $key = array_search($template_key, $relations);
+                unset($relations[$key]);
+            }
+        }
+
+        return parent::load( $relations );
+    }
 }
