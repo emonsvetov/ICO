@@ -21,10 +21,6 @@ class ProgramUserController extends Controller
     public function index(Organization $organization, Program $program)
     {
 
-        return $program->load('template');
-
-        return $program;
-
         if ( ! $program->users->isNotEmpty()) {
             return response([]);
         }

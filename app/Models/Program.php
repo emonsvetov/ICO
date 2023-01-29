@@ -366,17 +366,37 @@ class Program extends BaseModel
         return self::getStatusLocked()->id;
     }
 
+    private function getTemplateRecursive( $program )
+    {
+        if( $program->template ) return $program->template;
+
+        if( $program->parent()->exists() )
+        {
+            $parent = $program->parent()->first();
+            if( $parent->template ) {
+                return $parent->template;
+            } else {
+                return $parent->getTemplateRecursive( $parent );
+            }
+        }
+    }
+
     public function load( $relations )
     {
         $template_key = 'template';
 
         if( (is_string($relations) && $relations == $template_key) || (is_array($relations) && sizeof($relations) > 0 && in_array($template_key, $relations)  ))
         {
-            $this->mysomstuf = "New";
+            $this->template = $this->getTemplateRecursive($this);
+
             if(is_array($relations))
             {
                 $key = array_search($template_key, $relations);
                 unset($relations[$key]);
+            }
+            if(is_string($relations))
+            {
+                $relations = [];
             }
         }
 

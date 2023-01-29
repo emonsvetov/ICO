@@ -2,7 +2,7 @@
 
 @section('content')
 
-    <table cellspacing="0" cellpadding="0" style="font-family:{{ $program['name'] }}, Helvetica, Arial;
+    <table cellspacing="0" cellpadding="0" style="font-family:{{ $template['font_family'] }}, Helvetica, Arial;
 border-left:solid 1px;
                     border-right:solid 1px; border-top:solid 1px;
                     border-bottom:solid 1px;
@@ -10,7 +10,6 @@ border-left:solid 1px;
         <tbody style="background-color:rgb(244,243,242);">
         <tr>
             <td height="312" style="font-size: 14px;">
-                {{ $program['name'] }}
                 <div style="width:600px; height:312px; background-color: rgb(241,233,227); text-align: center;">
                     <img style="margin: 25px;max-height: 80px;" src="{{ url( '/storage/' . $template['small_logo'])}}"
                          border="0"><br>
