@@ -136,7 +136,7 @@ class DomainController extends Controller
             return response(['errors' => 'No program found for the domain'], 422);
         }
 
-        $program->load('template');
+        // $program->load('template');
 
         // return Domain::has('programs', 'programs.id', '=', 'model_has_roles.program_id')
         // ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
