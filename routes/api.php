@@ -414,7 +414,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/participant-points',[App\Http\Controllers\API\ProgramUserController::class, 'readParticipantPoints'])->middleware('can:readParticipantPoints,App\ProgramUser,organization,program,user');
 
     //Get Total Points Rewarded Participant
-    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/participant-total-points-rewarded',[App\Http\Controllers\API\ProgramUserController::class, 'readParticipantTotalPointsRewarded'])->middleware('can:readParticipantPoints,App\ProgramUser,organization,program,user');
+    /*Route::get('/v1/organization/{organization}/program/{program}/user/{user}/participant-total-points-rewarded',[App\Http\Controllers\API\ProgramUserController::class, 'readParticipantTotalPointsRewarded'])->middleware('can:readParticipantTotalPointsRewarded,App\ProgramUser,organization,program,user');*/
 
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',
