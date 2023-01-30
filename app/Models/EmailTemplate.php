@@ -15,4 +15,14 @@ class EmailTemplate extends Model
         'updated_at',
         'deleted_at',
     ];
+    const DEFAULTS = [
+        'font_family' => 'Roboto',
+        'theme_color' => '#fff',
+        'button_color' => '#fff',
+        'button_bg_color' => '#fff',
+        'button_corner' => 0,
+        'small_logo' => '',
+        'big_logo' => '',
+        'hero_banner' => '',
+    ];
 }

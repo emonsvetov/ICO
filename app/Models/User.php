@@ -168,9 +168,15 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         ->withTimestamps();
     }
 
-    public function readAvailableBalance( $program, $user )  {
+    public function readAvailableBalance( $program, $user = null )  {
         $program_id = self::extractId($program);
-        $user_id = self::extractId($user);
+        if( $user ) {
+            $user_id = self::extractId($user);
+        } else if ($this->id) {
+            $user_id = $this->id;
+            $user = $this;
+        } else $user_id = null;
+        
         if( !$program_id || !$user_id ) return;
         $journal_event_types = array (); // leave $journal_event_types empty to get all  - original comment
         if( gettype($program)!='object' ) {

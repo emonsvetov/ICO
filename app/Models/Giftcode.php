@@ -146,11 +146,11 @@ class Giftcode extends Model
 		return $response;
 	}
 
-	public function getRedeemableListByMerchant($merchant, $filters = []) {
+	public static function getRedeemableListByMerchant($merchant, $filters = []) {
 		return self::_read_redeemable_list_by_merchant( $merchant, $filters );
 	}
 
-	public function getRedeemableListByMerchantAndRedemptionValue($merchant, $redemption_value = 0, $end_date = '2022-10-01') {
+	public static function getRedeemableListByMerchantAndRedemptionValue($merchant, $redemption_value = 0, $end_date = '2022-10-01') {
 		// pr($end_date );die;
 		$filters = [];
 		if( (float) $redemption_value > 0 )	{

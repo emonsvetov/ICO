@@ -173,6 +173,8 @@ trait ProgramPaymentTrait {
             'created_at' => now()
         ]);
 
+        $result = [];
+
         $postings_A = Account::postings(
             $program_account_holder_id,
             'Monies Pending',
@@ -189,6 +191,8 @@ trait ProgramPaymentTrait {
             null, // medium_info_id
             $currency_id
         );
+
+        $result['postings'][] = $postings_A;
 
         $postings_B = Account::postings(
             $owner_account_holder_id,
@@ -207,13 +211,15 @@ trait ProgramPaymentTrait {
             $currency_id
         );
 
+        $result['postings'][] = $postings_B;
+
         if(isset($postings_A['success']) && isset($postings_B['success'])) {
-            InvoiceJournalEvent::create([
+            $result['invoice_journal_event_id'] = InvoiceJournalEvent::insertGetId([
                 'journal_event_id' => $journal_event_id,
                 'invoice_id' => $invoice_id
             ]);
-            return true;
         }
+        return $result;
     }
 
     public function program_refunds_for_monies_pending($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
@@ -235,6 +241,8 @@ trait ProgramPaymentTrait {
             'created_at' => now()
         ]);
 
+        $result = [];
+
         $postings_A = Account::postings(
             $program_account_holder_id,
             'Monies Available',
@@ -251,6 +259,8 @@ trait ProgramPaymentTrait {
             null, // medium_info_id
             $currency_id
         );
+
+        $result['postings'][] = $postings_A;
 
         $postings_B = Account::postings(
             $program_account_holder_id,
@@ -269,13 +279,16 @@ trait ProgramPaymentTrait {
             $currency_id
         );
 
+        $result['postings'][] = $postings_B;
+
         if(isset($postings_A['success']) && isset($postings_B['success'])) {
-            InvoiceJournalEvent::create([
+            $result['invoice_journal_event_id'] = InvoiceJournalEvent::insertGetId([
                 'journal_event_id' => $journal_event_id,
                 'invoice_id' => $invoice_id
             ]);
-            return true;
         }
+
+        return $result;
     }
 
     public function program_pays_for_points_transaction_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {

@@ -44,7 +44,17 @@ class SendgridEmail extends Mailable
         foreach ($parameters as $key => $parameter) {
             $argument = $arguments[$key] ?? '';
             $this->data[$parameter->name] = $argument;
+
+            if($parameter->name == 'program'){
+                $programTemplate = $argument->load('template');
+                if( !$programTemplate->template )
+                {
+                    $programTemplate->template = \App\Models\EmailTemplate::DEFAULTS;
+                }
+                $this->data['template'] = $programTemplate->template;
+            }
         }
+
     }
 
     /**

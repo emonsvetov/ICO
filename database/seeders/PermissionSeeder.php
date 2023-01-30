@@ -32,6 +32,7 @@ class PermissionSeeder extends Seeder
             'domain-listAvailableProgramsToAdd',
             'emailtemplate-list',
             'emailtemplate-edit',
+            'emailtemplate-type-list',
             'event-list',
             'event-view',
             'event-create',
@@ -142,6 +143,12 @@ class PermissionSeeder extends Seeder
             'expiration-rule-list',
             'program-list-status',
             'program-update-status',
+             'team-create',
+             'team-list',
+             'team-delete',
+             'team-update',
+             'team-view',
+            'user-read-points',
         ];
 
         foreach ($permissions as $permission) {

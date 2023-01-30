@@ -257,3 +257,18 @@ if (! function_exists ( 'toSql' ))
 	}
 }
 
+if(!function_exists('getEntrataAcademicYear')) {
+	function getEntrataAcademicYear($date = "")
+	{
+		if(empty($date)){
+			$date = date('Y-m-d');
+		}
+		$fiscalYear = date('Y-09-01');		
+		if(date("m", strtotime($date)) < 9){
+			$year = date('Y')-1;
+			$fiscalYear = $year.'-09-01';	
+		}
+		return $fiscalYear;
+	}
+}
+

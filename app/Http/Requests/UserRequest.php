@@ -96,4 +96,11 @@ class UserRequest extends FormRequest
             'mail' => 'nullable|boolean',
         ];
     }
+
+    public function attributes()
+    {
+        return [
+            'dob' => 'Birthday',
+        ];
+    }
 }

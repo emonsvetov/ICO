@@ -89,17 +89,32 @@ class Program extends BaseModel
         return $this->hasOne(ProgramTemplate::class);
     }
 
-    public function program_is_invoice_for_awards( $extraArg = false) {
-		if ($this->invoice_for_awards == 1) {
-			return true;
-		}
-        if($extraArg)   {
-            if ( $this->factor_valuation != 1 ) {
-                return true;
-            }
+    public function programIsInvoiceForAwards(): bool
+    {
+        if ($this->invoice_for_awards || $this->factor_valuation != 1) {
+            return true;
         }
-		return false;
+        return false;
+    }
+
+    /**
+     * Alias to "programIsInvoiceForAwards"
+     * Param - $extraArg boolean
+     */
+
+    public function program_is_invoice_for_awards( $extraArg = false) {
+        return $this->programIsInvoiceForAwards();
+		// if ($this->invoice_for_awards == 1) {
+		// 	return true;
+		// }
+        // if($extraArg)   {
+        //     if ( $this->factor_valuation != 1 ) {
+        //         return true;
+        //     }
+        // }
+		// return false;
 	}
+
     public static function createAccount( $data )    {
         $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
         if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
@@ -211,14 +226,6 @@ class Program extends BaseModel
             null, // medium_info_id
             $currency_id
         );
-    }
-
-    public function programIsInvoiceForAwards(): bool
-    {
-        if ($this->invoice_for_awards || $this->factor_valuation != 1) {
-            return true;
-        }
-        return false;
     }
 
     public function isShellProgram(): bool
@@ -357,5 +364,42 @@ class Program extends BaseModel
     public static function getIdStatusLocked()
     {
         return self::getStatusLocked()->id;
+    }
+
+    private function getTemplateRecursive( $program )
+    {
+        if( $program->template ) return $program->template;
+
+        if( $program->parent()->exists() )
+        {
+            $parent = $program->parent()->first();
+            if( $parent->template ) {
+                return $parent->template;
+            } else {
+                return $parent->getTemplateRecursive( $parent );
+            }
+        }
+    }
+
+    public function load( $relations )
+    {
+        $template_key = 'template';
+
+        if( (is_string($relations) && $relations == $template_key) || (is_array($relations) && sizeof($relations) > 0 && in_array($template_key, $relations)  ))
+        {
+            $this->template = $this->getTemplateRecursive($this);
+
+            if(is_array($relations))
+            {
+                $key = array_search($template_key, $relations);
+                unset($relations[$key]);
+            }
+            if(is_string($relations))
+            {
+                $relations = [];
+            }
+        }
+
+        return parent::load( $relations );
     }
 }

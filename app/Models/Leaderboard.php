@@ -10,13 +10,17 @@ use App\Models\Status;
 class Leaderboard extends BaseModel
 {
     use SoftDeletes;
+    public $timestamps = true;
+
+    const LEADERBOARD_STATE_DELETED = 'Deleted';
+    const LEADERBOARD_STATE_DEACTIVATED = 'Deactivated';
 
     protected $guarded = [];
 
     public function getStatusByName( $status ) {
         return self::getByNameAndContext($status, 'Leaderboards');
-    }   
-    
+    }
+
     public static function getActiveStatusId() {
         $status = self::getByNameAndContext('Active', 'Leaderboards');
         if( $status->exists()) return  $status->id;
@@ -36,5 +40,9 @@ class Leaderboard extends BaseModel
 
     public function status()    {
         return $this->belongsTo(Status::class);
+    }
+    public function leaderboard_type()
+    {
+        return $this->belongsTo(LeaderboardType::class, 'leaderboard_type_id');
     }
 }

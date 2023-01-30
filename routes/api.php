@@ -297,7 +297,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/emailtemplate',[App\Http\Controllers\API\EmailTemplateController::class, 'index'])->middleware('can:viewAny,App\EmailTemplate,organization,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/emailtemplate/{emailTemplate}',[App\Http\Controllers\API\EmailTemplateController::class, 'update'])->middleware('can:update,App\EmailTemplate,organization,program,emailTemplate');
-    
+
+    Route::get('/v1/organization/{organization}/program/{program}/emailtemplate/typeList',[App\Http\Controllers\API\EmailTemplateController::class, 'typeList'])->middleware('can:listType,App\EmailTemplate,organization,program');
+
     //Award
 
     Route::post('/v1/organization/{organization}/program/{program}/award',[App\Http\Controllers\API\AwardController::class, 'store'])->middleware('can:create,App\Award,organization,program');
@@ -311,6 +313,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Get User Point Balance
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/balance',[App\Http\Controllers\API\ProgramUserController::class, 'readBalance'])->middleware('can:readBalance,App\ProgramUser,organization,program,user');
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/event-history',[App\Http\Controllers\API\ProgramUserController::class, 'readEventHistory'])->middleware('can:readEventHistory,App\ProgramUser,organization,program,user');
+
+    // Participant
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
 
     //Statuses
 
@@ -340,6 +348,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}',[App\Http\Controllers\API\LeaderboardController::class, 'update'])->middleware('can:update,App\Leaderboard,organization,program,leaderboard');
 
     Route::delete('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}',[App\Http\Controllers\API\LeaderboardController::class, 'delete'])->middleware('can:delete,App\Leaderboard,organization,program,leaderboard');
+
+    // Leaderboard Leaders
+    Route::get('/v1/organization/{organization}/program/{program}/leaderboard-leaders',[App\Http\Controllers\API\LeaderboardLeadersController::class, 'index'])->middleware('can:viewAny,App\LeaderboardLeaders,organization,program');
 
     // LeaderboardType
 
@@ -406,6 +417,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);
+
+    //Team Routes
+    /*Route::post('/v1/organization/{organization}/program/{program}/team',
+    [App\Http\Controllers\API\TeamController::class, 'store'])->middleware('can:create,App\Team,organization,program');*/
+    Route::post('/v1/organization/{organization}/program/{program}/team', [App\Http\Controllers\API\TeamController::class, 'store'])->middleware('can:create,App\Team,organization,program');
+
+     Route::get('/v1/organization/{organization}/program/{program}/team',
+     [App\Http\Controllers\API\TeamController::class, 'index'])->name('api.v1.team.index')->middleware('can:viewAny,App\Team,organization,program');
+    
+     Route::get('/v1/organization/{organization}/program/{program}/team/{team}',
+     [App\Http\Controllers\API\TeamController::class, 'show'])->name('api.v1.team.show')->middleware('can:view,App\Team,organization,program,team');
+     Route::put('/v1/organization/{organization}/program/{program}/team/{team}',
+     [App\Http\Controllers\API\TeamController::class, 'update'])->name('api.v1.team.update')->middleware('can:update,App\Team,organization,program,team');
+     Route::delete('/v1/organization/{organization}/program/{program}/team/{team}',
+     [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
 
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',

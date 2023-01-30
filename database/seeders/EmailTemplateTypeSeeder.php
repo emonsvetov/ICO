@@ -1,7 +1,6 @@
 <?php
-
 namespace Database\Seeders;
-
+  
 use Illuminate\Database\Seeder;
 use App\Models\EmailTemplateType;
 
@@ -16,67 +15,52 @@ class EmailTemplateTypeSeeder extends Seeder
     {
         EmailTemplateType::insert([
             [
-                'id' => '1',
-                'type' => 'Invite Participant'
+                "id" => 1,
+                "type" => "Activation Reminder"
             ],
             [
-                'id' => '2',
-                'type' => 'Invite Manager'
+                "id" => 2,
+                "name" => "Award"
             ],
             [
-                'id' => '3',
-                'type' => 'Welcome'
+                "id" => 3,
+                "name" => "Award Badge"
             ],
             [
-                'id' => '4',
-                'type' => 'Password Reset'
+                "id" => 4,
+                "name" => "Gift Code"
             ],
             [
-                'id' => '5',
-                'type' => 'Activation Reminder'
+                "id" => 5,
+                "name" => "Goal Status"
             ],
             [
-                'id' => '6',
-                'type' => 'Award'
+                "id" => 6,
+                "name" => "Invite Manager"
             ],
             [
-                'id' => '7',
-                'type' => 'Gift Code'
+                "id" => 7,
+                "name" => "Invite Participant"
             ],
             [
-                'id' => '8',
-                'type' => 'Goal Progress'],
-            [
-                'id' => '9',
-                'type' => 'Points Expiration'],
-            [
-                'id' => '10',
-                'type' => 'Allocate Peer to Peer'],
-            [
-                'id' => '11',
-                'type' => 'Award Badge'],
-            [
-                'id' => '12',
-                'type' => 'Award Approved'],
-            [
-                'id' => '13',
-                'type' => 'Award Approval'],
-            [
-                'id' => '14',
-                'type' => 'Budget Approved'],
-            [
-                'id' => '15',
-                'type' => 'Budget Approval'],
-            [
-                'id' => '16',
-                'type' => 'Budget Denied'],
-            [
-                'id' => '17',
-                'type' => 'Budget Approved Edited'
+                "id" => 8,
+                "name" => "Password Reset"
             ],
             [
-                'id' => '18',
-                'type' => 'Program Closing Notice'
+                "id" => 9,
+                "name" => "Peer Allocation"
+            ],
+            [
+                "id" => 10,
+                "name" => "Peer Award"
+            ],
+            [
+                "id" => 11,
+                "name" => "Reward Expiration Notice"
+            ],
+            [
+                "id" => 12,
+                "name" => "Welcome"
             ]
         ]);
     }

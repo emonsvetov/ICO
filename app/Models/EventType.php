@@ -16,6 +16,15 @@ class EventType extends Model
     const EVENT_TYPE_STANDARD = 'Standard';
     const EVENT_TYPE_BADGE = 'Badge';
 
+    const EVENT_TYPE_BADGE = 'badge';
+    const EVENT_TYPE_PEER2PEER_BADGE = 'peer2peer badge';
+    const EVENT_TYPE_STANDARD = 'standard';
+    const event_type_activation = 'activation';
+    const EVENT_TYPE_PEER2PEER = 'peer2peer';
+    const EVENT_TYPE_PEER2PEER_ALLOCATION = 'peer2peer allocation';
+    const EVENT_TYPE_PROMOTIONAL_AWARD = 'promotional award';
+    const EVENT_TYPE_AUTO_AWARD = 'auto award';
+
     /**
      * @param string $type
      * @return int|null
@@ -27,17 +36,17 @@ class EventType extends Model
 
     public function isEventTypePeer2Peer(): bool
     {
-        return $this->type == config('global.event_type_peer2peer');
+        return $this->type == self::EVENT_TYPE_PEER2PEER;
     }
 
     public function isEventTypeBadge(): bool
     {
-        return $this->type == config('global.event_type_badge');
+        return $this->type == self::EVENT_TYPE_BADGE;
     }
 
     public function isEventTypePeer2PeerBadge(): bool
     {
-        return $this->type == config('global.event_type_peer2peer_badge');
+        return $this->type == self::EVENT_TYPE_PEER2PEER_BADGE;
     }
 
     public function isEventTypePeer2PeerAllocation(): bool
@@ -47,7 +56,7 @@ class EventType extends Model
 
     public static function getEventTypePeer2PeerAllocation(): string
     {
-        return config('global.event_type_peer2peer_allocation');
+        return self::EVENT_TYPE_PEER2PEER_ALLOCATION;
     }
 
     public static function getEventTypeIdPeer2PeerAllocation(): int
