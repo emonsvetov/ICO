@@ -521,4 +521,51 @@ class AccountService
     public static function read_list_event_awards_with_internal_store_for_participant(Program $program, User $participant) {
         return self::readListEventAwardsWithInternalStoreForParticipant($program, $participant);
     }
+
+    /**
+	 * 
+	 * @author BCM 20150203
+	 *         Returns the total amount this participant has ever been awarded
+	 * @param int $program_account_holder_id        
+	 * @param int $participant_account_holder_id        
+	 * @throws InvalidArgumentException
+	 * @return number */
+	public static function read_awarded_total_for_participant(Program $program, User $participant) {
+		$journal_event_types = array ();
+		$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
+		if ($program->programIsInvoiceForAwards( $program )) { //TO DO
+			// use 
+			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
+			$journal_event_types [] = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
+		} else {
+			// use monies
+			$account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
+			$journal_event_types [] = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT;
+		}
+		// return $this->_read_balance($participant_account_holder_id, $account_type, $journal_event_types);
+		return self::_read_sum_credits ($participant->account_holder_id, $account_type, $journal_event_types );
+	
+	}
+
+	/**
+	 * 
+	 * @author BCM - 20150203
+	 *         This method returns the sum of all credits to the given account, using the given journal event.
+	 *         Leave journal events to get all credits to the given account.
+	 * @return number */
+	private static function _read_sum_credits($account_holder_id, $account_type, $journal_event_types = array()) {
+		$credits = JournalEvent::read_sum_postings_by_account_and_journal_events(
+            $account_holder_id, $account_type, $journal_event_types, 1
+        );
+		return ( float ) ($credits->total);
+	
+	}
+
+    /**
+     * Alias for "read_awarded_total_for_participant"
+     */
+    public static function readAwardedTotalForUser(Program $program, User $user){
+        return self::read_awarded_total_for_participant($program, $user);
+    }
+
 }
