@@ -24,10 +24,22 @@ class ParticipantController extends Controller
             $result = $awardService->readListExpireFuture($program, $user);
 
             // Check for existense of required information
-            if( !isset($result['expiration']))
+            if( isset($result['expiration']) && sizeof($result['expiration']) > 0)
             {
-                $result['expiration'] = null;
-            }
+                // Organize the point expirations for the view
+                $points_expirations = [];
+                foreach ( $result['expiration'] as $point_expiration ) {
+                    // Convert to month, day, year, now so we can group points that expire on the same day
+                    $expiration_date = date ( "F d, Y", strtotime ( $point_expiration->expiration ) );
+                    // Group all of the point expirations together by date with their sum as the value
+                    if (! isset ( $points_expirations [$expiration_date] )) {
+                        $points_expirations[$expiration_date] = $point_expiration;
+                    } else {
+                        $points_expirations[$expiration_date]->amount += $point_expiration->amount;
+                    }
+                }
+                $result['expiration'] = $points_expirations;
+		    }
 
             if( !isset($result['points_redeemed']))
             {
