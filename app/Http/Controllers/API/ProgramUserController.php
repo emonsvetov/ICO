@@ -229,5 +229,5 @@ class ProgramUserController extends Controller
             DB::rollBack();
             return response(['errors' => 'Program User Role assignment failed', 'e' => $e->getMessage()], 422);
         }
-    }
+    } 
 }

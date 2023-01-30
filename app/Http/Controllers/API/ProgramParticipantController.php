@@ -23,6 +23,8 @@ class ProgramParticipantController extends Controller
             $users[$key]['pointBalance'] = AccountService::readAvailableBalanceForUser($program, $user);
             $users[$key]['redeemedBalance'] = AccountService::readRedeemedTotalForParticipant($program, $user);
             $users[$key]['peerBalance'] = $userService->readAvailablePeerBalance($user, $program);
+
+            $users[$key]['totalPointsRewarded'] = AccountService::readAwardedTotalForUser($program, $user);
         }
         if( $users ) {
             return response( $users );
