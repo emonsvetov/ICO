@@ -27,7 +27,7 @@ class ProgramEmailTemplatePolicy
         
         if($authUser->isAdmin()) return true;
 
-        return $authUser->isManagerToProgram( $program ) || $authUser->can('programemailtemplate-list');
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('program-email-template-list');
     }
    
 }

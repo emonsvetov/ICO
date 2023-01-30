@@ -37,7 +37,7 @@ class GoalPlanRequest extends FormRequest
                  }
                  return true;
             },
-            ':Goal Exceeded Event type must be standard'
+            'Goal Exceeded Event type must be standard'
         );
         $personel_type_id = GoalPlanType::getIdByTypePersonal();
         $validationFactory->extend(
@@ -55,7 +55,7 @@ class GoalPlanRequest extends FormRequest
                 }
                  return true;
             },
-            ':Goal Exceeded Event type must be standard'
+            'Goal Achieved Event type must be standard'
         );
 
         $recog_type_id = GoalPlanType::getIdByTypeRecognition();
@@ -75,7 +75,7 @@ class GoalPlanRequest extends FormRequest
                 
                  return true;
             },
-            ':Event type must be badge'
+            'Event type must be badge'
         );
         // TO DO - validate goal plan even type id
         //default :
@@ -95,12 +95,16 @@ class GoalPlanRequest extends FormRequest
         //pr($request); die;
          $request['state_type_id'] = GoalPlan::calculateStatusId($request['date_begin'], $request['date_end']);
         // $request['state_type_id']=1;
-         $archived_event = Event::getEvent($request['achieved_event_id']);
-		if(!empty($archived_event)) 
-		$archived_event->load('eventType');
-		$exceeded_event = Event::getEvent($request['exceeded_event_id']);
-		if(!empty($exceeded_event)) 
-		$exceeded_event->load('eventType');
+        if(!empty($request['achieved_event_id'])) {
+            $archived_event = Event::getEvent($request['achieved_event_id']);
+            if(!empty($archived_event)) 
+            $archived_event->load('eventType');
+        }
+        if(!empty($request['exceeded_event_id'])) {
+            $exceeded_event = Event::getEvent($request['exceeded_event_id']);
+            if(!empty($exceeded_event)) 
+            $exceeded_event->load('eventType');
+        }
 		//Ques - shoud we haeve to move these in request
 		switch ($request['goal_plan_type_id']) {
 			case GoalPlanType::getIdByTypeEventcount() :

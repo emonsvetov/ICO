@@ -86,6 +86,9 @@ class GoalPlanController extends Controller
 
     public function update(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlan $goalplan, GoalPlanService $goalplanservice )
     {
+        if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
+            return response(['errors' => "You can't add goal plan in this program."], 422);
+        }
         try{
         $data = $request->validated();
         $update_goal_plan= $goalplanservice->update_goal_plan($data, $goalplan, $organization, $program);
