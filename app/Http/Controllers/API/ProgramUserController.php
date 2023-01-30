@@ -229,22 +229,5 @@ class ProgramUserController extends Controller
             DB::rollBack();
             return response(['errors' => 'Program User Role assignment failed', 'e' => $e->getMessage()], 422);
         }
-    }
-    public function readParticipantPoints(
-        Organization $organization,
-        Program $program,
-        User $user,
-        UserService $userService,
-        AccountService $accountService
-    ) {
-        $amount_balance = $user->readAvailableBalance($program, $user);
-        $points_balance = $amount_balance * $program->factor_valuation;
-        $peerBalance = $userService->readAvailablePeerBalance($user, $program);
-        $peer_points_balance = $peerBalance * $program->factor_valuation;
-        return response([
-            'current_points_balance' => $points_balance,
-            'current_peers_balance' => $peer_points_balance,
-        ]);
-    }
-    
+    } 
 }
