@@ -13,8 +13,6 @@ class EventType extends Model
         'updated_at',
         'deleted',
     ];
-    const EVENT_TYPE_STANDARD = 'Standard';
-    const EVENT_TYPE_BADGE = 'Badge';
 
     const EVENT_TYPE_BADGE = 'badge';
     const EVENT_TYPE_PEER2PEER_BADGE = 'peer2peer badge';
