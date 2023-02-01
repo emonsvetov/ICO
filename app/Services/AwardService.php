@@ -278,7 +278,7 @@ class AwardService
                     $leaderboardService->createLeaderboardJournalEvent($event_id, $journal_event_id);
                 }
 
-                // DB::commit();
+                DB::commit();
 
                 $notification = [
                     'notificationType' => $notificationType,
@@ -299,7 +299,7 @@ class AwardService
 
                 $user->notify(new AwardNotification((object)$notification));
 
-                DB::rollBack();
+                // DB::rollBack();
             }
             // return $award->user_id;
 
@@ -428,7 +428,9 @@ class AwardService
                     'currency_type_id' => $currencyId,
                 ];
                 $result[$userId]['recipient_postings'] = $this->accountService->posting($data);
+
                 DB::commit();
+                
                 $user->notify(new AwardNotification((object)[
                     'notificationType' => 'PeerAllocation',
                     'awardee_first_name' => $user->first_name,
@@ -437,7 +439,6 @@ class AwardService
                     'program' => $program
                 ]));
             }
-
         } catch (Exception $e) {
             DB::rollBack();
             throw $e;
