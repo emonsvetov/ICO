@@ -318,6 +318,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
 
+    // Giftcodes
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/gift-codes',[App\Http\Controllers\API\ProgramParticipantGiftCodeController::class, 'index'])->middleware('can:viewAny,App\ProgramParticipantGiftCode,organization,program,user');
+
     //Statuses
 
     // Route::get('/v1/status',[App\Http\Controllers\API\StatusController::class, 'index'])->middleware('can:viewAny,App\Status');
@@ -402,7 +405,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
      Route::get('/v1/organization/{organization}/program/{program}/team',
      [App\Http\Controllers\API\TeamController::class, 'index'])->name('api.v1.team.index')->middleware('can:viewAny,App\Team,organization,program');
-    
+
      Route::get('/v1/organization/{organization}/program/{program}/team/{team}',
      [App\Http\Controllers\API\TeamController::class, 'show'])->name('api.v1.team.show')->middleware('can:view,App\Team,organization,program,team');
      Route::put('/v1/organization/{organization}/program/{program}/team/{team}',
