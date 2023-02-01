@@ -107,7 +107,8 @@ class ProgramUserPolicy
         if($authUser->isAdmin()) return true;
         return $user->can('program-user-assign-role');
     }
-    public function readParticipantTotalPointsRewarded(User $authUser, Organization $organization, Program $program, User $user)
+
+    public function readReclaimablePeerPoints(User $authUser, Organization $organization, Program $program, User $user)
     {
         if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
         {
@@ -115,6 +116,6 @@ class ProgramUserPolicy
         }
 
         if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;
-        return $user->can('program-user-read-participant-points-rewarded');
+        return $user->can('program-user-read-reclaimable-peer-points');
     }
 }

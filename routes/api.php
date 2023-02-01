@@ -314,6 +314,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/event-history',[App\Http\Controllers\API\ProgramUserController::class, 'readEventHistory'])->middleware('can:readEventHistory,App\ProgramUser,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaimable-peer-points',[App\Http\Controllers\API\ProgramUserController::class, 'readReclaimablePeerPoints'])->middleware('can:readReclaimablePeerPoints,App\ProgramUser,organization,program,user');
+    
     // Participant
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
@@ -409,6 +411,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      [App\Http\Controllers\API\TeamController::class, 'update'])->name('api.v1.team.update')->middleware('can:update,App\Team,organization,program,team');
      Route::delete('/v1/organization/{organization}/program/{program}/team/{team}',
      [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
+    
 
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',
