@@ -11,7 +11,7 @@ class EmailTemplateType extends Model
     protected $hidden = [
         'created_at',
         'updated_at',
-        'deleted',
+        'deleted_at',
     ];
 
     const EMAIL_TEMPLATE_TYPE_ACTIVATION_REMINDER = 'Activation Reminder';

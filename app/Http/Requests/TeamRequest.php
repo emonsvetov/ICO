@@ -25,13 +25,12 @@ class TeamRequest extends FormRequest
     public function rules()
     {
         return [
-            'photo' => 'nullable',
             'name' => 'required|string',
-            'title' => 'nullable|string',
+            'title' => 'required|string',
             'description'=> 'nullable|string',
-            'contact_phone'=> 'nullable|string',
-            'contact_email'=> 'nullable|string',
-            'deleted'=> 'boolean|nullable',
+            'contact_phone'=> 'required|string',
+            'contact_email'=> 'required|string',
+            'photo' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
         ];
     }
 } 
