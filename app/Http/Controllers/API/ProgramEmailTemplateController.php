@@ -1,11 +1,10 @@
 <?php
-
 namespace App\Http\Controllers\API;
 
-use App\Http\Requests\EmailTemplateRequest;
-use App\Services\EmailTemplateService;
 use App\Http\Controllers\Controller;
 use App\Models\EmailTemplate;
+use App\Http\Requests\EmailTemplateRequest;
+use App\Services\EmailTemplateService;
 use App\Models\EmailTemplateType;
 use App\Models\Program;
 use App\Models\Organization;

@@ -22,7 +22,12 @@ class BaseModel extends Model
         return $id;
     }
 
+    // Depricated - Do not use
     public static function getByNameAndContext( $name, $context ) {
+        return Status::getByNameAndContext($name, $context);
+    }
+
+    public static function getStatusByNameAndContext( $name, $context ) {
         return Status::getByNameAndContext($name, $context);
     }
 }
