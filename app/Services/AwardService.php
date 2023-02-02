@@ -374,7 +374,7 @@ class AwardService
         $result = [];
         
         try {
-            $users = User::whereIn('id', $userIds)->select(['id', 'account_holder_id'])->get();
+            $users = User::whereIn('id', $userIds)->select(['id', 'account_holder_id', 'first_name'])->get();
             foreach ($users as $user) {
 
                 DB::beginTransaction();
@@ -428,16 +428,16 @@ class AwardService
                     'currency_type_id' => $currencyId,
                 ];
                 $result[$userId]['recipient_postings'] = $this->accountService->posting($data);
-
-                DB::commit();
                 
                 $user->notify(new AwardNotification((object)[
                     'notificationType' => 'PeerAllocation',
                     'awardee_first_name' => $user->first_name,
-                    'awardPoints' => $amount,
+                    'awardPoints' => (int) $amount,
                     'awardNotificationBody' => $notificationBody,
                     'program' => $program
                 ]));
+
+                DB::commit();
             }
         } catch (Exception $e) {
             DB::rollBack();
