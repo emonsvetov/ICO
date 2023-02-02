@@ -7,14 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Organization;
 use App\Models\GoalPlan;
 use App\Models\Program;
-use App\Services\ProgramService;
 use App\Services\GoalPlanService;
-use App\Models\User;
-use App\Models\UserGoal;
-//use App\Models\User;
-//use App\Models\Role;
-use DB;
-
 
 class GoalPlanController extends Controller
 {
@@ -45,19 +38,23 @@ class GoalPlanController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
-        $where[]=['program_id','=', $program->id];
-        $today = today()->format('Y-m-d');
-        $state_type_id =  request()->get('status');
-        
-        if($state_type_id)
-            $where[]=['state_type_id', '=', $state_type_id];
+        $where = [
+            'program_id' => $program->id,
+            'organization_id' => $organization->id
+        ];
 
-        $goal_plans = GoalPlan::where('organization_id', $organization->id)
-                        //->where('program_id', $program->id)
-                        ->where($where)
-                        ->orderBy('name')
-                        ->with(['goalPlanType'])
-                        ->get();
+        $status =  request()->get('status');
+        
+        if( $status )
+        {
+            $status_id = GoalPlan::getStatusIdByName($status);
+            $where[] = ['state_type_id', '=', $status_id];
+        }
+
+        $goal_plans = GoalPlan::where($where)
+        ->orderBy('name')
+        ->with(['goalPlanType'])
+        ->get();
 
         if ( $goal_plans->isNotEmpty() )
         {

@@ -19,10 +19,15 @@ class GoalPlan extends BaseModel
         return $this->belongsTo(GoalPlanType::class, 'goal_plan_type_id');
     }
     public function status()    {
-        return $this->belongsTo(Status::class,'state_type_id');
+        return $this->belongsTo(Status::class, 'state_type_id');
     }
+
     public static function getStatusByName( $status ) {
         return self::getByNameAndContext($status, 'Goals');
+    }
+
+    public static function getStatusIdByName( $status ) {
+        return Status::getSetByContextAndName('Goals', $status);
     }   
     
     public static function getActiveStatusId() {
