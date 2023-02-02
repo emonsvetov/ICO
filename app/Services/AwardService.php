@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\SocialWallPostType;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Exception;
@@ -28,6 +29,7 @@ class AwardService
     private AccountService $accountService;
     private EventXmlDataService $eventXmlDataService;
     private JournalEventService $journalEventService;
+    private SocialWallPostService $socialWallPostService;
     private UserService $userService;
 
     public function __construct(
@@ -35,13 +37,15 @@ class AwardService
         EventXmlDataService $eventXmlDataService,
         JournalEventService $journalEventService,
         AccountService $accountService,
-        UserService $userService
+        UserService $userService,
+        SocialWallPostService $socialWallPostService
     ) {
         $this->programService = $programService;
         $this->eventXmlDataService = $eventXmlDataService;
         $this->journalEventService = $journalEventService;
         $this->accountService = $accountService;
         $this->userService = $userService;
+        $this->socialWallPostService = $socialWallPostService;
     }
 
     /**
@@ -70,7 +74,7 @@ class AwardService
                 }
             }
 
-            $newAward = self::doAward(
+            $newAward = $this->doAward(
                 (object)($data +
                     [
                         'organization_id' => $organization->id,
@@ -84,7 +88,7 @@ class AwardService
         return $newAward;
     }
 
-    public static function doAward( $award, Program $program, User $awarder )
+    public function doAward( $award, Program $program, User $awarder )
     {
         $event = Event::where('id', $award->event_id)->first();
         $eventType = EventType::where('id', $event->event_type_id)->first();
@@ -160,6 +164,8 @@ class AwardService
         }
 
         $result = null;
+
+        $socialWallPostType = SocialWallPostType::getEventType();
 
         try {
 
@@ -299,6 +305,20 @@ class AwardService
 
                 $user->notify(new AwardNotification((object)$notification));
 
+                // If the event template used has post to social wall turned on. Create a new social wall post
+                if ($program->uses_social_wall && $event->post_to_social_wall) {
+                    $socialWallPostData = [
+                        'social_wall_post_type_id' => $socialWallPostType->id,
+                        'social_wall_post_id' => null,
+                        'event_xml_data_id' => $event_xml_data_id,
+                        'program_id' => $program->id,
+                        'organization_id' => $award->organization_id,
+                        'sender_user_account_holder_id' => $awarder_account_holder_id,
+                        'receiver_user_account_holder_id' => $userAccountHolderId,
+                    ];
+                    $this->socialWallPostService->create($socialWallPostData);
+                }
+
                 // DB::rollBack();
             }
             // return $award->user_id;
@@ -372,7 +392,7 @@ class AwardService
         }
 
         $result = [];
-        
+
         try {
             $users = User::whereIn('id', $userIds)->select(['id', 'account_holder_id'])->get();
             foreach ($users as $user) {
@@ -430,7 +450,7 @@ class AwardService
                 $result[$userId]['recipient_postings'] = $this->accountService->posting($data);
 
                 DB::commit();
-                
+
                 $user->notify(new AwardNotification((object)[
                     'notificationType' => 'PeerAllocation',
                     'awardee_first_name' => $user->first_name,
@@ -527,7 +547,7 @@ class AwardService
 		// later use and validation of the $query object
 
 		$reclaim_jet = [];
-		if ( $program->programIsInvoiceForAwards() ) 
+		if ( $program->programIsInvoiceForAwards() )
         {
 		    $account_name = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
 		    $reclaim_jet[] = "Reclaim points";
@@ -599,13 +619,13 @@ class AwardService
 
         try {
             $result = $query->get();
-            
+
             if( $result->isNotEmpty() )
             {
                 // Get the points redeemed and expired
                 $points_redeemed = $this->accountService->readRedeemedTotalForParticipant ( $program, $user );
                 $points_expired = $this->accountService->readExpiredTotalForParticipant ( $program, $user );
-                
+
                 // // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successful
                 $points_reclaimed = $this->accountService->readReclaimedTotalForParticipant ( $program, $user );
 
