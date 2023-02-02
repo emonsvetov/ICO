@@ -314,7 +314,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/event-history',[App\Http\Controllers\API\ProgramUserController::class, 'readEventHistory'])->middleware('can:readEventHistory,App\ProgramUser,organization,program,user');
 
-    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaimable-peer-points',[App\Http\Controllers\API\ProgramUserController::class, 'readReclaimablePeerPoints'])->middleware('can:readReclaimablePeerPoints,App\ProgramUser,organization,program,user');
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaimable-peer-points-list',[App\Http\Controllers\API\ProgramUserController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\ProgramUser,organization,program,user');
     
     // Participant
 

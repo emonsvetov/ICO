@@ -108,7 +108,7 @@ class ProgramUserPolicy
         return $user->can('program-user-assign-role');
     }
 
-    public function readReclaimablePeerPoints(User $authUser, Organization $organization, Program $program, User $user)
+    public function readListReclaimablePeerPoints(User $authUser, Organization $organization, Program $program, User $user)
     {
         if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
         {

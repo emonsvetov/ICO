@@ -231,11 +231,19 @@ class ProgramUserController extends Controller
         }
     }
     
-    public function readReclaimablePeerPoints(
+    public function readListReclaimablePeerPoints(
         Organization $organization,
         Program $program,
         User $user,
-    ) {
-        //return response([ 'test' => ['dd'] ]);
+        AwardService $awardService
+    ) { 
+        $limit=9999999;
+        $offset=0;
+        return response($awardService->readListReclaimablePeerPointsByProgramAndUser(
+            $program,
+            $user,
+            $limit,
+            $offset
+        ));
     }
 }

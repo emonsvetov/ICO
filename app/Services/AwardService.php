@@ -717,4 +717,176 @@ class AwardService
             throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
     }
+
+    /** $A read_list_reclaimable_peer_points_by_program_and_user()
+	 *
+	 * @param Program $program
+     * @param User $user     
+	 * @param int $offset        
+	 * @param int $limit 
+      */
+	public function readListReclaimablePeerPointsByProgramAndUser(Program $program, User $user, $offset = 0, $limit = 10) {
+		// Get the full list of points that have yet to be redeemed or expired
+		$result = $this->readListUnusedPeerAwards ( $program, $user );
+		$page = array ();
+		for($i = $offset; ($i - $offset) < $limit && $i < sizeof ( $result ); $i ++) {
+			$page [] = $result [$i];
+		}
+		return $page;
+	}
+    /**
+     * Alias for "readListReclaimablePeerPointsByProgramAndUser"
+     */
+    private function read_list_reclaimable_peer_points_by_program_and_user(Program $program, User $user, $offset, $limit) {
+        return self::readListReclaimablePeerPointsByProgramAndUser($program, $user, $offset, $limit);
+    }
+    /** $A
+	 * 
+	 * @param Program $program
+     * @param User $user
+     * @return array
+     * @throws Exception
+     */
+	private function readListUnusedPeerAwards(Program $program, User $user) {
+		// build and run the query and store it into the $query variable for
+		// later use and validation of the $query object
+		$account_name = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+		$reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
+		if (! $program->program_is_invoice_for_awards ( true )) {
+            throw new Exception('Function unsupported by this program.');
+			// $account_name = 'Monies Awarded';
+			// $reclaim_jet = "Reclaim monies";
+		}
+		// Get's the full list of points awarded and their expiration dates
+		// Note, we must get the full list awards to the user so we don't need to join back to the
+		// roles or programs this way. However, we do need to join back to the AWARDING program via the journal
+		// event so that we can tell where this award originated from
+        $query = DB::table('users');
+
+        $query->addSelect(
+            DB::raw("DISTINCT postings.id")
+        );
+        $query->addSelect([
+            'users.account_holder_id AS user_account_holder_id',
+            'postings.posting_amount AS amount',
+            'postings.created_at AS awarded',
+            'journal_events.id as journal_event_id',
+            'p.account_holder_id as program_id',
+            'event_xml_data.name as event_name',
+        ]);
+        $query->leftJoin('statuses', 'statuses.id', '=', 'users.user_status_id');
+        $query->leftJoin('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
+        $query->leftJoin('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->leftJoin('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->leftJoin('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->leftJoin('postings As program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts AS program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('programs AS p', 'p.account_holder_id', '=', 'program_accounts.account_holder_id');
+
+        $query->where('users.account_holder_id', '=', $user->account_holder_id);
+        $query->where('account_types.name', '=', $account_name);
+        $query->where('postings.is_credit', '=', 1);
+        try {
+            $result = $query->get();
+            
+            if( $result->isNotEmpty() )
+            {
+                // Get the points redeemed and expired
+                $points_redeemed = $this->accountService->readRedeemedTotalPeerPointsForParticipant (  $program, $user  );
+                // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successfulreadReclaimedTotalPeerPointsForParticipant
+                $points_reclaimed = $this->accountService->readReclaimedTotalPeerPointsForParticipant( $program, $user );
+                // Get the full list of reclaims, we need to do a "smart" whittle on these so that we
+                $points_reclaimed_list = $this->accountService->readListParticipantPostingsByAccountAndJournalEvents ( $user->account_holder_id, $account_name, $reclaim_jet, 0 );
+                // "Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
+                if ( $points_reclaimed_list->isNotEmpty() ) {
+                    foreach ( $points_reclaimed_list as $reclaim_posting ) {
+                        if ($points_reclaimed <= 0) {
+                            break;
+                        }
+                        foreach ( $result as &$point_award3 ) {
+                            if ($points_reclaimed <= 0) {
+                                break;
+                            }
+                            if ($reclaim_posting->posting_amount_total <= 0) {
+                                break;
+                            }
+                            if ($point_award3->amount <= 0) {
+                                continue;
+                            }
+                            // If the program id does not match where the reclaim happened, skip it
+                            if ($point_award3->program_id != $reclaim_posting->program_id) {
+                                continue;
+                            }
+                            if ($point_award3->journal_event_id != $reclaim_posting->parent_journal_event_id) {
+                                continue;
+                            }
+                            if ($reclaim_posting->posting_amount_total <= $point_award3->amount) {
+                                $point_award3->amount -= $reclaim_posting->posting_amount_total;
+                                $points_reclaimed -= $reclaim_posting->posting_amount_total;
+                                $reclaim_posting->posting_amount_total = 0;
+                            } else {
+                                $reclaim_posting->posting_amount_total -= $point_award3->amount;
+                                $points_reclaimed -= $point_award3->amount;
+                                $point_award3->amount = 0;
+                            }
+                        }
+                    }
+                }
+                // Finish the reclaim whittle using the regular method in case of errors
+                foreach ( $result as &$point_award4 ) {
+                    if ($points_reclaimed <= 0) {
+                        break;
+                    }
+                    if ($point_award4->amount <= 0) {
+                        continue;
+                    }
+                    if ($points_reclaimed <= $point_award4->amount) {
+                        $point_award4->amount -= $points_reclaimed;
+                        $points_reclaimed = 0;
+                    } else {
+                        $points_reclaimed -= $point_award4->amount;
+                        $point_award4->amount = 0;
+                    }
+                }
+                // Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
+                // take away points that have been redeemed since we care about
+                foreach ( $result as &$point_award ) {
+                    if ($points_redeemed <= 0) {
+                        break;
+                    }
+                    if ($point_award->amount <= 0) {
+                        continue;
+                    }
+                    if ($points_redeemed <= $point_award->amount) {
+                        $point_award->amount -= $points_redeemed;
+                        $points_redeemed = 0;
+                    } else {
+                        $points_redeemed -= $point_award->amount;
+                        $point_award->amount = 0;
+                    }
+                }
+                // Remove any point awards that are now at 0
+                for($i = count ( $result ) - 1; $i >= 0; -- $i) {
+                    if ($result [$i]->amount <= 0) {
+                        unset ( $result [$i] );
+                    }
+                }
+            } //result end
+            /*return [
+                'data' => $query->limit($limit)->offset($offset)->get(),
+                'total' => $query->count()
+            ];*/
+            return $result;
+            //return array_values ( $result );
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+    }
+    /**
+     * Alias for "readListUnusedPeerAwards"
+     */
+    private function _read_list_unused_peer_awards(Program $program, User $user) {
+        return self::readListUnusedPeerAwards($program, $user);
+    }
 }
