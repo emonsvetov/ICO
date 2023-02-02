@@ -53,10 +53,9 @@ class AwardNotification extends Notification implements ShouldQueue
             case 'PeerAllocation':
                 return (new PeerAllocationEmail(
                     $this->data->awardee_first_name, 
-                    $programUrl, 
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
-                    $this->data->program
+                    $this->data->program,
                 ));
             break;
             case 'PeerAward':
