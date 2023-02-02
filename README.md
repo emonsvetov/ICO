@@ -74,10 +74,8 @@ Add common file uploads to .gitignore file. For example:
 `/public/uploads`
 
 ## Update Log
-** January 24, 2023
-php artisan db:seed --class=EmailTemplateTypeSeeder
 
-** January 10 2023
+** January Jan 31 2023
 
 Run `migrations`
 `php artisan migrate`
