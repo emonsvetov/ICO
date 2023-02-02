@@ -13,8 +13,7 @@ class GoalPlanController extends Controller
 {
     public function store(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlanService $goalplanservice)
     {
-        //pr($request->all()); die;
-       // $response=[];
+
 		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
             return response(['errors' => "You can't add goal plan in this program."], 422);
         }
@@ -23,6 +22,7 @@ class GoalPlanController extends Controller
         }
         
         $data = $request->validated();
+
         try{
             $response= $goalplanservice->add_goal_plan($data,$organization,$program);
             return response($response);
@@ -38,6 +38,7 @@ class GoalPlanController extends Controller
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
+
         $where = [
             'program_id' => $program->id,
             'organization_id' => $organization->id
@@ -48,7 +49,9 @@ class GoalPlanController extends Controller
         if( $status )
         {
             $status_id = GoalPlan::getStatusIdByName($status);
-            $where[] = ['state_type_id', '=', $status_id];
+            if( $status_id) {
+                $where[] = ['state_type_id', '=', $status_id];
+            }
         }
 
         $goal_plans = GoalPlan::where($where)
