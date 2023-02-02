@@ -15,7 +15,6 @@ class ProgramLoginController extends Controller
     {
         $requestRole = $request->validated()['role'];
         $user = auth()->user();
-        $program->load(['organization']); // load essentials
 
         if( $requestRole == 'manager' )    {
             if( $user->isManagerToProgram($program->id) ) {
