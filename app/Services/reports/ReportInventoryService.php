@@ -83,6 +83,12 @@ class ReportInventoryService extends ReportServiceAbstract
 
         }
 
+        if ($this->isExport) {
+            $this->table['skuValues'] = $skuValues;
+            $this->table['data'] = $this->prepareForExport($table);
+            return $this->table;
+        }
+
         $this->table['data']['report'] = $table;
         $this->table['data']['skuValues'] = $skuValues;
         $this->table['total'] = count($table);
@@ -90,76 +96,55 @@ class ReportInventoryService extends ReportServiceAbstract
         return $this->table;
     }
 
-    protected function getReportForCSV(): array
-    {
-        $this->params[self::SQL_LIMIT] = null;
-        $this->params[self::SQL_OFFSET] = null;
-        $data = $this->getTable();
-        $tmpData = [];
-        $tmpRow = [];
-//        print_r($data);
-//        die;
-        foreach ($data['data']['report'] as $merchant_id => $inventory_data) {
-            $tmpRow = [];
-            $tmpRow[] = $inventory_data->name;
-            foreach ($data['data']['skuValues'] as $sku_value) {
-                $value = '-';
-                $sku_value_amount = number_format($sku_value, 2, '.',
-                    ''); // Get rid of commas and set to 2 decimal places
-                if (isset ($inventory_data->on_hand [$sku_value_amount]) && $inventory_data->on_hand [$sku_value_amount] != 'na') {
-                    $value = $inventory_data->on_hand[$sku_value_amount];
-                }
-                $tmpRow[] = $value;
-            }
-            foreach ($data['data']['skuValues'] as $sku_value) {
-                $value = '-';
-                $sku_value_amount = number_format($sku_value, 2, '.',
-                    ''); // Get rid of commas and set to 2 decimal places
-                if (isset ($inventory_data->optimal_values [$sku_value_amount]) && $inventory_data->optimal_values [$sku_value_amount] != 'na') {
-                    $value = $inventory_data->optimal_values[$sku_value_amount];
-                }
-                $tmpRow[] = $value;
-            }
-            foreach ($data['data']['skuValues'] as $sku_value) {
-                $value = '-';
-                $sku_value_amount = number_format($sku_value, 2, '.', '');
-                if (isset ($inventory_data->percent_remaining [$sku_value_amount])) {
-                    if (( string )$inventory_data->percent_remaining [$sku_value_amount] == "^") {
-                        $value = '^';
-                    } else {
-                        if ($inventory_data->percent_remaining [$sku_value_amount] != 'na') {
-                            $value = number_format($inventory_data->percent_remaining [$sku_value_amount] * 100, 0, '.',
-                                    '') . "%";
-                        }
-                    }
-                }
-                $tmpRow[] = $value;
-            }
-            $value = '-';
-            if ($inventory_data->cost_basis == "^") {
-                $value = '^';
-            } else if ($inventory_data->cost_basis != '0') {
-                $value = '$' . number_format ( $inventory_data->cost_basis, 2, '.', '' );
-            }
-            $tmpRow[] = $value;
-            $tmpData[] = $tmpRow;
-        }
-
-        $result = [
-            'data' => $tmpData,
-            'headers' => [] // $this->getCsvHeaders(),
-            ];
-        return $result;
-    }
-
     public function getCsvHeaders(): array
     {
-        return [
-            [
-                'label' => 'Program Name',
-                'key' => 'program_name'
-            ],
+        $arr = [];
+        $arr[] = [
+            'label' => 'Merchant Name',
+            'key' => 'name'
         ];
+        if ($this->table['skuValues']) {
+            $z = 0;
+            for ($i = 0; $i < 3; $i++) {
+                foreach ($this->table['skuValues'] as $item) {
+                    $arr[] = [
+                        'label' => number_format((float)$item, 2, '.', ''),
+                        'key' => 'key' . $z . number_format((float)$item, 2, '.', '')
+                    ];
+                    $z++;
+                }
+            }
+        }
+        $arr[] = [
+            'label' => 'Cost Basis',
+            'key' => 'cost_basis'
+        ];
+
+        return $arr;
     }
 
+    private function prepareForExport($table): array
+    {
+        $arr = [];
+        foreach ($table as $item) {
+            $z = 0;
+            $row = [];
+            $row['name'] = $item->name;
+            foreach ($item->on_hand as $subKey => $subItem) {
+                $row['key' . $z . $subKey] = $subItem;
+                $z++;
+            }
+            foreach ($item->optimal_values as $subKey => $subItem) {
+                $row['key' . $z . $subKey] = $subItem;
+                $z++;
+            }
+            foreach ($item->percent_remaining as $subKey => $subItem) {
+                $row['key' . $z . $subKey] = $subItem;
+                $z++;
+            }
+            $row['cost_basis'] = $item->cost_basis;
+            $arr[] = $row;
+        }
+        return $arr;
+    }
 }

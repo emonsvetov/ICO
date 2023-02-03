@@ -58,6 +58,12 @@ class ReportInventoryOrderService extends ReportServiceAbstract
             }
         }
 
+        // needed flat array to csv export
+        if ($this->isExport) {
+            $this->table['data'] = $this->prepareForExport($table);
+            return $this->table;
+        }
+
         // prepare data for react-table with rowSpan
         $arr = [];
         foreach ($table as $item) {
@@ -84,7 +90,7 @@ class ReportInventoryOrderService extends ReportServiceAbstract
             }
         }
 
-        $this->table['data']['report'] = $arr;
+        $this->table['data'] = $arr;
         $this->table['total'] = count($arr);
         return $this->table;
     }
@@ -93,10 +99,40 @@ class ReportInventoryOrderService extends ReportServiceAbstract
     {
         return [
             [
-                'label' => 'Program Name',
-                'key' => 'program_name'
+                'label' => 'Merchant Name',
+                'key' => 'merchant_name'
+            ],
+            [
+                'label' => 'Denomination',
+                'key' => 'denomination'
+            ],
+            [
+                'label' => '#in Inventory',
+                'key' => 'count'
+            ],
+            [
+                'label' => '2-Week Target',
+                'key' => 'optimal_value'
             ],
         ];
+    }
+
+    private function prepareForExport($table): array
+    {
+        $arr = [];
+        foreach ($table as $item) {
+            if (count($item->optimal_values) >= 1) {
+                foreach ($item->optimal_values as $subKey => $subItem) {
+                    $row = [];
+                    $row['merchant_name'] = $item->merchant_name;
+                    $row['denomination'] = $subItem->denomination;
+                    $row['count'] = $subItem->count;
+                    $row['optimal_value'] = $subItem->optimal_value;
+                    $arr[] = $row;
+                }
+            }
+        }
+        return $arr;
     }
 
 }
