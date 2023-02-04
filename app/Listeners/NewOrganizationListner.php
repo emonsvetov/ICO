@@ -31,6 +31,6 @@ class NewOrganizationListner
     public function handle(OrganizationCreated $event)
     {
         $superAdmins = $this->userService->getSuperAdmins();
-        Notification::send($superAdmins, new NewOrganizationNotification( $event->organization ));
+        //Notification::send($superAdmins, new NewOrganizationNotification( $event->organization )); comment out for now and auto confirm email TODO: Add mail verification email with link
     }
 }

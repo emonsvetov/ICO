@@ -33,6 +33,7 @@ class SendgridEmail extends Mailable
     public function __construct()
     {
         $this->data['imagePath'] = self::IMAGE_PATH;
+        $this->data['contactProgramHost0'] = app()->call('App\Services\DomainService@makeUrl');
     }
 
     protected function init($arguments)
@@ -54,7 +55,6 @@ class SendgridEmail extends Mailable
                 $this->data['template'] = $programTemplate->template;
             }
         }
-
     }
 
     /**

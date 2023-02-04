@@ -583,7 +583,6 @@ class ProgramService
         }
         return $billable_programs;
     }
-
     public function listStatus()
     {
         return Status::where('context', 'Programs')->get();
