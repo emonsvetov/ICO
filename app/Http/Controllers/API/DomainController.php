@@ -137,6 +137,12 @@ class DomainController extends Controller
         }
 
         $program->load('template');
+        // return $program->template;
+        // $program->template = $template2;
+
+        // return $template2;
+
+        // return $program->template;
 
         // return Domain::has('programs', 'programs.id', '=', 'model_has_roles.program_id')
         // ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
@@ -146,7 +152,7 @@ class DomainController extends Controller
         // ->withPivot('program_id')
         // ->get();
 
-        return response( ['domain' => $domain, 'program' => $program] );
+        return response( ['domain' => $domain, 'program' => $program, 'template'=>$program->template] );
 
     }
 

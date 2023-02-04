@@ -394,12 +394,19 @@ class Program extends BaseModel
                 $key = array_search($template_key, $relations);
                 unset($relations[$key]);
             }
+            
             if(is_string($relations))
             {
                 $relations = [];
             }
+
+            if( !$this->template )
+            {
+                $this->template = ProgramTemplate::DEFAULT_TEMPLATE;
+                pr($this->template);
+            }
         }
 
-        return parent::load( $relations );
+        // return parent::load( $relations );
     }
 }
