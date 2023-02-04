@@ -26,6 +26,8 @@ abstract class ReportServiceAbstract
 
     protected array $params;
     protected array $table = [];
+    protected bool $isExport = false;
+
     /**
      * @var ReportHelper|null
      */
@@ -153,6 +155,7 @@ abstract class ReportServiceAbstract
 
     protected function getReportForCSV(): array
     {
+        $this->isExport = true;
         $this->params[self::SQL_LIMIT] = null;
         $this->params[self::SQL_OFFSET] = null;
         $data = $this->getTable();
