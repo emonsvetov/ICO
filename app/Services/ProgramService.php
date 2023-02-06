@@ -369,13 +369,13 @@ class ProgramService
     public function create($data)
     {
         if (isset($data['status'])) { //If status present in "string" format
-            $data['status_id'] = Program::getStatusIdByName($data['status']); 
+            $data['status_id'] = Program::getStatusIdByName($data['status']);
             unset($data['status']);
         }
         else if(empty($data['status_id'])) //if, the status_id also not set
         {
             //Set default status
-            $data['status_id'] = Program::getIdStatusActive(); 
+            $data['status_id'] = Program::getIdStatusActive();
         }
         return Program::createAccount($data);
     }
@@ -396,7 +396,7 @@ class ProgramService
         }
         if( empty($data['status_id']) )
         {   //set default status to "Active"
-            $data['status_id'] = Program::getIdStatusActive(); 
+            $data['status_id'] = Program::getIdStatusActive();
         }
         if($program->update($data)) {
             if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
@@ -593,13 +593,10 @@ class ProgramService
         return $program->update( ['status_id' => $validated['program_status_id']] );
     }
 
-    public function get_parent_program_by_account($program_account_holder_id)  {
-        $program = Program::where('account_holder_id', $program_account_holder_id)->select(['id', 'account_holder_id','parent_id'])->get()->first();
-        $program->load('parent');
-        if(!empty($program->parent)) {
-            return $program->parent;
-        } else {
-            return false;
-        }
+    public function getTemplate(Program $program)
+    {
+        $ancestors = $program->ancestorsAndSelf()->pluck('id');
+        $ancestor = Program::has('template')->whereIn('id', $ancestors)->latest()->first();
+        return $ancestor ? $ancestor->template : null;
     }
 }
