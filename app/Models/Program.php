@@ -84,9 +84,14 @@ class Program extends BaseModel
         ->withTimestamps();
     }
 
+    public function templates()
+    {
+        return $this->hasMany(ProgramTemplate::class);
+    }
+
     public function template()
     {
-        return $this->hasOne(ProgramTemplate::class);
+        return $this->hasOne(ProgramTemplate::class)->ofMany('is_active', 'max');
     }
 
     public function programIsInvoiceForAwards(): bool
@@ -366,47 +371,23 @@ class Program extends BaseModel
         return self::getStatusLocked()->id;
     }
 
-    private function getTemplateRecursive( $program )
+    public function getTemplate()
     {
-        if( $program->template ) return $program->template;
+        // If available return it
+        if( $this->template ) return $this->template;
 
-        if( $program->parent()->exists() )
+        // Get first available template from ancestors
+        $ancestors = $this->ancestors()->pluck('id');
+        if( $ancestors )
         {
-            $parent = $program->parent()->first();
-            if( $parent->template ) {
-                return $parent->template;
-            } else {
-                return $parent->getTemplateRecursive( $parent );
-            }
-        }
-    }
-
-    public function load( $relations )
-    {
-        $template_key = 'template';
-
-        if( (is_string($relations) && $relations == $template_key) || (is_array($relations) && sizeof($relations) > 0 && in_array($template_key, $relations)  ))
-        {
-            $this->template = $this->getTemplateRecursive($this);
-
-            if(is_array($relations))
-            {
-                $key = array_search($template_key, $relations);
-                unset($relations[$key]);
-            }
-            
-            if(is_string($relations))
-            {
-                $relations = [];
-            }
-
-            if( !$this->template )
-            {
-                $this->template = ProgramTemplate::DEFAULT_TEMPLATE;
-                pr($this->template);
-            }
+            $ancestor = $this->has('template')->whereIn('id', $ancestors)->latest()->first();
+            if( $ancestor && $ancestor->template ) return $ancestor->template;
         }
 
-        // return parent::load( $relations );
+        // If not set then use default template
+        $newTemplate = new ProgramTemplate( ProgramTemplate::DEFAULT_TEMPLATE );
+        // pr($newTemplate);
+        $this->setRelation('template', $newTemplate);
+        return $newTemplate;
     }
 }
