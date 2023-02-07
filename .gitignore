@@ -1,10 +1,7 @@
 /node_modules
 /public/hot
-
-!public/storage
-public/storage/*
-!public/storage/theme/
-
+/public/storage
+!/public/storage/theme
 /public/uploads
 /storage/*.key
 /vendor
