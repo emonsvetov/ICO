@@ -1,4 +1,8 @@
 *
 !logo/
 !logo/*
+!theme
+!theme/*
+!theme/**
 !.gitignore
+.DS_Store
