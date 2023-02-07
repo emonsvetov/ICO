@@ -1,6 +1,7 @@
 *
 !logo/
 !logo/*
-!theme/
+!theme
 !theme/*
+!theme/**
 !.gitignore
