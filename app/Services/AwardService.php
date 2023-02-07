@@ -912,4 +912,27 @@ class AwardService
     private function _read_list_unused_peer_awards(Program $program, User $user) {
         return self::readListUnusedPeerAwards($program, $user);
     }
+
+    //$A
+    /** recliam_peer_points()
+	 *
+	 * @author BCM 2015-03-20
+	 *        
+	 * @param int $authenticated_account_holder_id        
+	 * @param int $program_account_holder_id        
+	 * @param int $user_account_holder_id        
+	 * @param float $amount        
+	 * @throws InvalidArgumentException If $program_account_holder_id passed is not an unsigned int > 0
+	 * @throws InvalidArgumentException If $program_account_holder_id passed is not in our records
+	 * @throws InvalidArgumentException If $user_account_holder_id passed is not an unsigned int > 0
+	 * @throws InvalidArgumentException If $user_account_holder_id passed is not in our records
+	 * @throws InvalidArgumentException If $amount passed is not a float > 0
+	 * @throws RuntimeException If internal query fails */
+	public function reclaim_peer_points($authenticated_account_holder_id, $program_account_holder_id = 0, $user_account_holder_id = 0, $amount = 0.0, $notes, $parent_journal_event_id) {
+        return self::ReclaimPeerPoints($authenticated_account_holder_id, $program_account_holder_id, $user_account_holder_id, $amount, $notes, $parent_journal_event_id);
+    }
+
+    public function ReclaimPeerPoints($authenticated_account_holder_id, $program_account_holder_id = 0, $user_account_holder_id = 0, $amount = 0.0, $notes, $parent_journal_event_id) {
+        
+    }
 }

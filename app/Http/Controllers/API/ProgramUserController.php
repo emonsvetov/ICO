@@ -246,4 +246,14 @@ class ProgramUserController extends Controller
             $offset
         ));
     }
+    public function ReclaimPeerPoints(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AwardService $awardService
+    ) { 
+       pr( request()->all());
+       //$test = request()->get('points');
+       return response([]);
+    }
 }
