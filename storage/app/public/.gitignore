@@ -5,3 +5,4 @@
 !theme/*
 !theme/**
 !.gitignore
+.DS_Store
