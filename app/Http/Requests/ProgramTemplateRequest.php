@@ -37,7 +37,7 @@ class ProgramTemplateRequest extends FormRequest
             'button_bg_color' => 'string|nullable',
             'font_family' => 'string|nullable',
             'welcome_message' => 'string|nullable',
-            'is_active' => 'boolean|nullable'
+            'is_active' => 'boolean|sometimes'
         ];
     }
 }
