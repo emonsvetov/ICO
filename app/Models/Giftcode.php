@@ -87,7 +87,7 @@ class Giftcode extends Model
 		return $results;
 	}
 
-	public function createGiftcode($user, $merchant, $giftcode)	{
+	public static function createGiftcode($user, $merchant, $giftcode)	{
 
 		if( !$user || !$merchant || !$giftcode ) return;
 		$response = [];
