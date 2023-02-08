@@ -154,6 +154,11 @@ class PermissionSeeder extends Seeder
              'team-update',
              'team-view',
             'user-read-points',
+            'referral-create',
+            'referral-list',
+            'referral-delete',
+            'referral-update',
+            'referral-view',
         ];
 
         foreach ($permissions as $permission) {
