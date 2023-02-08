@@ -3,10 +3,6 @@ namespace App\Models\Traits;
 
 use App\Models\Program;
 use App\Models\Domain;
-use App\Models\Role;
-use App\Models\User;
-use DB;
-use Hamcrest\Type\IsBoolean;
 
 trait HasProgramRoles
 {

@@ -335,9 +335,17 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // ProgramTemplate
 
+    Route::get('/v1/organization/{organization}/program/{program}/template',[App\Http\Controllers\API\ProgramTemplateController::class, 'getTemplate'])->middleware('can:getTemplate,App\ProgramTemplate,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'show'])->middleware('can:view,App\ProgramTemplate,organization,program,programTemplate')->whereNumber('programTemplate');
+
+    Route::get('/v1/organization/{organization}/program/{program}/template/{name}',[App\Http\Controllers\API\ProgramTemplateController::class, 'showByName'])->middleware('can:view,App\ProgramTemplate,organization,program,programTemplate')->whereAlphaNumeric('name');
+
     Route::post('/v1/organization/{organization}/program/{program}/template',[App\Http\Controllers\API\ProgramTemplateController::class, 'store'])->middleware('can:create,App\ProgramTemplate,organization,program');
 
-    Route::put('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'update'])->middleware('can:update,App\ProgramTemplate,organization,program');
+    Route::put('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'update'])->middleware('can:update,App\ProgramTemplate,organization,program,programTemplate');
+
+    Route::delete('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'delete'])->middleware('can:delete,App\ProgramTemplate,organization,program,programTemplate');
 
     Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/inviteResend', [App\Http\Controllers\API\InvitationController::class, 'resend'])->middleware('can:resend,App\Invitation,organization,program');

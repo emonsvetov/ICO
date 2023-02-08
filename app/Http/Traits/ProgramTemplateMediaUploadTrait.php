@@ -15,10 +15,17 @@ trait ProgramTemplateMediaUploadTrait {
                     //try to find and delete old file
                     if( $updating ) {
                         $oldFile = $programTemplate[$field];
-                        if( $oldFile )  {
+                        if( $oldFile && strpos('theme/default', $oldFile) === false )  {
                             Storage::delete( $oldFile );
                         }
                     }
+                }
+            }
+            else 
+            {
+                if( !$updating && isset(ProgramTemplate::DEFAULT_TEMPLATE[$field]) )
+                {
+                    $uploads[$field] = ProgramTemplate::DEFAULT_TEMPLATE[$field];
                 }
             }
         }

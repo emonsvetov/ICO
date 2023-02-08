@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
+use App\Services\ProgramTemplateService;
 use App\Models\Traits\IdExtractor;
 use App\Services\AccountService;
 use App\Services\UserService;
@@ -23,6 +24,7 @@ class ProgramService
 
     private UserService $userService;
     private AccountService $accountService;
+    private ProgramTemplateService $programTemplateService;
     private TransferMoniesService $transferMoniesService;
     private ProgramsTransactionFeeService $programsTransactionFeeService;
 
@@ -30,11 +32,13 @@ class ProgramService
         UserService $userService,
         AccountService $accountService,
         TransferMoniesService $transferMoniesService,
+        ProgramTemplateService $programTemplateService,
         ProgramsTransactionFeeService $programsTransactionFeeService
     ) {
         $this->userService = $userService;
         $this->accountService = $accountService;
         $this->transferMoniesService = $transferMoniesService;
+        $this->programTemplateService = $programTemplateService;
         $this->programsTransactionFeeService = $programsTransactionFeeService;
     }
 
@@ -595,8 +599,6 @@ class ProgramService
 
     public function getTemplate(Program $program)
     {
-        $ancestors = $program->ancestorsAndSelf()->pluck('id');
-        $ancestor = Program::has('template')->whereIn('id', $ancestors)->latest()->first();
-        return $ancestor ? $ancestor->template : null;
+        return $this->programTemplateService->getTemplate($program);
     }
 }
