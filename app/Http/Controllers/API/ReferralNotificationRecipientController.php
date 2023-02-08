@@ -35,32 +35,33 @@ class ReferralNotificationRecipientController extends Controller
         return response([ 'referral' => $newReferralNotificationRecipient ]);
     }
 
-    public function show( Organization $organization, Program $program,ReferralNotificationRecipient $referralnotificationrecipient )
+    public function show( Organization $organization, Program $program,ReferralNotificationRecipient $referral_notification_recipient )
     {
-        if ($referralnotificationrecipient ) 
+        //pr()
+        if ($referral_notification_recipient ) 
         {
-            return response($referralnotificationrecipient );
+            return response($referral_notification_recipient );
         }
 
         return response( [] );
     }
 
-    public function update(ReferralNotificationRecipientRequest $request, Organization $organization, Program $program,ReferralNotificationRecipient $referralnotificationrecipient )
+    public function update(ReferralNotificationRecipientRequest $request, Organization $organization, Program $program,ReferralNotificationRecipient $referral_notification_recipient )
     {
         $data = $request->validated();
         try {
-            $referralnotificationrecipient->update( $data );
+            $referral_notification_recipient->update( $data );
         }
         catch(\Throwable $e)
         {
             return response(['errors' => 'Referral Creation failed', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
         }
-        return response(['referral' =>$referralnotificationrecipient ]);
+        return response(['referral' =>$referral_notification_recipient ]);
     }
 
-    public function delete(Organization $organization, Program $program,ReferralNotificationRecipient $referralnotificationrecipient)
+    public function delete(Organization $organization, Program $program,ReferralNotificationRecipient $referralnotireferral_notification_recipientficationrecipient)
     {
-        $referralnotificationrecipient->delete();
+        $referral_notification_recipient->delete();
         return response(['success' => true]);
     }
 }

@@ -4,13 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\ValidationException;
 
 class ReferralNotificationRecipient extends BaseModel
 {
     use HasFactory;
     protected $guarded = [];
-    use HasFactory;
     use SoftDeletes;
     //protected $table = 'team';
     
@@ -33,7 +33,7 @@ class ReferralNotificationRecipient extends BaseModel
     {
         $query = self::where('organization_id', $organization->id)
             ->where('program_id', $program->id);
-        return $query->orderBy('name')
+        return $query->orderBy('referral_notification_recipient_name')
             ->get();
     }
 }

@@ -450,7 +450,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'index'])->name('api.v1.referral_notification_recipient.index')->middleware('can:viewAny,App\ReferralNotificationRecipient,organization,program');
 
-     Route::get('/v1/organization/{organization}/program/{program}/treferral-notification-recipient/{referral_notification_recipient}',
+     Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referral_notification_recipient}',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'show'])->name('api.v1.referral_notification_recipient.show')->middleware('can:view,App\ReferralNotificationRecipient,organization,program,referral_notification_recipient');
      
      Route::put('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{treferral_notification_recipient}',
