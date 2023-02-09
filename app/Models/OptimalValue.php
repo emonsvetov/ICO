@@ -17,7 +17,7 @@ class OptimalValue extends Model
         return $this->belongsTo(Merchant::class);
     }
 
-    public function readByMerchanIdAndDenomination( $merchant_id, $denomination) {
+    public static function readByMerchanIdAndDenomination( $merchant_id, $denomination) {
         return self::where(['merchant_id' => $merchant_id, 'denomination' => $denomination])
         ->get();
     }
