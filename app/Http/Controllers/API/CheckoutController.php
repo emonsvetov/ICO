@@ -22,10 +22,10 @@ class CheckoutController extends Controller
                 return response(['errors' => $response['errors']], 422);
             }
             return $response;
-        }   catch (Exception $e)    {
+        }   catch (\Exception $e)    {
             return response(
                 [
-                    'errors' => sprintf('Error while processing checkout. Line: %d, Error: %s', $e->getLine, $e->getMessage()),
+                    'errors' => sprintf('Error while processing checkout. Line: %d, Error: %s', $e->getLine(), $e->getMessage()),
                 ],
                 422
             );

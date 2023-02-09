@@ -87,7 +87,7 @@ class Giftcode extends Model
 		return $results;
 	}
 
-	public function createGiftcode($user, $merchant, $giftcode)	{
+	public static function createGiftcode($user, $merchant, $giftcode)	{
 
 		if( !$user || !$merchant || !$giftcode ) return;
 		$response = [];
@@ -163,7 +163,7 @@ class Giftcode extends Model
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
 	}
 
-	public function getRedeemableListByMerchantAndSkuValue($merchant = 0, $sku_value = 0, $end_date = '2022-10-01') {
+	public static function getRedeemableListByMerchantAndSkuValue($merchant = 0, $sku_value = 0, $end_date = '2022-10-01') {
 
 		$filters = [];
 		if( (float) $sku_value > 0 )	{
@@ -177,7 +177,7 @@ class Giftcode extends Model
 	
 	}
 
-	public function holdGiftcode( $params = [] ) {
+	public static function holdGiftcode( $params = [] ) {
 		if( empty($params['merchant_id']) || empty($params['merchant_account_holder_id']) || empty($params['sku_value']) || empty($params['redemption_value']) )
 		{
 			return ['errors' => ['Invalid data passed']];
@@ -190,26 +190,26 @@ class Giftcode extends Model
 		return self::_hold_giftcode($params);
 	}
 
-	public function redeemPointsForGiftcodesNoTransaction( array $data)	{
+	public static function redeemPointsForGiftcodesNoTransaction( array $data)	{
 		return self::_redeem_points_for_giftcodes_no_transaction( $data );
 	}
 
-	public function redeemMoniesForGiftcodesNoTransaction( array $data)	{
+	public static function redeemMoniesForGiftcodesNoTransaction( array $data)	{
 		return self::_redeem_monies_for_giftcodes_no_transaction($data);
 	}	
 	
-	public function transferGiftcodesToMerchantNoTransaction( array $data)	{
+	public static function transferGiftcodesToMerchantNoTransaction( array $data)	{
 		return self::_transfer_giftcodes_to_merchant_no_transaction($data);
 	}
 
-	public function handlePremiumDiff( array $params )	{
+	public static function handlePremiumDiff( array $params )	{
 		if( empty($params['code']) || empty($params['journal_event_id']) )	{
 			return ['errors' => sprintf('Invalid data passed to Giftcode::handlePremiumDiff')];
 		}
 		self::_handle_premium_diff( $params );
 	}
 
-	private function _get_next_available_giftcode($merchant_account_holder_id, $sku_value, $redemption_value
+	private static function _get_next_available_giftcode($merchant_account_holder_id, $sku_value, $redemption_value
 	)	
 	{
 		$query = self::select([
@@ -236,7 +236,7 @@ class Giftcode extends Model
 		return $query->first();
 	}
 
-	private function _hold_giftcode( $params ) {
+	private static function _hold_giftcode( $params ) {
 		
 		extract($params);
 
@@ -269,7 +269,12 @@ class Giftcode extends Model
 		return $code;
 	}
 
-	private function _read_by_merchant_and_medium_info_id($merchant_account_holder_id = 0, $medium_info_id = 0) {
+    public static function readGiftcodeByMerchantAndId($merchant_account_holder_id = 0, $medium_info_id = 0)
+    {
+        return self::_read_by_merchant_and_medium_info_id($merchant_account_holder_id, $medium_info_id);
+    }
+
+	private static function _read_by_merchant_and_medium_info_id($merchant_account_holder_id = 0, $medium_info_id = 0) {
 		$query = Posting::select([
 			'medium_info.*',
 			'postings.created_at'
