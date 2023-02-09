@@ -85,7 +85,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\ReferralNotificationRecipient  $referralnotificationrecipient
      * @return mixed
      */
-    public function update(User $authUser, Organization $organization, Program $program,ReferralNotificationRecipient $referralnotificationrecipient)
+    public function update(User $authUser, Organization $organization, Program $program, ReferralNotificationRecipient $referral_notification_recipient)
     {
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {

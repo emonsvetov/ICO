@@ -37,7 +37,6 @@ class ReferralNotificationRecipientController extends Controller
 
     public function show( Organization $organization, Program $program,ReferralNotificationRecipient $referral_notification_recipient )
     {
-        //pr()
         if ($referral_notification_recipient ) 
         {
             return response($referral_notification_recipient );
@@ -59,7 +58,7 @@ class ReferralNotificationRecipientController extends Controller
         return response(['referral' =>$referral_notification_recipient ]);
     }
 
-    public function delete(Organization $organization, Program $program,ReferralNotificationRecipient $referralnotireferral_notification_recipientficationrecipient)
+    public function delete(Organization $organization, Program $program,ReferralNotificationRecipient $referral_notification_recipient)
     {
         $referral_notification_recipient->delete();
         return response(['success' => true]);

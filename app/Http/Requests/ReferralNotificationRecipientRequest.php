@@ -27,7 +27,7 @@ class ReferralNotificationRecipientRequest extends FormRequest
             'referral_notification_recipient_email'=> 'required|string',
             'referral_notification_recipient_name'=> 'required|string',
             'referral_notification_recipient_lastname'=> 'required|string',
-            'referral_notification_recipient_active'=> 'required|boolean',
+            'referral_notification_recipient_active'=> 'boolean',
         ];
     }
 }
