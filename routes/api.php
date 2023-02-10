@@ -233,6 +233,20 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/redeemable', [App\Http\Controllers\API\ProgramMerchantController::class, 'redeemable'])->middleware('can:viewRedeemable,App\ProgramMerchant,organization,program,merchant');
 
     //ProgramUser routes
+    Route::get('/v1/digital-medias',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'index'])->middleware('can:viewAny,App\ProgramMediaTypeController');
+
+    Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
+        [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:viewAny,App\ProgramMedia,organization,program,programMediaType');
+//
+//    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
+//        [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
+//
+//    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/giftcode',
+//        [App\Http\Controllers\API\ProgramMerchantController::class, 'giftcodes'])->name('api.v1.program.merchant.giftcodes')->middleware('can:viewGiftcodes,App\ProgramMerchant,organization,program,merchant');
+    Route::post('/v1/organization/{organization}/program/{program}/digital-media',
+        [App\Http\Controllers\API\ProgramMediaController::class, 'store'])->middleware('can:add,App\ProgramMedia,organization,program');
+
 
     Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,organization,program');
 
