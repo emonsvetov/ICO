@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ProgramMediaType extends Model
 {
     use HasFactory;
+    protected $primaryKey = 'program_media_type_id';
     protected $table = 'program_media_type';
     protected $guarded = [];
     protected $hidden = [
