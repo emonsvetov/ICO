@@ -27,6 +27,9 @@ class ProgramMediaController extends Controller
 {
     public function index( Organization $organization, Program $program, ProgramMediaType $programMediaType, Request $request)
     {
+        print_r($programMediaType);
+        die;
+
         $programMedia = ProgramMedia::where([
             'program_id' => $program->id,
             'program_media_type_id' => $programMediaType->id
