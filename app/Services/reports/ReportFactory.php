@@ -10,6 +10,7 @@ class ReportFactory
 
     public function build(string $title = '', array $params = [])
     {
+
         $programs = isset($params['programs']) ? $params['programs'] : null;
         $programs = $programs ? explode(',', $programs) : [];
         $merchants = isset($params['merchants']) ? $params['merchants'] : null;
@@ -19,6 +20,8 @@ class ReportFactory
         $paramPage = isset($params['page']) ? (int)$params['page'] : null;
         $paramLimit = isset($params['limit']) ? (int)$params['limit'] : null;
         $exportToCsv = $params['exportToCsv'] ?? 0;
+        $active = isset($params['active']) && $params['active'] != 'false' ? 1 : 0;
+        $reportKey = $params['reportKey'] ?? 0;
 
         if ($paramPage && $paramLimit) {
             $offset = ($paramPage - 1) * $paramLimit;
@@ -32,7 +35,9 @@ class ReportFactory
             'dateTo' => $dateTo,
             'limit' => $limit ?? null,
             'offset' => $offset ?? null,
-            'exportToCsv' => $exportToCsv
+            'exportToCsv' => $exportToCsv,
+            'active' => $active,
+            'reportKey' => $reportKey,
         ];
 
         if (empty($title)) {
