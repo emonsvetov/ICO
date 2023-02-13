@@ -326,4 +326,85 @@ class GoalPlanService
 		UserGoal::where(['id'=>$future_user_goal_id])->update(['previous_user_goal_id'=>$user_goal->id]);
 		return $future_user_goal;
 	}
+
+	/** 
+         * @api true
+	 * @permission Administrator
+	 *
+	 * @permission Program Manager
+	 * @permission Program Manager Read Only
+	 *
+	 * @param int $program_account_holder_id        
+	 * @param int $offset        
+	 * @param int $limit        
+	 * @param string $order_column        
+	 * @param string $order_direction        
+	 * @return GoalPlanObject[] */
+	/*public function read_active_by_program($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$state = Status::get_goal_active_state();
+		return $this->read_list_by_program_and_state ( $program_account_holder_id, ( int ) $state, $offset, $limit, $order_column, $order_direction );
+	
+	}
+	public static function readActiveByProgram($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		return self::read_active_by_program($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc');
+	}
+	}*/
+	/** read_list_by_program()
+	 *
+	 * @param int $program_account_holder_id        
+	 * @param int $offset        
+	 * @param int $limit        
+	 * @param string $order_column        
+	 * @param string $order_direction        
+	 * @throws InvalidArgumentException If $program_account_holder_id is not an unsigned int or < 1
+	 * @throws InvalidArgumentException If $program_account_holder_id is not in our database
+	 * @throws InvalidArgumentException If $offset is not an unsigned int
+	 * @throws InvalidArgumentException If $limit is not an unsigned int or < 1
+	 * @throws InvalidArgumentException If $order_column is not a string or trimmed length < 1
+	 * @throws InvalidArgumentException If $order_column is not one of the allowed columns
+	 * @throws InvalidArgumentException If $order_direction is not a string or trimmed length < 1
+	 * @throws InvalidArgumentException If $order_direction is not either ASC or DEC
+	 * @throws RuntimeException If internal query fails
+	 * @return UserObject[] */
+	public function read_list_by_program_and_state($program_account_holder_id = 0, $goal_plan_state_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		assert_is_positive_int ( "program_account_holder_id", $program_account_holder_id );
+		assert_is_positive_int ( "goal_plan_state_id", $goal_plan_state_id );
+		assert_is_positive_int_or_zero ( "offset", $offset );
+		assert_is_positive_int ( "limit", $limit );
+		// TODO: This should be checking against a list of order columns!
+		// make sure we have a valid format for the $order_column, we don;t even want to try
+		// to run a query without this column name cause it will surely fail! right?
+		if (! is_string ( $order_column ) || strlen ( trim ( $order_column ) ) < 1) {
+			throw new InvalidArgumentException ( 'Invalid "order_column" passed, must be a string and trimmed length > 0', 400 );
+		}
+		// make sure that $order_direction is either ASC or DESC, for the same reason we checked the $order_column
+		if (strtoupper ( $order_direction ) != 'ASC' && strtoupper ( $order_direction ) != 'DESC') {
+			throw new InvalidArgumentException ( 'Invalid "order_direction" passed, must be either "ASC" or "DESC"', 400 );
+		}
+		// make sure that the $order_direction is uppercase
+		// cause we want it to be standard SQL :)
+		$order_direction = strtoupper ( $order_direction );
+		// build and run the query
+		$sql = "
+            SELECT
+                " . $this->_select_goal_plan_info () . "
+            WHERE
+                gp.`program_account_holder_id` = {$program_account_holder_id}
+                AND gp.`state_type_id` = {$goal_plan_state_id}
+            ORDER BY
+                gp.`{$order_column}` {$order_direction}
+            LIMIT
+                {$offset}, {$limit};
+        ";
+		// $handle = fopen('x.txt', 'w');fwrite($handle, $sql);
+		$query = $this->read_db->query ( $sql );
+		// check if the query has run right
+		if (! $query) {
+			throw new RuntimeException ( 'Internal query failed, please contact API administrator', 500 );
+		}
+		// now we finally give back the result to the FUNCTION caller
+		return $query->result ();
+	
+	}
+
 }

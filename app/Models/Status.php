@@ -35,4 +35,8 @@ class Status extends Model
     public static function get_order_shipped_state()  {
         return self::getSetByContextAndName('Orders', 'Shipped');
     }
+
+    public static function get_goal_active_state()  {
+        return self::getSetByContextAndName('Goals', 'Active');
+    }
 }
