@@ -247,6 +247,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/digital-media',
         [App\Http\Controllers\API\ProgramMediaController::class, 'store'])->middleware('can:add,App\ProgramMedia,organization,program');
 
+    Route::post('/v1/organization/{organization}/program/{program}/digital-media/upload',
+        [App\Http\Controllers\API\ProgramMediaController::class, 'upload'])->middleware('can:add,App\ProgramMedia,organization,program');
+
 
     Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,organization,program');
 
