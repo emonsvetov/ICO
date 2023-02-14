@@ -233,8 +233,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/redeemable', [App\Http\Controllers\API\ProgramMerchantController::class, 'redeemable'])->middleware('can:viewRedeemable,App\ProgramMerchant,organization,program,merchant');
 
     //ProgramUser routes
-    Route::get('/v1/digital-medias',
+    //ProgramUser routes
+    Route::get('/v1/organization/{organization}/program/{program}/digital-media-type',
         [App\Http\Controllers\API\ProgramMediaTypeController::class, 'index'])->middleware('can:viewAny,App\ProgramMediaTypeController');
+
+    Route::post('/v1/organization/{organization}/program/{program}/digital-media-type',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store'])->middleware('can:viewAny,App\ProgramMediaTypeController');
 
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:viewAny,App\ProgramMedia,organization,program,programMediaType');
@@ -246,6 +250,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 //        [App\Http\Controllers\API\ProgramMerchantController::class, 'giftcodes'])->name('api.v1.program.merchant.giftcodes')->middleware('can:viewGiftcodes,App\ProgramMerchant,organization,program,merchant');
     Route::post('/v1/organization/{organization}/program/{program}/digital-media',
         [App\Http\Controllers\API\ProgramMediaController::class, 'store'])->middleware('can:add,App\ProgramMedia,organization,program');
+
+    Route::delete('/v1/organization/{organization}/program/{program}/programMedia/{programMedia}/digital-media',
+    [App\Http\Controllers\API\ProgramMediaController::class, 'delete'])->middleware('can:remove,App\ProgramMedia,organization,program');
+
 
     Route::post('/v1/organization/{organization}/program/{program}/digital-media/upload',
         [App\Http\Controllers\API\ProgramMediaController::class, 'upload'])->middleware('can:add,App\ProgramMedia,organization,program');

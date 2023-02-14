@@ -33,8 +33,9 @@ class ProgramMediaController extends Controller
     ) {
         $programMedia = ProgramMedia::where([
             'program_id' => $program->id,
-            'program_media_type_id' => $programMediaType->program_media_type_id
-        ])->where('deleted', 0)->get();
+            'program_media_type_id' => $programMediaType->program_media_type_id,
+            'deleted' => 0
+        ])->get();
 
         if ($programMedia->isNotEmpty()) {
             return response($programMedia);
@@ -61,13 +62,16 @@ class ProgramMediaController extends Controller
         return response()->json($responseFiles);
     }
 
-    private function saveFile($file, $name, $program)
+    private function saveFile($file, $name, $program, $mediaType, $isIcon)
     {
         $pathInfo = pathinfo($file['name']);
-        $hash = Str::random(40);
-        $name = $name ? $name . '.' . $pathInfo['extension'] : $hash . '.' . $pathInfo['extension'];
+        $name = str_replace(" ", "_", $name) . '.' . $pathInfo['extension'];
         $oldPath = 'programMedia/tmp/' . date('Y-m-d') . '/' . $file['id'] . '/' . $file['name'];
-        $newPath = 'programMedia/' . $program->id . '/' . $name;
+        $newPathDir = 'programMedia/' . $program->id . '/' . $mediaType . '/';
+        if($isIcon){
+            $newPathDir .= 'icon/';
+        }
+        $newPath = $newPathDir . $name;
         Storage::move($oldPath, $newPath);
         return $newPath;
     }
@@ -79,13 +83,14 @@ class ProgramMediaController extends Controller
             $icon = (array)json_decode($request->get('icon'));
             $name = $request->get('name');
             $mediaType = $request->get('mediaType');
-
-            $filePath = $this->saveFile($file, $name, $program);
-            $iconPath = $this->saveFile($icon, '', $program);
+            $filePath = $this->saveFile($file, $name, $program, $mediaType, false);
+            $iconPath = $this->saveFile($icon, $name, $program, $mediaType, true);
             $programMedia = ProgramMedia::create([
-                "name" => $name,
-                "path" => $filePath,
-                "program_id" => $program->id
+                "program_id" => $program->id,
+                'program_media_type_id' => $mediaType,
+                "name"       => $name,
+                "icon_path"  => $iconPath,
+                "path"       => $filePath
             ]);
         } catch (\Exception $e) {
             return response(['errors' => $e->getMessage()], 422);
@@ -94,11 +99,16 @@ class ProgramMediaController extends Controller
         return response()->json($programMedia);
     }
 
-    public function delete(Organization $organization, Program $program)
+    public function delete(Organization $organization, Program $program, ProgramMedia $programMedia )
     {
-        $program->delete();
-        $program->update(['status' => 'deleted']);
-        return response(['delete' => true]);
-    }
+        if(Storage::exists($programMedia->icon_path)){
+            Storage::delete($programMedia->icon_path);
+        }
+        if(Storage::exists($programMedia->path)){
+            Storage::delete($programMedia->path);
+        }
 
+        $programMedia->delete();
+        return response(['deleted' => true]);
+    }
 }
