@@ -21,8 +21,8 @@ class AwardController extends Controller
     ) {
         try {
             /** @var User $currentUser */
-            $currentUser = auth()->user();
-            $newAward = $awardService->create($program, $organization, $currentUser, $request->validated());
+            $awarder = auth()->user();
+            $newAward = $awardService->create($program, $organization, $awarder, $request->validated());
             return response($newAward);
         } catch (\Exception $e) {
             return response(['errors' => 'Award creation failed', 'e' => $e->getMessage()], 422);

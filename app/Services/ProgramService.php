@@ -8,6 +8,7 @@ use App\Services\ProgramTemplateService;
 use App\Models\Traits\IdExtractor;
 use App\Services\AccountService;
 use App\Services\UserService;
+use App\Models\AccountType;
 use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
@@ -515,7 +516,7 @@ class ProgramService
         float $amount,
         array $extraArgs = []
     ): bool {
-        if ( ! $program->programIsInvoiceForAwards()) {
+        if ( $program->programIsInvoiceForAwards() ) {
             // If we invoice for awards, the program will always pay later
             return true;
         } else {
@@ -551,9 +552,9 @@ class ProgramService
     public function readAvailableBalance(Program $program): float
     {
         if ($program->programIsInvoiceForAwards()) {
-            $account_type = config('global.account_type_points_awarded');
+            $account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
         } else {
-            $account_type = config('global.account_type_monies_awarded');
+            $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
         }
         return $this->accountService->readBalance($program->account_holder_id, $account_type, []);
     }

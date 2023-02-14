@@ -71,7 +71,8 @@ class AwardNotification extends Notification implements ShouldQueue
             break;
             case 'BadgeAward':
                 return (new AwardBadgeEmail(
-                    $this->data->awardee_first_name, $programUrl, 
+                    $this->data->awardee_first_name, 
+                    $programUrl, 
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program
@@ -88,6 +89,5 @@ class AwardNotification extends Notification implements ShouldQueue
                 ));
             break;
         }
-        
     }
 }

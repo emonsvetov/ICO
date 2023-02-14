@@ -52,6 +52,11 @@ class EventType extends Model
         return $this->type == self::getEventTypePeer2PeerAllocation();
     }
 
+    public function isEventTypeAutoAward(): bool
+    {
+        return $this->type == self::EVENT_TYPE_AUTO_AWARD;
+    }
+
     public static function getEventTypePeer2PeerAllocation(): string
     {
         return self::EVENT_TYPE_PEER2PEER_ALLOCATION;
@@ -72,6 +77,5 @@ class EventType extends Model
     } 
     public static function getIdByTypeBadge( $insert = false)   {
         return self::getIdByName(self::EVENT_TYPE_BADGE);
-    }   
-
+    }
 }
