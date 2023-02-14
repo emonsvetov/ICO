@@ -20,10 +20,10 @@ class MerchantPolicy
     public function viewAny(User $user, Organization $organization)
     {
         if( !$this->__preAuthCheck($user, $organization) ) return false;
-        if( $user->isAdmin() ) return true;
+        return true;
         return $user->can('merchant-list');
     }
-  
+
     public function create(User $user)
     {
         return $user->can('merchant-create');
