@@ -15,6 +15,7 @@ class ProgramPaymentService
     public $program;
     public $program_account_holder_id;
     public $user_account_holder_id;
+    public $invoiceService;
 
     public function __construct(
         InvoiceService $invoiceService

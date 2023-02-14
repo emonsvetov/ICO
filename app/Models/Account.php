@@ -62,6 +62,8 @@ class Account extends BaseModel
         $currency_id
     ) {
 
+        // pr(func_get_args());
+
         $result = null;
 
         // GetSet Accounts
@@ -76,6 +78,8 @@ class Account extends BaseModel
             'currency_type_id' => $currency_id
         ], true);
 
+        // dump('$debit_account_id', $debit_account_id);
+
         $credit_account_type_id = AccountType::getIdByName($credit_account_type_name, true);
 
         // Credit Account - GetSet/Create Accounts
@@ -86,6 +90,8 @@ class Account extends BaseModel
             'medium_type_id' => $credit_medium_type_id,
             'currency_id' => $currency_id
         ], true);
+
+        // dump('$credit_account_id', $credit_account_id);
 
         $result['postings'] = Posting::createPostings([
             'journal_event_id' => $journal_event_id,

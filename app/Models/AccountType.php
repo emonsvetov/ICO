@@ -32,21 +32,21 @@ class AccountType extends Model
 
     public static function getTypeIdPeer2PeerPoints(): int
     {
-        return (int)self::getIdByName(config('global.account_type_peer_to_peer_points'), true);
+        return (int)self::getIdByName(self::ACCOUNT_TYPE_PEER2PEER_POINTS, true);
     }
 
     public static function getTypePeer2PeerPoints(): string
     {
-        return config('global.account_type_peer_to_peer_points');
+        return self::ACCOUNT_TYPE_PEER2PEER_POINTS;
     }
 
     public static function getTypePointsAwarded(): string
     {
-        return config('global.account_type_points_awarded');
+        return self::ACCOUNT_TYPE_POINTS_AWARDED;
     }
 
     public static function getTypeMoniesAwarded(): string
     {
-        return config('global.account_type_monies_awarded');
+        return self::ACCOUNT_TYPE_MONIES_AWARDED;
     }
 }

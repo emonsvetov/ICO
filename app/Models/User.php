@@ -187,10 +187,10 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         }
         if ($program->program_is_invoice_for_awards ()) {
 			// use points
-			$account_type = config('global.account_type_points_awarded');
+			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
 		} else {
 			// use monies
-            $account_type = config('global.account_type_monies_awarded');
+            $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
 		}
         return self::_read_balance( $user->account_holder_id, $account_type, $journal_event_types );
     }
