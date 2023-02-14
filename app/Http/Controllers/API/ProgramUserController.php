@@ -229,5 +229,31 @@ class ProgramUserController extends Controller
             DB::rollBack();
             return response(['errors' => 'Program User Role assignment failed', 'e' => $e->getMessage()], 422);
         }
-    } 
+    }
+    
+    public function readListReclaimablePeerPoints(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AwardService $awardService
+    ) { 
+        $limit=9999999;
+        $offset=0;
+        return response($awardService->readListReclaimablePeerPointsByProgramAndUser(
+            $program,
+            $user,
+            $limit,
+            $offset
+        ));
+    }
+    public function ReclaimPeerPoints(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AwardService $awardService
+    ) { 
+       pr( request()->all());
+       //$test = request()->get('points');
+       return response([]);
+    }
 }
