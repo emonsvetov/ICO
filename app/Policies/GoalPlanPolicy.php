@@ -121,4 +121,16 @@ class GoalPlanPolicy
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-delete');
     }
+    public function readActiveByProgram(User $authUser, Organization $organization, Program $program)
+    {
+         //return true;
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
+        {
+            return false;
+        }
+        
+        if($authUser->isAdmin()) return true;
+
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-read-active-by-program');
+    }
 }

@@ -114,4 +114,13 @@ class GoalPlanController extends Controller
         $goalplan->delete();
         return response(['success' => true]);
     }
+
+    public  function readActiveByProgram(Organization $organization, Program $program, GoalPlanService $goalplanservice) {
+        $limit = request()->get('pageSize', 10);
+        $page = request()->get('page', 1);
+        $order_direction = request()->get('order_direction', 'asc');
+        $order_column = request()->get('order_column', 'name');
+        $offset = ($page - 1) * $limit;
+		return $goalplanservice::ReadActiveByProgram($program,$offset, $limit, $order_column, $order_direction);
+	}
 }

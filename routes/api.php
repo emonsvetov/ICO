@@ -444,6 +444,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      Route::delete('/v1/organization/{organization}/program/{program}/team/{team}',
      [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
 
+    //Goal plans
+    Route::get('/v1/organization/{organization}/program/{program}/read-active-by-program', [App\Http\Controllers\API\GoalPlanController::class, 'readActiveByProgram'])->name('api.v1.organization.program.goalplan.readActiveByProgram')->middleware('can:readActiveByProgram,App\GoalPlan,organization,program');
+
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',
     ], function ()

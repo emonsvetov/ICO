@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Services\Program\ReadCompiledInvoiceService;
 use App\Services\Program\ReadInvoicePaymentsService;
+use Illuminate\Database\Query\Builder;
 use App\Services\Program\CreateInvoiceService;
 use App\Http\Requests\GoalPlanRequest;
 use App\Http\Controllers\Controller;
@@ -17,6 +18,8 @@ use App\Models\EventType;
 use App\Models\GoalPlanType;
 use App\Models\ExternalCallback;
 use App\Models\EmailTemplate;
+use App\Models\Status;
+use DB;
 //use App\Services\EmailTemplateService;
 use DateTime;
 
@@ -340,16 +343,17 @@ class GoalPlanService
 	 * @param string $order_column        
 	 * @param string $order_direction        
 	 * @return GoalPlanObject[] */
-	/*public function read_active_by_program($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+	public static function readActiveByProgram($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
 		$state = Status::get_goal_active_state();
-		return $this->read_list_by_program_and_state ( $program_account_holder_id, ( int ) $state, $offset, $limit, $order_column, $order_direction );
+		return self::readListByProgramAndState ( $program, $state, $offset, $limit, $order_column, $order_direction );
 	
 	}
-	public static function readActiveByProgram($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
-		return self::read_active_by_program($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc');
+	//Alias for readActiveByProgram
+	public static function read_active_by_program($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		return self::readActiveByProgram($program, $offset, $limit, $order_column, $order_direction);
 	}
-	}*/
-	/** read_list_by_program()
+	
+	/** readListByProgramAndState()
 	 *
 	 * @param int $program_account_holder_id        
 	 * @param int $offset        
@@ -366,26 +370,20 @@ class GoalPlanService
 	 * @throws InvalidArgumentException If $order_direction is not either ASC or DEC
 	 * @throws RuntimeException If internal query fails
 	 * @return UserObject[] */
-	public function read_list_by_program_and_state($program_account_holder_id = 0, $goal_plan_state_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
-		assert_is_positive_int ( "program_account_holder_id", $program_account_holder_id );
-		assert_is_positive_int ( "goal_plan_state_id", $goal_plan_state_id );
-		assert_is_positive_int_or_zero ( "offset", $offset );
-		assert_is_positive_int ( "limit", $limit );
-		// TODO: This should be checking against a list of order columns!
-		// make sure we have a valid format for the $order_column, we don;t even want to try
-		// to run a query without this column name cause it will surely fail! right?
-		if (! is_string ( $order_column ) || strlen ( trim ( $order_column ) ) < 1) {
-			throw new InvalidArgumentException ( 'Invalid "order_column" passed, must be a string and trimmed length > 0', 400 );
-		}
-		// make sure that $order_direction is either ASC or DESC, for the same reason we checked the $order_column
-		if (strtoupper ( $order_direction ) != 'ASC' && strtoupper ( $order_direction ) != 'DESC') {
-			throw new InvalidArgumentException ( 'Invalid "order_direction" passed, must be either "ASC" or "DESC"', 400 );
-		}
-		// make sure that the $order_direction is uppercase
-		// cause we want it to be standard SQL :)
-		$order_direction = strtoupper ( $order_direction );
+	public static function readListByProgramAndState($program, $goal_plan_state_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$query = self::_selectGoalPlanInfo();
+		$query->where('gp.program_id', '=', $program->id);
+		$query->where('gp.state_type_id', '=', $goal_plan_state_id);
+		$query->limit($limit)->offset($offset)->get();
+		$query->orderBy($order_column,$order_direction);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
 		// build and run the query
-		$sql = "
+		/*$sql = "
             SELECT
                 " . $this->_select_goal_plan_info () . "
             WHERE
@@ -403,8 +401,99 @@ class GoalPlanService
 			throw new RuntimeException ( 'Internal query failed, please contact API administrator', 500 );
 		}
 		// now we finally give back the result to the FUNCTION caller
-		return $query->result ();
-	
+		return $query->result ();*/
+	/**try {
+            return [
+                'data' => $query->limit($limit)->offset($offset)->get(),
+                'total' => $query->count()
+            ];
+        } catch (Exception $e) {
+            throw new Exception('DB query failed.', 500);
+        } */
+	}
+
+	//Alias for readListByProgramAndState
+	public static function read_list_by_program_and_state($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		return self::readListByProgramAndState($program, $offset, $limit, $order_column, $order_direction);
+	}
+	private static function _selectGoalPlanInfo() {
+		$query = DB::table('goal_plans AS gp');
+		$query->addSelect([
+			'gp.id',
+			'gp.next_goal_id as next_goal_id',
+			'gp.previous_goal_id as previous_goal_id',
+			'gp.program_id',
+			'gp.name',
+			'gp.default_target',
+			'gp.goal_measurement_label',
+			'gp.email_template_id',
+			'gp.expiration_rule_id',
+			'gp.custom_expire_offset',
+			'gp.custom_expire_units',
+			'gp.annual_expire_month',
+			'gp.annual_expire_day',
+			'gp.notification_body',
+			'gp.achieved_callback_id',
+			'gp.exceeded_callback_id',
+			'gp.achieved_event_id',
+			'gp.exceeded_event_id',
+			
+			'gp.achieved_event_id',
+			'ae.name as achieved_event_name',
+			'ae.event_icon_id as achieved_event_icon',
+			
+			'gp.exceeded_event_id',
+			'ee.name as  exceeded_event_name',
+			'ee.event_icon_id as exceeded_event_icon',
+			
+			'gp.factor_before',
+			'gp.factor_after',
+			'gp.date_begin',
+			'gp.date_end',
+			'gp.created_at',
+			'gp.created_by',
+			'gp.updated_at',
+			'gp.modified_by',
+			'gp.goal_plan_type_id',
+			'gp.state_type_id',
+			'gp.is_recurring',
+			'gp.award_per_progress',
+			'gp.award_email_per_progress',
+			'gp.progress_notification_email_id',
+			'gp.progress_requires_unique_ref_num',
+			'gp.assign_goal_all_participants_default',
+			'gp.automatic_progress',
+			'gp.automatic_frequency',
+			'gp.automatic_value',
+			'gt.name as goal_plan_type_name',
+			'er.name as expiration_rule_name',
+			'st.status as state_type_name',
+		]);
+		// (SELECT COUNT(*) FROM " . USER_GOALS_TBL . " WHERE `goal_plan_id` = gp.`id`) as has_participants,
+		/*$query->addSelect(
+            DB::raw("count(*) FROM user_goals WHERE `goal_plan_id` = `gp.id` as `has_participants`")
+        );*/
+		$query->addSelect(['has_participants' => function (Builder $builder) {
+			$builder->from('user_goals')->selectRaw('count(*) as has_participants')->whereColumn('user_goals.goal_plan_id', 'gp.id');
+		}]);
+		//(SELECT COUNT(*) FROM " . USER_GOAL_PROGRESS_TBL . " WHERE `goal_plan_id` = gp.`id`) as has_participant_progress
+		/*$query->addSelect(
+            DB::raw("count(*) FROM user_goal_progress WHERE goal_plan_id = gp.id as has_participant_progress")
+        );*/
+		$query->addSelect(['has_participant_progress' => function (Builder $builder) {
+			$builder->from('user_goal_progress')->selectRaw('count(*) as has_participant_progress')->whereColumn('user_goal_progress.goal_plan_id', 'gp.id');
+		}]);
+		$query->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id');
+		$query->leftJoin('statuses AS st', 'st.id', '=', 'gp.state_type_id'); 
+		$query->leftJoin('expiration_rules AS er', 'er.id', '=', 'gp.expiration_rule_id'); 
+		$query->join('events AS ae', 'ae.id', '=', 'gp.achieved_event_id');
+		$query->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
+		
+		return $query;
+	}
+	//Alias for readListByProgramAndState
+	public  function _select_goal_plan_info() {
+		return self::_selectGoalPlanInfo();
 	}
 
 }

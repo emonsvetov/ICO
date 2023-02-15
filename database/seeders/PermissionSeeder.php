@@ -154,6 +154,7 @@ class PermissionSeeder extends Seeder
              'team-update',
              'team-view',
             'user-read-points',
+            'goal-plan-read-active-by-program',
         ];
 
         foreach ($permissions as $permission) {
