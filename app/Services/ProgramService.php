@@ -8,7 +8,6 @@ use App\Services\ProgramTemplateService;
 use App\Models\Traits\IdExtractor;
 use App\Services\AccountService;
 use App\Services\UserService;
-use App\Models\AccountType;
 use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
@@ -536,6 +535,7 @@ class ProgramService
 
             $total_awards = $amount * count($userIds);
             $program_balance = $this->readAvailableBalance($program);
+
             if (isset($extraArgs['pending_amount']) && $extraArgs['pending_amount'] > 0) {
                 $program_balance = $program_balance - floatval($extraArgs['pending_amount']);
             }
@@ -551,12 +551,7 @@ class ProgramService
      */
     public function readAvailableBalance(Program $program): float
     {
-        if ($program->programIsInvoiceForAwards()) {
-            $account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
-        } else {
-            $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
-        }
-        return $this->accountService->readBalance($program->account_holder_id, $account_type, []);
+        return $this->accountService->readAvailableBalanceForProgram($program);
     }
     /**
      * Returns the list of billable descedents under a given program
