@@ -61,6 +61,7 @@ class AwardService
      */
     public function create(Program $program, Organization $organization, User $awarder, array $data)
     {
+        // return $this->programService->readAvailableBalance($program);
 
         $userIds = $data['user_id'] ?? [];
 
@@ -143,7 +144,7 @@ class AwardService
         }
 
         if ( !$this->programService->canProgramPayForAwards($program, $event, $userIds, $awardAmount)) {
-            throw new Exception('Your account balance is too low.');
+            throw new Exception('Your program\'s account balance is too low to award.');
         }
 
         $transactionFee = 0;
@@ -372,7 +373,7 @@ class AwardService
                     $this->socialWallPostService->create($socialWallPostData);
                 }
 
-                // $user->notify(new AwardNotification((object)$notification));
+                $user->notify(new AwardNotification((object)$notification));
 
                 // DB::rollBack();
                 DB::commit();
@@ -409,7 +410,7 @@ class AwardService
      * @return array
      * @throws Exception
      */
-    public function allocatePeer2Peer(Program $program, User $currentUser, array $data): array
+    public function allocatePeer2Peer(Program $program, User $currentUser, array $data)
     {
         /** @var Event $event */
         $event = Event::findOrFail($data['event_id']);
@@ -423,15 +424,17 @@ class AwardService
 
         $notificationBody = $data['message'] ?? '';
 
-        if ($this->programService->canProgramPayForAwards($program, $event, $userIds, $amount)) {
-            throw new Exception('Your account balance is too low.');
+        // return $this->programService->readAvailableBalance($program);
+
+        if ( !$this->programService->canProgramPayForAwards($program, $event, $userIds, $amount) ) {
+            throw new Exception('Your program\'s account balance is too low to allocate peer.');
         }
 
         if ($program->isShellProgram()) {
             throw new InvalidArgumentException ('Invalid program passed, you cannot create an award in a shell program');
         }
 
-        if ( ! $program->uses_peer2peer) {
+        if ( ! $program->uses_peer2peer ) {
             throw new InvalidArgumentException ('This program does not allow peer 2 peer allocation');
         }
 

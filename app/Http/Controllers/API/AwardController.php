@@ -20,7 +20,7 @@ class AwardController extends Controller
         AwardService $awardService
     ) {
         try {
-            /** @var User $currentUser */
+            /** @var User $awarder */
             $awarder = auth()->user();
             $newAward = $awardService->create($program, $organization, $awarder, $request->validated());
             return response($newAward);
@@ -28,5 +28,4 @@ class AwardController extends Controller
             return response(['errors' => 'Award creation failed', 'e' => $e->getMessage()], 422);
         }
     }
-
 }
