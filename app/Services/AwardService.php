@@ -31,6 +31,7 @@ class AwardService
     private JournalEventService $journalEventService;
     private SocialWallPostService $socialWallPostService;
     private UserService $userService;
+    private ProgramsTransactionFeeService $programsTransactionFeeService;
 
     public function __construct(
         ProgramService $programService,
@@ -38,7 +39,8 @@ class AwardService
         JournalEventService $journalEventService,
         AccountService $accountService,
         UserService $userService,
-        SocialWallPostService $socialWallPostService
+        SocialWallPostService $socialWallPostService,
+        ProgramsTransactionFeeService $programsTransactionFeeService
     ) {
         $this->programService = $programService;
         $this->eventXmlDataService = $eventXmlDataService;
@@ -46,6 +48,7 @@ class AwardService
         $this->accountService = $accountService;
         $this->userService = $userService;
         $this->socialWallPostService = $socialWallPostService;
+        $this->programsTransactionFeeService = $programsTransactionFeeService;
     }
 
     /**
@@ -56,112 +59,119 @@ class AwardService
      * @return array
      * @throws Exception
      */
-    public function create(Program $program, Organization $organization, User $currentUser, array $data)
+    public function create(Program $program, Organization $organization, User $awarder, array $data)
     {
+
+        $userIds = $data['user_id'] ?? [];
+
+        if( sizeof($userIds) <=0 )
+        {
+            throw new InvalidArgumentException ( 'Invalid or no "recipients" passed', 400 );
+        }
+
+        if(in_array($awarder->id, $userIds)) {
+            throw new InvalidArgumentException ( 'Invalid "user" passed, you can\'t award your own account', 400 );
+        }
+
         /** @var Event $event */
         $event = Event::findOrFail($data['event_id']);
         /** @var EventType $eventType */
         $eventType = $event->eventType()->firstOrFail();
 
         if ($eventType->isEventTypePeer2PeerAllocation()) {
-            $newAward = $this->allocatePeer2Peer($program, $currentUser, $data);
-        } else {
-            if ($eventType->isEventTypePeer2Peer()) {
-                $amount = $data['override_cash_value'] ?? 0;
-                $users = $data['user_id'] ?? [];
-                if ( ! $this->canPeerPayForAwards($program, $currentUser, (float)$amount, $users)) {
-                    throw new Exception('Your account balance is too low.');
-                }
-            }
-
-            $newAward = $this->doAward(
-                (object)($data +
-                    [
-                        'organization_id' => $organization->id,
-                        'program_id' => $program->id
-                    ]),
-                $program,
-                auth()->user()
-            );
+            $newAward = $this->allocatePeer2Peer($program, $awarder, $data);
+            return $newAward;
         }
 
-        return $newAward;
-    }
+        $award = (object)($data +
+        [
+            'organization_id' => $organization->id,
+            'program_id' => $program->id
+        ]);
 
-    public function doAward( $award, Program $program, User $awarder )
-    {
-        $event = Event::where('id', $award->event_id)->first();
-        $eventType = EventType::where('id', $event->event_type_id)->first();
-        $peer2peer = null;
+        $isInvoice4Awards = $program->programIsInvoiceForAwards();
+        $isBadge = $eventType->isEventTypeBadge();
+        $isPeer2peer = $eventType->isEventTypePeer2Peer();
+        $isAutoAward = $eventType->isEventTypeAutoAward();
+        $isPeer2peerBadge = $eventType->isEventTypePeer2PeerBadge();
+        $isPromotional = $event->is_promotional;
+
+        $escrowCreditAccountTypeName = $escrowAccountTypeName = "";
+
         $referrer = isset($award->referrer) ? $award->referrer : null;
-        $lease_number = isset($award->lease_number) ? $award->lease_number : null;
+        $leaseNumber = isset($award->lease_number) ? $award->lease_number : null;
 
-        $event_amount_override = $award->override_cash_value > 0;
-        $award_amount = $event_amount_override ? $award->override_cash_value : $event->max_awardable_amount;
+        $overrideCashValue = $award->override_cash_value ?? 0;
+        $eventAmountOverride = $overrideCashValue > 0;
+        $awardAmount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
 
         $awardUniqId = generate_unique_id();
         $token = uniqid();
         $event_id = $event->id;
-        $event_type_id = $event->event_type_id;
+        $eventTypeId = $event->event_type_id;
         $eventName = $event->name;
-        $awarder_account_holder_id = $awarder->account_holder_id; //user_id
+        $awarderAccountHolderId = $awarder->account_holder_id;
         $notificationBody = $award->message; //TODO
         $notes = $award->notes ?? '';
         $notificationType = 'Award';
 
-        if( $program->program_is_invoice_for_awards() )  {
-            $journal_event_type = 'Award points to recipient';
+        if( $isInvoice4Awards )  {
+            $journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
 		} else {
-			$journal_event_type = 'Award monies to recipient';
+			$journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT;
 		}
 
-        $escrow_credit_account = $escrow_account = "";
-
-        // echo config('global.account_type_peer2peer_points');
-        // return;
-
-        if ( $eventType->isEventTypePeer2Peer() ) {
-            $peer2peer = true;
+        if ( $isPeer2peerBadge ) {
+            $isBadge = true;
+            $isPeer2peer = true;
+            $awardAmount = 0;
             $notificationType = 'PeerAward';
 		}
-        if ( $eventType->isEventTypePeer2PeerBadge() ) {
-            $peer2peer = true;
-            $award_amount = 0;
-            $notificationType = 'PeerAward';
-		}
-        if( $eventType->isEventTypeBadge() )
+        if( $isBadge )
         {
+            $awardAmount = 0;
             $notificationType = 'BadgeAward';
         }
-        if ($peer2peer){
-            $escrow_account = config('global.account_type_peer2peer_points'); // .", -- escrow account type name
+        if ( $isPeer2peer ){
+            $escrowAccountTypeName = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+            $notificationType = 'PeerAward';
         }
 
-        // echo $escrow_account_type_name;
+        if( $program->isShellProgram() )
+        {
+            throw new \RuntimeException ( 'Invalid "receiver program", you cannot create an award in a shell program', 400 );
+        }
 
-        $journal_event_type_id = JournalEventType::getIdByType( $journal_event_type );
+        if ( !$this->programService->canProgramPayForAwards($program, $event, $userIds, $awardAmount)) {
+            throw new Exception('Your account balance is too low.');
+        }
+
+        $transactionFee = 0;
+
+        if( $isAutoAward || !$isPromotional ) {
+            if($awardAmount > 0){
+				$transactionFee = $this->programsTransactionFeeService->calculateTransactionFee ( $program, $awardAmount );
+				if ($transactionFee > 0 && ! $this->programService->canProgramPayForAwards ( $program, $event, $userIds, $transactionFee )) {
+					throw new \RuntimeException ( "The program's balance is too low.", 400 );
+				}
+			}
+        }
+
+		if ($event->only_internal_redeemable && $program->show_internal_store) {
+			$journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE;
+			$escrowCreditAccountTypeName = AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS;
+		} else if ( $isPromotional ) {
+        	$journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD;
+        	$escrowCreditAccountTypeName = AccountType::ACCOUNT_TYPE_PROMOTIONAL_POINTS;
+        }
+
+        $journalEventTypeId = JournalEventType::getIdByType( $journalEventType );
 
         $liability = FinanceType::getIdByName('Liability');
         $asset = FinanceType::getIdByName('Asset', true);
         $points = MediumType::getIdByName('Points', true);
         $monies = MediumType::getIdByName('Monies', true);
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
-
-        //TODO - find appropriate fields for calculating "escrow_credit_account"
-        // $program_extra = $this->programs_model->read_extra_program_info ( $receiver_program_id );
-		// if ($event_template->only_internal_redeemable && $program_extra->show_internal_store) {
-		// 	$journal_event_type = 'Redeemable by Internal Store';
-		// 	$escrow_credit_account = $this->write_db->escape ('Award Internal Store Points');
-		// } else if ($isPromotional) {
-		// 	$journal_event_type = 'Promotional Award Points';
-		// 	$escrow_credit_account = $this->write_db->escape ('Award Promotional Points');
-		// }
-
-		if($escrow_credit_account != '')    {
-			$credit_account_type_name = $escrow_credit_account;
-        } else  {
-            $credit_account_type_name = 'Points Available';
-        }
 
         $result = null;
 
@@ -172,55 +182,54 @@ class AwardService
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach( $users as $user)    {
+                $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
+                DB::statement($statement);
                 DB::beginTransaction();
-                // print_r( $userId );
                 $userId = $user->id;
+
                 $userAccountHolderId = $user->account_holder_id;
                 // continue;
-                $event_xml_data_id = EventXmlData::insertGetId([
-                    'awarder_account_holder_id' => $awarder_account_holder_id,
+                $eventXmlDataID = EventXmlData::insertGetId([
+                    'awarder_account_holder_id' => $awarderAccountHolderId,
                     'name' => $eventName,
                     'award_level_name' => 'default', //TODO
-                    'amount_override' => $event_amount_override,
+                    'amount_override' => $eventAmountOverride,
                     'notification_body' => $notificationBody,
                     'notes' => $notes,
                     'referrer' => $referrer,
-                    'lease_number' => $lease_number,
+                    'lease_number' => $leaseNumber,
                     'token' => $token,
                     'email_template_id' => $award->email_template_id ?? 1, // TODO: email templates
-                    'event_type_id' => $event_type_id,
+                    'event_type_id' => $eventTypeId,
                     'icon' => 'Award', //TODO
                     'event_template_id' => $event_id, //Event > id
                     'award_transaction_id' => $awardUniqId,
                     'created_at' => now()
                 ]);
 
-                $result[$userId]['event_xml_data_id'] = $event_xml_data_id;
+                $result[$userId]['event_xml_data_id'] = $eventXmlDataID;
                 $result[$userId]['userAccountHolderId'] = $userAccountHolderId;
 
-                $journal_event_id = JournalEvent::insertGetId([
-                    'journal_event_type_id' => $journal_event_type_id,
-                    'event_xml_data_id' => $event_xml_data_id,
+                $journalEventID = JournalEvent::insertGetId([
+                    'journal_event_type_id' => $journalEventTypeId,
+                    'event_xml_data_id' => $eventXmlDataID,
                     'notes' => $notes,
-                    'prime_account_holder_id' => $awarder_account_holder_id,
+                    'prime_account_holder_id' => $awarderAccountHolderId,
                     'created_at' => now()
-                ]);//9816692516
+                ]);
 
-                if( $escrow_account != "")    {
-
-                    // pr('Run > escrow_postings');
-
+                if( $escrowAccountTypeName != "")    {
                     $result[$userId]['escrow_postings'] = Account::postings(
-                        $awarder_account_holder_id,
-                        $escrow_account,
+                        $awarderAccountHolderId,
+                        $escrowAccountTypeName,
                         $liability,
-                        $points,
+                        $isInvoice4Awards ? $points : $monies,
                         $program->account_holder_id,
-                        $escrow_credit_account,
+                        $escrowCreditAccountTypeName,
                         $liability,
-                        $points,
-                        $journal_event_id,
-                        $award_amount,
+                        $isInvoice4Awards ? $points : $monies,
+                        $journalEventID,
+                        $awardAmount,
                         1, //qty
                         null, // medium_info
                         null, // medium_info_id
@@ -228,68 +237,116 @@ class AwardService
                     );
                 }
 
-                if( $escrow_credit_account != '')   {
-                    $credit_account_type_name = $escrow_credit_account;
-                } else {
-                    $credit_account_type_name = 'Points Available';
-                }
-
                 // pr('Run > awarder_postings');
+                if( $isInvoice4Awards)
+                {
+                    // First posting i.e. if( $escrowAccountTypeName != "")... is done outside of this condition
+                    // "Monies Due to Owner/Points Available(conditional))" postings
+                    $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_POINTS_AVAILABLE;
+                    $result[$userId]['awarder_postings'] = Account::postings(
+                        $program->account_holder_id,
+                        AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
+                        $asset,
+                        $monies,
+                        $program->account_holder_id,
+                        $creditAccountTypeName,
+                        $liability,
+                        $points,
+                        $journalEventID,
+                        $awardAmount,
+                        1, //qty
+                        null, // medium_info
+                        null, // medium_info_id
+                        $currency_id
+                    );
+                    // "Points Available/Points Awarded(conditional)" postings
+                    $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_POINTS_AWARDED;
+                    $result[$userId]['awarder_postings'] = Account::postings(
+                        $program->account_holder_id,
+                        AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE,
+                        $liability,
+                        $points,
+                        $user->account_holder_id,
+                        $creditAccountTypeName,
+                        $liability,
+                        $points,
+                        $journalEventID,
+                        $awardAmount,
+                        1, //qty
+                        null, // medium_info
+                        null, // medium_info_id
+                        $currency_id
+                    );
 
-                $result[$userId]['awarder_postings'] = Account::postings(
-                    $program->account_holder_id,
-                    'Monies Due to Owner',
-                    $asset,
-                    $monies,
-                    $program->account_holder_id,
-                    $credit_account_type_name,
-                    $liability,
-                    $points,
-                    $journal_event_id,
-                    $award_amount,
-                    1, //qty
-                    null, // medium_info
-                    null, // medium_info_id
-                    $currency_id
-                );
-
-                if( $escrow_credit_account != '') {
-                    $credit_account_type_name = $escrow_credit_account;
-                }   else {
-                    $credit_account_type_name = 'Points Awarded';
+                    // "Monies Due to Owner/Monies Fees" (transaction fee) postings
+                    $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_MONIES_FEES;
+                    $result[$userId]['awarder_postings'] = Account::postings(
+                        $program->account_holder_id,
+                        AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
+                        $asset,
+                        $monies,
+                        $program->account_holder_id,
+                        $creditAccountTypeName,
+                        $liability,
+                        $monies,
+                        $journalEventID,
+                        $transactionFee,
+                        1, //qty
+                        null, // medium_info
+                        null, // medium_info_id
+                        $currency_id
+                    );
+                } else {
+                    // First posting i.e. if( $escrowAccountTypeName != "")... is done outside of this condition
+                    // 1st "Monies Available/Monies Awarded" postings
+                    $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_MONIES_AWARDED;
+                    // dump($creditAccountTypeName);
+                    $result[$userId]['awarder_postings'] = Account::postings(
+                        $program->account_holder_id,
+                        AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE,
+                        $asset,
+                        $monies,
+                        $user->account_holder_id,
+                        $creditAccountTypeName,
+                        $liability,
+                        $monies,
+                        $journalEventID,
+                        $awardAmount,
+                        1, //qty
+                        null, // medium_info
+                        null, // medium_info_id
+                        $currency_id
+                    );
+                    // "Monies Available/Monies Fees" postings
+                    $result[$userId]['awarder_postings'] = Account::postings(
+                        $program->account_holder_id,
+                        AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE,
+                        $asset,
+                        $monies,
+                        $program->account_holder_id,
+                        AccountType::ACCOUNT_TYPE_MONIES_FEES,
+                        $liability,
+                        $monies,
+                        $journalEventID,
+                        $transactionFee,
+                        1, //qty
+                        null, // medium_info
+                        null, // medium_info_id
+                        $currency_id
+                    );
                 }
-
-                $result[$userId]['recepient_postings'] = Account::postings(
-                    $program->account_holder_id,
-                    'Points Available',
-                    $liability,
-                    $points,
-                    $userAccountHolderId,
-                    $credit_account_type_name,
-                    $liability,
-                    $points,
-                    $journal_event_id,
-                    $award_amount,
-                    1, //qty
-                    null, // medium_info
-                    null, // medium_info_id
-                    $currency_id
-                );
-
                 // print_r( $userId );
 
                 // If the program uses leaderboards get all the leaderboards that are tied to this event
                 if($program->uses_leaderboards)	{
                     $leaderboardService = new LeaderboardService();
-                    $leaderboardService->createLeaderboardJournalEvent($event_id, $journal_event_id);
+                    $leaderboardService->createLeaderboardJournalEvent($event_id, $journalEventID);
                 }
-
-                DB::commit();
 
                 $notification = [
                     'notificationType' => $notificationType,
                     'awardee_first_name' => $user->first_name,
-                    'awardPoints' => $award_amount,
+                    'awardPoints' => $awardAmount,
                     'awardNotificationBody' => $notificationBody,
                     'program' => $program
                 ];
@@ -301,29 +358,28 @@ class AwardService
                     $notification['availableAwardPoints'] = $user->readAvailableBalance($program);
                 }
 
-                // return $user;
-
-                $user->notify(new AwardNotification((object)$notification));
-
                 // If the event template used has post to social wall turned on. Create a new social wall post
                 if ($program->uses_social_wall && $event->post_to_social_wall) {
                     $socialWallPostData = [
                         'social_wall_post_type_id' => $socialWallPostType->id,
                         'social_wall_post_id' => null,
-                        'event_xml_data_id' => $event_xml_data_id,
+                        'event_xml_data_id' => $eventXmlDataID,
                         'program_id' => $program->id,
                         'organization_id' => $award->organization_id,
-                        'sender_user_account_holder_id' => $awarder_account_holder_id,
+                        'sender_user_account_holder_id' => $awarderAccountHolderId,
                         'receiver_user_account_holder_id' => $userAccountHolderId,
                     ];
                     $this->socialWallPostService->create($socialWallPostData);
                 }
 
-                // DB::rollBack();
-            }
-            // return $award->user_id;
+                // $user->notify(new AwardNotification((object)$notification));
 
-            // print_r( $journal_event_type );
+                // DB::rollBack();
+                DB::commit();
+                DB::statement("UNLOCK TABLES;");
+            }
+
+            // print_r( $journalEventType );
 
             // TODO
             // // Read the award levels assigned to the event
@@ -333,10 +389,15 @@ class AwardService
             // }
         } catch (Exception $e) {
             $result['error'] = "Error while processing awarding. Error:{$e->getMessage()} in line {$e->getLine()}";
-            // DB::rollBack();
+            DB::rollBack();
         }
 
         return $result;
+    }
+
+    public function awardPeer2Peer(array $data, Event $event, Program $program, User $awarder)
+    {
+
     }
 
     /**
@@ -739,5 +800,202 @@ class AwardService
         } catch (Exception $e) {
             throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
+    }
+
+    /** $A read_list_reclaimable_peer_points_by_program_and_user()
+	 *
+	 * @param Program $program
+     * @param User $user     
+	 * @param int $offset        
+	 * @param int $limit 
+      */
+	public function readListReclaimablePeerPointsByProgramAndUser(Program $program, User $user, $offset = 0, $limit = 10) {
+		// Get the full list of points that have yet to be redeemed or expired
+		$result = $this->readListUnusedPeerAwards ( $program, $user );
+		// $page = array ();
+		// for($i = $offset; ($i - $offset) < $limit && $i < sizeof ( $result ); $i ++) {
+		// 	$page [] = $result [$i];
+		// }
+		return $result;
+	}
+    /**
+     * Alias for "readListReclaimablePeerPointsByProgramAndUser"
+     */
+    private function read_list_reclaimable_peer_points_by_program_and_user(Program $program, User $user, $offset, $limit) {
+        return self::readListReclaimablePeerPointsByProgramAndUser($program, $user, $offset, $limit);
+    }
+    /** $A
+	 * 
+	 * @param Program $program
+     * @param User $user
+     * @return array
+     * @throws Exception
+     */
+	private function readListUnusedPeerAwards(Program $program, User $user) {
+		// build and run the query and store it into the $query variable for
+		// later use and validation of the $query object
+		$account_name = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+		$reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
+
+		if (! $program->programIsInvoiceForAwards ()) {
+            throw new Exception('Function unsupported by this program.');
+			// $account_name = 'Monies Awarded';
+			// $reclaim_jet = "Reclaim monies";
+		}
+		// Get's the full list of points awarded and their expiration dates
+		// Note, we must get the full list awards to the user so we don't need to join back to the
+		// roles or programs this way. However, we do need to join back to the AWARDING program via the journal
+		// event so that we can tell where this award originated from
+        $query = DB::table('users');
+
+        $query->addSelect(
+            DB::raw("DISTINCT postings.id")
+        );
+        $query->addSelect([
+            'users.account_holder_id AS user_account_holder_id',
+            'postings.posting_amount AS amount',
+            'postings.created_at AS awarded',
+            'journal_events.id as journal_event_id',
+            'p.account_holder_id as program_id',
+            'event_xml_data.name as event_name',
+            'account_types.name as account_type_name',
+        ]);
+        $query->leftJoin('statuses', 'statuses.id', '=', 'users.user_status_id');
+        $query->leftJoin('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
+        $query->leftJoin('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->leftJoin('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->leftJoin('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->leftJoin('postings As program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts AS program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('programs AS p', 'p.account_holder_id', '=', 'program_accounts.account_holder_id');
+
+        $query->where('users.account_holder_id', '=', $user->account_holder_id);
+        // $query->where('account_types.name', 'LIKE', $account_name);
+        $query->where('postings.is_credit', '=', 1);
+        try {
+            $result = $query->get();
+            // pr($result);
+            
+            if( $result->isNotEmpty() )
+            {
+                // Get the points redeemed and expired
+                $points_redeemed = $this->accountService->readRedeemedTotalPeerPointsForParticipant (  $program, $user  );
+                // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successfulreadReclaimedTotalPeerPointsForParticipant
+                $points_reclaimed = $this->accountService->readReclaimedTotalPeerPointsForParticipant( $program, $user );
+                // Get the full list of reclaims, we need to do a "smart" whittle on these so that we
+                $points_reclaimed_list = $this->accountService->readListParticipantPostingsByAccountAndJournalEvents ( $user->account_holder_id, $account_name, $reclaim_jet, 0 );
+                // "Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
+                if ( $points_reclaimed_list->isNotEmpty() ) {
+                    foreach ( $points_reclaimed_list as $reclaim_posting ) {
+                        if ($points_reclaimed <= 0) {
+                            break;
+                        }
+                        foreach ( $result as &$point_award3 ) {
+                            if ($points_reclaimed <= 0) {
+                                break;
+                            }
+                            if ($reclaim_posting->posting_amount_total <= 0) {
+                                break;
+                            }
+                            if ($point_award3->amount <= 0) {
+                                continue;
+                            }
+                            // If the program id does not match where the reclaim happened, skip it
+                            if ($point_award3->program_id != $reclaim_posting->program_id) {
+                                continue;
+                            }
+                            if ($point_award3->journal_event_id != $reclaim_posting->parent_journal_event_id) {
+                                continue;
+                            }
+                            if ($reclaim_posting->posting_amount_total <= $point_award3->amount) {
+                                $point_award3->amount -= $reclaim_posting->posting_amount_total;
+                                $points_reclaimed -= $reclaim_posting->posting_amount_total;
+                                $reclaim_posting->posting_amount_total = 0;
+                            } else {
+                                $reclaim_posting->posting_amount_total -= $point_award3->amount;
+                                $points_reclaimed -= $point_award3->amount;
+                                $point_award3->amount = 0;
+                            }
+                        }
+                    }
+                }
+                // Finish the reclaim whittle using the regular method in case of errors
+                foreach ( $result as &$point_award4 ) {
+                    if ($points_reclaimed <= 0) {
+                        break;
+                    }
+                    if ($point_award4->amount <= 0) {
+                        continue;
+                    }
+                    if ($points_reclaimed <= $point_award4->amount) {
+                        $point_award4->amount -= $points_reclaimed;
+                        $points_reclaimed = 0;
+                    } else {
+                        $points_reclaimed -= $point_award4->amount;
+                        $point_award4->amount = 0;
+                    }
+                }
+                // Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
+                // take away points that have been redeemed since we care about
+                foreach ( $result as &$point_award ) {
+                    if ($points_redeemed <= 0) {
+                        break;
+                    }
+                    if ($point_award->amount <= 0) {
+                        continue;
+                    }
+                    if ($points_redeemed <= $point_award->amount) {
+                        $point_award->amount -= $points_redeemed;
+                        $points_redeemed = 0;
+                    } else {
+                        $points_redeemed -= $point_award->amount;
+                        $point_award->amount = 0;
+                    }
+                }
+                // Remove any point awards that are now at 0
+                // for($i = count ( $result ) - 1; $i >= 0; -- $i) {
+                //     if ($result [$i]->amount <= 0) {
+                //         unset ( $result [$i] );
+                //     }
+                // }
+            } //result end
+            /*return [
+                'data' => $query->limit($limit)->offset($offset)->get(),
+                'total' => $query->count()
+            ];*/
+            // pr($result);
+            return $result;
+            //return array_values ( $result );
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+    }
+    /**
+     * Alias for "readListUnusedPeerAwards"
+     */
+    private function _read_list_unused_peer_awards(Program $program, User $user) {
+        return self::readListUnusedPeerAwards($program, $user);
+    }
+
+    //$A
+    /** recliam_peer_points()
+	 *
+	 * @param int $authenticated_account_holder_id        
+	 * @param int $program_account_holder_id        
+	 * @param int $user_account_holder_id        
+	 * @param float $amount        
+	 * @throws InvalidArgumentException If $program_account_holder_id passed is not an unsigned int > 0
+	 * @throws InvalidArgumentException If $program_account_holder_id passed is not in our records
+	 * @throws InvalidArgumentException If $user_account_holder_id passed is not an unsigned int > 0
+	 * @throws InvalidArgumentException If $user_account_holder_id passed is not in our records
+	 * @throws InvalidArgumentException If $amount passed is not a float > 0
+	 * @throws RuntimeException If internal query fails */
+	public function reclaim_peer_points($authenticated_account_holder_id, $program_account_holder_id = 0, $user_account_holder_id = 0, $amount = 0.0, $notes, $parent_journal_event_id) {
+        return self::ReclaimPeerPoints($authenticated_account_holder_id, $program_account_holder_id, $user_account_holder_id, $amount, $notes, $parent_journal_event_id);
+    }
+
+    public function ReclaimPeerPoints($authenticated_account_holder_id, $program_account_holder_id = 0, $user_account_holder_id = 0, $amount = 0.0, $notes, $parent_journal_event_id) {
+        
     }
 }

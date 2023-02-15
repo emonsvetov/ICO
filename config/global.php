@@ -3,7 +3,6 @@
 return [
     'paginate_limit' => 50,
     'factor_valuation' => 40,
-    'account_type_peer2peer_points' => 'Peer to Peer Points',
     'default_currency' => 'USD',
     'medium_type_gift_codes' => 1,
     'state_context_orders' => 'Orders',

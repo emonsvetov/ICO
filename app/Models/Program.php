@@ -94,9 +94,9 @@ class Program extends BaseModel
         return $this->hasOne(ProgramTemplate::class)->ofMany('is_active', 'max');
     }
 
-    public function programIsInvoiceForAwards(): bool
+    public function programIsInvoiceForAwards($extraArg = false): bool
     {
-        if ($this->invoice_for_awards || $this->factor_valuation != 1) {
+        if ($this->invoice_for_awards || ($extraArg && $this->factor_valuation != 1)) {
             return true;
         }
         return false;
@@ -108,7 +108,7 @@ class Program extends BaseModel
      */
 
     public function program_is_invoice_for_awards( $extraArg = false) {
-        return $this->programIsInvoiceForAwards();
+        return $this->programIsInvoiceForAwards($extraArg);
 		// if ($this->invoice_for_awards == 1) {
 		// 	return true;
 		// }

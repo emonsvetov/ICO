@@ -18,6 +18,7 @@ class AccountType extends Model
     const ACCOUNT_TYPE_POINTS_AVAILABLE = 'Points Available';
     const ACCOUNT_TYPE_POINTS_AWARDED = 'Points Awarded';
     const ACCOUNT_TYPE_MONIES_AWARDED = 'Monies Awarded';
+    const ACCOUNT_TYPE_PEER2PEER_POINTS = 'Peer to Peer Points';
 
     public static function getIdByName( $name, $insert = false ) {
         $first = self::where('name', $name)->first();
@@ -31,21 +32,21 @@ class AccountType extends Model
 
     public static function getTypeIdPeer2PeerPoints(): int
     {
-        return (int)self::getIdByName(config('global.account_type_peer_to_peer_points'), true);
+        return (int)self::getIdByName(self::ACCOUNT_TYPE_PEER2PEER_POINTS, true);
     }
 
     public static function getTypePeer2PeerPoints(): string
     {
-        return config('global.account_type_peer_to_peer_points');
+        return self::ACCOUNT_TYPE_PEER2PEER_POINTS;
     }
 
     public static function getTypePointsAwarded(): string
     {
-        return config('global.account_type_points_awarded');
+        return self::ACCOUNT_TYPE_POINTS_AWARDED;
     }
 
     public static function getTypeMoniesAwarded(): string
     {
-        return config('global.account_type_monies_awarded');
+        return self::ACCOUNT_TYPE_MONIES_AWARDED;
     }
 }

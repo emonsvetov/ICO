@@ -118,4 +118,10 @@ class Merchant extends Model
             ->whereNull('parent_id')
             ->get();
     }
+
+    public static function getFlatTree(): Collection
+    {
+        return self::tree()->depthFirst()->get();
+    }
+
 }

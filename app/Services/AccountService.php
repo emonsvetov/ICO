@@ -567,5 +567,40 @@ class AccountService
     public static function readAwardedTotalForUser(Program $program, User $user){
         return self::read_awarded_total_for_participant($program, $user);
     }
+    //$A
+    public static function readRedeemedTotalPeerPointsForParticipant(
+        Program $program, 
+        User $user //participant
+    )
+    {
+        $journal_event_types = [];
+        $account_type = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+        if ($program->programIsInvoiceForAwards()) {
+            // use points
+            $account_type = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+            $journal_event_types [] = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
+        } else {
+            // use monies
+            $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
+            $journal_event_types [] = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT;
+        }
+        return self::readSumDebits ( $user->account_holder_id, $account_type, $journal_event_types );
+    }
+    //$A
+    public static function readReclaimedTotalPeerPointsForParticipant(
+        Program $program, 
+        User $user
+    )
+    {
+        $journal_event_types = array ();
+		$account_type = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+		if ( $program->programIsInvoiceForAwards(true) ) {
+			// use points
+			$journal_event_types [] = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
+		} else {
+            throw new Exception('Usupported condition. Contact Administrator', 500);
+		}
+        return self::readSumDebits ( $user->account_holder_id, $account_type, $journal_event_types );
+    }
 
 }
