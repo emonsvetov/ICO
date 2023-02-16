@@ -805,30 +805,18 @@ class AwardService
         }
     }
 
-    /** $A read_list_reclaimable_peer_points_by_program_and_user()
-	 *
+    /** readListReclaimablePeerPointsByProgramAndUser
+	 * v2 Alias: read_list_reclaimable_peer_points_by_program_and_user
 	 * @param Program $program
-     * @param User $user     
-	 * @param int $offset        
-	 * @param int $limit 
+     * @param User $user
       */
-	public function readListReclaimablePeerPointsByProgramAndUser(Program $program, User $user, $offset = 0, $limit = 10) {
-		// Get the full list of points that have yet to be redeemed or expired
+	public function readListReclaimablePeerPointsByProgramAndUser(Program $program, User $user) {
 		$result = $this->readListUnusedPeerAwards ( $program, $user );
-		// $page = array ();
-		// for($i = $offset; ($i - $offset) < $limit && $i < sizeof ( $result ); $i ++) {
-		// 	$page [] = $result [$i];
-		// }
 		return $result;
 	}
-    /**
-     * Alias for "readListReclaimablePeerPointsByProgramAndUser"
-     */
-    private function read_list_reclaimable_peer_points_by_program_and_user(Program $program, User $user, $offset, $limit) {
-        return self::readListReclaimablePeerPointsByProgramAndUser($program, $user, $offset, $limit);
-    }
-    /** $A
-	 * 
+    /** 
+     * @method readListUnusedPeerAwards - alias to _read_list_unused_peer_awards
+     * 
 	 * @param Program $program
      * @param User $user
      * @return array
@@ -956,49 +944,33 @@ class AwardService
                         $point_award->amount = 0;
                     }
                 }
-                // Remove any point awards that are now at 0
-                // for($i = count ( $result ) - 1; $i >= 0; -- $i) {
-                //     if ($result [$i]->amount <= 0) {
-                //         unset ( $result [$i] );
-                //     }
-                // }
-            } //result end
-            /*return [
-                'data' => $query->limit($limit)->offset($offset)->get(),
-                'total' => $query->count()
-            ];*/
-            // pr($result);
+            }
             return $result;
-            //return array_values ( $result );
         } catch (Exception $e) {
             throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
     }
-    /**
-     * Alias for "readListUnusedPeerAwards"
-     */
-    private function _read_list_unused_peer_awards(Program $program, User $user) {
-        return self::readListUnusedPeerAwards($program, $user);
-    }
 
-    //$A
-    /** recliam_peer_points()
+    /** 
+     * @method reclaimPeerPoints - v2 (recliam_peer_points)
 	 *
-	 * @param int $authenticated_account_holder_id        
-	 * @param int $program_account_holder_id        
-	 * @param int $user_account_holder_id        
-	 * @param float $amount        
-	 * @throws InvalidArgumentException If $program_account_holder_id passed is not an unsigned int > 0
-	 * @throws InvalidArgumentException If $program_account_holder_id passed is not in our records
-	 * @throws InvalidArgumentException If $user_account_holder_id passed is not an unsigned int > 0
-	 * @throws InvalidArgumentException If $user_account_holder_id passed is not in our records
-	 * @throws InvalidArgumentException If $amount passed is not a float > 0
-	 * @throws RuntimeException If internal query fails */
-	public function reclaim_peer_points($authenticated_account_holder_id, $program_account_holder_id = 0, $user_account_holder_id = 0, $amount = 0.0, $notes, $parent_journal_event_id) {
-        return self::ReclaimPeerPoints($authenticated_account_holder_id, $program_account_holder_id, $user_account_holder_id, $amount, $notes, $parent_journal_event_id);
+	 * @param Program $program
+	 * @param User $user        
+	 * @param array $reclaimData        
+     * */
+
+    public function reclaimPeerPoints( Program $program, User $user, $reclaimData) {
+        if(sizeof($reclaimData) > 0)
+        {
+            foreach($reclaimData as $reclaim)
+            {
+                return $this->_reclaimPeerPoints($program, $user, $reclaim);
+            }
+        }
     }
 
-    public function ReclaimPeerPoints($authenticated_account_holder_id, $program_account_holder_id = 0, $user_account_holder_id = 0, $amount = 0.0, $notes, $parent_journal_event_id) {
-        
+    private function _reclaimPeerPoints(Program $program, $user, array $reclaim)
+    {
+        return $reclaimableList = $this->readListReclaimablePeerPointsByProgramAndUser($program, $user);
     }
 }

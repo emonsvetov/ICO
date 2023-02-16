@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReclaimPeerPointsRequest;
 use App\Http\Requests\AwardRequest;
 use App\Models\Organization;
 use App\Models\Program;
@@ -27,5 +28,33 @@ class AwardController extends Controller
         } catch (\Exception $e) {
             return response(['errors' => 'Award creation failed', 'e' => $e->getMessage()], 422);
         }
+    }
+
+
+    public function readListReclaimablePeerPoints(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AwardService $awardService
+    ) { 
+        $limit=9999999;
+        $offset=0;
+        return response($awardService->readListReclaimablePeerPointsByProgramAndUser(
+            $program,
+            $user,
+            $limit,
+            $offset
+        ));
+    }
+    public function ReclaimPeerPoints(
+        ReclaimPeerPointsRequest $request,
+        Organization $organization,
+        Program $program,
+        User $user,
+        AwardService $awardService
+    ) {
+        // return response($request->validated());
+        $response = $awardService->reclaimPeerPoints($program, $user, $request->validated());
+        return response($response);
     }
 }
