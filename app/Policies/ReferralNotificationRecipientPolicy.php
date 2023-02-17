@@ -24,7 +24,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\User  $authuser
      * @param  \App\Models\Organization  $organization
      * @param  \App\Models\Program  $program
-     * @return mixed
+     * @return boolean
      */
 	 public function create(User $authUser, Organization $organization, Program $program)
     {
@@ -43,7 +43,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\User  $authuser
      * @param  \App\Models\Organization  $organization
      * @param  \App\Models\Program  $program
-     * @return mixed
+     * @return boolean
      */
     public function viewAny(User $authUser, Organization $organization, Program $program)
     {
@@ -63,7 +63,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\Organization  $organization
      * @param  \App\Models\Program  $program
      * @param  \App\Models\ReferralNotificationRecipient  $referralnotificationrecipient
-     * @return mixed
+     * @return boolean
      */
     public function view(User $authUser, Organization $organization, Program $program)
     {
@@ -83,7 +83,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\Organization  $organization
      * @param  \App\Models\Program  $program
      * @param  \App\Models\ReferralNotificationRecipient  $referralnotificationrecipient
-     * @return mixed
+     * @return boolean
      */
     public function update(User $authUser, Organization $organization, Program $program, ReferralNotificationRecipient $referralNotificationRecipient)
     {
@@ -103,7 +103,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\Organization  $organization
      * @param  \App\Models\Program  $program
      * @param  \App\Models\ReferralNotificationRecipient  $referralnotificationrecipient
-     * @return mixed
+     * @return boolean
      */
     public function delete(User $authUser, Organization $organization, Program $program, ReferralNotificationRecipient $referralNotificationRecipient)
     {
