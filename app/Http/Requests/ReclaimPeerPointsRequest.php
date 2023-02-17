@@ -29,7 +29,7 @@ class ReclaimPeerPointsRequest extends FormRequest
             'reclaim.*.note' => 'nullable|string',
             'reclaim.*.journal_event_id' => 'required|integer',
             'reclaim.*.amount' => 'required|numeric',
-            'reclaim.*.user_id' => 'required|integer',
+            'reclaim.*.recipient_id' => 'required|integer',
         ];
     }
 }

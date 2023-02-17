@@ -843,11 +843,11 @@ class AwardService
             DB::raw("DISTINCT postings.id")
         );
         $query->addSelect([
-            'users.account_holder_id AS user_account_holder_id',
+            'users.id AS recipient_id',
             'postings.posting_amount AS amount',
             'postings.created_at AS awarded',
             'journal_events.id as journal_event_id',
-            'p.account_holder_id as program_id',
+            'p.id as program_id',
             'event_xml_data.name as event_name',
             'account_types.name as account_type_name',
         ]);
@@ -861,8 +861,8 @@ class AwardService
         $query->join('accounts AS program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
         $query->join('programs AS p', 'p.account_holder_id', '=', 'program_accounts.account_holder_id');
 
-        $query->where('users.account_holder_id', '=', $user->account_holder_id);
-        // $query->where('account_types.name', 'LIKE', $account_name);
+        $query->where('users.id', '=', $user->id);
+        $query->where('account_types.name', 'LIKE', $account_name);
         $query->where('postings.is_credit', '=', 1);
         try {
             $result = $query->get();
@@ -969,8 +969,9 @@ class AwardService
         }
     }
 
-    private function _reclaimPeerPoints(Program $program, $user, array $reclaim)
+    private function _reclaimPeerPoints(Program $program, User $user, array $reclaim)
     {
-        return $reclaimableList = $this->readListReclaimablePeerPointsByProgramAndUser($program, $user);
+        return $reclaim;
+        // return $reclaimableList = $this->readListReclaimablePeerPointsByProgramAndUser($program, $authUser);
     }
 }
