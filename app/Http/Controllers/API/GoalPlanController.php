@@ -91,9 +91,9 @@ class GoalPlanController extends Controller
         }
         try{
         $data = $request->validated();
-        $update_goal_plan= $goalplanservice->update_goal_plan($data, $goalplan, $organization, $program);
-        $response['goal_plan'] = $update_goal_plan;
-        if (!empty($goalplan->id)) {
+        $response= $goalplanservice->update_goal_plan($data, $goalplan, $organization, $program);
+       // $response = $update_goal_plan;
+        /*if (!empty($goalplan->id)) { //already done on service
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
             if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
@@ -101,7 +101,7 @@ class GoalPlanController extends Controller
                 $assign_response = $goalplanservice->assign_all_participants_now($goalplan, $program);
 				$response['assign_msg'] = $goalplanservice->assign_all_participants_res($assign_response);
             }
-		}
+		}*/
     }
     catch (\Exception $e )    {
         return response(['errors' => $e->getMessage()], 422);
