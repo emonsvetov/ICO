@@ -1,6 +1,8 @@
 <?php
 namespace App\Models\Traits;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Models\JournalEventType;
 use App\Models\JournalEvent;
 use App\Models\FinanceType;
@@ -8,7 +10,6 @@ use App\Models\MediumType;
 use App\Models\Merchant;
 use App\Models\Account;
 use App\Models\Posting;
-use DB;
 
 trait Redeemable
 {
@@ -208,7 +209,7 @@ trait Redeemable
 		return $response;
     }
 
-    private function _redeem_monies_for_giftcodes_no_transaction( $params )    {
+    private static function _redeem_monies_for_giftcodes_no_transaction( $params )    {
         
 		extract($params);
 
@@ -433,7 +434,7 @@ trait Redeemable
         }
     }
 
-    private function _transfer_giftcodes_to_merchant_no_transaction( $data )   {
+    private static function _transfer_giftcodes_to_merchant_no_transaction( $data )   {
 
             extract($data); // extracts $user, $code and $currency_id
             // Note: $code is a "Posting" Model object having "id" as medium_info.id

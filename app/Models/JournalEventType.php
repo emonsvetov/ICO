@@ -49,6 +49,7 @@ class JournalEventType extends Model
     const JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE = 'Charge program for convenience fee';
     const JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS = 'Award credit reclaim points';
     const JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES = 'Award credit reclaim monies';
+    const JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS = 'Reclaim peer points';
 
 
     public static function getIdByType( $type, $insert = false ) {

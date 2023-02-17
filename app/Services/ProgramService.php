@@ -515,7 +515,7 @@ class ProgramService
         float $amount,
         array $extraArgs = []
     ): bool {
-        if ( ! $program->programIsInvoiceForAwards()) {
+        if ( $program->programIsInvoiceForAwards() ) {
             // If we invoice for awards, the program will always pay later
             return true;
         } else {
@@ -535,6 +535,7 @@ class ProgramService
 
             $total_awards = $amount * count($userIds);
             $program_balance = $this->readAvailableBalance($program);
+
             if (isset($extraArgs['pending_amount']) && $extraArgs['pending_amount'] > 0) {
                 $program_balance = $program_balance - floatval($extraArgs['pending_amount']);
             }
@@ -550,12 +551,7 @@ class ProgramService
      */
     public function readAvailableBalance(Program $program): float
     {
-        if ($program->programIsInvoiceForAwards()) {
-            $account_type = config('global.account_type_points_awarded');
-        } else {
-            $account_type = config('global.account_type_monies_awarded');
-        }
-        return $this->accountService->readBalance($program->account_holder_id, $account_type, []);
+        return $this->accountService->readAvailableBalanceForProgram($program);
     }
     /**
      * Returns the list of billable descedents under a given program
