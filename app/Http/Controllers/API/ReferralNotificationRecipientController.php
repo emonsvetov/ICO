@@ -35,32 +35,32 @@ class ReferralNotificationRecipientController extends Controller
         return response([ 'referral' => $newReferralNotificationRecipient ]);
     }
 
-    public function show( Organization $organization, Program $program,ReferralNotificationRecipient $referral_notification_recipient )
+    public function show( Organization $organization, Program $program,ReferralNotificationRecipient $referralNotificationRecipient )
     {
-        if ($referral_notification_recipient ) 
+        if ($referralNotificationRecipient ) 
         {
-            return response($referral_notification_recipient );
+            return response($referralNotificationRecipient );
         }
 
         return response( [] );
     }
 
-    public function update(ReferralNotificationRecipientRequest $request, Organization $organization, Program $program,ReferralNotificationRecipient $referral_notification_recipient )
+    public function update(ReferralNotificationRecipientRequest $request, Organization $organization, Program $program,ReferralNotificationRecipient $referralNotificationRecipient )
     {
         $data = $request->validated();
         try {
-            $referral_notification_recipient->update( $data );
+            $referralNotificationRecipient->update( $data );
         }
         catch(\Throwable $e)
         {
             return response(['errors' => 'Referral Creation failed', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
         }
-        return response(['referral' =>$referral_notification_recipient ]);
+        return response(['referral' =>$referralNotificationRecipient ]);
     }
 
-    public function delete(Organization $organization, Program $program,ReferralNotificationRecipient $referral_notification_recipient)
+    public function delete(Organization $organization, Program $program,ReferralNotificationRecipient $referralNotificationRecipient)
     {
-        $referral_notification_recipient->delete();
+        $referralNotificationRecipient->delete();
         return response(['success' => true]);
     }
 }

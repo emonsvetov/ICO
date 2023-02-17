@@ -85,7 +85,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\ReferralNotificationRecipient  $referralnotificationrecipient
      * @return mixed
      */
-    public function update(User $authUser, Organization $organization, Program $program, ReferralNotificationRecipient $referral_notification_recipient)
+    public function update(User $authUser, Organization $organization, Program $program, ReferralNotificationRecipient $referralNotificationRecipient)
     {
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
@@ -105,7 +105,7 @@ class ReferralNotificationRecipientPolicy
      * @param  \App\Models\ReferralNotificationRecipient  $referralnotificationrecipient
      * @return mixed
      */
-    public function delete(User $authUser, Organization $organization, Program $program,ReferralNotificationRecipient $referralnotificationrecipient)
+    public function delete(User $authUser, Organization $organization, Program $program, ReferralNotificationRecipient $referralNotificationRecipient)
     {
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
