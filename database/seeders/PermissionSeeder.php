@@ -156,7 +156,8 @@ class PermissionSeeder extends Seeder
             'user-read-points',
             'goal-plan-read-active-by-program',
             'program-user-read-reclaimable-peer-points',
-            'program-user-reclaim-peer-points'
+            'program-user-reclaim-peer-points',
+            'user-goal-create'
         ];
 
         foreach ($permissions as $permission) {

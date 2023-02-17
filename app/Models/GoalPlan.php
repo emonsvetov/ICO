@@ -62,4 +62,9 @@ class GoalPlan extends BaseModel
     {
         return $this->hasMany(UserGoal::class);
     }
+    public static function getGoalPlan($id,$program_id)
+    {
+        $goal_plan = GoalPlan::find()::where(['id'=>$id,'program_id'=>$program_id]);  
+        return $goal_plan; 
+    }
 }
