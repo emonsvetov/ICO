@@ -475,16 +475,16 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      Route::post('/v1/organization/{organization}/program/{program}/referral-notification-recipient', [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'store'])->middleware('can:create,App\ReferralNotificationRecipient,organization,program');
      
      Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient',
-     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'index'])->name('api.v1.referral_notification_recipient.index')->middleware('can:viewAny,App\ReferralNotificationRecipient,organization,program');
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'index'])->name('api.v1.referralNotificationRecipient.index')->middleware('can:viewAny,App\ReferralNotificationRecipient,organization,program');
 
-     Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referral_notification_recipient}',
-     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'show'])->name('api.v1.referral_notification_recipient.show')->middleware('can:view,App\ReferralNotificationRecipient,organization,program,referral_notification_recipient');
+     Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'show'])->name('api.v1.referralNotificationRecipient.show')->middleware('can:view,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
      
-     Route::put('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referral_notification_recipient}',
-     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'update'])->name('api.v1.referral_notification_recipient.update')->middleware('can:update,App\ReferralNotificationRecipient,organization,program,referral_notification_recipient');
+     Route::put('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'update'])->name('api.v1.referralNotificationRecipient.update')->middleware('can:update,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
      
-     Route::delete('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referral_notification_recipient}',
-     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'delete'])->name('api.v1.referral_notification_recipient.delete')->middleware('can:delete,App\ReferralNotificationRecipient,organization,program,referral_notification_recipient');
+     Route::delete('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'delete'])->name('api.v1.referralNotificationRecipient.delete')->middleware('can:delete,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
     
      Route::post('/v1/organization/{organization}/program/{program}/user/{user}/ReclaimPeerPoints',[App\Http\Controllers\API\ProgramUserController::class, 'ReclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\ProgramUser,organization,program,user');
      
