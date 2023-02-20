@@ -19,6 +19,7 @@ use App\Models\Currency;
 use App\Models\Program;
 use App\Models\Account;
 use App\Models\Event;
+use App\Models\Owner;
 use App\Models\User;
 
 use App\Notifications\AwardNotification;
@@ -809,7 +810,8 @@ class AwardService
 	 * v2 Alias: read_list_reclaimable_peer_points_by_program_and_user
 	 * @param Program $program
      * @param User $user
-      */
+     * @return Collection
+    */
 	public function readListReclaimablePeerPointsByProgramAndUser(Program $program, User $user) {
 		$result = $this->readListUnusedPeerAwards ( $program, $user );
 		return $result;
@@ -819,7 +821,7 @@ class AwardService
      * 
 	 * @param Program $program
      * @param User $user
-     * @return array
+     * @return Collection
      * @throws Exception
      */
 	private function readListUnusedPeerAwards(Program $program, User $user) {
@@ -843,7 +845,7 @@ class AwardService
             DB::raw("DISTINCT postings.id")
         );
         $query->addSelect([
-            'users.id AS recipient_id',
+            'users.id AS user_id',
             'postings.posting_amount AS amount',
             'postings.created_at AS awarded',
             'journal_events.id as journal_event_id',
@@ -876,6 +878,7 @@ class AwardService
                 $points_reclaimed = $this->accountService->readReclaimedTotalPeerPointsForParticipant( $program, $user );
                 // Get the full list of reclaims, we need to do a "smart" whittle on these so that we
                 $points_reclaimed_list = $this->accountService->readListParticipantPostingsByAccountAndJournalEvents ( $user->account_holder_id, $account_name, $reclaim_jet, 0 );
+                // exit;
                 // "Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
                 if ( $points_reclaimed_list->isNotEmpty() ) {
                     foreach ( $points_reclaimed_list as $reclaim_posting ) {
@@ -945,7 +948,12 @@ class AwardService
                     }
                 }
             }
-            return $result;
+            for($i = count ( $result ) - 1; $i >= 0; -- $i) {
+                if ($result [$i]->amount <= 0) {
+                    unset ( $result [$i] );
+                }
+            }
+            return $result->reverse()->values();
         } catch (Exception $e) {
             throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
@@ -962,16 +970,84 @@ class AwardService
     public function reclaimPeerPoints( Program $program, User $user, $reclaimData) {
         if(sizeof($reclaimData) > 0)
         {
+            $result = [];
             foreach($reclaimData as $reclaim)
             {
-                return $this->_reclaimPeerPoints($program, $user, $reclaim);
+                $result[$user->id][] = $this->_reclaimPeerPoints($program, $user, $reclaim);
             }
+            return $result;
         }
     }
 
     private function _reclaimPeerPoints(Program $program, User $user, array $reclaim)
     {
-        return $reclaim;
-        // return $reclaimableList = $this->readListReclaimablePeerPointsByProgramAndUser($program, $authUser);
+        $authUser = auth()->user();
+        $reclaimableList = $this->readListReclaimablePeerPointsByProgramAndUser($program, $user);
+        $totalReclaimable = 0;
+        ['journal_event_id'=> $journal_event_id, 'amount' => $amount, 'note' => $notes] = $reclaim;
+
+        $notes = strip_tags ( $notes, ALLOWED_HTML_TAGS );
+
+        if( $reclaimableList->isNotEmpty() )
+        {
+            foreach($reclaimableList as $reclaimablePosting)
+            {
+                if ($reclaimablePosting->program_id != $program->id) {
+                    continue;
+                }
+                $totalReclaimable += $reclaimablePosting->amount;
+            }
+
+            if (compare_floats ( $totalReclaimable, $amount ) > 0) {
+                throw new InvalidArgumentException ( "The total reclaimable amount for this user is less than the amount trying to be reclaimed ({$totalReclaimable} < {$amount})" );
+            }
+        }
+
+        if( $program->programIsInvoiceForAwards(true))
+        {
+            $result = null;
+
+            DB::unprepared("LOCK TABLES postings WRITE, medium_info WRITE, journal_events WRITE;");
+            DB::beginTransaction();
+
+            $journalEventTypeId = JournalEventType::getIdByTypeReclaimPeerPoints();
+
+            $journalEventData = [
+                'parent_journal_event_id' => $journal_event_id,
+                'journal_event_type_id' => $journalEventTypeId,
+                'notes' => $notes ? $notes : '',
+                'prime_account_holder_id' => $authUser->account_holder_id,
+                'created_at' => now()
+            ];
+
+            $journalEventId = $this->journalEventService->create($journalEventData);
+
+            $liability = FinanceType::getIdByTypeLiability();
+            $points = MediumType::getIdByTypePoints();
+
+            $currencyId = Currency::getDefault();
+
+            $accountTypePeer2PeerPoints = AccountType::getTypeIdPeer2PeerPoints();
+
+            $data = [
+                'debit_account_holder_id' => $user->account_holder_id,
+                'debit_account_type_id' => $accountTypePeer2PeerPoints,
+                'debit_finance_type_id' => $liability,
+                'debit_medium_type_id' => $points,
+                'credit_account_holder_id' => $program->account_holder_id,
+                'credit_account_type_id' => $accountTypePeer2PeerPoints,
+                'credit_finance_type_id' => $liability,
+                'credit_medium_type_id' => $points,
+                'journal_event_id' => $journalEventId,
+                'amount' => $amount,
+                'currency_type_id' => $currencyId,
+            ];
+            $result = $this->accountService->posting($data);
+            DB::commit();
+            DB::unprepared("UNLOCK TABLES;" );
+            return $result;
+        } else {
+			throw new \RuntimeException ( "Program does not support this function." );
+		}
     }
 }

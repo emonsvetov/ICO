@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel;
 
-class AccountType extends Model
+class AccountType extends BaseModel
 {
     protected $guarded = [];
     const ACCOUNT_TYPE_MONIES_FEES = 'Monies Fees';
@@ -19,16 +19,6 @@ class AccountType extends Model
     const ACCOUNT_TYPE_POINTS_AWARDED = 'Points Awarded';
     const ACCOUNT_TYPE_MONIES_AWARDED = 'Monies Awarded';
     const ACCOUNT_TYPE_PEER2PEER_POINTS = 'Peer to Peer Points';
-
-    public static function getIdByName( $name, $insert = false ) {
-        $first = self::where('name', $name)->first();
-        if( $first) return $first->id;
-        if( $insert )    {
-            return self::insertGetId([
-                'name'=>$name
-            ]);
-        }
-    }
 
     public static function getTypeIdPeer2PeerPoints(): int
     {

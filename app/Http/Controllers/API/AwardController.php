@@ -53,8 +53,11 @@ class AwardController extends Controller
         User $user,
         AwardService $awardService
     ) {
-        // return response($request->validated());
-        $response = $awardService->reclaimPeerPoints($program, $user, $request->validated());
-        return response($response);
+        try{
+            $response = $awardService->reclaimPeerPoints($program, $user, $request->validated()['reclaim']);
+            return response($response);
+        } catch (\Exception $e) {
+            return response(['errors' => 'Reclaim failed', 'e' => $e->getMessage()], 422);
+        }
     }
 }

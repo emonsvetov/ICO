@@ -3,22 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
 class GoalPlanType extends BaseModel
 {
     use HasFactory;
-    /*public static function getNameById( $id ) {
-        $first = self::where('id', $id)->first();
-        if( $first) return $first->name;
-        return;
-    }*/
+    
     const GOAL_PLAN_TYPE_SALES = 'Sales Goal';//1;
     const GOAL_PLAN_TYPE_PERSONAL = 'Personal Goal';//2;
     const GOAL_PLAN_TYPE_RECOGNITION = 'Recognition Goal';//3;
     const GOAL_PLAN_TYPE_EVENTCOUNT = 'Event Count Goal';//4;
     
-    public static function getIdByName( $name, $insert = false, $description = '')   {
+    public static function getIdByName( $name, $insert = false, $description = '') : int   {
         $row = self::where('name', $name)->first();
         $id = $row->id ?? null;
 
