@@ -13,11 +13,10 @@ class ProgramMediaPolicy
 {
     use HandlesAuthorization;
 
-    private function __preAuthCheck($authUser, $organization, $program, $programTemplate = null): bool
+    private function __preAuthCheck($authUser, $organization, $program): bool
     {
         if( $organization->id != $authUser->organization_id ) return false;
         if( $organization->id != $program->organization_id) return false;
-        if($programTemplate && $programTemplate->program_id != $program->id) return false;
         return true;
     }
 
@@ -28,31 +27,31 @@ class ProgramMediaPolicy
         return $authUser->can('program-media-create');
     }
 
-    public function update(User $authUser, Organization $organization, Program $program, ProgramTemplate $programTemplate)
+    public function update(User $authUser, Organization $organization, Program $program)
     {
-        if(!$this->__preAuthCheck($authUser, $organization, $program, $programTemplate)) return false;
+        if(!$this->__preAuthCheck($authUser, $organization, $program)) return false;
         if($authUser->isAdmin()) return true;
         return $authUser->can('program-media-update');
     }
 
-    public function view(User $user, Organization $organization, Program $program, ProgramTemplate $programTemplate)
+    public function view(User $user, Organization $organization, Program $program)
     {
-        if( !$this->__preAuthCheck($user, $organization, $program, $programTemplate) ) return false;
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
-        return $user->can('program-media-view');
+        return true; //$user->can('program-media-view');
     }
 
-    public function delete(User $user, Organization $organization, Program $program, ProgramTemplate $programTemplate)
+    public function delete(User $user, Organization $organization, Program $program)
     {
-        if( !$this->__preAuthCheck($user, $organization, $program, $programTemplate) ) return false;
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
-        return $user->can('program-template-delete');
+        return $user->can('program-media-delete');
     }
 
     public function getTemplate(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
-        return $user->can('program-template-view');
+        return $user->can('program-media-view');
     }
 }
