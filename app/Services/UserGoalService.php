@@ -10,6 +10,7 @@ use App\Services\ProgramService;
 use App\Models\User;
 use App\Models\UserGoal;
 use App\Models\GoalPlanType;
+Use Exception;
 use DB;
 //use App\Services\EmailTemplateService;
 use DateTime;
@@ -32,13 +33,15 @@ class UserGoalService
 			throw new UnexpectedValueException ( 'This program does allow goal plans', 400 );
 		}
 		*/
-		/*$date_begin = new DateTime ( $user_goal['date_begin'] );
+		$date_begin = new DateTime ( $user_goal['date_begin'] );
 		$date_end = new DateTime ( $user_goal['date_end'] );
+		unset($user_goal['date_begin']);
+		unset($user_goal['date_end']);
 		if ($date_end < $date_begin) {
-			$response['error']='Date begin cannot be less than Date end';
-			return $response;
+			//$response['error']='Date begin cannot be less than Date end';
+			//return $response;
+			throw new Exception('Date begin cannot be less than Date end');
 		}
-		*/
 
 		$current_user_goal_plan = UserGoal::where(['user_id' =>$user_goal['user_id'], 'goal_plan_id' => $user_goal['goal_plan_id']])->first();
 		//pr($current_user_goal_plan); die;
@@ -117,5 +120,84 @@ class UserGoalService
 		// Update the future user goal plan's previous user goal with the previous user goal id
 		UserGoal::where(['id'=>$future_user_goal_id])->update(['previous_user_goal_id'=>$user_goal->id]);
 		return $future_user_goal;
+	}
+
+	public function createUserGoalPlans($organization,$program, $data) {
+		$userIds = $data['user_id'] ?? [];
+
+        if( sizeof($userIds) <=0 )
+        {
+            throw new InvalidArgumentException ( 'Invalid or no participants (s) selected', 400 );
+        }
+		
+		// Read the program's goal plan, then copy over the necessary values
+		$program_goal = GoalPlan::getGoalPlan( $data['goal_plan_id'],$program->id ); //TO DO
+		$goal_plan = $program_goal; //TO DO - fix
+		//TO DO -Pending to check if submitted goal plan values are in use (here assets/js/manager/dialog-add-goal.js?v=1569381162), currently using goal plan data i.e $program_goal
+		// Copy the submitted info into the user's goal plan object
+		$user_goal_plan=[];
+		$user_goal_plan['goal_plan_id'] = $program_goal->id;
+		$user_goal_plan['target_value'] = $program_goal ['default_target'];
+		$user_goal_plan['date_begin'] = $program_goal ['date_begin'];
+		$user_goal_plan['date_end'] = $program_goal ['date_end'];
+		$user_goal_plan['factor_before'] = $program_goal ['factor_before'];
+		$user_goal_plan['factor_after'] = $program_goal ['factor_after'];
+		$user_goal_plan['created_by'] = auth()->user()->id;
+		$user_goal_plan['achieved_callback_id'] =$program_goal ['achieved_callback_id'];
+		$user_goal_plan['exceeded_callback_id'] = $program_goal ['exceeded_callback_id'];
+		$success_user=$fail_user=$success_future_user=$fail_future_user=$already_assigned=$added_info=[];
+		if(!empty($userIds)) { 
+			$users = User::whereIn('id', $userIds)->get();
+			foreach($users as $user) {
+				$user_id = $user->id;
+				//check for duplicates
+				if(!empty($added_info)) {
+					foreach($added_info as $val){
+						if($val['goal_plan_id']==$goal_plan->id && $val['users_id']==$user_id){
+							continue 2; //if already added then continue outer users loop
+						}  
+					}
+				}
+				$user_goal_plan['user_id'] = $user_id;
+				//create
+				$response = UserGoalService::create($goal_plan, $user_goal_plan);
+				if(isset($response['already_assigned'])) {
+					$already_assigned[] =$user->email;
+					continue;
+				}
+				if(!$response || !isset($response['user_goal_plan'])) {
+					$fail_user[]=$user->email;
+				} else if(isset($response['user_goal_plan'])) {
+					$added_info[]=array("goal_plan_id"=>$goal_plan->id,"users_id"=>$user_id);
+					$success_user[]=$user->email;
+				}
+				//$goal_plan is_recurring
+				if(isset($response['future_user_goal'])) { 
+					if($response['future_user_goal'])
+						$success_future_user[]=$user->email;
+					else
+						$fail_future_user[]=$user->email;
+				} //else no need of future goal	
+			}	
+		}
+		//create response 
+		$response['success_users']=$success_user;
+		$response['fail_users']=$fail_user; 
+		$response['already_assigned']=$already_assigned;
+		$response['message'] = self::createUserGoalRes($response);
+		return $response;
+	}
+	public function createUserGoalRes($response) {
+		$msg='';
+		if(!empty($response['already_assigned'])) {
+			$msg .= "Already existing goal plan for selected user(s):".(implode(",",$response['already_assigned'])). " \n";
+		}
+		if(!empty($response['success_users'])) {
+			$msg.= "Successfully created goal plan for user(s):".(implode(",",$response['success_users'])). "\n";
+		}
+		if(!empty($response['fail_users'])) {
+			$msg .= "Failed to create goal plan for user(s):".(impload(",",$response['fail_users'])). "\n";
+		}
+		return $msg;
 	}
 }

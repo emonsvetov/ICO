@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Requests\GoalPlanRequest;
+use App\Http\Requests\UserGoalRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
-use App\Models\GoalPlan;
+use App\Models\UserGoal;
 use App\Models\Program;
-use App\Services\GoalPlanService;
+use App\Services\UserGoalService;
 
-class GoalPlanController extends Controller
+class UserGoalController extends Controller
 {
    /* public function store(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlanService $goalplanservice)
     {
@@ -31,10 +31,15 @@ class GoalPlanController extends Controller
             return response(['errors' => 'Goal plan Creation failed','e'=>$e->getMessage()], 422);
         }
 	}*/
-    public function createUserGoalPlans(UserGoalRequest $request, Organization $organization, Program $program, UserGoalService $usergoalservice) {
-		$response = array ();
-        $data = $request->validated();
-        pr($data); die;
+    public function createUserGoalPlans(UserGoalRequest $request, Organization $organization, Program $program, UserGoalService $userGoalService) {
+		$data = $request->validated();
+		try {
+			$response = $userGoalService->createUserGoalPlans($organization,$program, $data);
+			return response($response);
+		} catch (\Exception $e )    {
+			return response(['errors' => 'User Goal plan Creation failed','e'=>$e->getMessage()], 422);
+		}
+        //pr($validated); die;
 		/*$response ['sent'] = false;
 		$submitted_goal = $this->input->post ( 'goal' );
 		$user_ids = $this->input->post ( 'user_ids' );

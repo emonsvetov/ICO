@@ -26,7 +26,9 @@ class UserGoalRequest extends FormRequest
     {
         return [
            // 'name' => ['required|string', Rule::unique('goal_plans', 'name')->ignore($this->goal_plans)],
-            'user_id'=>'integer',
+            //'user_id'=>'',
+            'user_id' => 'required|array',
+            'user_id.*' => 'required|integer',
             'goal_plan_id'=>'integer',
             'next_user_goal_id'=>'integer', 
             'previous_user_goal_id'=>'integer',
@@ -38,8 +40,8 @@ class UserGoalRequest extends FormRequest
             'factor_after'=>'numeric',
             'calc_progress_total'=>'numeric',
             'calc_progress_percentage'=>'numeric',
-            'created_by'=>'required|integer',
-             'modified_by'=>'integer',
+            //'created_by'=>'required|integer',
+             //'modified_by'=>'integer',
              'expired',
         ];
     }

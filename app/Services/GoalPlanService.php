@@ -136,7 +136,7 @@ class GoalPlanService
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
             if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
-                $assign_response =self::assign_all_participants_now($goalplan, $program);
+                $assign_response =self::assign_all_participants_now($updated_goal_plan, $program);
 				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
             }
 		}
@@ -166,11 +166,36 @@ class GoalPlanService
        //TO DO to implement this large function 
 	   //$data = $this->users_model->readParticipantListWithProgramAwardLevelObject((int) $account_holder_id, 0, '', 0, $max, 'last_name', 'asc', array());
 	    $available_statuses = array("Active","TO DO Activation","New");
-        $added_info = array();
+        $added_info = [];
        // pr($users);
 	  // $future_goal_plan_failure = 0;
 	  $success_user=$fail_user=$success_future_user=$fail_future_user=$already_assigned=[];
         if(!empty($users)) {
+			$user_goal=[];
+			//pr($goal_plan); die;
+			// Copy the submitted info into the user's goal plan array
+			/*
+				Already in create function 
+				$date_begin = new DateTime ( $user_goal['date_begin'] );
+				$date_end = new DateTime ( $user_goal['date_end'] );
+
+				if ($date_end < $date_begin) {
+					//no need to loop other users and stop it here because goal plan data is same for all
+					//it should be in validation code -TO DO
+					$response['error']='Date begin cannot be less than Date end';
+					break;
+				}
+			unset($user_goal['date_begin']);
+			unset($user_goal['date_end']);*/
+			$user_goal['goal_plan_id'] =  $goal_plan->id;
+			$user_goal['target_value'] = $goal_plan->default_target;
+			$user_goal['date_begin'] = $goal_plan->date_begin;
+			$user_goal['date_end'] = $goal_plan->date_end;
+			$user_goal['factor_before'] = $goal_plan->factor_before;
+			$user_goal['factor_after'] = $goal_plan->factor_after;
+			$user_goal['created_by'] =  auth()->user()->id; //$goal_plan->created_by;
+			$user_goal['achieved_callback_id'] = $goal_plan->achieved_callback_id;
+			$user_goal['exceeded_callback_id'] = $goal_plan->exceeded_callback_id;
             foreach($users as $user){
 				if (!in_array($user->status->status, $available_statuses)) {
 				 continue;
@@ -184,33 +209,8 @@ class GoalPlanService
 						}  
 					}
 				}
-                $user_goal=[];
-               
-             	//pr($goal_plan); die;
-                // Copy the submitted info into the user's goal plan array
-                $user_goal['goal_plan_id'] =  $goal_plan->id;
-                $user_goal['target_value'] = $goal_plan->default_target;
-                $user_goal['date_begin'] = $goal_plan->date_begin;
-                $user_goal['date_end'] = $goal_plan->date_end;
-                $user_goal['factor_before'] = $goal_plan->factor_before;
-                $user_goal['factor_after'] = $goal_plan->factor_after;
-                $user_goal['created_by'] =  $goal_plan->created_by;
-                $user_goal['achieved_callback_id'] = $goal_plan->achieved_callback_id;
-                $user_goal['exceeded_callback_id'] = $goal_plan->exceeded_callback_id;
                 $user_goal['user_id'] = $user_id;
-				
-				$date_begin = new DateTime ( $user_goal['date_begin'] );
-				$date_end = new DateTime ( $user_goal['date_end'] );
-
-				if ($date_end < $date_begin) {
-					//no need to loop other users and stop it here because goal plan data is same for all
-					//it should be in validation code -TO DO
-					$response['error']='Date begin cannot be less than Date end';
-					break;
-				}
-				unset($user_goal['date_begin']);
-				unset($user_goal['date_end']);
-
+				//create
 				$response = UserGoalService::create($goal_plan, $user_goal);
 				if(isset($response['already_assigned'])) {
 					$already_assigned[]=$user_id; // User is already assigned to this goal plan
