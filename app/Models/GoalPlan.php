@@ -64,8 +64,8 @@ class GoalPlan extends BaseModel
     }
     public static function getGoalPlan($id,$program_id)
     {
+        //$goal_plan = self::where('program_id', $program_id)->where('id', $id)->get();
         $goal_plan = self::find($id);
-        //TO DO::where(['id'=>$id,'program_id'=>$program_id]);  
         return $goal_plan; 
     }
 }

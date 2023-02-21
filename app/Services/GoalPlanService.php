@@ -1,12 +1,9 @@
 <?php
 namespace App\Services;
 
-use App\Services\Program\ReadCompiledInvoiceService;
-use App\Services\Program\ReadInvoicePaymentsService;
 use App\Services\UserGoalService; 
 
 use Illuminate\Database\Query\Builder;
-use App\Services\Program\CreateInvoiceService;
 use App\Http\Requests\GoalPlanRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
@@ -156,8 +153,6 @@ class GoalPlanService
 		//
 	    //$max = 50000;
         //This is temporary solution - TO DO implemntation of original function
-        //pr($goal_plan);
-		//pr($program);
 		$response=[];
         $users =  $this->programService->getParticipants($program, true);
 		if(!empty($users)) {
@@ -167,9 +162,8 @@ class GoalPlanService
 	   //$data = $this->users_model->readParticipantListWithProgramAwardLevelObject((int) $account_holder_id, 0, '', 0, $max, 'last_name', 'asc', array());
 	    $available_statuses = array("Active","TO DO Activation","New");
         $added_info = [];
-       // pr($users);
-	  // $future_goal_plan_failure = 0;
-	  $success_user=$fail_user=$success_future_user=$fail_future_user=$already_assigned=[];
+	  	// $future_goal_plan_failure = 0;
+	  	$success_user=$fail_user=$success_future_user=$fail_future_user=$already_assigned=[];
         if(!empty($users)) {
 			$user_goal=[];
 			//pr($goal_plan); die;
@@ -237,46 +231,27 @@ class GoalPlanService
 		return $response;
 	}
 
-	/** 
-         * @api true
-	 * @permission Administrator
-	 *
-	 * @permission Program Manager
-	 * @permission Program Manager Read Only
-	 *
-	 * @param int $program_account_holder_id        
-	 * @param int $offset        
-	 * @param int $limit        
-	 * @param string $order_column        
-	 * @param string $order_direction        
-	 * @return GoalPlanObject[] */
+	 /** 
+     * @method readActiveByProgram - alias to read_active_by_program
+     * 
+	 * @param Program $program
+     * @return Collection
+     * @throws Exception
+     */
 	public static function readActiveByProgram($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
 		$state = Status::get_goal_active_state();
 		return self::readListByProgramAndState ( $program, $state, $offset, $limit, $order_column, $order_direction );
 	
 	}
-	//Alias for readActiveByProgram
-	public static function read_active_by_program($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
-		return self::readActiveByProgram($program, $offset, $limit, $order_column, $order_direction);
-	}
-	
-	/** readListByProgramAndState()
-	 *
-	 * @param int $program_account_holder_id        
-	 * @param int $offset        
-	 * @param int $limit        
-	 * @param string $order_column        
-	 * @param string $order_direction        
-	 * @throws InvalidArgumentException If $program_account_holder_id is not an unsigned int or < 1
-	 * @throws InvalidArgumentException If $program_account_holder_id is not in our database
-	 * @throws InvalidArgumentException If $offset is not an unsigned int
-	 * @throws InvalidArgumentException If $limit is not an unsigned int or < 1
-	 * @throws InvalidArgumentException If $order_column is not a string or trimmed length < 1
-	 * @throws InvalidArgumentException If $order_column is not one of the allowed columns
-	 * @throws InvalidArgumentException If $order_direction is not a string or trimmed length < 1
-	 * @throws InvalidArgumentException If $order_direction is not either ASC or DEC
-	 * @throws RuntimeException If internal query fails
-	 * @return UserObject[] */
+
+	 /** 
+     * @method readListByProgramAndState - alias to read_list_by_program_and_state
+     * 
+	 * @param Program $program
+     * @param $goal_plan_state_id
+     * @return Collection
+     * @throws Exception
+     */
 	public static function readListByProgramAndState($program, $goal_plan_state_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
 		$query = self::_selectGoalPlanInfo();
 		$query->where('gp.program_id', '=', $program->id);
@@ -309,7 +284,7 @@ class GoalPlanService
 		}
 		// now we finally give back the result to the FUNCTION caller
 		return $query->result ();*/
-	/**try {
+		/**try {
             return [
                 'data' => $query->limit($limit)->offset($offset)->get(),
                 'total' => $query->count()
@@ -319,10 +294,10 @@ class GoalPlanService
         } */
 	}
 
-	//Alias for readListByProgramAndState
-	public static function read_list_by_program_and_state($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
-		return self::readListByProgramAndState($program, $offset, $limit, $order_column, $order_direction);
-	}
+	  /** 
+     * @method _selectGoalPlanInfo - alias to _select_goal_plan_info
+     * @return Collection
+     */
 	private static function _selectGoalPlanInfo() {
 		$query = DB::table('goal_plans AS gp');
 		$query->addSelect([
@@ -397,10 +372,6 @@ class GoalPlanService
 		$query->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
 		
 		return $query;
-	}
-	//Alias for readListByProgramAndState
-	public  function _select_goal_plan_info() {
-		return self::_selectGoalPlanInfo();
 	}
 
 }
