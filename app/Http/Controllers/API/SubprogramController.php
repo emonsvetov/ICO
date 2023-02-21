@@ -37,7 +37,7 @@ class SubprogramController extends Controller
                 $available = $programService->getAvailableToMoveSubprogram($organization, $program);
             break;
         endswitch;
-        
+
         return response($available);
     }
 
@@ -54,6 +54,9 @@ class SubprogramController extends Controller
 
     public function getDescendents(Organization $organization, Program $program, ProgramService $programService)    {
         $includeSelf = request()->get('includeSelf') ? true : false;
-        return $programService->getDescendents( $program, $includeSelf );
+        $flat = (bool)request()->get('flat');
+        $result = $programService->getDescendents( $program, $includeSelf );
+        $result = $flat ? _flatten($result) : $result;
+        return $result;
     }
 }
