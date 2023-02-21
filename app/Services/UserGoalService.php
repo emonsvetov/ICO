@@ -133,18 +133,18 @@ class UserGoalService
 		// Read the program's goal plan, then copy over the necessary values
 		$goal_plan = GoalPlan::getGoalPlan( $data['goal_plan_id'], $program->id); //TO DO
 		//$goal_plan = $program_goal; //TO DO - fix
-		//TO DO -Pending to check if submitted goal plan values are in use (here assets/js/manager/dialog-add-goal.js?v=1569381162), currently using goal plan data i.e $program_goal
+		//TO DO -Pending to check here assets/js/manager/dialog-add-goal.js?v=1569381162),
 		// Copy the submitted info into the user's goal plan object
 		$user_goal_plan=[];
 		$user_goal_plan['goal_plan_id'] = $goal_plan->id;
-		$user_goal_plan['target_value'] = $goal_plan ['default_target'];
-		$user_goal_plan['date_begin'] = $goal_plan ['date_begin'];
-		$user_goal_plan['date_end'] = $goal_plan ['date_end'];
-		$user_goal_plan['factor_before'] = $goal_plan ['factor_before'];
-		$user_goal_plan['factor_after'] = $goal_plan ['factor_after'];
+		$user_goal_plan['target_value'] = $data['target_value'];
+		$user_goal_plan['date_begin'] = $data['date_begin'];
+		$user_goal_plan['date_end'] = $data['date_end'];
+		$user_goal_plan['factor_before'] = $data['factor_before'];
+		$user_goal_plan['factor_after'] = $data['factor_after'];
 		$user_goal_plan['created_by'] = auth()->user()->id;
-		$user_goal_plan['achieved_callback_id'] =$goal_plan ['achieved_callback_id'];
-		$user_goal_plan['exceeded_callback_id'] = $goal_plan ['exceeded_callback_id'];
+		$user_goal_plan['achieved_callback_id'] =$data['achieved_callback_id'];
+		$user_goal_plan['exceeded_callback_id'] = $data['exceeded_callback_id'];
 		$success_user=$fail_user=$success_future_user=$fail_future_user=$already_assigned=$added_info=[];
 		if(!empty($userIds)) { 
 			$users = User::whereIn('id', $userIds)->get();
