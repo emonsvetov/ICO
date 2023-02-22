@@ -66,11 +66,6 @@ class EventType extends Model
     {
         return self::getIdByType(self::getEventTypePeer2PeerAllocation());
     }
-    public static function getIdByName( $name)   {
-        $row = self::where('name', $name)->first();
-        $id = $row->id ?? null;
-        return $id;
-    }    
 
     public static function getIdByTypeStandard( $insert = false)   {
         return self::getIdByName(self::EVENT_TYPE_STANDARD);

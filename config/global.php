@@ -24,7 +24,7 @@ return [
     'journal_event_type_allocate_peer_points' => 'Allocate peer points to recipient',
 
     // Finance Type
-    'finance_type_liability' => 'Liability',
+    'finance_type_liability' => 'Liability', //depricated, please use FinanceType::FINANCE_TYPE_LIABILITY
     'finance_type_asset' => 'Asset',
 
     // Medium Type
