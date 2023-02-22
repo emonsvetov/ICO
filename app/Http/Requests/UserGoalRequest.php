@@ -27,7 +27,7 @@ class UserGoalRequest extends FormRequest
         return [
             'user_id' => 'required|array',
             'user_id.*' => 'required|integer',
-            'goal_plan_id'=>'integer',
+            'goal_plan_id'=>'required|integer',
             'target_value'=>'required|numeric',
             'next_user_goal_id'=>'integer|nullable', 
             'previous_user_goal_id'=>'integer|nullable',
@@ -41,9 +41,9 @@ class UserGoalRequest extends FormRequest
             'calc_progress_percentage'=>'numeric|nullable',
             'date_begin'=> 'required|date_format:Y-m-d',
             'date_end'=>'required|date_format:Y-m-d|after:date_begin',
-             //'created_by'=>'required|integer',
-            'modified_by'=>'integer|nullable',
-            'expired'=>'nullable',
+             'created_by'=>'integer',
+             'modified_by'=>'integer|nullable',
+             'expired'=>'nullable',
         ];
     }
 }
