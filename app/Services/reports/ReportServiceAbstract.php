@@ -14,6 +14,8 @@ abstract class ReportServiceAbstract
     const SQL_LIMIT = 'limit';
     const SQL_OFFSET = 'offset';
 
+    const PROGRAM_ID = 'programId';
+    const CREATED_ONLY = 'createdOnly';
     const PROGRAMS = 'program_account_holder_ids';
     const AWARD_LEVEL_NAMES = "award_level_names";
     const EXPORT_CSV = 'exportToCsv';
@@ -42,6 +44,8 @@ abstract class ReportServiceAbstract
         $this->params[self::MERCHANTS] = isset($params[self::MERCHANTS]) && is_array($params[self::MERCHANTS]) ? $params[self::MERCHANTS] : [];
         $this->params[self::MERCHANTS_ACTIVE] = $params[self::MERCHANTS_ACTIVE] ?? null;
         $this->params[self::FIELD_REPORT_KEY] = $params[self::FIELD_REPORT_KEY] ?? null;
+        $this->params[self::PROGRAM_ID] = $params[self::PROGRAM_ID] ?? null;
+        $this->params[self::CREATED_ONLY] = $params[self::CREATED_ONLY] ?? null;
 
         $this->reportHelper = new ReportHelper() ?? null;
     }
