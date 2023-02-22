@@ -50,6 +50,8 @@ class JournalEventType extends BaseModel
     const JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES = 'Award credit reclaim monies';
     const JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS = 'Reclaim peer points';
     const JOURNAL_EVENT_TYPES_ALLOCATE_PEER_POINTS_TO_RECIPIENT = 'Allocate peer points to recipient';
+    const JOURNAL_EVENT_TYPES_RECLAIM_PEER_MONIES = 'Reclaim peer monies';
+
 
     public static function getTypeAllocatePeerPoints(): int
     {

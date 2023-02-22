@@ -22,6 +22,8 @@ class ReportFactory
         $exportToCsv = $params['exportToCsv'] ?? 0;
         $active = isset($params['active']) && $params['active'] != 'false' ? 1 : 0;
         $reportKey = $params['reportKey'] ?? 0;
+        $programId = $params['programId'] ?? null;
+        $createdOnly = $params['createdOnly'] ?? null;
 
         if ($paramPage && $paramLimit) {
             $offset = ($paramPage - 1) * $paramLimit;
@@ -38,6 +40,8 @@ class ReportFactory
             'exportToCsv' => $exportToCsv,
             'active' => $active,
             'reportKey' => $reportKey,
+            'programId' => $programId,
+            'createdOnly' => $createdOnly,
         ];
 
         if (empty($title)) {
