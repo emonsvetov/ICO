@@ -233,15 +233,14 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/redeemable', [App\Http\Controllers\API\ProgramMerchantController::class, 'redeemable'])->middleware('can:viewRedeemable,App\ProgramMerchant,organization,program,merchant');
 
     //ProgramUser routes
-    //ProgramUser routes
     Route::get('/v1/organization/{organization}/program/{program}/digital-media-type',
-        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'index'])->middleware('can:viewAny,App\ProgramMediaTypeController');
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'index'])->middleware('can:viewAny,App\ProgramMediaType,organization,program,user');
 
     Route::post('/v1/organization/{organization}/program/{program}/digital-media-type',
-        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store'])->middleware('can:viewAny,App\ProgramMediaTypeController');
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store'])->middleware('can:viewAny,App\ProgramMediaTypeController,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
-        [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:viewAny,App\ProgramMedia,organization,program,programMediaType');
+        [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
 //
 //    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
 //        [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
@@ -341,7 +340,11 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/event-history',[App\Http\Controllers\API\ProgramUserController::class, 'readEventHistory'])->middleware('can:readEventHistory,App\ProgramUser,organization,program,user');
 
-    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaimable-peer-points-list',[App\Http\Controllers\API\ProgramUserController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\ProgramUser,organization,program,user');
+    // Reclaim
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\Award,organization,program,user');
+
+    Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
     
     // Participant
 
@@ -470,8 +473,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      [App\Http\Controllers\API\TeamController::class, 'update'])->name('api.v1.team.update')->middleware('can:update,App\Team,organization,program,team');
      Route::delete('/v1/organization/{organization}/program/{program}/team/{team}',
      [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
-    
-     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/ReclaimPeerPoints',[App\Http\Controllers\API\ProgramUserController::class, 'ReclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\ProgramUser,organization,program,user');
      
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',

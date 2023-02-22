@@ -2,31 +2,40 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel;
 
-class FinanceType extends Model
+class FinanceType extends BaseModel
 {
-
     protected $guarded = [];
 
-    public static function getIdByName( $name, $insert = false ) {
-        $id = self::where('name', $name)->first()->id;
-        if( !$id && $insert)    {
-            $id = self::insertGetId([
-                'name'=>$name
-            ]);
-        }
-        return $id;
-    }
+    const FINANCE_TYPE_LIABILITY = 'Liability';
+    const FINANCE_TYPE_ASSET = 'Asset';
+    const FINANCE_TYPE_MONIES = 'Monies';
+    const FINANCE_TYPE_REVENUE = 'Monies';
 
     public static function getTypeLiability(): int
     {
-        return (int)self::getIdByName(config('global.finance_type_liability'), true);
+        return (int)self::getIdByName(self::FINANCE_TYPE_LIABILITY, true);
     }
 
     public static function getTypeAsset(): int
     {
-        return (int)self::getIdByName(config('global.finance_type_asset'), true);
+        return (int)self::getIdByName(self::FINANCE_TYPE_ASSET, true);
     }
-
+    public static function getIdByTypeLiability(): int
+    {
+        return (int)self::getIdByName(self::FINANCE_TYPE_LIABILITY, true);
+    }
+    public static function getIdByTypeAsset(): int
+    {
+        return (int)self::getIdByName(self::FINANCE_TYPE_ASSET, true);
+    }
+    public static function getIdByTypeMonies(): int
+    {
+        return (int)self::getIdByName(self::FINANCE_TYPE_MONIES, true);
+    }
+    public static function getIdByTypeRevenue(): int
+    {
+        return (int)self::getIdByName(self::FINANCE_TYPE_REVENUE, true);
+    }
 }
