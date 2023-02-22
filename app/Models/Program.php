@@ -107,17 +107,8 @@ class Program extends BaseModel
      * Param - $extraArg boolean
      */
 
-    public function program_is_invoice_for_awards( $extraArg = false) {
+    public function program_is_invoice_for_awards( $extraArg = false): bool {
         return $this->programIsInvoiceForAwards($extraArg);
-		// if ($this->invoice_for_awards == 1) {
-		// 	return true;
-		// }
-        // if($extraArg)   {
-        //     if ( $this->factor_valuation != 1 ) {
-        //         return true;
-        //     }
-        // }
-		// return false;
 	}
 
     public static function createAccount( $data )    {

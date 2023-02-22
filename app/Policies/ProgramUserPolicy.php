@@ -107,27 +107,4 @@ class ProgramUserPolicy
         if($authUser->isAdmin()) return true;
         return $user->can('program-user-assign-role');
     }
-
-    public function readListReclaimablePeerPoints(User $authUser, Organization $organization, Program $program, User $user)
-    {
-        //return true;
-        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
-        {
-            return false;
-        }
-
-        if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;
-        return $user->can('program-user-read-reclaimable-peer-points');
-    }
-
-    public function reclaimPeerPoints(User $authUser, Organization $organization, Program $program, User $user)
-    {
-        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
-        {
-            return false;
-        }
-
-        if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;
-        return $user->can('program-user-reclaim-peer-points');
-    }
 }

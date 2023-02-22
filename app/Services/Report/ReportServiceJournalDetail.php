@@ -363,7 +363,7 @@ class ReportServiceJournalDetail extends ReportServiceAbstractBase
 						// Get an easier reference to the program
 						$program = $this->table [$program_account_holder_id];
 						if (! $program->invoice_for_awards) {
-							$this->table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [ACCOUNT_TYPE_MONIES_AWARDED] [JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT];
+							$this->table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [AccountType::ACCOUNT_TYPE_MONIES_AWARDED] [JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT];
 						}
 					}
 				}
@@ -379,7 +379,7 @@ class ReportServiceJournalDetail extends ReportServiceAbstractBase
 						// Get an easier reference to the program
 						$program = $this->table [$program_account_holder_id];
 						if ($program->invoice_for_awards) {
-							$this->table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [AccountType::ACCOUNT_TYPE_POINTS_AWARDED] [AccountType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT];
+							$this->table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [AccountType::ACCOUNT_TYPE_POINTS_AWARDED] [JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT];
 						}
 					}
 				}

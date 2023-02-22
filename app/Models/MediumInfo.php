@@ -20,7 +20,7 @@ class MediumInfo extends BaseModel
 
     public function merchant()
     {
-        return $this->hasOne(Merchant::class, 'account_holder_id', 'merchant_id');
+        return $this->hasOne(Merchant::class, 'id', 'merchant_id');
     }
 
     public static function isTest()

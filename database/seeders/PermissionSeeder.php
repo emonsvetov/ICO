@@ -18,6 +18,8 @@ class PermissionSeeder extends Seeder
 
         $permissions = [
             'award-create',
+            'award-read-reclaimable-peer-points',
+            'award-reclaim-peer-points',
             'checkout',
             'domain-list',
             'domain-view',

@@ -11,9 +11,17 @@ class AwardPolicy
 {
     use HandlesAuthorization;
 
-    public function before(User $user, $ability)
+    // public function before(User $user, $ability)
+    // {
+    //     // return true; //allowed until we have roles + permissions
+    // }
+
+    private function __authCheck($authUser, $organization, $program, $user = null): bool
     {
-        // return true; //allowed until we have roles + permissions
+        if( $organization->id != $authUser->organization_id ) return false;
+        if( $organization->id != $program->organization_id) return false;
+        if( $user && $program->organization_id != $user->organization_id) return false;
+        return true;
     }
 
     /**
@@ -27,5 +35,28 @@ class AwardPolicy
         if( $organization->id != $user->organization_id ) return false;
         if( $organization->id != $program->organization_id ) return false;
         return true;
+    }
+
+    public function readListReclaimablePeerPoints(User $authUser, Organization $organization, Program $program, User $user)
+    {
+        //return true;
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+
+        if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;
+        return $user->can('award-read-reclaimable-peer-points');
+    }
+
+    public function reclaimPeerPoints(User $authUser, Organization $organization, Program $program, User $user)
+    {
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+
+        if( $authUser->isManagerToProgram( $program ) ) return true;
+        return $user->can('award-reclaim-peer-points');
     }
 }
