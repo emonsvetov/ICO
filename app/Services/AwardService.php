@@ -830,11 +830,11 @@ class AwardService
 		$account_name = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
 		$reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
 
-		if (! $program->programIsInvoiceForAwards ()) {
-            throw new Exception('Function unsupported by this program.');
-			// $account_name = 'Monies Awarded';
-			// $reclaim_jet = "Reclaim monies";
-		}
+		// if (! $program->programIsInvoiceForAwards ()) {
+        //     // throw new Exception('Function unsupported by this program.');
+		// 	$account_name = 'Monies Awarded';
+		// 	$reclaim_jet = "Reclaim monies";
+		// }
 		// Get's the full list of points awarded and their expiration dates
 		// Note, we must get the full list awards to the user so we don't need to join back to the
 		// roles or programs this way. However, we do need to join back to the AWARDING program via the journal
@@ -868,7 +868,6 @@ class AwardService
         $query->where('postings.is_credit', '=', 1);
         try {
             $result = $query->get();
-            // pr($result);
             
             if( $result->isNotEmpty() )
             {
