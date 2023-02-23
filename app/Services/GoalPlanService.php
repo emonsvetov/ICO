@@ -16,7 +16,6 @@ use App\Models\Event;
 use App\Models\EventType;
 use App\Models\GoalPlanType;
 use App\Models\ExternalCallback;
-use App\Models\EmailTemplate;
 use App\Models\Status;
 use DB;
 //use App\Services\EmailTemplateService;
@@ -26,12 +25,14 @@ class GoalPlanService
 {
 
     public function __construct(
-        ProgramService $programService
+        ProgramService $programService,
+		UserGoalService $userGoalService
         )
 	{
         $this->programService = $programService;
+		$this->userGoalService = $userGoalService;
     }
-	public function add_goal_plan( $data, $organization, $program)
+	public function create( $data, $organization, $program)
     {   
 		/* TO DO
 		// check if we have a valid $goal_plan->name format and that it is unique
@@ -68,23 +69,23 @@ class GoalPlanService
 			$goal_plan->goal_measurement_label = '';
 		}*/
 		
-        $new_goal_plan = GoalPlan::create(  $data +
+        $newGoalPlan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
             'program_id' => $program->id, 
             //'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
             'created_by'=>auth()->user()->id,
         ] );
-     	//pr($new_goal_plan);
-		 $response['goal_plan'] = $new_goal_plan;
-        if (!empty($new_goal_plan->id)) {
+     	//pr($newGoalPlan);
+		 $response['goal_plan'] = $newGoalPlan;
+        if (!empty($newGoalPlan->id)) {
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
 			if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
-                //$new_goal_plan->id = $result;
-                $assign_response =self::assign_all_participants_now($new_goal_plan, $program);
-				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
-				//$response['assign_all_participants']=$assign_response;
+                //$newGoalPlan->id = $result;
+                $assignResponse =self::assignAllParticipantsNow($newGoalPlan, $program);
+				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
+				//$response['assign_all_participants']=$assignResponse;
             }
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		}
@@ -92,7 +93,7 @@ class GoalPlanService
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		// unset($validated['custom_email_template']);
     }
-	public function update_goal_plan($data, $goalplan, $organization, $program)
+	public function update1($data, $goalPlan, $organization, $program)
     {
 		$response=[];
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
@@ -127,19 +128,19 @@ class GoalPlanService
         // $event_type_needed,
         // ), 0, 9999);*/
 		$data['modified_by']=auth()->user()->id;
-        $updated_goal_plan = $goalplan->update( $data );
-		$response['goal_plan'] = $goalplan;
+        $updated_goal_plan = $goalPlan->update( $data );
+		$response['goal_plan'] = $goalPlan;
         if (!empty($updated_goal_plan)) {
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
             if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
-                $assign_response =self::assign_all_participants_now($goalplan, $program);
-				$response['assign_msg'] = self::assign_all_participants_res($assign_response);
+                $assignResponse =self::assignAllParticipantsNow($goalPlan, $program);
+				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
             }
 		}
 			return $response;
     }
-	public function assign_all_participants_res($response) {
+	public function assignAllParticipantsRes($response) {
 		$msg='';
 		if(!empty($response['success_count']) && $response['success_count'] >= 1) {
 			$msg = $response['success_count']. " participant(s) assigned!";
@@ -149,7 +150,8 @@ class GoalPlanService
 		}
 		return $msg;
 	}
-    public function assign_all_participants_now($goal_plan, $program) {
+	//Aliases for assign_all_participants_now
+    public function assignAllParticipantsNow($goalPlan, $program) {
 		//
 	    //$max = 50000;
         //This is temporary solution - TO DO implemntation of original function
@@ -181,15 +183,15 @@ class GoalPlanService
 				}
 			unset($user_goal['date_begin']);
 			unset($user_goal['date_end']);*/
-			$user_goal['goal_plan_id'] =  $goal_plan->id;
-			$user_goal['target_value'] = $goal_plan->default_target;
-			$user_goal['date_begin'] = $goal_plan->date_begin;
-			$user_goal['date_end'] = $goal_plan->date_end;
-			$user_goal['factor_before'] = $goal_plan->factor_before;
-			$user_goal['factor_after'] = $goal_plan->factor_after;
-			$user_goal['created_by'] =  auth()->user()->id; //$goal_plan->created_by;
-			$user_goal['achieved_callback_id'] = $goal_plan->achieved_callback_id;
-			$user_goal['exceeded_callback_id'] = $goal_plan->exceeded_callback_id;
+			$user_goal['goal_plan_id'] =  $goalPlan->id;
+			$user_goal['target_value'] = $goalPlan->default_target;
+			$user_goal['date_begin'] = $goalPlan->date_begin;
+			$user_goal['date_end'] = $goalPlan->date_end;
+			$user_goal['factor_before'] = $goalPlan->factor_before;
+			$user_goal['factor_after'] = $goalPlan->factor_after;
+			$user_goal['created_by'] =  auth()->user()->id; //$goalPlan->created_by;
+			$user_goal['achieved_callback_id'] = $goalPlan->achieved_callback_id;
+			$user_goal['exceeded_callback_id'] = $goalPlan->exceeded_callback_id;
             foreach($users as $user){
 				if (!in_array($user->status->status, $available_statuses)) {
 				 continue;
@@ -198,14 +200,14 @@ class GoalPlanService
                 //check for duplicates
 				if(!empty($added_info)) {
 					foreach($added_info as $val){
-						if($val['goal_plan_id']==$goal_plan->id && $val['users_id']==$user_id){
+						if($val['goal_plan_id']==$goalPlan->id && $val['users_id']==$user_id){
 							continue 2; //if already added then continue outer users loop
 						}  
 					}
 				}
                 $user_goal['user_id'] = $user_id;
 				//create
-				$response = UserGoalService::create($goal_plan, $user_goal);
+				$response = $this->userGoalService::create($goalPlan, $user_goal);
 				if(isset($response['already_assigned'])) {
 					$already_assigned[]=$user_id; // User is already assigned to this goal plan
 					continue;
@@ -213,10 +215,10 @@ class GoalPlanService
 				if(!$response || !isset($response['user_goal_plan'])) {
 					$fail_user[]=$user_id;
 				} else if(isset($response['user_goal_plan'])) {
-					$added_info[]=array("goal_plan_id"=>$goal_plan->id,"users_id"=>$user_id);
+					$added_info[]=array("goal_plan_id"=>$goalPlan->id,"users_id"=>$user_id);
 					$success_user[]=$user_id;
 				}
-				//$goal_plan is_recurring
+				//$goalPlan is_recurring
 				if(isset($response['future_user_goal'])) { 
 					if($response['future_user_goal'])
 						$success_future_user[]=$user_id;

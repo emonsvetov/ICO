@@ -413,11 +413,11 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //->name('api.v1.organization.program.goalplan.store')
    Route::get('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'index'])->name('api.v1.organization.program.goalplan.index')->middleware('can:viewAny,App\GoalPlan,organization,program');
 
-   Route::get('/v1/organization/{organization}/program/{program}/goalplan/{goalplan}', [App\Http\Controllers\API\GoalPlanController::class, 'show'])->name('api.v1.organization.program.goalplan.show')->middleware('can:view,App\GoalPlan,organization,program,goalplan');
+   Route::get('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'show'])->name('api.v1.organization.program.goalplan.show')->middleware('can:view,App\GoalPlan,organization,program,goalPlan');
 
-   Route::put('/v1/organization/{organization}/program/{program}/goalplan/{goalplan}', [App\Http\Controllers\API\GoalPlanController::class, 'update'])->name('api.v1.organization.program.goalplan.update')->middleware('can:update,App\GoalPlan,organization,program,goalplan');
+   Route::put('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'update'])->name('api.v1.organization.program.goalplan.update')->middleware('can:update,App\GoalPlan,organization,program,goalPlan');
    
-   Route::delete('/v1/organization/{organization}/program/{program}/goalplan/{goalplan}', [App\Http\Controllers\API\GoalPlanController::class, 'destroy'])->middleware('can:delete,App\GoalPlan,organization,program,goalplan');
+   Route::delete('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'destroy'])->middleware('can:delete,App\GoalPlan,organization,program,goalPlan');
 
     // Program Email templates
 

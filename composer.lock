@@ -114,18 +114,6 @@
         },
         {
             "name": "aws/aws-sdk-php",
-<<<<<<< HEAD
-            "version": "3.260.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "25a14f63cc927d72adad3cc24d6bcdadfe6e0fc7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/25a14f63cc927d72adad3cc24d6bcdadfe6e0fc7",
-                "reference": "25a14f63cc927d72adad3cc24d6bcdadfe6e0fc7",
-=======
             "version": "3.258.6",
             "source": {
                 "type": "git",
@@ -136,7 +124,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/5284c04bc409dfafc7751d9b80a8e2217aaca68a",
                 "reference": "5284c04bc409dfafc7751d9b80a8e2217aaca68a",
->>>>>>> Development
                 "shasum": ""
             },
             "require": {
@@ -215,15 +202,9 @@
             "support": {
                 "forum": "https://forums.aws.amazon.com/forum.jspa?forumID=80",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-<<<<<<< HEAD
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.260.0"
-            },
-            "time": "2023-02-21T20:26:17+00:00"
-=======
                 "source": "https://github.com/aws/aws-sdk-php/tree/3.258.6"
             },
             "time": "2023-02-08T19:25:07+00:00"
->>>>>>> Development
         },
         {
             "name": "aws/aws-sdk-php-laravel",
@@ -8344,18 +8325,6 @@
         },
         {
             "name": "kitloong/laravel-app-logger",
-<<<<<<< HEAD
-            "version": "v1.2.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/kitloong/laravel-app-logger.git",
-                "reference": "9f62604dacc1f185ae76ddc5d2488d030792f639"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/kitloong/laravel-app-logger/zipball/9f62604dacc1f185ae76ddc5d2488d030792f639",
-                "reference": "9f62604dacc1f185ae76ddc5d2488d030792f639",
-=======
             "version": "v1.2.0",
             "source": {
                 "type": "git",
@@ -8366,7 +8335,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/kitloong/laravel-app-logger/zipball/b5a45e916af7c21d859d46fb4fe0a1e4493cafd7",
                 "reference": "b5a45e916af7c21d859d46fb4fe0a1e4493cafd7",
->>>>>>> Development
                 "shasum": ""
             },
             "require": {
@@ -8415,11 +8383,7 @@
             ],
             "support": {
                 "issues": "https://github.com/kitloong/laravel-app-logger/issues",
-<<<<<<< HEAD
                 "source": "https://github.com/kitloong/laravel-app-logger/tree/v1.2.1"
-=======
-                "source": "https://github.com/kitloong/laravel-app-logger/tree/v1.2.0"
->>>>>>> Development
             },
             "funding": [
                 {
@@ -8427,22 +8391,6 @@
                     "type": "custom"
                 }
             ],
-<<<<<<< HEAD
-            "time": "2023-02-18T15:35:34+00:00"
-        },
-        {
-            "name": "laravel/sail",
-            "version": "v1.21.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/laravel/sail.git",
-                "reference": "758a914fc4da41f3f6ca5522c85902181b228bd1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/laravel/sail/zipball/758a914fc4da41f3f6ca5522c85902181b228bd1",
-                "reference": "758a914fc4da41f3f6ca5522c85902181b228bd1",
-=======
             "time": "2023-02-01T12:28:19+00:00"
         },
         {
@@ -8457,7 +8405,6 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/laravel/sail/zipball/4b85dbfa3dceeaf7227e3029707562fd60297e86",
                 "reference": "4b85dbfa3dceeaf7227e3029707562fd60297e86",
->>>>>>> Development
                 "shasum": ""
             },
             "require": {
