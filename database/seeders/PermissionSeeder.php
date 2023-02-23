@@ -18,6 +18,8 @@ class PermissionSeeder extends Seeder
 
         $permissions = [
             'award-create',
+            'award-read-reclaimable-peer-points',
+            'award-reclaim-peer-points',
             'checkout',
             'domain-list',
             'domain-view',
@@ -157,7 +159,14 @@ class PermissionSeeder extends Seeder
             'goal-plan-read-active-by-program',
             'program-user-read-reclaimable-peer-points',
             'program-user-reclaim-peer-points',
-            'user-goal-create'
+            'user-goal-create',
+            'referral-create',
+            'referral-list',
+            'referral-delete',
+            'referral-update',
+            'referral-view',
+            'program-user-read-reclaimable-peer-points',
+            'program-user-reclaim-peer-points',
         ];
 
         foreach ($permissions as $permission) {

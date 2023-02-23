@@ -27,6 +27,10 @@ class JournalEventService
         }
 
         $validated = $validator->validated();
+        if( empty($validated['created_at']) )
+        {
+            $validated['created_at'] = now();
+        }
         return JournalEvent::insertGetId($validated);
     }
 }

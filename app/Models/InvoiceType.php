@@ -13,7 +13,7 @@ class InvoiceType extends BaseModel
     const INVOICE_TYPE_MONTHLY = 'Monthly';
     const INVOICE_TYPE_CREDITCARD = 'Credit Card Deposit';
 
-    public static function getIdByName( $name, $insert = false, $description = '')   {
+    public static function getIdByName( $name, $insert = false, $description = '') : int   {
         $row = self::where('name', $name)->first();
         $id = $row->id ?? null;
 

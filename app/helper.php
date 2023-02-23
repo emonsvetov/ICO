@@ -271,4 +271,11 @@ if(!function_exists('getEntrataAcademicYear')) {
 		return $fiscalYear;
 	}
 }
-
+if(!function_exists('compare_floats')) {
+    function compare_floats($a, $b) {
+        $epsilon = 0.00001;
+        if (abs ( $a - $b ) < $epsilon)
+            return 0;
+        return ($a > $b) ? - 1 : 1;
+    }
+}

@@ -8,21 +8,10 @@ class Currency extends BaseModel
 {
     protected $guarded = [];
 
-    public static function getIdByType( $type = 'USD', $insert = false ) {
-
-        $first = self::where('type', $type)->first();
-        if( $first )    {
-            return $first->id;
-        }
-        if( $insert )    {
-            return self::insertGetId([
-                'type'=>$type
-            ]);
-        }
-    }
+    const DEFAULT_CURRENCY = 'USD';
 
     public static function getDefault()
     {
-        return self::getIdByType(config('global.default_currency'), true);
+        return self::getIdByType(self::DEFAULT_CURRENCY, true);
     }
 }
