@@ -91,7 +91,7 @@ class GoalPlanController extends Controller
         }
         try{
         $data = $request->validated();
-        $response= $goalPlanService->update1($data, $goalPlan, $organization, $program);
+        $response= $goalPlanService->update($data, $goalPlan, $organization, $program);
        // $response = $update_goal_plan;
         /*if (!empty($goalplan->id)) { //already done on service
             // Assign goal plans after goal plan updated based on INC-206

@@ -93,7 +93,7 @@ class GoalPlanService
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		// unset($validated['custom_email_template']);
     }
-	public function update1($data, $goalPlan, $organization, $program)
+	public function update($data, $goalPlan, $organization, $program)
     {
 		$response=[];
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
