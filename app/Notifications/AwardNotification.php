@@ -56,7 +56,7 @@ class AwardNotification extends Notification implements ShouldQueue
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program,
-                ));
+                ))->convertToMailMessage();
             break;
             case 'PeerAward':
                 return (new PeerAwardEmail(
@@ -67,7 +67,7 @@ class AwardNotification extends Notification implements ShouldQueue
                     $this->data->availableAwardPoints, 
                     $programUrl, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
             case 'BadgeAward':
                 return (new AwardBadgeEmail(
@@ -76,7 +76,7 @@ class AwardNotification extends Notification implements ShouldQueue
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
             case 'Award';
             default:
@@ -86,7 +86,7 @@ class AwardNotification extends Notification implements ShouldQueue
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
         }
     }
