@@ -350,7 +350,8 @@ class AwardService
                     'awardee_first_name' => $user->first_name,
                     'awardPoints' => $awardAmount,
                     'awardNotificationBody' => $notificationBody,
-                    'program' => $program
+                    'program' => $program,
+                    'eventName' => $eventName,
                 ];
 
                 if( $notificationType == 'PeerAward')
