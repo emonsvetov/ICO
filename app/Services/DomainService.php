@@ -163,6 +163,18 @@ class DomainService
         return  $scheme . '://' . $host . ($port ? ':' . $port : '');
     }
 
+    public function getProgram()
+    {
+        $domain = $this->getDomain();
+        if( !$domain || $this->isAdminAppDomain() ) {
+            return null;
+        }
+        if($domain->programs()->exists())
+        {
+            return $domain->programs()->first();
+        }
+    }
+
     public function isAdminAppDomain()
     {
         return $this->hostIsAdminApp();
