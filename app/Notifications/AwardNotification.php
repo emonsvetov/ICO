@@ -2,18 +2,19 @@
 
 namespace App\Notifications;
 
-// use Illuminate\Bus\Queueable;
-// use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 use App\Mail\templates\PeerAllocationEmail;
 use App\Mail\templates\AwardBadgeEmail;
 use App\Mail\templates\PeerAwardEmail;
 use App\Mail\templates\AwardEmail;
 
-class AwardNotification extends Notification
+class AwardNotification extends Notification implements ShouldQueue
 {
-    // use Queueable;
+    use Queueable;
 
     public $data;
 
@@ -47,6 +48,10 @@ class AwardNotification extends Notification
     public function toMail($notifiable)
     {
         $programUrl = app()->call('App\Services\DomainService@makeUrl');
+
+        Log::info("******* Award Notification *******");
+        Log::info($programUrl);
+        Log::info($this->data);
 
         switch($this->data->notificationType)
         {
