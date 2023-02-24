@@ -89,7 +89,7 @@ class MerchantController extends Controller
      */
     public function store(MerchantRequest $request)
     {
-        $newMerchant = Merchant::createAccount( $request->validated() );
+        $newMerchant = (new \App\Models\Merchant)->createAccount( $request->validated() );
 
         if ( !$newMerchant )
         {
