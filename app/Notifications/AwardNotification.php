@@ -51,7 +51,7 @@ class AwardNotification extends Notification implements ShouldQueue
 
         Log::info("******* Award Notification *******");
         Log::info($programUrl);
-        Log::info($this->data);
+        Log::info(json_encode($this->data));
 
         switch($this->data->notificationType)
         {
