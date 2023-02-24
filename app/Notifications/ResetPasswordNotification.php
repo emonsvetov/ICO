@@ -11,6 +11,7 @@ class ResetPasswordNotification extends Notification
 
     public $token;
     public $first_name;
+    public $program;
 
     /**
      * Create a new notification instance.
@@ -19,6 +20,7 @@ class ResetPasswordNotification extends Notification
      */
     public function __construct(string $token, string $first_name)
     {
+        $this->program = app()->call('App\Services\DomainService@getProgram');
         $this->token = $token;
         $this->first_name = $first_name;
     }
@@ -42,10 +44,10 @@ class ResetPasswordNotification extends Notification
      */
     public function toMail($notifiable)
     {
-
         return (new PasswordResetEmail(
                 $this->first_name,
-                $this->token
+                $this->token,
+                $this->program
             )
         )->convertToMailMessage();
     }
