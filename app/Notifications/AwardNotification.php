@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
+// use Illuminate\Bus\Queueable;
+// use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
@@ -12,9 +12,9 @@ use App\Mail\templates\AwardBadgeEmail;
 use App\Mail\templates\PeerAwardEmail;
 use App\Mail\templates\AwardEmail;
 
-class AwardNotification extends Notification implements ShouldQueue
+class AwardNotification extends Notification
 {
-    use Queueable;
+    // use Queueable;
 
     public $data;
 

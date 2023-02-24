@@ -22,6 +22,7 @@ class AwardEmail extends SendgridEmail
         string $awardNotificationBody,
         $program
     ) {
+        \Illuminate\Support\Facades\Log::info("In AwardEmail::__construct");
         parent::__construct();
         $this->init(func_get_args());
     }
