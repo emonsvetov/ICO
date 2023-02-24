@@ -167,6 +167,7 @@ class PermissionSeeder extends Seeder
             'referral-view',
             'program-user-read-reclaimable-peer-points',
             'program-user-reclaim-peer-points',
+            'external-callback-list',
         ];
 
         foreach ($permissions as $permission) {

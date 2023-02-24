@@ -496,6 +496,19 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
      Route::post('/v1/organization/{organization}/program/{program}/user/{user}/ReclaimPeerPoints',[App\Http\Controllers\API\ProgramUserController::class, 'ReclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\ProgramUser,organization,program,user');
      
+     
+    //External Callback
+
+    Route::get('/v1/external-callback',[App\Http\Controllers\API\ExternalCallbackController::class, 'index'])->middleware('can:viewAny,App\ExternalCallback');
+
+    /*Route::get('/v1/getGoalMetProgramCallbacks',[App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalMetProgramCallbacks'])->middleware('can:viewAny,App\ExternalCallback');*/
+
+    Route::get('/v1/organization/{organization}/program/{program}/getGoalMetProgramCallbacks',
+     [App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalMetProgramCallbacks'])->name('api.v1.getGoalMetProgramCallbacks')->middleware('can:getGoalMetProgramCallbacks,App\ExternalCallback,organization,program');
+
+     Route::get('/v1/organization/{organization}/program/{program}/getGoalExceededProgramCallbacks',
+     [App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalExceededProgramCallbacks'])->name('api.v1.getGoalExceededProgramCallbacks')->middleware('can:getGoalExceededProgramCallbacks,App\ExternalCallback,organization,program');
+
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',
     ], function ()
