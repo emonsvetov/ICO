@@ -23,7 +23,7 @@ border-left:solid 1px;
                     Use the button below or following link to reset
                     your
                     password:
-                    <a href="{{ $contactPasswordResetTokenUrl }}"
+                    <a href="{{ $contactProgramHost0 }}/reset-password?token={{ $passwordResetToken }}"
                        class="inf-track-23213">Reset
                         Password</a>.
                 </p>
@@ -32,13 +32,13 @@ border-left:solid 1px;
         <tr>
             <td align="center" style="border:none; text-align=" center="center">
                 &nbsp;<br>
-                <a href="{{ $contactPasswordResetTokenUrl }}"
+                <a href="{{ $contactProgramHost0 }}/reset-password?token={{ $passwordResetToken }}"
                    class="inf-track-23215"><img src="{{ $imagePath }}nk110-edc07421-56e4-4b9b-b09b-584844e6843b-v2.png"
                                                 border="0"></a><br>
                 <span style="font-size:10px;">Unable to see the
                               button?
                               Click  <span style="text-decoration:underline;"><a
-                            href="{{ $contactPasswordResetTokenUrl }}"
+                            href="{{ $contactProgramHost0 }}/reset-password?token={{ $passwordResetToken }}"
                             class="inf-track-23217">Here</a></span>.</span>
                 <br>
                 &nbsp;
