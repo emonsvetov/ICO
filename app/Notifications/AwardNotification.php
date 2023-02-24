@@ -2,8 +2,8 @@
 
 namespace App\Notifications;
 
-// use Illuminate\Bus\Queueable;
-// use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 use App\Mail\templates\PeerAllocationEmail;
@@ -11,9 +11,9 @@ use App\Mail\templates\AwardBadgeEmail;
 use App\Mail\templates\PeerAwardEmail;
 use App\Mail\templates\AwardEmail;
 
-class AwardNotification extends Notification
+class AwardNotification extends Notification implements ShouldQueue
 {
-    // use Queueable;
+    use Queueable;
 
     public $data;
 
@@ -56,7 +56,7 @@ class AwardNotification extends Notification
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program,
-                ));
+                ))->convertToMailMessage();
             break;
             case 'PeerAward':
                 return (new PeerAwardEmail(
@@ -67,7 +67,7 @@ class AwardNotification extends Notification
                     $this->data->availableAwardPoints, 
                     $programUrl, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
             case 'BadgeAward':
                 return (new AwardBadgeEmail(
@@ -76,7 +76,7 @@ class AwardNotification extends Notification
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
             case 'Award';
             default:
@@ -86,7 +86,7 @@ class AwardNotification extends Notification
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
         }
     }
