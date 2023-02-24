@@ -20,8 +20,8 @@ class UserGoals extends Migration
             $table->integer('next_user_goal_id')->nullable();
             $table->integer('previous_user_goal_id')->nullable();
             $table->decimal('target_value',11,4);
-            $table->mediumText('achieved_callback_id')->nullable();
-            $table->mediumText('exceeded_callback_id')->nullable();
+            $table->integer('achieved_callback_id')->nullable();
+            $table->integer('exceeded_callback_id')->nullable();
             $table->timestamp('date_met')->nullable();
             $table->timestamp('date_exceeded')->nullable();
             $table->decimal('factor_before', 9,4)->nullable(); //only for sales goal plan type
