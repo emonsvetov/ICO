@@ -91,7 +91,7 @@ class AwardNotification extends Notification
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
         }
     }
