@@ -3,6 +3,7 @@
 namespace App\Mail\templates;
 
 use App\Mail\SendgridEmail;
+use App\Models\Program;
 
 class PasswordResetEmail extends SendgridEmail
 {
@@ -17,7 +18,8 @@ class PasswordResetEmail extends SendgridEmail
      */
     public function __construct(
         string $contactFirstName,
-        string $passwordResetToken
+        string $passwordResetToken,
+        Program $program
     ) {
         parent::__construct();
         $this->init(func_get_args());
