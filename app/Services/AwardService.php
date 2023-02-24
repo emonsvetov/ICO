@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\SocialWallPostType;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Exception;
 
@@ -374,7 +373,7 @@ class AwardService
                     ];
                     $this->socialWallPostService->create($socialWallPostData);
                 }
-                Log::info("Email:" . $user->email);
+
                 $user->notify(new AwardNotification((object)$notification));
 
                 // DB::rollBack();
