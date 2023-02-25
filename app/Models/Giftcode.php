@@ -19,7 +19,7 @@ class Giftcode extends Model
     protected $table = 'medium_info';
 
     public function setPurchaseDateAttribute($purchaseDate)
-    {   
+    {
         $this->attributes['purchase_date'] = Carbon::createFromFormat('d/m/Y', $purchaseDate)->format('Y-m-d');
     }
 
@@ -100,7 +100,7 @@ class Giftcode extends Model
 			$merchant = Merchant::find($merchant);
 		}
 		if( !empty($giftcode['purchase_date']))	{
-			$giftcode['purchase_date'] = Carbon::createFromFormat('d/m/Y', $giftcode['purchase_date'])->format('Y-m-d');
+			$giftcode['purchase_date'] = $giftcode['purchase_date']; //Carbon::createFromFormat('d/m/Y', )->format('Y-m-d');
 		}
 
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
@@ -160,7 +160,7 @@ class Giftcode extends Model
 		if( isValidDate($end_date) )	{
 			$filters['end_date'] = $end_date;
 		}
-		
+
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
 	}
 
@@ -173,9 +173,9 @@ class Giftcode extends Model
 		if( isValidDate($end_date) )	{
 			$filters['end_date'] = $end_date;
 		}
-		
+
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
-	
+
 	}
 
 	public static function holdGiftcode( $params = [] ) {
@@ -197,8 +197,8 @@ class Giftcode extends Model
 
 	public static function redeemMoniesForGiftcodesNoTransaction( array $data)	{
 		return self::_redeem_monies_for_giftcodes_no_transaction($data);
-	}	
-	
+	}
+
 	public static function transferGiftcodesToMerchantNoTransaction( array $data)	{
 		return self::_transfer_giftcodes_to_merchant_no_transaction($data);
 	}
@@ -211,7 +211,7 @@ class Giftcode extends Model
 	}
 
 	private static function _get_next_available_giftcode($merchant_account_holder_id, $sku_value, $redemption_value
-	)	
+	)
 	{
 		$query = self::select([
 			'medium_info.code',
@@ -238,12 +238,12 @@ class Giftcode extends Model
 	}
 
 	private static function _hold_giftcode( $params ) {
-		
+
 		extract($params);
 
 		$giftcode = self::_get_next_available_giftcode(
-			$merchant_account_holder_id, 
-			$sku_value, 
+			$merchant_account_holder_id,
+			$sku_value,
 			$redemption_value
 		);
 
