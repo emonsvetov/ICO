@@ -14,6 +14,7 @@ use App\Http\Requests\InvitationResendRequest;
 use App\Http\Requests\InvitationRequest;
 use App\Http\Controllers\Controller;
 use App\Events\InvitationAccepted;
+use App\Services\DomainService;
 use App\Models\Organization;
 use App\Events\UsersInvited;
 use App\Events\UserInvited;
@@ -81,7 +82,7 @@ class InvitationController extends Controller
         }
 	}
 
-    public function accept(Request $request)
+    public function accept(Request $request, DomainService $domainService)
     {
         $request->validate([
             'token' => 'required',
@@ -89,26 +90,56 @@ class InvitationController extends Controller
             'password' => 'required|confirmed'
         ]);
 
-        $status = Password::reset(
-            $request->only('email', 'password', 'password_confirmation', 'token'),
-            function ($user) use ($request) {
-                $user->forceFill([
-                    'password' => $request->password,
-                    'remember_token' => Str::random(60),
-                    'email_verified_at' => now(),
-                    'user_status_id' => User::getIdStatusActive()
-                ])->save();
+        if( $domainService->isValidDomain() )
+        {
+            $response = [];
+            $status = Password::reset(
+                $request->only('email', 'password', 'password_confirmation', 'token'),
+                function ($user) use ($request) {
+                    $user->forceFill([
+                        'password' => $request->password,
+                        'remember_token' => Str::random(60),
+                        'email_verified_at' => now(),
+                        'user_status_id' => User::getIdStatusActive()
+                    ])->save();
+    
+                    $user->tokens()->delete();
+                    event(new InvitationAccepted($user));
+                }
+            );
 
-                $user->tokens()->delete();
+            if ($status == Password::PASSWORD_RESET) {
+                $response = [
+                    'message'=> 'Invitation accepted successfully'
+                ];
+                if(auth()->guard('web')->attempt( ['email' => $request->email, 'password' => $request->password] ))
+                {
+                    $user = auth()->guard('web')->user();
+                    $domain = $domainService->getDomain();
 
-                event(new InvitationAccepted($user));
+                    if($user && $domain)
+                    {
+                        $user->load(['organization']);
+                        $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
+                        if( $user->programRoles )  {
+                            foreach( $user->programRoles as $programRole)
+                            {
+                                $program = Program::find($programRole['id']);
+                                if( $program->exists() )
+                                {
+                                    $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
+                                    $response['access_token'] = $accessToken;
+                                    $response['user'] = $user;
+                                    $response['program'] = $program;
+                                    $response['role'] = Role::where('name', config('roles.participant'))->first();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                return response($response);
             }
-        );
-
-        if ($status == Password::PASSWORD_RESET) {
-            return response([
-                'message'=> 'Invitation accepted successfully'
-            ]);
         }
 
         return response([

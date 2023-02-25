@@ -13,15 +13,17 @@ class InvitationAcceptedNotification extends Notification
 {
     // use Queueable;
     public $user;
+    public $program;
 
     /**
      * Create a new notification instance.
      *
      * @return void
      */
-    public function __construct($user)
+    public function __construct($user, $program = null)
     {
         $this->user = $user;
+        $this->program = $program;
     }
 
     /**
@@ -43,7 +45,11 @@ class InvitationAcceptedNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        $programUrl = app()->call('App\Services\DomainService@makeUrl');
-        return (new WelcomeEmail($this->user->name, $this->user->email, $programUrl));
+        if( !$this->program )
+        {
+            $this->program = app()->call('App\Services\DomainService@getProgram');
+        }
+        
+        return (new WelcomeEmail($this->user->name, $this->user->email, $this->program));
     }
 }
