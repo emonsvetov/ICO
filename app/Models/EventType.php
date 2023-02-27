@@ -68,9 +68,9 @@ class EventType extends Model
     }
 
     public static function getIdByTypeStandard( $insert = false)   {
-        return self::getIdByName(self::EVENT_TYPE_STANDARD);
+        return self::getIdByType(self::EVENT_TYPE_STANDARD);
     } 
     public static function getIdByTypeBadge( $insert = false)   {
-        return self::getIdByName(self::EVENT_TYPE_BADGE);
+        return self::getIdByType(self::EVENT_TYPE_BADGE);
     }
 }

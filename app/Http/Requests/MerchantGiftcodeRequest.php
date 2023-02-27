@@ -67,12 +67,12 @@ class MerchantGiftcodeRequest extends FormRequest
                     'purchase_date' => 'required|date',
                     'supplier_code' => ['required', 'match_merchant_code'],
                     'redemption_value' => 'required|integer',
-                    'cost_basis' => 'required|integer',
-                    'discount' => 'required|integer',
+                    'cost_basis' => 'required|numeric',
+                    'discount' => 'required|numeric',
                     'sku_value' => 'required|integer',
                     'code' => ['required', 'is_valid_code'],
-                    'pin' => ['required', 'giftcode_requires_pin'],
-                    'redemption_url' => ' required|string',
+                    'pin' => ['giftcode_requires_pin'],
+                    'redemption_url' => ' required|string'
                 ])
             ]
         ];

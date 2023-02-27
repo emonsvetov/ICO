@@ -46,7 +46,6 @@ class AwardNotification extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
-        $programUrl = app()->call('App\Services\DomainService@makeUrl');
 
         switch($this->data->notificationType)
         {
@@ -56,7 +55,7 @@ class AwardNotification extends Notification implements ShouldQueue
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program,
-                ));
+                ))->convertToMailMessage();
             break;
             case 'PeerAward':
                 return (new PeerAwardEmail(
@@ -64,29 +63,25 @@ class AwardNotification extends Notification implements ShouldQueue
                     $this->data->awarder_first_name,
                     $this->data->awarder_last_name, 
                     $this->data->awardPoints, 
-                    $this->data->availableAwardPoints, 
-                    $programUrl, 
+                    $this->data->availableAwardPoints,
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
             case 'BadgeAward':
                 return (new AwardBadgeEmail(
                     $this->data->awardee_first_name, 
-                    $programUrl, 
-                    $this->data->awardPoints, 
-                    $this->data->awardNotificationBody, 
+                    $this->data->eventName,
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
             case 'Award';
             default:
                 return (new AwardEmail(
                     $this->data->awardee_first_name, 
-                    $programUrl, 
                     $this->data->awardPoints, 
                     $this->data->awardNotificationBody, 
                     $this->data->program
-                ));
+                ))->convertToMailMessage();
             break;
         }
     }
