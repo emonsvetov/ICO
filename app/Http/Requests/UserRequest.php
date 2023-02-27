@@ -57,7 +57,7 @@ class UserRequest extends FormRequest
             'roles' => 'sometimes|required|array', // program specific roles
             'roles.*' => 'sometimes|required|integer',
             'avatar' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
-
+            'send_invite' => 'sometimes|boolean',
         ];
     }
 

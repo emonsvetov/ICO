@@ -372,13 +372,22 @@ class Program extends BaseModel
         if( $ancestors )
         {
             $ancestor = $this->has('template')->whereIn('id', $ancestors)->latest()->first();
-            if( $ancestor && $ancestor->template ) return $ancestor->template;
+            if( $ancestor && $ancestor->template ) {
+                $this->setRelation('template', $ancestor->template);
+                return $ancestor->template;
+            }
         }
 
         // If not set then use default template
         $newTemplate = new ProgramTemplate( ProgramTemplate::DEFAULT_TEMPLATE );
-        // pr($newTemplate);
         $this->setRelation('template', $newTemplate);
         return $newTemplate;
+    }
+    /***
+     * Alias to getTemplate()
+     */
+    public function loadTemplate()
+    {
+        return $this->getTemplate();
     }
 }

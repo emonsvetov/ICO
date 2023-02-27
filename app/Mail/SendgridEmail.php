@@ -47,12 +47,9 @@ class SendgridEmail extends Mailable
             $this->data[$parameter->name] = $argument;
 
             if( $parameter->name == 'program' && $argument ){
-                $programTemplate = $argument->load('template');
-                if( !$programTemplate->template )
-                {
-                    $programTemplate->template = \App\Models\EmailTemplate::DEFAULTS;
-                }
-                $this->data['template'] = $programTemplate->template;
+                $argument->loadTemplate();
+                $this->data[$parameter->name] = $argument;
+                $this->data['template'] = $argument->template??\App\Models\ProgramTemplate::DEFAULT_TEMPLATE;
             }
         }
     }
