@@ -126,7 +126,7 @@ class UserGoalService
 		//goalPlan = GoalPlan::getGoalPlan( $data['goal_plan_id'], $program->id);
 		//TO DO - getGoalPlan - currently it is reading by goal plan id, pending to create read() function for goalplan for fecthing goalplan by id and program id both with other conditions
 		//$goalPlan = $program_goal; //TO DO - fix
-		//TO DO -Pending to check here assets/js/manager/dialog-add-goal.js?v=1569381162),
+		//assets/js/manager/dialog-add-goal.js?v=1569381162),
 		// Copy the submitted info into the user's goal plan object
 		$userGoalPlan=[];
 		$userGoalPlan['goal_plan_id'] = $goalPlan->id;
