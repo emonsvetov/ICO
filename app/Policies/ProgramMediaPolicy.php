@@ -20,6 +20,13 @@ class ProgramMediaPolicy
         return true;
     }
 
+    public function add(User $user, Organization $organization, Program $program)
+    {
+        if( !$this->__preAuthCheck($user,$organization, $program) ) return false;
+        if($user->isAdmin()) return true;
+        return $user->isManagerToProgram($program) || $user->can('program-media-add');
+    }
+
     public function create(User $authUser, Organization $organization, Program $program)
     {
         if(!$this->__preAuthCheck($authUser, $organization, $program)) return false;
