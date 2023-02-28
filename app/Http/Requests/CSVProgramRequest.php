@@ -173,4 +173,18 @@ class CSVProgramRequest extends FormRequest
             'transaction_fee'=>'nullable|numeric',*/
         ];
     }
+
+    public function setups()
+    {
+        return [
+            'mail' => 'nullable|boolean',
+        ];
+    }
+
+    public function importSetups()
+    {
+        return [
+            'mail' => 'nullable|boolean'
+        ];
+    }
 }

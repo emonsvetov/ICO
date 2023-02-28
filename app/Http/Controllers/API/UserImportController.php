@@ -22,6 +22,7 @@ use Illuminate\Support\Collection;
 // Remove after test
 use App\Models\User;
 use App\Models\Program;
+use App\Http\Traits\UserImportTrait;
 
 use DB;
 use Mail;
@@ -33,6 +34,8 @@ use App\Mail\templates\WelcomeEmail;
 class UserImportController extends Controller
 {
 
+    use UserImportTrait;
+    
     public function index(Organization $organization)
     {
         $query = CsvImport::withOrganization($organization);
@@ -67,10 +70,57 @@ class UserImportController extends Controller
             ['organization_id' => $organization->id]
         );
         
-        $csvHeaders = $csvService->getFieldsToMap( $validated['upload-file'], $supplied_constants,  new \App\Http\Requests\CSVProgramRequest, new \App\Http\Requests\UserRequest );
+        $csvHeaders = $csvService->getFieldsToMap( 
+            $validated['upload-file'], $supplied_constants,  
+            new \App\Http\Requests\CSVProgramRequest, 
+            new \App\Http\Requests\UserRequest
+        );
 
         return $csvHeaders;
     }
+
+
+    public function addAwardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization)
+    {
+        //Use policies to determine if has rights and correct organization
+        //Setup Request file
+        $validated = $request->validated();
+
+        $supplied_constants = collect(
+            ['organization_id' => $organization->id]
+        );
+        
+        $csvHeaders = $csvService->getFieldsToMap( 
+            $validated['upload-file'], $supplied_constants,  
+            new \App\Http\Requests\CSVProgramRequest, 
+            new \App\Http\Requests\UserRequest, 
+            new \App\Http\Requests\EventXmlDataRequest 
+        );
+
+        return $csvHeaders;
+    }
+
+
+    public function awardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization)
+    {
+        //Use policies to determine if has rights and correct organization
+        //Setup Request file
+        $validated = $request->validated();
+
+        $supplied_constants = collect(
+            ['organization_id' => $organization->id]
+        );
+        
+        $csvHeaders = $csvService->getFieldsToMap( 
+            $validated['upload-file'], $supplied_constants,  
+            new \App\Http\Requests\CSVProgramRequest, 
+            new \App\Http\Requests\UserUpdateRequest, 
+            new \App\Http\Requests\EventXmlDataRequest 
+        );
+
+        return $csvHeaders;
+    }
+
 
     public function userFileImport(CSVImportRequest $request, Organization $organization)
     {    
@@ -83,14 +133,16 @@ class UserImportController extends Controller
 
         // Check type
         $setups = json_decode($validated['setups'], true);
-        $type = CsvImportType::getIdByType($setups['UserRequest']['type']);
+        $userModel = isset($setups['UserRequest']) ? 'UserRequest' : 'UserUpdateRequest';
+        $requestType = isset($setups['UserRequest']) ? $setups['UserRequest']['type'] : $setups['UserUpdateRequest']['type'];
+        $type = CsvImportType::getIdByType($requestType);
 
         if (empty($type)) 
         {   
             return response(["errors" => [
                 'Setups' => [
-                    'UserRequest' => [
-                        'type' => "'" . $setups['UserRequest']['type'] . "' does not exist"
+                    $userModel => [
+                        'type' => "'" . $srequestType . "' does not exist"
                     ]
                 ]
             ]]);
@@ -117,81 +169,28 @@ class UserImportController extends Controller
 
         if ( empty($importData['errors']) )
         {
-            //import data
-            try
+            $type = CsvImportType::find( $newCsvImport->csv_import_type_id)->type;
+
+            switch ($type)
             {
-                $userIds = DB::transaction(function() use ($importData, $supplied_constants) {
+                case 'add_participants':
+                    $this->addUser($newCsvImport, $importData, $supplied_constants);
+                    break;
                 
-                    $createdUserIds = [];
-                    $user = new User;
+                case 'add_managers':
+                    $this->addUser($newCsvImport, $importData, $supplied_constants);
+                    break;
 
-                    $mail = $importData['setups']['UserRequest']['mail'] ?? 0;
-
-                    foreach ($importData['UserRequest'] as $key => $userData) 
-                    {    
-                        $employee_number = $userData['employee_number'] ?? '';
-                        $updated = 0;
-
-                        $dob = $userData['dob'] ?? null;
-                        // Split DOB
-                        if ($dob)
-                        {
-                            $dob = new DateTime($dob);
-                            $day = $dob->format('d');
-                            $month = $dob->format('m');
-                            $year = $dob->format('Y');
-                        }
-
-                        if (!empty($employee_number))
-                        {
-                            $updated = $user->where([
-                                    ['organization_id', $supplied_constants['organization_id']],
-                                    ['employee_number', $employee_number]
-                                ])
-                                ->update($userData);
-                        }
-                        
-                        if (!$updated)
-                        {
-                            // $userData['roles'] = !empty($userData['roles']) ? $userData['roles'] : $importData['setups']['UserRequest']['roles'];
-                            // print_r($userData);exit;
-                            
-                            $newUser = $user->createAccount($userData + [
-                                'organization_id' => $supplied_constants['organization_id'],
-                                'password' => str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil(60/strlen($x)) ))
-                            ]);
-                            $createdUserIds[] = $newUser->id;
-
-                            // ADD NEW USER TO PROGRAM ?
-                            $program = Program::find($importData['CSVProgramRequest'][$key]['program_id']);
-                            $program->users()->sync( [ $newUser->id ], false );
-
-                            // A NEW USER HAS ROLE AS A PARTICIPANT ?
-                            $roles = !empty($userData['roles']) ? $userData['roles'] : $importData['setups']['UserRequest']['roles'];
-                            if( !empty($roles) )
-                            {
-                                $newUser->syncProgramRoles($program->id, $roles);
-                            }
-                            
-
-                            if ($mail)
-                            {
-                                // What is contact program host?
-                                $message = new WelcomeEmail($newUser->first_name, $newUser->email, "");
-                                Mail::to($newUser->email)->send($message);
-                            }
-                        }
-                    }
-                    // WHAT MUST WE DO WITH USER ROLES
-                    return $createdUserIds;
-                });  
+                case 'add_and_award_users':
+                    $results = $this->addAndAwardUser($newCsvImport, $importData, $supplied_constants);
+                    break;
+                
+                case 'award_users':
+                    $results = $this->awardUser($newCsvImport, $importData, $supplied_constants);
+                    break;
             }
-            catch (\Throwable $e)
-            {
-                $errors = ['errors' => 'ImportUserForProgramJob with error: ' . $e->getMessage() . ' in line ' . $e->getLine()];
-                return $errors;
-            }
-            return response(['csvImport' => $newCsvImport, 'importIds' => $userIds]);   
+
+            return response(['csvImport' => $newCsvImport, 'importData' => $importData, 'results' => $results]);   
         }
         else 
         {
@@ -203,11 +202,7 @@ class UserImportController extends Controller
                 'errors' => $importData['errors']
             ];
 
-            // Who will get the notification?
-            // $organization = Organization::find($supplied_constants['organization_id']);
-            $organization->notify(new CSVImportNotification($notifData));
-
-            //return errors via notifications
+            $newCsvImport->notify(new CSVImportNotification($notifData));
         }
         
         //$file->getRealPath();

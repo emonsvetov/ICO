@@ -68,6 +68,14 @@ class ImportUserForProgramJob implements ShouldQueue
             case 'add_managers':
                 $this->addUser($this->csvImport, $this->importData, $this->supplied_constants);
                 break;
+                
+            case 'add_and_award_users':
+                $this->addAndAwardUser($this->csvImport, $this->importData, $this->supplied_constants);
+                break;
+
+            case 'award_users':
+                $this->awardUser($this->csvImport, $this->importData, $this->supplied_constants);
+                break;
         }
 
         /*
