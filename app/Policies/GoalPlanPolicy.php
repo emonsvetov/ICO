@@ -87,7 +87,7 @@ class GoalPlanPolicy
      * @param  \App\Models\GoalPlan  $goalplan
      * @return mixed
      */
-    public function update(User $authUser, Organization $organization, Program $program, GoalPlan $goalplan)
+    public function update(User $authUser, Organization $organization, Program $program, GoalPlan $goalPlan)
     {
         // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
@@ -108,7 +108,7 @@ class GoalPlanPolicy
      * @param  \App\Models\GoalPlan  $goalplan
      * @return mixed
      */
-    public function delete(User $authUser, Organization $organization, Program $program, GoalPlan $goalplan)
+    public function delete(User $authUser, Organization $organization, Program $program, GoalPlan $goalPlan)
     {
        
         // return true;
@@ -120,5 +120,17 @@ class GoalPlanPolicy
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-delete');
+    }
+    public function readActiveByProgram(User $authUser, Organization $organization, Program $program)
+    {
+         //return true;
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
+        {
+            return false;
+        }
+        
+        if($authUser->isAdmin()) return true;
+
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-read-active-by-program');
     }
 }
