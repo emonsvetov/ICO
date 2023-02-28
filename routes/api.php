@@ -236,8 +236,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/digital-media-type',
         [App\Http\Controllers\API\ProgramMediaTypeController::class, 'index'])->middleware('can:viewAny,App\ProgramMediaType,organization,program,user');
 
-    Route::post('/v1/organization/{organization}/program/{program}/digital-media-type',
-        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store'])->middleware('can:viewAny,App\ProgramMediaTypeController,organization,program');
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
@@ -345,7 +347,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\Award,organization,program,user');
 
     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
-    
+
     // Participant
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
@@ -404,7 +406,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/assignableEvent',[App\Http\Controllers\API\LeaderboardEventController::class, 'assignable'])->middleware('can:viewAny,App\LeaderboardEvent,organization,program,leaderboard');
 
     Route::patch('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/event',[App\Http\Controllers\API\LeaderboardEventController::class, 'assign'])->middleware('can:assign,App\LeaderboardEvent,organization,program,leaderboard');
-   
+
     Route::get('/v1/goalplantype',[App\Http\Controllers\API\GoalPlanTypeController::class, 'index'])->middleware('can:viewAny,App\GoalPlanType');
 
     // Goal plans
@@ -475,39 +477,36 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
 
     //Goal plans
-    Route::get('/v1/organization/{organization}/program/{program}/read-active-goalplans-by-program', [App\Http\Controllers\API\GoalPlanController::class, 'readActiveByProgram'])->name('api.v1.organization.program.goalplan.readActiveByProgram')->middleware('can:readActiveByProgram,App\GoalPlan,organization,program');
+     Route::get('/v1/organization/{organization}/program/{program}/read-active-goalplans-by-program', [App\Http\Controllers\API\GoalPlanController::class, 'readActiveByProgram'])->name('api.v1.organization.program.goalplan.readActiveByProgram')->middleware('can:readActiveByProgram,App\GoalPlan,organization,program');
      //Referrals 
      Route::post('/v1/organization/{organization}/program/{program}/referral-notification-recipient', [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'store'])->middleware('can:create,App\ReferralNotificationRecipient,organization,program');
-     
+
      Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'index'])->name('api.v1.referralNotificationRecipient.index')->middleware('can:viewAny,App\ReferralNotificationRecipient,organization,program');
 
      Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'show'])->name('api.v1.referralNotificationRecipient.show')->middleware('can:view,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
-     
+
      Route::put('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'update'])->name('api.v1.referralNotificationRecipient.update')->middleware('can:update,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
-     
+
      Route::delete('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'delete'])->name('api.v1.referralNotificationRecipient.delete')->middleware('can:delete,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
     
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');
-
-     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/ReclaimPeerPoints',[App\Http\Controllers\API\ProgramUserController::class, 'ReclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\ProgramUser,organization,program,user');
-     
      
     //External Callback
 
     Route::get('/v1/external-callback',[App\Http\Controllers\API\ExternalCallbackController::class, 'index'])->middleware('can:viewAny,App\ExternalCallback');
 
-    /*Route::get('/v1/getGoalMetProgramCallbacks',[App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalMetProgramCallbacks'])->middleware('can:viewAny,App\ExternalCallback');*/
-
     Route::get('/v1/organization/{organization}/program/{program}/getGoalMetProgramCallbacks',
      [App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalMetProgramCallbacks'])->name('api.v1.getGoalMetProgramCallbacks')->middleware('can:getGoalMetProgramCallbacks,App\ExternalCallback,organization,program');
 
-     Route::get('/v1/organization/{organization}/program/{program}/getGoalExceededProgramCallbacks',
+    Route::get('/v1/organization/{organization}/program/{program}/getGoalExceededProgramCallbacks',
      [App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalExceededProgramCallbacks'])->name('api.v1.getGoalExceededProgramCallbacks')->middleware('can:getGoalExceededProgramCallbacks,App\ExternalCallback,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/user/{user}/ReclaimPeerPoints',[App\Http\Controllers\API\ProgramUserController::class, 'ReclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\ProgramUser,organization,program,user');
 
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',

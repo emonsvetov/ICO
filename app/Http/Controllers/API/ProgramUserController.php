@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Services\AccountService;
-use App\Services\AwardService;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 use App\Http\Requests\ProgramUserAssignRoleRequest;
-
-use App\Http\Requests\UserRequest;
+use App\Services\Program\ProgramUserService;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
-use App\Models\Organization;
-use App\Models\User;
-use App\Models\Program;
+use App\Http\Requests\UserRequest;
+use App\Services\AccountService;
+use App\Services\AwardService;
 use App\Services\UserService;
-use Exception;
+use App\Models\Organization;
+use App\Models\Program;
+use App\Models\User;
 
 class ProgramUserController extends Controller
 {
@@ -75,22 +75,10 @@ class ProgramUserController extends Controller
         return response([]);
     }
 
-    public function store(UserRequest $request, Organization $organization, Program $program)
+    public function store(UserRequest $request, ProgramUserService $programUserService, Organization $organization, Program $program)
     {
-
         $validated = $request->validated();
-
-        $validated['organization_id'] = $organization->id;
-        $validated['email_verified_at'] = now();
-        $user = User::createAccount($validated);
-
-        if ($user) {
-            $program->users()->sync([$user->id], false);
-            if (isset($validated['roles'])) {
-                $user->syncProgramRoles($program->id, $validated['roles']);
-            }
-        }
-
+        $user = $programUserService->create($program, $validated);
         return response(['user' => $user]);
     }
 
