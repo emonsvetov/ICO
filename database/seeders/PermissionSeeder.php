@@ -156,6 +156,10 @@ class PermissionSeeder extends Seeder
              'team-update',
              'team-view',
             'user-read-points',
+            'goal-plan-read-active-by-program',
+            'program-user-read-reclaimable-peer-points',
+            'program-user-reclaim-peer-points',
+            'user-goal-create',
             'referral-create',
             'referral-list',
             'referral-delete',
@@ -163,6 +167,7 @@ class PermissionSeeder extends Seeder
             'referral-view',
             'program-user-read-reclaimable-peer-points',
             'program-user-reclaim-peer-points',
+            'external-callback-list',
         ];
 
         foreach ($permissions as $permission) {

@@ -11,7 +11,7 @@ use App\Services\GoalPlanService;
 
 class GoalPlanController extends Controller
 {
-    public function store(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlanService $goalplanservice)
+    public function store(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlanService $goalPlanService)
     {
 
 		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
@@ -24,7 +24,7 @@ class GoalPlanController extends Controller
         $data = $request->validated();
 
         try{
-            $response= $goalplanservice->add_goal_plan($data,$organization,$program);
+            $response= $goalPlanService->create($data,$organization,$program);
             return response($response);
 
         } catch (\Exception $e )    {
@@ -54,54 +54,54 @@ class GoalPlanController extends Controller
             }
         }
 
-        $goal_plans = GoalPlan::where($where)
+        $goalPlans = GoalPlan::where($where)
         ->orderBy('name')
         ->with(['goalPlanType'])
         ->get();
 
-        if ( $goal_plans->isNotEmpty() )
+        if ( $goalPlans->isNotEmpty() )
         {
-            return response( $goal_plans );
+            return response( $goalPlans );
         }
 
         return response( [] );
     }
     
-    public function show( Organization $organization, Program $program, GoalPlan $goalplan )
+    public function show( Organization $organization, Program $program, GoalPlan $goalPlan )
     {
-        if ( !( $organization->id == $program->organization_id && $program->id == $goalplan->program_id ) )
+        if ( !( $organization->id == $program->organization_id && $program->id == $goalPlan->program_id ) )
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
-        if ( $goalplan )
+        if ( $goalPlan )
         {
-            $goalplan->load('GoalPlanType');
-            return response( $goalplan );
+            $goalPlan->load('GoalPlanType');
+            return response( $goalPlan );
         }
     
 
         return response( [] );
     }
 
-    public function update(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlan $goalplan, GoalPlanService $goalplanservice )
+    public function update(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlan $goalPlan, GoalPlanService $goalPlanService )
     {
         if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
             return response(['errors' => "You can't add goal plan in this program."], 422);
         }
         try{
         $data = $request->validated();
-        $update_goal_plan= $goalplanservice->update_goal_plan($data, $goalplan, $organization, $program);
-        $response['goal_plan'] = $update_goal_plan;
-        if (!empty($goalplan->id)) {
+        $response= $goalPlanService->update($data, $goalPlan, $organization, $program);
+       // $response = $update_goal_plan;
+        /*if (!empty($goalplan->id)) { //already done on service
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
             if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
                 //$ew_goal_plan->id = $result;
-                $assign_response = $goalplanservice->assign_all_participants_now($goalplan, $program);
-				$response['assign_msg'] = $goalplanservice->assign_all_participants_res($assign_response);
+                $assign_response = $goalPlanService->assign_all_participants_now($goalplan, $program);
+				$response['assign_msg'] = $goalPlanService->assign_all_participants_res($assign_response);
             }
-		}
+		}*/
     }
     catch (\Exception $e )    {
         return response(['errors' => $e->getMessage()], 422);
@@ -109,9 +109,18 @@ class GoalPlanController extends Controller
         return $response;
     }
 
-    public function destroy(Organization $organization, Program $program, GoalPlan $goalplan)
+    public function destroy(Organization $organization, Program $program, GoalPlan $goalPlan)
     {
-        $goalplan->delete();
+        $goalPlan->delete();
         return response(['success' => true]);
     }
+
+    public  function readActiveByProgram(Organization $organization, Program $program, GoalPlanService $goalPlanService) {
+        $limit = request()->get('pageSize', 10);
+        $page = request()->get('page', 1);
+        $order_direction = request()->get('order_direction', 'asc');
+        $order_column = request()->get('order_column', 'name');
+        $offset = ($page - 1) * $limit;
+		return $goalPlanService::ReadActiveByProgram($program,$offset, $limit, $order_column, $order_direction);
+	}
 }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Status;
 use App\Models\GoalPlanType;
+use App\Models\ExpirationRule;
 use Illuminate\Validation\ValidationException;
 
 class GoalPlan extends BaseModel
@@ -21,7 +22,9 @@ class GoalPlan extends BaseModel
     public function status()    {
         return $this->belongsTo(Status::class, 'state_type_id');
     }
-
+    public function expiration_rules()    {
+        return $this->belongsTo(ExpirationRule::class, 'expiration_rule_id');
+    }
     public static function getStatusByName( $status ) {
         return self::getByNameAndContext($status, 'Goals');
     }
@@ -58,5 +61,11 @@ class GoalPlan extends BaseModel
     public function user_goals()
     {
         return $this->hasMany(UserGoal::class);
+    }
+    public static function getGoalPlan($id)
+    {
+        $goal_plan = self::find($id);
+       //$goal_plan =  self::where('program_id', $program_id)->where('id', $id)->first();
+        return $goal_plan; 
     }
 }
