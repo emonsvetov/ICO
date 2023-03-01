@@ -52,7 +52,6 @@ class UserInvitedNotifyUser extends Notification
     {
         $url = app()->call('App\Services\DomainService@makeUrl'); //This to be removed, URL already set in SendgridEmail.php
         $tokenUrl = $url . '/invitation?token=' . $this->token;
-
         return (new InviteParticipantEmail($this->recepient->name, $tokenUrl, $this->program))->convertToMailMessage();
     }
 

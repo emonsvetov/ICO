@@ -77,9 +77,17 @@ class ProgramUserController extends Controller
 
     public function store(UserRequest $request, ProgramUserService $programUserService, Organization $organization, Program $program)
     {
-        $validated = $request->validated();
-        $user = $programUserService->create($program, $validated);
-        return response(['user' => $user]);
+        DB::beginTransaction();
+        try{
+            $validated = $request->validated();
+            $user = $programUserService->create($program, $validated);
+            DB::commit();
+            return response(['user' => $user]);
+        } catch (\Exception $e )    {
+            DB::rollBack();
+            $error = 'Error adding user to program program: %s';
+            return response(['errors' => $error], 422);
+        }
     }
 
     public function show(Organization $organization, Program $program, User $user): UserResource

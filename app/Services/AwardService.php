@@ -375,6 +375,12 @@ class AwardService
                     $this->socialWallPostService->create($socialWallPostData);
                 }
 
+                if( $user->status()->first()->status == User::STATUS_NEW )
+                {
+                    $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+                    event(new \App\Events\UserInvited($user, $program, $token));
+                }
+
                 $user->notify(new AwardNotification((object)$notification));
 
                 // DB::rollBack();
