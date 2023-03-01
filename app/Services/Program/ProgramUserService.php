@@ -32,7 +32,6 @@ class ProgramUserService
                 $participantRoleId = Role::getParticipantRoleId();
                 if( in_array($participantRoleId, $validated['roles']))
                 {
-                    // $user = User::find( 590 );
                     $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
                     event(new UserInvited($user, $program, $token));
                 }
