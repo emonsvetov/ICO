@@ -495,7 +495,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');
-     
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/readListByProgramAndUser',
+     [App\Http\Controllers\API\UserGoalController::class, 'readListByProgramAndUser'])->name('api.v1.readListByProgramAndUser')->middleware('can:readListByProgramAndUser,App\UserGoal,organization,program,user');
     //External Callback
 
     Route::get('/v1/external-callback',[App\Http\Controllers\API\ExternalCallbackController::class, 'index'])->middleware('can:viewAny,App\ExternalCallback');
