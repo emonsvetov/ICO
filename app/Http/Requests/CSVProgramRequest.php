@@ -177,4 +177,18 @@ class CSVProgramRequest extends FormRequest
             */
         ];
     }
+
+    public function setups()
+    {
+        return [
+            'mail' => 'nullable|boolean',
+        ];
+    }
+
+    public function importSetups()
+    {
+        return [
+            'mail' => 'nullable|boolean'
+        ];
+    }
 }

@@ -26,6 +26,13 @@ Route::post('/v1/organization/{organization}/userimport', [App\Http\Controllers\
 Route::get('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'index']);
 Route::get('/v1/organization/{organization}/userimport/{csvImport}', [App\Http\Controllers\API\UserImportController::class, 'show']);
 
+Route::post('/v1/organization/{organization}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
+Route::post('/v1/organization/{organization}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
+
+// Route::post('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'addAwardUserFileImport']);
+// Route::get('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'index']);
+// Route::get('/v1/organization/{organization}/addawarduserimport/{csvImport}', [App\Http\Controllers\API\AddAwardUserImportController::class, 'show']);
+
 Route::post('/v1/organization/{organization}/eventimportheaders', [App\Http\Controllers\API\EventImportController::class, 'eventHeaderIndex']);
 Route::post('/v1/organization/{organization}/eventimport', [App\Http\Controllers\API\EventImportController::class, 'eventFileImport']);
 Route::get('/v1/organization/{organization}/eventimport', [App\Http\Controllers\API\EventImportController::class, 'index']);
@@ -35,6 +42,8 @@ Route::post('/v1/organization/{organization}/programimportheaders', [App\Http\Co
 Route::post('/v1/organization/{organization}/programimport', [App\Http\Controllers\API\ProgramImportController::class, 'programFileImport']);
 Route::get('/v1/organization/{organization}/programimport', [App\Http\Controllers\API\ProgramImportController::class, 'index']);
 Route::get('/v1/organization/{organization}/programimport/{csvImport}', [App\Http\Controllers\API\ProgramImportController::class, 'show']);
+
+
 
 Route::get('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'index'])->name('api.v1.event_icons.index');
 Route::post('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'store'])->name('api.v1.event_icons.store');
