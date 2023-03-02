@@ -146,7 +146,7 @@ class ProgramRequest extends FormRequest
             //Leaderboards
             'leaderboard_seperation'=>'nullable|boolean',
             'share_siblings_leader_board'=>'nullable|boolean',
-            'uses_leaderbaords'=>'nullable|boolean',
+            'uses_leaderboards'=>'nullable|boolean',
             //Manager Settings
             'manager_can_award_all_program_participants'=>'nullable|boolean',
             'program_managers_can_invite_participants'=>'nullable|boolean',
@@ -164,6 +164,9 @@ class ProgramRequest extends FormRequest
             'uses_goal_tracker'=>'nullable|boolean',
             'transaction_fee'=>'nullable|numeric',
             'create_setup_fee_account'=>'nullable|boolean',
+            'allow_award_peers_not_logged_into'=>'nullable|boolean',
+            'allow_search_peers_not_logged_into'=>'nullable|boolean',
+            'allow_view_leaderboards_not_logged_into'=>'nullable|boolean',
         ];
     }
 

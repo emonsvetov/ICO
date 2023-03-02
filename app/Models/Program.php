@@ -84,22 +84,33 @@ class Program extends BaseModel
         ->withTimestamps();
     }
 
-    public function template()
+    public function templates()
     {
-        return $this->hasOne(ProgramTemplate::class);
+        return $this->hasMany(ProgramTemplate::class);
     }
 
-    public function program_is_invoice_for_awards( $extraArg = false) {
-		if ($this->invoice_for_awards == 1) {
-			return true;
-		}
-        if($extraArg)   {
-            if ( $this->factor_valuation != 1 ) {
-                return true;
-            }
+    public function template()
+    {
+        return $this->hasOne(ProgramTemplate::class)->ofMany('is_active', 'max');
+    }
+
+    public function programIsInvoiceForAwards($extraArg = false): bool
+    {
+        if ($this->invoice_for_awards || ($extraArg && $this->factor_valuation != 1)) {
+            return true;
         }
-		return false;
+        return false;
+    }
+
+    /**
+     * Alias to "programIsInvoiceForAwards"
+     * Param - $extraArg boolean
+     */
+
+    public function program_is_invoice_for_awards( $extraArg = false): bool {
+        return $this->programIsInvoiceForAwards($extraArg);
 	}
+
     public static function createAccount( $data )    {
         $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
         if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
@@ -211,14 +222,6 @@ class Program extends BaseModel
             null, // medium_info_id
             $currency_id
         );
-    }
-
-    public function programIsInvoiceForAwards(): bool
-    {
-        if ($this->invoice_for_awards || $this->factor_valuation != 1) {
-            return true;
-        }
-        return false;
     }
 
     public function isShellProgram(): bool
@@ -357,5 +360,34 @@ class Program extends BaseModel
     public static function getIdStatusLocked()
     {
         return self::getStatusLocked()->id;
+    }
+
+    public function getTemplate()
+    {
+        // If available return it
+        if( $this->template ) return $this->template;
+
+        // Get first available template from ancestors
+        $ancestors = $this->ancestors()->pluck('id');
+        if( $ancestors )
+        {
+            $ancestor = $this->has('template')->whereIn('id', $ancestors)->latest()->first();
+            if( $ancestor && $ancestor->template ) {
+                $this->setRelation('template', $ancestor->template);
+                return $ancestor->template;
+            }
+        }
+
+        // If not set then use default template
+        $newTemplate = new ProgramTemplate( ProgramTemplate::DEFAULT_TEMPLATE );
+        $this->setRelation('template', $newTemplate);
+        return $newTemplate;
+    }
+    /***
+     * Alias to getTemplate()
+     */
+    public function loadTemplate()
+    {
+        return $this->getTemplate();
     }
 }

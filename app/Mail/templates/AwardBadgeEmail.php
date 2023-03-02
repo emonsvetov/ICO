@@ -18,7 +18,7 @@ class AwardBadgeEmail extends SendgridEmail
     public function __construct(
         string $contactFirstName,
         string $eventName,
-        string $contactProgramHost0
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());

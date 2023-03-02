@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\EventTypeSeeder;
@@ -22,6 +20,9 @@ use Database\Seeders\CallbackTypeSeeder;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\StateSeeder;
 use Database\Seeders\LeaderboardTypeSeeder;
+use Database\Seeders\InvoiceTypeSeeder;
+use Database\Seeders\PaymentMethodSeeder;
+use Database\Seeders\EmailTemplateTypeSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -33,6 +34,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $this->call([
+            OwnerSeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
             EventTypeSeeder::class,
@@ -44,15 +46,14 @@ class DatabaseSeeder extends Seeder
             StatusSeeder::class,
             UserSeeder::class,
             OrganizationSeeder::class,
-            OwnerSeeder::class,
-            // AccountHolderPatcher::class,
             CallbackTypeSeeder::class,
             CountrySeeder::class,
             StateSeeder::class,
             LeaderboardTypeSeeder::class,
             CsvImportTypeSeeder::class,
-            Database\Seeders\InvoiceTypeSeeder::class,
-            Database\Seeders\PaymentMethodSeeder::class,
+            InvoiceTypeSeeder::class,
+            PaymentMethodSeeder::class,
+            EmailTemplateTypeSeeder::class
         ]);
     }
 }

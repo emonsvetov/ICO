@@ -9,4 +9,9 @@ class Owner extends Model
 {
     use HasFactory;
     protected $guarded = [];
+
+    public static function getFirstAccountHolderId()
+    {
+        return Owner::findOrFail(1)->account_holder_id;
+    }
 }

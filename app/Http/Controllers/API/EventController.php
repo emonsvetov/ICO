@@ -13,7 +13,6 @@ use App\Models\Event;
 
 class EventController extends Controller
 {
-
     public function index( Organization $organization, Program $program, Request $request )
     {
         return response(Event::getIndexData($organization, $program, $request->all()) ?? []);
@@ -64,6 +63,19 @@ class EventController extends Controller
         catch(\Throwable $e)
         {
             return response(['errors' => 'Error updating program event', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
+        }
+    }
+
+    public function delete(Organization $organization, Program $program, Event $event )
+    {
+        try {
+            $deleted = ['deleted' => 1];
+            $event->delete();
+            return response( $deleted );
+        }
+        catch(\Throwable $e)
+        {
+            return response(['errors' => 'Error deleting program event', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
         }
     }
 }

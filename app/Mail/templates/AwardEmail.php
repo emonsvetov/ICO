@@ -17,9 +17,9 @@ class AwardEmail extends SendgridEmail
      */
     public function __construct(
         string $contactFirstName,
-        string $contactProgramHost0,
         int $awardPoints,
-        string $awardNotificationBody
+        string $awardNotificationBody,
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());

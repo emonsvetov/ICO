@@ -5,26 +5,18 @@ use App\Events\MerchantDenominationAlert;
 use App\Events\OrderShippingRequest;
 use App\Events\TangoOrderCreated;
 
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Traits\IdExtractor;
-use App\Models\JournalEventType;
 use App\Models\ExternalCallback;
 use App\Models\PhysicalOrder;
 use App\Models\OptimalValue;
-use App\Models\JournalEvent;
-use App\Models\FinanceType;
-use App\Models\MediumType;
 use App\Models\TangoOrder;
 use App\Models\Currency;
 use App\Models\Giftcode;
 use App\Models\Merchant;
-use App\Models\Account;
-use App\Models\Program;
 use App\Models\Country;
-use App\Models\Owner;
 use App\Models\State;
-use DB;
 
 class CheckoutService 
 {
@@ -274,7 +266,7 @@ class CheckoutService
 					// Add the giftcode to the merchant's inventory
 					$gift_code_id = ( int ) Giftcode::createGiftcode ( ( int ) $user->id, ( int ) $gift_code2->merchant_id, $code );
 					// Read the rest of the information about the code that was reserved
-					$reserved_code = self::_read_by_merchant_and_medium_info_id ( ( int ) $gift_code2->gift_code_provider_account_holder_id, $gift_code_id );
+					$reserved_code = Giftcode::readGiftcodeByMerchantAndId ( ( int ) $gift_code2->gift_code_provider_account_holder_id, $gift_code_id );
 				} else {
 					// merchant hasn't external callback so store all values
 					// store all values to redeem $redeem_merchant_info[merchant_id][code_value]
@@ -342,7 +334,7 @@ class CheckoutService
 					$userData->sku_value = $reserved_code->sku_value;
 					$userData->gift_code = $reserved_code->code;
 					$note = json_encode ( $userData, JSON_HEX_APOS );
-					$order_id = PhysicalOrder::create ( $user->id, $program_id, $address, $note );
+					$order_id = PhysicalOrder::create ( $user->id, $program->id, $address, $note );
 					PhysicalOrder::add_line_item ( ( int ) $reserved_code->id, $order_id );
 				}
 
@@ -385,7 +377,7 @@ class CheckoutService
 
 		try {
 			// I am not sure why some of the database transactions above are exempted from the rollback. Probably we need to move the DB::beginTransaction(); to the very top of this function ; Arvind
-			// DB::statement("LOCK TABLES postings WRITE, medium_info WRITE, journal_events WRITE;");
+			DB::statement("LOCK TABLES postings WRITE, medium_info WRITE, journal_events WRITE;");
 			DB::beginTransaction();
 			$commit = true;
 			// $currency_type = self::$currency_type;
@@ -456,7 +448,7 @@ class CheckoutService
 				$redeem_merchant_info[$code->merchant->id][number_format ( $code->sku_value, 2 )]['used']++;
 				$gift_codes_redeemed_for [] = $code;
 			}
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			DB::rollback();
 			DB::statement("UNLOCK TABLES;");
 			$commit = false;

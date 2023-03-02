@@ -18,7 +18,8 @@ class PeerAllocationEmail extends SendgridEmail
     public function __construct(
         string $contactFirstName,
         int $awardPoints,
-        string $contactProgramHost0
+        string $awardNotificationBody,
+        $program
     ) {
         parent::__construct();
         $this->init(func_get_args());

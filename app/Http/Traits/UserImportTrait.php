@@ -80,7 +80,7 @@ trait UserImportTrait
                         if ($mail)
                         {
                             // What is contact program host?
-                            $message = new WelcomeEmail($newUser->first_name, $newUser->email, "");
+                            $message = new WelcomeEmail($newUser->first_name, $newUser->email, $program);
                             Mail::to($newUser->email)->send($message);
                         }
                     }

@@ -2,14 +2,21 @@
 
 @section('content')
 
-    <table width="600" bgcolor="#ffffff" cellspacing="0" cellpadding="0" style="font-family:Arial, Helvetica, sans-serif; border-left:solid 1px;
+    <table cellspacing="0" cellpadding="0" style="font-family:{{ $template['font_family'] }}, Helvetica, Arial;
+border-left:solid 1px;
                     border-right:solid 1px; border-top:solid 1px;
-border-bottom:solid 1px;
-                    border-color:#bfbaba; font-size:14px;">
-        <tbody>
+                    border-bottom:solid 1px;
+                    border-color:#bfbaba;">
+        <tbody style="background-color:rgb(244,243,242);">
         <tr>
-            <td>
-                <img src="{{ $imagePath }}nk110-75933eb3-d85d-4093-aaab-7c450915f0e0-v2.jpeg">
+            <td height="312" style="font-size: 14px;">
+                <div style="width:600px; height:312px; background-color: rgb(241,233,227); text-align: center;">
+                    <img style="margin: 25px;max-height: 80px;" src="{{ url( '/storage/' . $template['small_logo'])}}"
+                         border="0"><br>
+                    <span
+                        style="font-size:50px; font-weight: bold; color: #333333;line-height: .75em;letter-spacing: -3px;">YOU'VE BEEN<br>RECOGNIZED</span>
+                    <hr style="border-top: 4px dashed {{ $template['theme_color'] }}; margin:40px;">
+                </div>
                 <p style="margin-left:20px; margin-right:20px;">
                     Dear {{ $contactFirstName }},
                 </p>
@@ -21,7 +28,7 @@ border-bottom:solid 1px;
             </td>
         </tr>
         <tr>
-            <td align="center" style="background-color:#ffffff; border:none;
+            <td align="center" style="border:none;
                           text-align:center; padding-bottom:4px;">
                 <a href="{{ $contactProgramHost0 }}" class="inf-track-23183"><img
                         src="{{ $imagePath }}nk110-edc07421-56e4-4b9b-b09b-584844e6843b-v2.png"

@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     const STATUS_PENDING_DEACTIVATION = 'Pending Deactivation';
     const STATUS_DEACTIVATED = 'Deactivated';
     const STATUS_LOCKED = 'Locked';
+    const STATUS_NEW = 'New';
 
     public $timestamps = true;
 
@@ -91,7 +92,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         // 'isAdmin',
         // 'isManager',
         // 'isParticipant',
-        'created_at',
+        //'created_at',
         'updated_at',
         'deleted_at',
     ];
@@ -168,9 +169,15 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         ->withTimestamps();
     }
 
-    public function readAvailableBalance( $program, $user )  {
+    public function readAvailableBalance( $program, $user = null )  {
         $program_id = self::extractId($program);
-        $user_id = self::extractId($user);
+        if( $user ) {
+            $user_id = self::extractId($user);
+        } else if ($this->id) {
+            $user_id = $this->id;
+            $user = $this;
+        } else $user_id = null;
+        
         if( !$program_id || !$user_id ) return;
         $journal_event_types = array (); // leave $journal_event_types empty to get all  - original comment
         if( gettype($program)!='object' ) {
@@ -181,10 +188,10 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         }
         if ($program->program_is_invoice_for_awards ()) {
 			// use points
-			$account_type = config('global.account_type_points_awarded');
+			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
 		} else {
 			// use monies
-            $account_type = config('global.account_type_monies_awarded');
+            $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
 		}
         return self::_read_balance( $user->account_holder_id, $account_type, $journal_event_types );
     }

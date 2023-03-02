@@ -7,7 +7,6 @@ use App\Models\FinanceType;
 use App\Models\MediumType;
 use App\Models\Currency;
 use App\Models\Account;
-use DB;
 
 class TransferMoniesService
 {

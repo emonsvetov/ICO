@@ -14,24 +14,26 @@ abstract class ReportServiceAbstract
     const SQL_LIMIT = 'limit';
     const SQL_OFFSET = 'offset';
 
+    const PROGRAM_ID = 'programId';
+    const CREATED_ONLY = 'createdOnly';
     const PROGRAMS = 'program_account_holder_ids';
     const AWARD_LEVEL_NAMES = "award_level_names";
     const EXPORT_CSV = 'exportToCsv';
     const MERCHANTS = 'merchants';
+    const MERCHANTS_ACTIVE = 'active';
 
-    /**
-     * The main key used to organize the return data. Change this in the subclass if it's different
-     */
-    const FIELD_ID = "account_holder_id";
+    const FIELD_REPORT_KEY = 'reportKey';
 
     protected array $params;
     protected array $table = [];
+    protected bool $isExport = false;
+
     /**
      * @var ReportHelper|null
      */
     protected $reportHelper;
 
-    public function __construct(array $params = [], array $services = [])
+    public function __construct(array $params = [])
     {
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
@@ -40,6 +42,10 @@ abstract class ReportServiceAbstract
         $this->params[self::SQL_OFFSET] = $params[self::SQL_OFFSET] ?? null;
         $this->params[self::EXPORT_CSV] = $params[self::EXPORT_CSV] ?? null;
         $this->params[self::MERCHANTS] = isset($params[self::MERCHANTS]) && is_array($params[self::MERCHANTS]) ? $params[self::MERCHANTS] : [];
+        $this->params[self::MERCHANTS_ACTIVE] = $params[self::MERCHANTS_ACTIVE] ?? null;
+        $this->params[self::FIELD_REPORT_KEY] = $params[self::FIELD_REPORT_KEY] ?? null;
+        $this->params[self::PROGRAM_ID] = $params[self::PROGRAM_ID] ?? null;
+        $this->params[self::CREATED_ONLY] = $params[self::CREATED_ONLY] ?? null;
 
         $this->reportHelper = new ReportHelper() ?? null;
     }
@@ -153,6 +159,7 @@ abstract class ReportServiceAbstract
 
     protected function getReportForCSV(): array
     {
+        $this->isExport = true;
         $this->params[self::SQL_LIMIT] = null;
         $this->params[self::SQL_OFFSET] = null;
         $data = $this->getTable();
@@ -172,7 +179,7 @@ abstract class ReportServiceAbstract
      */
     protected function getBaseSql(): Builder
     {
-        return DB::table();
+        return DB::table('');
     }
 
 }

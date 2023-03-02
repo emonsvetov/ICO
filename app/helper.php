@@ -257,3 +257,25 @@ if (! function_exists ( 'toSql' ))
 	}
 }
 
+if(!function_exists('getEntrataAcademicYear')) {
+	function getEntrataAcademicYear($date = "")
+	{
+		if(empty($date)){
+			$date = date('Y-m-d');
+		}
+		$fiscalYear = date('Y-09-01');		
+		if(date("m", strtotime($date)) < 9){
+			$year = date('Y')-1;
+			$fiscalYear = $year.'-09-01';	
+		}
+		return $fiscalYear;
+	}
+}
+if(!function_exists('compare_floats')) {
+    function compare_floats($a, $b) {
+        $epsilon = 0.00001;
+        if (abs ( $a - $b ) < $epsilon)
+            return 0;
+        return ($a > $b) ? - 1 : 1;
+    }
+}

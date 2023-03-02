@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\AccountType;
 use App\Models\Currency;
+use App\Models\Program;
 use App\Models\Posting;
+use App\Models\User;
 
 class Account extends BaseModel
 {
@@ -60,6 +62,8 @@ class Account extends BaseModel
         $currency_id
     ) {
 
+        // pr(func_get_args());
+
         $result = null;
 
         // GetSet Accounts
@@ -74,6 +78,8 @@ class Account extends BaseModel
             'currency_type_id' => $currency_id
         ], true);
 
+        // dump('$debit_account_id', $debit_account_id);
+
         $credit_account_type_id = AccountType::getIdByName($credit_account_type_name, true);
 
         // Credit Account - GetSet/Create Accounts
@@ -84,6 +90,8 @@ class Account extends BaseModel
             'medium_type_id' => $credit_medium_type_id,
             'currency_id' => $currency_id
         ], true);
+
+        // dump('$credit_account_id', $credit_account_id);
 
         $result['postings'] = Posting::createPostings([
             'journal_event_id' => $journal_event_id,
@@ -132,21 +140,5 @@ class Account extends BaseModel
 		}
 		return $result;
 
-	}
-
-    public static function read_available_balance_for_program( $program ) {
-        $account_type = AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE;
-		$journal_event_types = array (); // leave $journal_event_types empty to get all journal events
-		if ( $program->program_is_invoice_for_awards() ) {
-			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
-		}
-		return self::_read_balance ( $program->account_holder_id, $account_type, $journal_event_types );
-    }
-
-	private static function _read_balance($account_holder_id, $account_type, $journal_events = []) {
-		$credits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_events, 1 );
-		$debits = JournalEvent::read_sum_postings_by_account_and_journal_events ( ( int ) $account_holder_id, $account_type, $journal_events, 0 );
-		$bal = ( float ) (number_format ( ($credits->total - $debits->total), 2, '.', '' ));
-		return $bal;
 	}
 }

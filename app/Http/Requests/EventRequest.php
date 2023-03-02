@@ -37,10 +37,7 @@ class EventRequest extends FormRequest
             'is_anniversary_award'=> 'boolean|nullable',
             'award_message_editable'=> 'boolean|nullable',
             'ledger_code'=> 'numeric|nullable',
-            'email_template_id'=> 'sometimes|integer',
-            'custom_email_template' =>'sometimes|boolean',
-            'template_name'=> 'required_if:custom_email_template,true|string',
-            'email_template'=> 'required_if:custom_email_template,true|string',
+            'email_template_type_id'=> 'sometimes|integer'
         ];
     }
 
@@ -50,9 +47,8 @@ class EventRequest extends FormRequest
             'organization_id'=> 'mustExistInModel:Organization|use:id|hide:true|provided:true',
             'event_type_id'=> 'mustComeFromModel:EventType|matchWith:type|use:id',
             'event_icon_id'=> 'mustComeFromModel:EventIcon|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
-            'email_template_id'=> 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
             'post_to_social_wall'=> 'required|boolean',
-            'custom_email_template' =>'hide:true',
+            'email_template_type_id'=> 'mustComeFromModel:EmailTemplateType|matchWith:type|use:id'
         ];
     }
 }

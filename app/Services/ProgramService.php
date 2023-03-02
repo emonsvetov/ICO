@@ -4,9 +4,10 @@ namespace App\Services;
 
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
+use App\Services\ProgramTemplateService;
 use App\Models\Traits\IdExtractor;
+use App\Services\AccountService;
 use App\Services\UserService;
-use App\Models\Account;
 use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
@@ -23,17 +24,21 @@ class ProgramService
 
     private UserService $userService;
     private AccountService $accountService;
+    private ProgramTemplateService $programTemplateService;
+    private TransferMoniesService $transferMoniesService;
     private ProgramsTransactionFeeService $programsTransactionFeeService;
 
     public function __construct(
         UserService $userService,
         AccountService $accountService,
         TransferMoniesService $transferMoniesService,
+        ProgramTemplateService $programTemplateService,
         ProgramsTransactionFeeService $programsTransactionFeeService
     ) {
         $this->userService = $userService;
         $this->accountService = $accountService;
         $this->transferMoniesService = $transferMoniesService;
+        $this->programTemplateService = $programTemplateService;
         $this->programsTransactionFeeService = $programsTransactionFeeService;
     }
 
@@ -368,13 +373,13 @@ class ProgramService
     public function create($data)
     {
         if (isset($data['status'])) { //If status present in "string" format
-            $data['status_id'] = Program::getStatusIdByName($data['status']); 
+            $data['status_id'] = Program::getStatusIdByName($data['status']);
             unset($data['status']);
         }
         else if(empty($data['status_id'])) //if, the status_id also not set
         {
             //Set default status
-            $data['status_id'] = Program::getIdStatusActive(); 
+            $data['status_id'] = Program::getIdStatusActive();
         }
         return Program::createAccount($data);
     }
@@ -395,7 +400,7 @@ class ProgramService
         }
         if( empty($data['status_id']) )
         {   //set default status to "Active"
-            $data['status_id'] = Program::getIdStatusActive(); 
+            $data['status_id'] = Program::getIdStatusActive();
         }
         if($program->update($data)) {
             if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
@@ -463,7 +468,7 @@ class ProgramService
             $topLevelProgram = $program;
         }
         $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
-        $balance = Account::read_available_balance_for_program ( $program );
+        $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
         return
             [
                 'program' => $program,
@@ -477,7 +482,7 @@ class ProgramService
         if(sizeof($data["amounts"]) > 0)    {
             $result = [];
             foreach($data["amounts"] as $programId => $amount)  {
-                $balance = Account::read_available_balance_for_program ( $program );
+                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
                 if ($amount > $balance) {
                     throw new \RuntimeException ( "Account balance has insufficient funds to transfer $" . $amount, 400 );
                 }
@@ -487,7 +492,7 @@ class ProgramService
                 $result[$programId] = $this->transferMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
             }
             if( sizeof($data["amounts"]) == sizeof($result))    {
-                $balance = Account::read_available_balance_for_program ( $program );
+                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
                 return ['success'=>true, 'transferred' => $result, 'balance' => $balance];
             }
         }
@@ -510,7 +515,7 @@ class ProgramService
         float $amount,
         array $extraArgs = []
     ): bool {
-        if ( ! $program->programIsInvoiceForAwards()) {
+        if ( $program->programIsInvoiceForAwards() ) {
             // If we invoice for awards, the program will always pay later
             return true;
         } else {
@@ -530,6 +535,7 @@ class ProgramService
 
             $total_awards = $amount * count($userIds);
             $program_balance = $this->readAvailableBalance($program);
+
             if (isset($extraArgs['pending_amount']) && $extraArgs['pending_amount'] > 0) {
                 $program_balance = $program_balance - floatval($extraArgs['pending_amount']);
             }
@@ -545,12 +551,7 @@ class ProgramService
      */
     public function readAvailableBalance(Program $program): float
     {
-        if ($program->programIsInvoiceForAwards()) {
-            $account_type = config('global.account_type_points_awarded');
-        } else {
-            $account_type = config('global.account_type_monies_awarded');
-        }
-        return $this->accountService->readBalance($program->account_holder_id, $account_type, []);
+        return $this->accountService->readAvailableBalanceForProgram($program);
     }
     /**
      * Returns the list of billable descedents under a given program
@@ -582,7 +583,6 @@ class ProgramService
         }
         return $billable_programs;
     }
-
     public function listStatus()
     {
         return Status::where('context', 'Programs')->get();
@@ -591,5 +591,10 @@ class ProgramService
     public function updateStatus($validated, $program)
     {
         return $program->update( ['status_id' => $validated['program_status_id']] );
+    }
+
+    public function getTemplate(Program $program)
+    {
+        return $this->programTemplateService->getTemplate($program);
     }
 }

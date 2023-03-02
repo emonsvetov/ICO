@@ -57,7 +57,7 @@ class UserRequest extends FormRequest
             'roles' => 'sometimes|required|array', // program specific roles
             'roles.*' => 'sometimes|required|integer',
             'avatar' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
-
+            'send_invite' => 'sometimes|boolean',
         ];
     }
 
@@ -94,6 +94,13 @@ class UserRequest extends FormRequest
             'type' => 'mustComeFromModel:CsvImportType|matchWith:type|use:id|filter:context,=,Users',
             'roles' => 'mustComeFromModel:Role|matchWith:name|use:id|filterConstant:organization_id,=,organization_id|filterOrNull:organization_id|dataType:array',
             'mail' => 'nullable|boolean',
+        ];
+    }
+
+    public function attributes()
+    {
+        return [
+            'dob' => 'Birthday',
         ];
     }
 }

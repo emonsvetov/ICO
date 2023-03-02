@@ -3,10 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\BaseModel;
 
-class JournalEventType extends Model
+class JournalEventType extends BaseModel
 {
     use HasFactory;
 
@@ -47,23 +46,20 @@ class JournalEventType extends Model
     const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE = 'Program pays for deposit fee';
     const JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_MONIES_PENDING = 'Program refunds for monies pending';
     const JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE = 'Charge program for convenience fee';
+    const JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS = 'Award credit reclaim points';
+    const JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES = 'Award credit reclaim monies';
+    const JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS = 'Reclaim peer points';
+    const JOURNAL_EVENT_TYPES_ALLOCATE_PEER_POINTS_TO_RECIPIENT = 'Allocate peer points to recipient';
+    const JOURNAL_EVENT_TYPES_RECLAIM_PEER_MONIES = 'Reclaim peer monies';
 
-
-    public static function getIdByType( $type, $insert = false ) {
-
-        $first = self::where('type', $type)->first();
-        if( $first )    {
-            return $first->id;
-        }
-        if( $insert )    {
-            return self::insertGetId([
-                'type'=>$type
-            ]);
-        }
-    }
 
     public static function getTypeAllocatePeerPoints(): int
     {
         return (int)self::getIdByType(config('global.journal_event_type_allocate_peer_points'));
+    }
+
+    public static function getIdByTypeReclaimPeerPoints(): int
+    {
+        return (int)self::getIdByType(self::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS);
     }
 }

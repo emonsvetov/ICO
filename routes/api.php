@@ -71,6 +71,7 @@ Route::group([
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
         Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
 });
 
@@ -241,6 +242,32 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/redeemable', [App\Http\Controllers\API\ProgramMerchantController::class, 'redeemable'])->middleware('can:viewRedeemable,App\ProgramMerchant,organization,program,merchant');
 
     //ProgramUser routes
+    Route::get('/v1/organization/{organization}/program/{program}/digital-media-type',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'index'])->middleware('can:viewAny,App\ProgramMediaType,organization,program,user');
+
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
+        [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
+//
+//    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
+//        [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
+//
+//    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}/giftcode',
+//        [App\Http\Controllers\API\ProgramMerchantController::class, 'giftcodes'])->name('api.v1.program.merchant.giftcodes')->middleware('can:viewGiftcodes,App\ProgramMerchant,organization,program,merchant');
+    Route::post('/v1/organization/{organization}/program/{program}/digital-media',
+        [App\Http\Controllers\API\ProgramMediaController::class, 'store'])->middleware('can:add,App\ProgramMedia,organization,program');
+
+    Route::delete('/v1/organization/{organization}/program/{program}/programMedia/{programMedia}/digital-media',
+    [App\Http\Controllers\API\ProgramMediaController::class, 'delete'])->middleware('can:remove,App\ProgramMedia,organization,program');
+
+
+    Route::post('/v1/organization/{organization}/program/{program}/digital-media/upload',
+        [App\Http\Controllers\API\ProgramMediaController::class, 'upload'])->middleware('can:add,App\ProgramMedia,organization,program');
+
 
     Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,organization,program');
 
@@ -300,10 +327,14 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //EmailTemplate
 
+    //Route::get('/v1/emailtemplate',[App\Http\Controllers\API\EmailTemplateController::class, 'index'])->middleware('can:viewAny,App\EmailTemplate');
+
     Route::get('/v1/organization/{organization}/program/{program}/emailtemplate',[App\Http\Controllers\API\EmailTemplateController::class, 'index'])->middleware('can:viewAny,App\EmailTemplate,organization,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/emailtemplate/{emailTemplate}',[App\Http\Controllers\API\EmailTemplateController::class, 'update'])->middleware('can:update,App\EmailTemplate,organization,program,emailTemplate');
-    
+
+    Route::get('/v1/organization/{organization}/program/{program}/emailtemplate/typeList',[App\Http\Controllers\API\EmailTemplateController::class, 'typeList'])->middleware('can:listType,App\EmailTemplate,organization,program');
+
     //Award
 
     Route::post('/v1/organization/{organization}/program/{program}/award',[App\Http\Controllers\API\AwardController::class, 'store'])->middleware('can:create,App\Award,organization,program');
@@ -318,6 +349,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/balance',[App\Http\Controllers\API\ProgramUserController::class, 'readBalance'])->middleware('can:readBalance,App\ProgramUser,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/event-history',[App\Http\Controllers\API\ProgramUserController::class, 'readEventHistory'])->middleware('can:readEventHistory,App\ProgramUser,organization,program,user');
+
+    // Reclaim
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\Award,organization,program,user');
+
+    Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
+
+    // Participant
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
+
+    // Giftcodes
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/gift-codes',[App\Http\Controllers\API\ProgramParticipantGiftCodeController::class, 'index'])->middleware('can:viewAny,App\ProgramParticipantGiftCode,organization,program,user');
+
     //Statuses
 
     // Route::get('/v1/status',[App\Http\Controllers\API\StatusController::class, 'index'])->middleware('can:viewAny,App\Status');
@@ -328,11 +374,18 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // ProgramTemplate
 
+    Route::get('/v1/organization/{organization}/program/{program}/template',[App\Http\Controllers\API\ProgramTemplateController::class, 'getTemplate'])->middleware('can:getTemplate,App\ProgramTemplate,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'show'])->middleware('can:view,App\ProgramTemplate,organization,program,programTemplate')->whereNumber('programTemplate');
+
+    Route::get('/v1/organization/{organization}/program/{program}/template/{name}',[App\Http\Controllers\API\ProgramTemplateController::class, 'showByName'])->middleware('can:view,App\ProgramTemplate,organization,program,programTemplate')->whereAlphaNumeric('name');
+
     Route::post('/v1/organization/{organization}/program/{program}/template',[App\Http\Controllers\API\ProgramTemplateController::class, 'store'])->middleware('can:create,App\ProgramTemplate,organization,program');
 
-    Route::put('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'update'])->middleware('can:update,App\ProgramTemplate,organization,program');
+    Route::put('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'update'])->middleware('can:update,App\ProgramTemplate,organization,program,programTemplate');
 
-	//Manager invite participant
+    Route::delete('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'delete'])->middleware('can:delete,App\ProgramTemplate,organization,program,programTemplate');
+
     Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/inviteResend', [App\Http\Controllers\API\InvitationController::class, 'resend'])->middleware('can:resend,App\Invitation,organization,program');
 
@@ -348,6 +401,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::delete('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}',[App\Http\Controllers\API\LeaderboardController::class, 'delete'])->middleware('can:delete,App\Leaderboard,organization,program,leaderboard');
 
+    // Leaderboard Leaders
+    Route::get('/v1/organization/{organization}/program/{program}/leaderboard-leaders',[App\Http\Controllers\API\LeaderboardLeadersController::class, 'index'])->middleware('can:viewAny,App\LeaderboardLeaders,organization,program');
+
     // LeaderboardType
 
     Route::get('/v1/organization/{organization}/program/{program}/leaderboardType',[App\Http\Controllers\API\LeaderboardTypeController::class, 'index'])->middleware('can:viewAny,App\LeaderboardType,organization,program');
@@ -359,6 +415,28 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/assignableEvent',[App\Http\Controllers\API\LeaderboardEventController::class, 'assignable'])->middleware('can:viewAny,App\LeaderboardEvent,organization,program,leaderboard');
 
     Route::patch('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/event',[App\Http\Controllers\API\LeaderboardEventController::class, 'assign'])->middleware('can:assign,App\LeaderboardEvent,organization,program,leaderboard');
+
+    Route::get('/v1/goalplantype',[App\Http\Controllers\API\GoalPlanTypeController::class, 'index'])->middleware('can:viewAny,App\GoalPlanType');
+
+    // Goal plans
+
+   Route::post('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'store'])->middleware('can:create,App\GoalPlan,organization,program');
+    //->name('api.v1.organization.program.goalplan.store')
+   Route::get('/v1/organization/{organization}/program/{program}/goalplan', [App\Http\Controllers\API\GoalPlanController::class, 'index'])->name('api.v1.organization.program.goalplan.index')->middleware('can:viewAny,App\GoalPlan,organization,program');
+
+   Route::get('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'show'])->name('api.v1.organization.program.goalplan.show')->middleware('can:view,App\GoalPlan,organization,program,goalPlan');
+
+   Route::put('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'update'])->name('api.v1.organization.program.goalplan.update')->middleware('can:update,App\GoalPlan,organization,program,goalPlan');
+   
+   Route::delete('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'destroy'])->middleware('can:delete,App\GoalPlan,organization,program,goalPlan');
+
+    // Program Email templates
+
+    Route::get('/v1/organization/{organization}/program/{program}/programemailtemplate', [App\Http\Controllers\API\ProgramEmailTemplateController::class, 'index'])->name('api.v1.organization.program.programemailtemplate.viewAny')->middleware('can:viewAny,App\ProgramEmailTemplate,organization,program');
+
+    // Expiration rules
+
+    Route::get('/v1/expirationrule',[App\Http\Controllers\API\ExpirationRuleController::class, 'index'])->middleware('can:viewAny,App\ExpirationRule');
 
     // Invoice
     Route::get('/v1/organization/{organization}/program/{program}/invoice',[App\Http\Controllers\API\InvoiceController::class, 'index'])->middleware('can:viewAny,App\Invoice,organization,program');
@@ -392,6 +470,52 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);
 
+    //Team Routes
+    /*Route::post('/v1/organization/{organization}/program/{program}/team',
+    [App\Http\Controllers\API\TeamController::class, 'store'])->middleware('can:create,App\Team,organization,program');*/
+    Route::post('/v1/organization/{organization}/program/{program}/team', [App\Http\Controllers\API\TeamController::class, 'store'])->middleware('can:create,App\Team,organization,program');
+
+     Route::get('/v1/organization/{organization}/program/{program}/team',
+     [App\Http\Controllers\API\TeamController::class, 'index'])->name('api.v1.team.index')->middleware('can:viewAny,App\Team,organization,program');
+
+     Route::get('/v1/organization/{organization}/program/{program}/team/{team}',
+     [App\Http\Controllers\API\TeamController::class, 'show'])->name('api.v1.team.show')->middleware('can:view,App\Team,organization,program,team');
+     Route::put('/v1/organization/{organization}/program/{program}/team/{team}',
+     [App\Http\Controllers\API\TeamController::class, 'update'])->name('api.v1.team.update')->middleware('can:update,App\Team,organization,program,team');
+     Route::delete('/v1/organization/{organization}/program/{program}/team/{team}',
+     [App\Http\Controllers\API\TeamController::class, 'delete'])->name('api.v1.team.delete')->middleware('can:delete,App\Team,organization,program,team');
+
+    //Goal plans
+     Route::get('/v1/organization/{organization}/program/{program}/read-active-goalplans-by-program', [App\Http\Controllers\API\GoalPlanController::class, 'readActiveByProgram'])->name('api.v1.organization.program.goalplan.readActiveByProgram')->middleware('can:readActiveByProgram,App\GoalPlan,organization,program');
+     //Referrals 
+     Route::post('/v1/organization/{organization}/program/{program}/referral-notification-recipient', [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'store'])->middleware('can:create,App\ReferralNotificationRecipient,organization,program');
+
+     Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient',
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'index'])->name('api.v1.referralNotificationRecipient.index')->middleware('can:viewAny,App\ReferralNotificationRecipient,organization,program');
+
+     Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'show'])->name('api.v1.referralNotificationRecipient.show')->middleware('can:view,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
+
+     Route::put('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'update'])->name('api.v1.referralNotificationRecipient.update')->middleware('can:update,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
+
+     Route::delete('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
+     [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'delete'])->name('api.v1.referralNotificationRecipient.delete')->middleware('can:delete,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
+    
+    //User goal
+    Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');
+     
+    //External Callback
+
+    Route::get('/v1/external-callback',[App\Http\Controllers\API\ExternalCallbackController::class, 'index'])->middleware('can:viewAny,App\ExternalCallback');
+
+    Route::get('/v1/organization/{organization}/program/{program}/getGoalMetProgramCallbacks',
+     [App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalMetProgramCallbacks'])->name('api.v1.getGoalMetProgramCallbacks')->middleware('can:getGoalMetProgramCallbacks,App\ExternalCallback,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/getGoalExceededProgramCallbacks',
+     [App\Http\Controllers\API\ExternalCallbackController::class, 'getGoalExceededProgramCallbacks'])->name('api.v1.getGoalExceededProgramCallbacks')->middleware('can:getGoalExceededProgramCallbacks,App\ExternalCallback,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/user/{user}/ReclaimPeerPoints',[App\Http\Controllers\API\ProgramUserController::class, 'ReclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\ProgramUser,organization,program,user');
 
     Route::group([
         'prefix' => '/v1/organization/{organization}/program/{program}',
@@ -421,3 +545,4 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
 });
+

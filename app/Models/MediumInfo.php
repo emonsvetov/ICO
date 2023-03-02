@@ -18,6 +18,11 @@ class MediumInfo extends BaseModel
         return $this->hasOne(Posting::class, 'medium_info_id');
     }
 
+    public function merchant()
+    {
+        return $this->hasOne(Merchant::class, 'id', 'merchant_id');
+    }
+
     public static function isTest()
     {
         return app()->environment('production') ? false : true;
@@ -88,6 +93,27 @@ class MediumInfo extends BaseModel
             ->orderBy('redemption_value', 'ASC');
 
         return $query->get();
+    }
+
+    public static function getListRedeemedByParticipant(int $userId, bool $obfuscate = true, int $offset = 0, int $limit = 10)
+    {
+        $query = MediumInfo::with('merchant')
+        ->select(
+            DB::raw("
+                medium_info.*
+            "));
+        if($obfuscate){
+            $query->addSelect(
+                DB::raw("upper(substring(MD5(RAND()), 1, 20)) as `code`")
+            );
+        }
+        $query->where('redeemed_user_id', '=', $userId);
+
+        try {
+            return $limit ? $query->limit($limit)->offset($offset)->get() : $query->get();
+        } catch (\Exception $e) {
+            throw new \Exception('DB query failed.', 500);
+        }
     }
 
     /**

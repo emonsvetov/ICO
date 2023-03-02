@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\DomainRequest;
 use App\Services\DomainService;
 use App\Models\Organization;
+use App\Services\ProgramService;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Str;
 use App\Models\Domain;
@@ -114,7 +115,7 @@ class DomainController extends Controller
         return response([ 'secret_key' => $secret_key ]);
     }
 
-    public function getProgram(DomainService $domainService)    {
+    public function getProgram(DomainService $domainService, ProgramService $programService)    {
 
         $domainName = $domainService->getDomainName();
         // $domainHost = $domainService->getDomainHost();
@@ -136,7 +137,7 @@ class DomainController extends Controller
             return response(['errors' => 'No program found for the domain'], 422);
         }
 
-        $program->load('template');
+        $program->template = $programService->getTemplate($program);
 
         // return Domain::has('programs', 'programs.id', '=', 'model_has_roles.program_id')
         // ->join('domain_program', 'domain_program.program_id', '=', 'programs.id')
