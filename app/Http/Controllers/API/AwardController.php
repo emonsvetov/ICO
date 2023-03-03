@@ -7,12 +7,8 @@ use App\Http\Requests\ReclaimPeerPointsRequest;
 use App\Http\Requests\AwardRequest;
 use App\Models\Organization;
 use App\Models\Program;
-use App\Models\Award;
 use App\Models\User;
-use App\Services\UserService;
 use App\Services\AwardService;
-use App\Services\Program\ProgramUserService;
-use Exception;
 
 class AwardController extends Controller
 {
@@ -20,13 +16,9 @@ class AwardController extends Controller
         AwardRequest $request,
         Organization $organization,
         Program $program,
-        AwardService $awardService,
-        ProgramUserService $programUserService,
-        UserService $userService,
+        AwardService $awardService
     ) {
         try {
-            return $userService->sendActivationReminderToParticipants();
-            exit;
             /** @var User $awarder */
             $awarder = auth()->user();
             $newAward = $awardService->create($program, $organization, $awarder, $request->validated());
