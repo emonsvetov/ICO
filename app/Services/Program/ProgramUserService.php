@@ -2,10 +2,13 @@
 
 namespace App\Services\Program;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Events\UserInvited;
 use App\Models\Program;
 use App\Models\User;
 use App\Models\Role;
+use Illuminate\Database\Eloquent\Collection;
 
 class ProgramUserService
 {
