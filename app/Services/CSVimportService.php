@@ -13,6 +13,7 @@ class CSVimportService
 
     public $errors;
     public $supplied_constants;
+    public $currentRowData;
     /*
     1. open file
     2. read a line
@@ -94,6 +95,7 @@ class CSVimportService
                         #instantiate the form request
                         $requestClassPath = "App\Http\Requests\\" . $formRequest;
                         $formRequestClass = new $requestClassPath;
+                        $formRequestRules = $formRequestClass->rules();
 
                         if ( method_exists($formRequestClass, 'importRules') )
                         {
@@ -109,6 +111,7 @@ class CSVimportService
                         
                         foreach ($fieldsToMap as $dbField => $csvField)
                         {                    
+                            
                             $csvFieldValue = isset($headers[$csvField]) ? trim($filedata[$headers[$csvField]]) : NULL;
 
                             if ( !empty( $fieldsWithImportRules[$dbField] ) )
@@ -120,7 +123,9 @@ class CSVimportService
                             {
                                 # Each [table][database field] = csv file value
                                 $saveData[$formRequest][$line][$dbField] =  ($csvFieldValue !== '') ? $csvFieldValue : NULL;
-                            }   
+                            } 
+
+                            $this->currentRowData[$dbField] = $saveData[$formRequest][$line][$dbField];
                         }
 
                         # Validate the data against the form request. 
@@ -132,8 +137,10 @@ class CSVimportService
                         // {
                         //     $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestClass->rules() );
                         // }
+
+                        $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
                         
-                        $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestClass->rules() );
+                        $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestRules );
 
                         if ($validator->fails()) 
                         {
@@ -213,6 +220,20 @@ class CSVimportService
         return $saveData;
 
     }
+
+
+    public function filterRules($rules, $importRules)
+    {
+        foreach ($importRules as $key => $importRule)
+        {
+            if ( str_contains($importRule, 'create:true') )
+            {
+                unset($rules[$key]);
+            }
+        }
+        return $rules;
+    }
+
 
     public function getImportRule($formRequest, $importRule, $csvValue, $dbField, $line)
     {
@@ -340,8 +361,12 @@ class CSVimportService
             $query = $query->where($where[0], $where[1], $this->supplied_constants[$where[2]]);
         }
 
-        $query = $query->where($matchCondition[0], $matchCondition[1]);
-    
+        // print_r($matchCondition);
+        if (!empty($matchCondition))
+        {
+            $query = $query->where($matchCondition[0], $matchCondition[1]);
+        }
+        
         $allMatchWith = $query->first();
 
         return is_null($allMatchWith) ? null : $allMatchWith[$use];
@@ -389,6 +414,12 @@ class CSVimportService
             elseif ( $rule[0] == 'filterOrNull' )
             {
                 $orWhereNullConditions[] = $rule[1];
+            }
+            elseif ( $rule[0] == 'filterCsvField' )
+            {
+                $filter = explode(',', $rule[1]);
+                $filter[2] = $this->currentRowData[$filter[2]];
+                $whereConditions[] = $filter;
             }
             
         }

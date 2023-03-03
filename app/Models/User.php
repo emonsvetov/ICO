@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     const STATUS_PENDING_DEACTIVATION = 'Pending Deactivation';
     const STATUS_DEACTIVATED = 'Deactivated';
     const STATUS_LOCKED = 'Locked';
+    const STATUS_NEW = 'New';
 
     public $timestamps = true;
 
