@@ -120,7 +120,7 @@ class AccountService
      */
 
     public static function readExpiredTotalForParticipant(
-        Program $program, 
+        Program $program,
         User $user //participant
     ): float
     {
@@ -138,7 +138,7 @@ class AccountService
     }
 
     public static function readReclaimedTotalForParticipant(
-        Program $program, 
+        Program $program,
         User $user
     )
     {
@@ -179,7 +179,7 @@ class AccountService
     }
 
     public static function readRedeemedTotalForParticipant(
-        Program $program, 
+        Program $program,
         User $user //participant
     )
     {
@@ -196,7 +196,7 @@ class AccountService
     }
 
     public static function readAvailableBalanceForParticipant(
-        Program $program, 
+        Program $program,
         User $user
     )
     {
@@ -307,7 +307,7 @@ class AccountService
         } catch (Exception $e) {
             throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
-	
+
 	}
     /**
      * Alias for "readListParticipantPostingsByAccountAndJournalEvents"
@@ -523,18 +523,18 @@ class AccountService
     }
 
     /**
-	 * 
+	 *
 	 * @author BCM 20150203
 	 *         Returns the total amount this participant has ever been awarded
-	 * @param int $program_account_holder_id        
-	 * @param int $participant_account_holder_id        
+	 * @param int $program_account_holder_id
+	 * @param int $participant_account_holder_id
 	 * @throws InvalidArgumentException
 	 * @return number */
 	public static function read_awarded_total_for_participant(Program $program, User $participant) {
 		$journal_event_types = array ();
 		$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
 		if ($program->programIsInvoiceForAwards( $program )) { //TO DO
-			// use 
+			// use
 			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
 			$journal_event_types [] = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
 		} else {
@@ -544,11 +544,11 @@ class AccountService
 		}
 		// return $this->_read_balance($participant_account_holder_id, $account_type, $journal_event_types);
 		return self::_read_sum_credits ($participant->account_holder_id, $account_type, $journal_event_types );
-	
+
 	}
 
 	/**
-	 * 
+	 *
 	 * @author BCM - 20150203
 	 *         This method returns the sum of all credits to the given account, using the given journal event.
 	 *         Leave journal events to get all credits to the given account.
@@ -558,7 +558,7 @@ class AccountService
             $account_holder_id, $account_type, $journal_event_types, 1
         );
 		return ( float ) ($credits->total);
-	
+
 	}
 
     /**
@@ -569,7 +569,7 @@ class AccountService
     }
     //$A
     public static function readRedeemedTotalPeerPointsForParticipant(
-        Program $program, 
+        Program $program,
         User $user //participant
     )
     {
@@ -588,7 +588,7 @@ class AccountService
     }
     //$A
     public static function readReclaimedTotalPeerPointsForParticipant(
-        Program $program, 
+        Program $program,
         User $user
     )
     {

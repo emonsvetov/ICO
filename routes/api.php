@@ -26,6 +26,13 @@ Route::post('/v1/organization/{organization}/userimport', [App\Http\Controllers\
 Route::get('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'index']);
 Route::get('/v1/organization/{organization}/userimport/{csvImport}', [App\Http\Controllers\API\UserImportController::class, 'show']);
 
+Route::post('/v1/organization/{organization}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
+Route::post('/v1/organization/{organization}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
+
+// Route::post('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'addAwardUserFileImport']);
+// Route::get('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'index']);
+// Route::get('/v1/organization/{organization}/addawarduserimport/{csvImport}', [App\Http\Controllers\API\AddAwardUserImportController::class, 'show']);
+
 Route::post('/v1/organization/{organization}/eventimportheaders', [App\Http\Controllers\API\EventImportController::class, 'eventHeaderIndex']);
 Route::post('/v1/organization/{organization}/eventimport', [App\Http\Controllers\API\EventImportController::class, 'eventFileImport']);
 Route::get('/v1/organization/{organization}/eventimport', [App\Http\Controllers\API\EventImportController::class, 'index']);
@@ -35,6 +42,8 @@ Route::post('/v1/organization/{organization}/programimportheaders', [App\Http\Co
 Route::post('/v1/organization/{organization}/programimport', [App\Http\Controllers\API\ProgramImportController::class, 'programFileImport']);
 Route::get('/v1/organization/{organization}/programimport', [App\Http\Controllers\API\ProgramImportController::class, 'index']);
 Route::get('/v1/organization/{organization}/programimport/{csvImport}', [App\Http\Controllers\API\ProgramImportController::class, 'show']);
+
+
 
 Route::get('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'index'])->name('api.v1.event_icons.index');
 Route::post('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'store'])->name('api.v1.event_icons.store');
@@ -418,7 +427,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
    Route::get('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'show'])->name('api.v1.organization.program.goalplan.show')->middleware('can:view,App\GoalPlan,organization,program,goalPlan');
 
    Route::put('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'update'])->name('api.v1.organization.program.goalplan.update')->middleware('can:update,App\GoalPlan,organization,program,goalPlan');
-   
+
    Route::delete('/v1/organization/{organization}/program/{program}/goalplan/{goalPlan}', [App\Http\Controllers\API\GoalPlanController::class, 'destroy'])->middleware('can:delete,App\GoalPlan,organization,program,goalPlan');
 
     // Program Email templates
@@ -443,6 +452,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/invoice/{invoice}/pay',[App\Http\Controllers\API\InvoiceController::class, 'paySubmit'])->middleware('can:pay,App\Invoice,organization,program,invoice');
 
     Route::get('/v1/organization/{organization}/program/{program}/payments',[App\Http\Controllers\API\ProgramController::class, 'getPayments'])->middleware('can:listPayments,App\Program,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/balance',[App\Http\Controllers\API\ProgramController::class, 'getBalance'])->middleware('can:viewBalance,App\Program,organization,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/payments',[App\Http\Controllers\API\ProgramController::class, 'submitPayments'])->middleware('can:updatePayments,App\Program,organization,program');
 
@@ -478,7 +489,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Goal plans
      Route::get('/v1/organization/{organization}/program/{program}/read-active-goalplans-by-program', [App\Http\Controllers\API\GoalPlanController::class, 'readActiveByProgram'])->name('api.v1.organization.program.goalplan.readActiveByProgram')->middleware('can:readActiveByProgram,App\GoalPlan,organization,program');
-     //Referrals 
+     //Referrals
      Route::post('/v1/organization/{organization}/program/{program}/referral-notification-recipient', [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'store'])->middleware('can:create,App\ReferralNotificationRecipient,organization,program');
 
      Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient',
@@ -492,10 +503,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
      Route::delete('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'delete'])->name('api.v1.referralNotificationRecipient.delete')->middleware('can:delete,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
-    
+
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');
-     
+
     //External Callback
 
     Route::get('/v1/external-callback',[App\Http\Controllers\API\ExternalCallbackController::class, 'index'])->middleware('can:viewAny,App\ExternalCallback');

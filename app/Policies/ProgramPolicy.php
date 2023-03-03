@@ -89,6 +89,13 @@ class ProgramPolicy
         return $user->can('program-list-payments');
     }
 
+    public function viewBalance(User $user, Organization $organization, Program $program)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->isManagerToProgram( $program ) || $user->can('program-view-balance');
+    }
+
     public function updatePayments(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
@@ -108,8 +115,8 @@ class ProgramPolicy
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
         return $user->can('program-transfer-monies');
-    }    
-    
+    }
+
     public function listStatus(User $user, Organization $organization)
     {
         if( !$this->__preAuthCheck($user, $organization) ) return false;

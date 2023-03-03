@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Services\AccountService;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\ProgramPaymentReverseRequest;
 use App\Http\Requests\ProgramTransferMoniesRequest;
@@ -38,7 +39,10 @@ class ProgramController extends Controller
         {
             $newProgram = $programService->create(
                 $request->validated() +
-                ['organization_id' => $organization->id]
+                [
+                    'organization_id' => $organization->id,
+                    'deposit_fee' => 3,
+                ]
             );
         }
         else
@@ -123,4 +127,10 @@ class ProgramController extends Controller
         $result = $programService->submitTransferMonies($program, $request->validated());
         return response($result);
     }
+
+    public function getBalance(Organization $organization, Program $program, AccountService $accountService)  {
+        $balance = $accountService->readAvailableBalanceForProgram ( $program );
+        return response($balance);
+    }
+
 }
