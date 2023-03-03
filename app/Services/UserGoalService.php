@@ -252,7 +252,7 @@ class UserGoalService
 			'ug.updated_at',
 			'ug.modified_by',
 			'ug.deleted',
-			//'ug.iterations',
+			'ug.iterations',
 		]);
 		$query->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id');
 		$query->join('user_goals AS ug', 'ug.goal_plan_id', '=', 'gp.id');
