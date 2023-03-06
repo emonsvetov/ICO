@@ -67,9 +67,11 @@ class GoalPlanRequest extends FormRequest
                 if(!empty($achieved_event)) 
                     $achieved_event->load('eventType');
                 if($request['goal_plan_type_id'] == $recog_type_id) {
-                    if($achieved_event->eventType->id != EventType::getIdByTypeBadge()) {
-                        $customMessage="Event type must be badge";
-                        return false;
+                    if(!empty($achieved_event)) {
+                        if($achieved_event->eventType->id != EventType::getIdByTypeBadge()) {
+                            $customMessage="Event type must be badge";
+                            return false;
+                        }
                     }
                 }
                 
@@ -145,44 +147,43 @@ class GoalPlanRequest extends FormRequest
     public function rules()
     {
         return [
-           // 'name' => ['required|string', Rule::unique('goal_plans', 'name')->ignore($this->goal_plans)],
-            'next_goal_id'=>'integer|sometimes',
-            'previous_goal_id'=>'integer|sometimes', 
+            'next_goal_id'=>'integer|sometimes|nullable',
+            'previous_goal_id'=>'integer|sometimes|nullable', 
             'program_id'=>'required|integer',
             'organization_id'=>'required|integer',
             'name'=>[
                 "required",
-                Rule::unique('goal_plans', 'name')->ignore($this->goalplan)
+                Rule::unique('goal_plans', 'name')->ignore($this->goalPlan)
             ],
             //'required|string|unique:goal_plans',
             'goal_measurement_label'=>'required|string',
             'goal_plan_type_id'=>'required|integer',
             'state_type_id'=>'sometimes|integer',
-            'default_target'=>'required|numeric',
+            'default_target'=>'required|numeric|gt:0',
             //'email_template_id'=>'integer',
-            'notification_body'=>'string',
+            'notification_body'=>'string|nullable',
             'achieved_callback_id'=>'string',
             'exceeded_callback_id'=>'string',
             'achieved_event_id'=>'sometimes|integer|achieved_event_type_standard|achieved_event_type_badge',
             //'exceeded_event_id'=>'required_if:goal_plan_type_id,1',//|integer', //required if sales goal (id-1)
             'exceeded_event_id'=>'required_if:goal_plan_type_id,1|exceeded_event_type_check',
             'automatic_progress'=> 'required|boolean',
-            'automatic_frequency'=>'required_if:automatic_progress,1',//|string',
-            'automatic_value'=>'required_if:automatic_progress,1',//|integer',
+            'automatic_frequency'=>'nullable|sometimes|string|required_if:automatic_progress,1',//|string',
+            'automatic_value'=>'nullable|integer|required_if:automatic_progress,1|min:0',//|integer',
             'expiration_rule_id'=>'required|integer',
-            'custom_expire_offset'=>'required_if:expiration_rule_id,4',//|integer', //if expiration_rule_id is custom
-            'custom_expire_units'=>'required_if:expiration_rule_id,4',//|string', //if expiration_rule_id is custom 
-            'annual_expire_month'=>'required_if:expiration_rule_id,5',//|integer', //if expiration_rule_id is annual
-            'annual_expire_day'=> 'required_if:expiration_rule_id,5',//|integer',  //if expiration_rule_id is annual integer
+            'custom_expire_offset'=>'nullable|sometimes|integer|required_if:expiration_rule_id,4|gt:0',//|integer', //if expiration_rule_id is custom
+            'custom_expire_units'=>'sometimes|string|required_if:expiration_rule_id,4|nullable',//|string', //if expiration_rule_id is custom 
+            'annual_expire_month'=>'sometimes|integer|required_if:expiration_rule_id,5|nullable',//|integer', //if expiration_rule_id is annual
+            'annual_expire_day'=> 'sometimes|integer|required_if:expiration_rule_id,5|nullable',//|integer',  //if expiration_rule_id is annual integer
             'date_begin'=> 'required|date_format:Y-m-d',
             'date_end'=>'required_if:expiration_rule_id,6|date_format:Y-m-d|after:date_begin', //if expiration_rule_id is specific date
-            'factor_before'=>'required_if:goal_plan_type_id,1',//|numeric',
-            'factor_after'=>'required_if:goal_plan_type_id,1',//|numeric',
+            'factor_before'=>'nullable|integer|sometimes|required_if:goal_plan_type_id,1|min:0',//|numeric',
+            'factor_after'=>'nullable|integer|required_if:goal_plan_type_id,1|min:0',//|numeric',
             'is_recurring'=>'sometimes|boolean',
             'award_per_progress'=>'sometimes|boolean',
             'award_email_per_progress'=>'sometimes|boolean',
             'progress_requires_unique_ref_num'=>'sometimes|boolean',
-            // 'progress_notification_email_id'=>'required|integer',
+            //'progress_notification_email_id'=>'nullable|required|integer',
             //'progress_email_template_id'=>'required|integer',// not in old db
             'assign_goal_all_participants_default'=>'sometimes|boolean',
             'created_by'=>'	sometimes|integer',

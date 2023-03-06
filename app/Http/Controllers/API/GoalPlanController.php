@@ -22,7 +22,6 @@ class GoalPlanController extends Controller
         }
         
         $data = $request->validated();
-
         try{
             $response= $goalPlanService->create($data,$organization,$program);
             return response($response);
