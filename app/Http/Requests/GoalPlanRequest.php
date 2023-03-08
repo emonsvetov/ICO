@@ -10,6 +10,7 @@ use App\Models\EventType;
 use App\Models\GoalPlanType;
 use App\Models\Event;
 use App\Models\GoalPlan;
+use App\Models\ExpirationRule;
 
 class GoalPlanRequest extends FormRequest
 {
@@ -87,28 +88,17 @@ class GoalPlanRequest extends FormRequest
     {
         $request = $this->all(); 
         if( empty($request['date_begin']) )   {
-            $request['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
+            $request['date_begin'] = date("Y-m-d"); //default goal plan start date to be today
          }
 		// Default custom expire date to 1 year from today
          if( empty($request['date_end']) )   { //default custom expire date to 1 year from today
             $request['date_end'] = date('Y-m-d', strtotime('+1 year'));
          }
         //$request->goal_measurement_label = '$';
-        //pr($request); die;
          $request['state_type_id'] = GoalPlan::calculateStatusId($request['date_begin'], $request['date_end']);
-        // $request['state_type_id']=1;
-        if(!empty($request['achieved_event_id'])) {
-            $archived_event = Event::getEvent($request['achieved_event_id']);
-            if(!empty($archived_event)) 
-            $archived_event->load('eventType');
-        }
-        if(!empty($request['exceeded_event_id'])) {
-            $exceeded_event = Event::getEvent($request['exceeded_event_id']);
-            if(!empty($exceeded_event)) 
-            $exceeded_event->load('eventType');
-        }
-		//Ques - shoud we haeve to move these in request
-		switch ($request['goal_plan_type_id']) {
+        
+		//Ques - shoud we have to move these in request
+		switch (isset($request['goal_plan_type_id'])) {
 			case GoalPlanType::getIdByTypeEventcount() :
 				// Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
 				$request['factor_before'] = 0.0;
@@ -124,10 +114,16 @@ class GoalPlanRequest extends FormRequest
 				$request['award_email_per_progress'] = false;
 				break;
 		}
+        if(!isset($this->goalPlan)) { //Run only in case of create
+            $expiration_rule = ExpirationRule::find($request['expiration_rule_id']);
+
+            $expiration_date = ExpirationRule::compile($expiration_rule, $request['date_begin'], $request['date_end'], isset ( $request['custom_expire_offset'] ) ? $request['custom_expire_offset'] : null, isset ( $request['custom_expire_units'] ) ? $request['custom_expire_units'] : null, isset ( $request['annual_expire_month'] ) ? $request['annual_expire_month'] : null, isset ( $request['annual_expire_day'] ) ? $request['annual_expire_day'] : null );
+
+            $request['date_end'] =  $expiration_date[0]->expires;
+        }
         $this->merge(
             $request
         );
-        //pr($this->all()); die;
     }
     /**
      * Determine if the user is authorized to make this request.

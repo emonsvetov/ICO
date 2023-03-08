@@ -68,7 +68,6 @@ class GoalPlanService
 		if (! isset ( $goal_plan->goal_measurement_label )) {
 			$goal_plan->goal_measurement_label = '';
 		}*/
-		
         $newGoalPlan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,

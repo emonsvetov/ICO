@@ -13,7 +13,6 @@ class GoalPlanController extends Controller
 {
     public function store(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlanService $goalPlanService)
     {
-
 		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
             return response(['errors' => "You can't add goal plan in this program."], 422);
         }
