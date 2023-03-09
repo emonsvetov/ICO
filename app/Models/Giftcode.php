@@ -18,8 +18,17 @@ class Giftcode extends Model
     protected $guarded = [];
     protected $table = 'medium_info';
 
+    public function newQuery()
+    {
+        $query = parent::newQuery();
+
+        $query->where('purchased_by_v2', '=', 0);
+
+        return $query;
+    }
+
     public function setPurchaseDateAttribute($purchaseDate)
-    {   
+    {
         $this->attributes['purchase_date'] = Carbon::createFromFormat('d/m/Y', $purchaseDate)->format('Y-m-d');
     }
 
@@ -52,7 +61,7 @@ class Giftcode extends Model
         ];
 		// construct the SQL statement to query available gift codes
 		// gift codes debit count must be greater than credit count which would determine for gift codes that has already been redeemed or gift codes that was redeemed but cancelled
-		$sql = "SELECT 
+		$sql = "SELECT
                     `merchant_id`,
                     `redemption_value`,
                     `sku_value`,
@@ -60,7 +69,7 @@ class Giftcode extends Model
                         COUNT(DISTINCT medium_info.`id`) as count
                     from
                         medium_info
-                    where   
+                    where
                         merchant_id = :merchant_id";
 		if ($end_date != '') {
 			$sql .= " AND purchase_date <= :end_date AND (redemption_date is null OR redemption_date > :end_date_1) ";
@@ -69,7 +78,7 @@ class Giftcode extends Model
 		} else {
 			$sql .= " AND redemption_date is null ";
 		}
-		$sql .= " AND 
+		$sql .= " AND
                         `hold_until` <= now()";
 		$sql .= " group by
                         sku_value, redemption_value, merchant_id
@@ -160,7 +169,7 @@ class Giftcode extends Model
 		if( isValidDate($end_date) )	{
 			$filters['end_date'] = $end_date;
 		}
-		
+
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
 	}
 
@@ -173,9 +182,9 @@ class Giftcode extends Model
 		if( isValidDate($end_date) )	{
 			$filters['end_date'] = $end_date;
 		}
-		
+
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
-	
+
 	}
 
 	public static function holdGiftcode( $params = [] ) {
@@ -197,8 +206,8 @@ class Giftcode extends Model
 
 	public static function redeemMoniesForGiftcodesNoTransaction( array $data)	{
 		return self::_redeem_monies_for_giftcodes_no_transaction($data);
-	}	
-	
+	}
+
 	public static function transferGiftcodesToMerchantNoTransaction( array $data)	{
 		return self::_transfer_giftcodes_to_merchant_no_transaction($data);
 	}
@@ -211,7 +220,7 @@ class Giftcode extends Model
 	}
 
 	private static function _get_next_available_giftcode($merchant_account_holder_id, $sku_value, $redemption_value
-	)	
+	)
 	{
 		$query = self::select([
 			'medium_info.code',
@@ -238,12 +247,12 @@ class Giftcode extends Model
 	}
 
 	private static function _hold_giftcode( $params ) {
-		
+
 		extract($params);
 
 		$giftcode = self::_get_next_available_giftcode(
-			$merchant_account_holder_id, 
-			$sku_value, 
+			$merchant_account_holder_id,
+			$sku_value,
 			$redemption_value
 		);
 
