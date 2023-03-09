@@ -114,6 +114,16 @@ class GoalPlanRequest extends FormRequest
 				$request['award_email_per_progress'] = false;
 				break;
 		}
+        /* In update
+         case GOAL_PLAN_TYPE_PERSONAL :
+				// Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
+				$goal_plan->factor_before = 0.0;
+				$goal_plan->factor_after = 0.0;
+				$goal_plan->award_per_progress = false;
+				$goal_plan->award_email_per_progress = false;
+				break;
+          
+         */
         if(!isset($this->goalPlan)) { //Run only in case of create
             $expiration_rule = ExpirationRule::find($request['expiration_rule_id']);
 
