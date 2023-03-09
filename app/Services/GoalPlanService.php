@@ -17,6 +17,8 @@ use App\Models\EventType;
 use App\Models\GoalPlanType;
 use App\Models\ExternalCallback;
 use App\Models\Status;
+use App\Models\ExpirationRule;
+
 use DB;
 //use App\Services\EmailTemplateService;
 use DateTime;
@@ -34,40 +36,20 @@ class GoalPlanService
     }
 	public function create( $data, $organization, $program)
     {   
-		/* TO DO
-		// check if we have a valid $goal_plan->name format and that it is unique
-		if ($this->is_valid_goal_plan_by_name ( $program_account_holder_id, $goal_plan->name )) {
-			throw new InvalidArgumentException ( 'Invalid "goal_plan->name" passed, goal_plan->name = ' . $goal_plan->name . ' is already taken', 400 );
-		}
-		*/
-		/* TO DO
-		$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET); //CALLBACK_TYPE_GOAL_MET = Goal Met
-        $goal_exceeded_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_EXCEEDED);
-        $empty_callback = new stdClass();
-        $empty_callback->id = 0;
-        $empty_callback->name = $this->lang->line('txt_none');
-        array_unshift($goal_met_program_callbacks, $empty_callback);
-        array_unshift($goal_exceeded_program_callbacks, $empty_callback);
-        */
-		 /* TO DO
-         // All goal plans use standard events except recognition goal
-         $event_type_needed = EventType::getIdByTypeStandard();//standard
-         //if Recognition Goal selected then set 
-         if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::getIdByTypeRecognition())) {
-            $event_type_needed = EventType::getIdByTypeBadge(); // Badge event type; - TO DO need some constant here
-         }
-		 // Get the appropriate events for this goal plan type
-        $events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
-            $event_type_needed,
-        ), 0, 9999);
-		 */
 		 //TO DO
-		 /*if ($this->programs_model->is_shell_program ( $program_account_holder_id )) {
-			throw new InvalidArgumentException ( 'Invalid "program_account_holder_id" passed, you cannot create a goal plan in a shell program', 400 );
-		}
-		if (! isset ( $goal_plan->goal_measurement_label )) {
+		/*if (! isset ( $goal_plan->goal_measurement_label )) {
 			$goal_plan->goal_measurement_label = '';
 		}*/
+		$expiration_rule = ExpirationRule::find($data['expiration_rule_id']);
+		
+		$expiration_date = ExpirationRule::compile($expiration_rule, $data['date_begin'], $data['date_end'], isset ( $data['custom_expire_offset'] ) ? $data['custom_expire_offset'] : null, isset ( $data['custom_expire_units'] ) ? $data['custom_expire_units'] : null, isset ( $data['annual_expire_month'] ) ? $data['annual_expire_month'] : null, isset ( $data['annual_expire_day'] ) ? $data['annual_expire_day'] : null );
+		
+		$data['date_end'] =  $expiration_date[0]->expires;
+		if ($data['date_end'] < $data['date_begin']) {
+			//$response['error']='Date begin cannot be less than Date end';
+			//return $response;
+			throw new Exception('Date begin cannot be less than Date end');
+		}
         $newGoalPlan = GoalPlan::create(  $data +
         [
             'organization_id' => $organization->id,
