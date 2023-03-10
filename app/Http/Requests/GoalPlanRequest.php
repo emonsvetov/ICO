@@ -94,7 +94,6 @@ class GoalPlanRequest extends FormRequest
             $request['date_end'] = date('Y-m-d', strtotime('+1 year'));
          }
         //$request->goal_measurement_label = '$';
-         $request['state_type_id'] = GoalPlan::calculateStatusId($request['date_begin'], $request['date_end']);
         
 		//Ques - shoud we have to move these in request
 		switch (isset($request['goal_plan_type_id'])) {
@@ -160,8 +159,8 @@ class GoalPlanRequest extends FormRequest
             'default_target'=>'required|numeric|gt:0',
             //'email_template_id'=>'integer',
             'notification_body'=>'string|nullable',
-            'achieved_callback_id'=>'string',
-            'exceeded_callback_id'=>'string',
+            'achieved_callback_id'=>'nullable|integer',
+            'exceeded_callback_id'=>'nullable|integer',
             'achieved_event_id'=>'sometimes|integer|achieved_event_type_standard|achieved_event_type_badge',
             //'exceeded_event_id'=>'required_if:goal_plan_type_id,1',//|integer', //required if sales goal (id-1)
             'exceeded_event_id'=>'required_if:goal_plan_type_id,1|exceeded_event_type_check',

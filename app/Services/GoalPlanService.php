@@ -36,29 +36,24 @@ class GoalPlanService
     }
 	public function create( $data, $organization, $program)
     {   
+		//$custom_expire_offset = 12, $custom_expire_units = 'month', $annual_expire_month = 0, $annual_expire_day = 0
 		 //TO DO
 		/*if (! isset ( $goal_plan->goal_measurement_label )) {
 			$goal_plan->goal_measurement_label = '';
 		}*/
+		//$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		
+		//'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
+		$data['organization_id'] = $organization->id;
+		$data['program_id'] = $program->id;
+		$data['created_by'] = auth()->user()->id;
+
 		$expiration_rule = ExpirationRule::find($data['expiration_rule_id']);
-		
-		$expiration_date = ExpirationRule::compile($expiration_rule, $data['date_begin'], $data['date_end'], isset ( $data['custom_expire_offset'] ) ? $data['custom_expire_offset'] : null, isset ( $data['custom_expire_units'] ) ? $data['custom_expire_units'] : null, isset ( $data['annual_expire_month'] ) ? $data['annual_expire_month'] : null, isset ( $data['annual_expire_day'] ) ? $data['annual_expire_day'] : null );
-		
-		$data['date_end'] =  $expiration_date[0]->expires;
-		if ($data['date_end'] < $data['date_begin']) {
-			//$response['error']='Date begin cannot be less than Date end';
-			//return $response;
-			throw new Exception('Date begin cannot be less than Date end');
-		}
-        $newGoalPlan = GoalPlan::create(  $data +
-        [
-            'organization_id' => $organization->id,
-            'program_id' => $program->id, 
-            //'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
-            'created_by'=>auth()->user()->id,
-        ] );
-     	//pr($newGoalPlan);
+		//Create goal plan
+		$newGoalPlan = self::_insert($data, $expiration_rule);
+        
 		 $response['goal_plan'] = $newGoalPlan;
+		 
         if (!empty($newGoalPlan->id)) {
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
@@ -74,6 +69,18 @@ class GoalPlanService
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		// unset($validated['custom_email_template']);
     }
+	private static function _insert($data, $expiration_rule) {
+
+		$expiration_date = ExpirationRule::compile($expiration_rule, $data['date_begin'], $data['date_end'], isset ( $data['custom_expire_offset'] ) ? $data['custom_expire_offset'] : null, isset ( $data['custom_expire_units'] ) ? $data['custom_expire_units'] : null, isset ( $data['annual_expire_month'] ) ? $data['annual_expire_month'] : null, isset ( $data['annual_expire_day'] ) ? $data['annual_expire_day'] : null );
+
+		$data['date_end'] =  $expiration_date[0]->expires;
+
+		// build the query to INSERT an event then run it!
+		$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		$newGoalPlan = GoalPlan::create(  $data );
+		return $newGoalPlan;
+	}
+
 	public function update($data, $goalPlan, $organization, $program)
     {
 		$response=[];

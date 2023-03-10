@@ -13,9 +13,16 @@ class GoalPlanController extends Controller
 {
     public function store(GoalPlanRequest $request, Organization $organization, Program $program, GoalPlanService $goalPlanService)
     {
-		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) {
+		if (!GoalPlan::CONFIG_PROGRAM_USES_GOAL_TRACKER) { //TO DO make this dynamic CONFIG_PROGRAM_USES_GOAL_TRACKER
             return response(['errors' => "You can't add goal plan in this program."], 422);
         }
+        /*
+        // Make sure the program allows peer 2 peer
+		$uses_goal_tracker_config = $this->programs_config_fields_model->read_config_field_by_name ( $program_account_holder_id, CONFIG_PROGRAM_USES_GOAL_TRACKER );
+		if (! $uses_goal_tracker_config->value) {
+			throw new UnexpectedValueException ( 'This program does allow goal plans', 400 );
+		}
+        */
         if ($program->isShellProgram()) {
             return response(['errors' => "Invalid program id passed, you cannot create a goal plan in a shell program"], 422);
         }
@@ -26,7 +33,7 @@ class GoalPlanController extends Controller
             return response($response);
 
         } catch (\Exception $e )    {
-            return response(['errors' => 'Goal plan Creation failed','e'=>$e->getMessage()], 422);
+            return response(['errors' => 'Goal plan creation failed','e'=>$e->getMessage()], 422);
         }
 	}
 
