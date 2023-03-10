@@ -55,6 +55,10 @@ class ReportHelper
     public function awardsAudit(array $programs, string $dateBegin, string $dateEnd, array $args = []): Collection
     {
         $total = $args['total'] ?? null;
+        $p2p = $args['p2p'] ?? null;
+        $group = $args['group'] ?? null;
+        $order = $args['order'] ?? null;
+        $limit = $args['limit'] ?? null;
         $groupBy = null;
         if ($total) {
             $query = User::select(
@@ -63,6 +67,27 @@ class ReportHelper
                 DB::raw('COUNT(journal_events.id) as count'),
             );
             $groupBy = 'programs.account_holder_id';
+        } elseif ($group === 'event_name') {
+            $query = User::select(
+                DB::raw('SUM(postings.posting_amount) as total'),
+                'event_xml_data.name as event_name',
+                DB::raw('COUNT(journal_events.id) as count'),
+            );
+            $groupBy = 'event_xml_data.name';
+        } elseif ($group === 'date') {
+            $query = User::select(
+                DB::raw('SUM(postings.posting_amount) as total'),
+                DB::raw("DATE(`postings`.`created_at`) as `date`"),
+                DB::raw('COUNT(journal_events.id) as count'),
+            );
+            $groupBy = 'date';
+        } elseif ($group === 'month') {
+            $query = User::select(
+                DB::raw('SUM(postings.posting_amount) as total'),
+                DB::raw("MONTH(`postings`.`created_at`) as `month`"),
+                DB::raw('COUNT(journal_events.id) as count'),
+            );
+            $groupBy = 'month';
         } else {
             $query = User::select(
                 'users.account_holder_id AS recipient_id',
@@ -113,9 +138,9 @@ class ReportHelper
         $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
         $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
 
-        $query->leftJoin('postings as program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
-        $query->leftJoin('accounts as program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
-        $query->leftJoin('account_types as program_account_types', function ($join) {
+        $query->join('postings as program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts as program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('account_types as program_account_types', function ($join) {
             $join->on('program_account_types.id', '=', 'program_accounts.account_type_id');
             $join->on("program_account_types.name", "=", DB::raw("'" . AccountType::ACCOUNT_TYPE_MONIES_FEES . "'"));
         });
@@ -125,21 +150,36 @@ class ReportHelper
         $query->leftJoin('users as awarder', 'awarder.account_holder_id', '=',
             'event_xml_data.awarder_account_holder_id');
 
-        $query->where(function ($q) {
-            $q->where('account_types.name', '=', AccountType::getTypePointsAwarded())
-                ->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());
-        });
+        if ($p2p){
+            $query->where(function ($q) {
+                $q->where('account_types.name', '=', AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS)
+                    ->orWhere('account_types.name', '=', AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES);
+            });
+            $query->where('postings.is_credit', '=', 0);
+
+        } else {
+            $query->where(function ($q) {
+                $q->where('account_types.name', '=', AccountType::getTypePointsAwarded())
+                    ->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());
+            });
+            $query->where('postings.is_credit', '=', true);
+        }
         $query->where(function ($q) {
             $q->where('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT)
                 ->orWhere('journal_event_types.type', '=',
                     JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT);
         });
         $query->whereBetween('postings.created_at', [$dateBegin, $dateEnd]);
-        $query->where('postings.is_credit', '=', true);
         $query->whereIn('programs.account_holder_id', $programs);
 
         if ($groupBy) {
             $query->groupBy($groupBy);
+            if ($order) {
+                $query->orderBy($order, 'DESC');
+            }
+        }
+        if ($limit) {
+            $query->limit($limit);
         }
 
         return $query->get();
@@ -249,8 +289,11 @@ class ReportHelper
     }
 
 
-    public function sumPostsByAccountAndJournalEventAndCredit(string $dateBegin, string $dateEnd, array $args = []): array
-    {
+    public function sumPostsByAccountAndJournalEventAndCredit(
+        string $dateBegin,
+        string $dateEnd,
+        array $args = []
+    ): array {
         $accountTypes = $args['accountTypes'] ?? null;
         $journalEventTypes = $args['journalEventTypes'] ?? null;
         $isCredit = $args['isCredit'] ?? false;
@@ -268,10 +311,10 @@ class ReportHelper
 
         $query->whereBetween('postings.created_at', [$dateBegin, $dateEnd]);
         $query->where('postings.is_credit', '=', (bool)$isCredit);
-        if ($accountTypes){
+        if ($accountTypes) {
             $query->whereIn('account_types.name', $accountTypes);
         }
-        if ($journalEventTypes){
+        if ($journalEventTypes) {
 //            $query->whereIn('journal_event_types.type', $journalEventTypes);
         }
 
@@ -281,7 +324,7 @@ class ReportHelper
 
         $result = $query->get();
         $table = [];
-        foreach ( $result as $row ) {
+        foreach ($result as $row) {
             $table[$row->account_holder_id][$row->account_type_name][$row->journal_event_type] = $row->value;
         }
 
