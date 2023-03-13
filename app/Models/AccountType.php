@@ -20,6 +20,7 @@ class AccountType extends BaseModel
     const ACCOUNT_TYPE_MONIES_AWARDED = 'Monies Awarded';
     const ACCOUNT_TYPE_PEER2PEER_POINTS = 'Peer to Peer Points';
     const ACCOUNT_TYPE_PEER2PEER_MONIES = 'Peer to Peer Monies';
+    const ACCOUNT_TYPE_GIFT_CODES_AVAILABLE = 'Gift Codes Available';
 
     public static function getTypeIdPeer2PeerPoints(): int
     {

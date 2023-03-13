@@ -546,5 +546,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Imports
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
+
+    // Dashboard
+    Route::get('/v1/organization/{organization}/program/{program}/dashboard',[App\Http\Controllers\API\DashboardController::class, 'index'])->middleware('can:viewAny,App\Dashboard,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/dashboard/top-merchants/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'topMerchants'])->middleware('can:viewAny,App\Dashboard,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/dashboard/top-awards/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'topAwards'])->middleware('can:viewAny,App\Dashboard,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/dashboard/award-detail/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'awardDetail'])->middleware('can:viewAny,App\Dashboard,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/dashboard/award-peer-detail/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'awardPeerDetail'])->middleware('can:viewAny,App\Dashboard,organization,program');
+
 });
 

@@ -20,7 +20,7 @@ class ReportProgramStatusService extends ReportServiceAbstract
         $table = [];
         $this->table = [];
 
-        $dateBegin = date('2022-01-01 00:00:00', strtotime($this->params[self::DATE_FROM]));
+        $dateBegin = date('Y-m-d 00:00:00', strtotime($this->params[self::DATE_FROM]));
         $dateBegin2000 = '2000-01-01 00:00:00';
         $dateEnd = date('Y-m-d 23:59:59', strtotime($this->params[self::DATE_TO]));
         $programIds = $this->params[self::PROGRAMS];
@@ -32,6 +32,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
 
         $programs = Program::getFlatTree();
         foreach ($programs as $program) {
+            if (!in_array($program->account_holder_id, $programIds)){
+                continue;
+            }
             $program = (object)$program->toArray();
             $table[$program->account_holder_id] = $program;
             $table[$program->account_holder_id]->program_name = $program->name;
@@ -57,6 +60,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
         ];
         $countParticipants = $this->reportHelper->countParticipantsByUserStatuses($userStatuses, $dateBegin2000, $dateEnd);
         foreach ($countParticipants as $program_id => $participant_count) {
+            if (!in_array($program->account_holder_id, $programIds)){
+                continue;
+            }
             $table[$program_id]->participants_count = $participant_count;
         }
 
@@ -93,6 +99,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
         $credits_report = $this->reportHelper->sumPostsByAccountAndJournalEventAndCredit($dateBegin, $dateEnd, $args);
 
         foreach ($credits_report as $program_account_holder_id => $programs_credits_report_table) {
+            if (!in_array($program_account_holder_id, $programIds)){
+                continue;
+            }
             $program = $table[$program_account_holder_id];
             if (is_array($programs_credits_report_table) && count($programs_credits_report_table) > 0) {
                 foreach ($programs_credits_report_table as $account_type_name => $account) {
@@ -134,6 +143,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
         ];
         $countParticipants = $this->reportHelper->countParticipantsByUserStatuses($userStatuses, $dateBegin2000, $dateEnd);
         foreach ($countParticipants as $program_id => $participant_count) {
+            if (!in_array($program_id, $programIds)){
+                continue;
+            }
             $table[$program_id]->new_participants_count = $participant_count;
         }
 
@@ -172,6 +184,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
         $credits_report = $this->reportHelper->sumPostsByAccountAndJournalEventAndCredit($dateBeginMonth, $dateEnd, $args);
 
         foreach ($credits_report as $program_account_holder_id => $programs_credits_report_table) {
+            if (!in_array($program_account_holder_id, $programIds)){
+                continue;
+            }
             $program = $table[$program_account_holder_id];
             if (is_array($programs_credits_report_table) && count($programs_credits_report_table) > 0) {
                 foreach ($programs_credits_report_table as $account_type_name => $account) {
@@ -242,6 +257,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
         $credits_report = $this->reportHelper->sumPostsByAccountAndJournalEventAndCredit($dateBeginYear, $dateEnd, $args);
 
         foreach ($credits_report as $program_account_holder_id => $programs_credits_report_table) {
+            if (!in_array($program_account_holder_id, $programIds)){
+                continue;
+            }
             $program = $table[$program_account_holder_id];
             if (is_array($programs_credits_report_table) && count($programs_credits_report_table) > 0) {
                 foreach ($programs_credits_report_table as $account_type_name => $account) {

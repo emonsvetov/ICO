@@ -13,6 +13,8 @@ abstract class ReportServiceAbstract
 
     const SQL_LIMIT = 'limit';
     const SQL_OFFSET = 'offset';
+    const SQL_GROUP_BY = 'group';
+    const SQL_ORDER_BY = 'order';
 
     const PROGRAM_ID = 'programId';
     const CREATED_ONLY = 'createdOnly';
@@ -46,6 +48,8 @@ abstract class ReportServiceAbstract
         $this->params[self::FIELD_REPORT_KEY] = $params[self::FIELD_REPORT_KEY] ?? null;
         $this->params[self::PROGRAM_ID] = $params[self::PROGRAM_ID] ?? null;
         $this->params[self::CREATED_ONLY] = $params[self::CREATED_ONLY] ?? null;
+        $this->params[self::SQL_GROUP_BY] = $params[self::SQL_GROUP_BY] ?? null;
+        $this->params[self::SQL_ORDER_BY] = $params[self::SQL_ORDER_BY] ?? null;
 
         $this->reportHelper = new ReportHelper() ?? null;
     }
@@ -90,10 +94,15 @@ abstract class ReportServiceAbstract
         $query = $this->getBaseSql();
         $query = $this->setWhereFilters($query);
         $query = $this->setGroupBy($query);
-        $query = $this->setOrderBy($query);
-        $this->table['total'] = $query->count();
-        $query = $this->setLimit($query);
-        $this->table['data'] = $query->get()->toArray();
+        try {
+            $this->table['total'] = $query->count();
+            $query = $this->setOrderBy($query);
+            $query = $this->setLimit($query);
+            $this->table['data'] = $query->get()->toArray();
+        } catch (\Exception $exception){
+//            print_r($exception->getMessage());
+//            die;
+        }
         return $this->table;
     }
 
@@ -127,6 +136,9 @@ abstract class ReportServiceAbstract
      */
     protected function setOrderBy(Builder $query): Builder
     {
+        if ($this->params[self::SQL_ORDER_BY]){
+            $query->orderBy($this->params[self::SQL_ORDER_BY]);
+        }
         return $query;
     }
 

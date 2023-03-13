@@ -24,6 +24,8 @@ class ReportFactory
         $reportKey = $params['reportKey'] ?? 0;
         $programId = $params['programId'] ?? null;
         $createdOnly = $params['createdOnly'] ?? null;
+        $group = $params['group'] ?? null;
+        $order = $params['order'] ?? null;
 
         if ($paramPage && $paramLimit) {
             $offset = ($paramPage - 1) * $paramLimit;
@@ -42,6 +44,8 @@ class ReportFactory
             'reportKey' => $reportKey,
             'programId' => $programId,
             'createdOnly' => $createdOnly,
+            'group' => $group,
+            'order' => $order,
         ];
 
         if (empty($title)) {
