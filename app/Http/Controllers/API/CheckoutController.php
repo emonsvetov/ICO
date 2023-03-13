@@ -31,9 +31,9 @@ class CheckoutController extends Controller
                     $giftCodeId = (int)$codeItem->id;
                     $giftCode = Giftcode::find($giftCodeId);
                     $responseV2 = Http::withHeaders([
-                        'X-API-KEY' => 'f0b74774b92165716b1e08b3667ddcaf0a7511bb',
-                    ])->post(env('V2_API') . '/rest/gift_codes/redeem', [
-                        'v3_merchant_id' => $giftCode->code,
+                        'X-API-KEY' => env('V2_API_KEY'),
+                    ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
+                        'code' => $giftCode->code,
                     ]);
 //                    Log::info('V2: ' . $giftCode->code);
                     if ($responseV2->status() !== 200 ){
