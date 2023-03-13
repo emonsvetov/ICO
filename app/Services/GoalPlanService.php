@@ -106,11 +106,11 @@ class GoalPlanService
         //$request->goal_measurement_label = '$';
          //$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
          // All goal plans use standard events except recognition goal
-         $event_type_needed = 1;//standard
+         /*$event_type_needed = 1;//standard
          //if Recognition Goal selected then set 
 		if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::GOAL_PLAN_TYPE_RECOGNITION)) {
             $event_type_needed = 5; // Badge event type; - TO DO need some constant here
-         }
+         }*/
         /* TO DO - Get the appropriate events for this goal plan type - this is old site code - TO DO
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
@@ -126,7 +126,26 @@ class GoalPlanService
 				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
             }
 		}
-			return $response;
+		/* TO DO
+		 * // If the event template was created redirect the user to the edit page
+			if (has_resource_permission(RESOURCE_GOAL_PLANS_TIE_EVENT)) {
+				try {
+					$gpes = $this->goal_plans_model->read_list_goal_plan_events((int) $this->program->account_holder_id, array(
+						(int) $goal_plan_id,
+					));
+					$gpe = $gpes[(int) $goal_plan_id];
+					$this->update_tied_goal_plan_events($goal_plan_id, $gpe, $assigned_events, $unassigned_events);
+				} catch (Exception $e) {
+					$this->_add_error_message($e->getMessage());
+				}
+			}
+		 */
+		//php_includes\application\controllers\manager\program_settings.php
+		//TO DO - Find if goal plan is editable
+		//TO DO - Event goals event_goals code unassigned_events/assigned_events
+	   //TO DO - Load events which is different from create goalplan(Pending to discusss)
+
+		return $response;
     }
 	public function assignAllParticipantsRes($response) {
 		$msg='';
