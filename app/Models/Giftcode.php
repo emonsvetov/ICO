@@ -11,25 +11,27 @@ use App\Models\Traits\IdExtractor;
 use App\Models\Traits\Redeemable;
 use Carbon\Carbon;
 
+/**
+ * @property date $purchase_date
+ * @property int $purchased_by_v2
+ */
 class Giftcode extends Model
 {
     use HasFactory, IdExtractor, Redeemable, SoftDeletes;
 
     protected $guarded = [];
     protected $table = 'medium_info';
+    private static bool $all = false;
 
     public function newQuery()
     {
         $query = parent::newQuery();
 
-        $query->where('purchased_by_v2', '=', 0);
+        if (self::$all === false){
+            $query->where('purchased_by_v2', '=', 0);
+        }
 
         return $query;
-    }
-
-    public function setPurchaseDateAttribute($purchaseDate)
-    {
-        $this->attributes['purchase_date'] = Carbon::createFromFormat('d/m/Y', $purchaseDate)->format('Y-m-d');
     }
 
     public function merchant()
@@ -330,4 +332,19 @@ class Giftcode extends Model
 		// $response = $this->external_callback->call ( $callback, $data, ( int ) $user_id, ( int ) $merchant_id );
 		return $response;
 	}
+
+    /**
+     * @param string $code
+     * @return Giftcode|null
+     * @throws \Exception
+     */
+    public static function getByCode(string $code)
+    {
+        self::$all = true;
+        $code = self::where('code', $code)->first();
+        if (!$code){
+            throw new \Exception('Gift Code not found.');
+        }
+        return $code;
+    }
 }
