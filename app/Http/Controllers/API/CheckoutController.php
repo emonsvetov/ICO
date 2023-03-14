@@ -25,7 +25,7 @@ class CheckoutController extends Controller
             }
 
             // alert V2
-            if (isset($response['gift_codes_redeemed_for'])) {
+            if (env('V2_GIFTCODE_SYNC_ENABLE') && isset($response['gift_codes_redeemed_for'])) {
                 $giftCodes = $response['gift_codes_redeemed_for'];
                 foreach ($giftCodes as $codeItem) {
                     $giftCodeId = (int)$codeItem->id;

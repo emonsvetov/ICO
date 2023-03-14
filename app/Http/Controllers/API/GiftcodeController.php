@@ -15,9 +15,11 @@ class GiftcodeController extends Controller
         $result['success'] = false;
 
         try {
-            $code = $request->get('code');
-            $giftcode = Giftcode::getByCode($code);
-            $result['success'] = $giftcodeService->purchaseFromV2($giftcode);
+            if (env('V2_GIFTCODE_SYNC_ENABLE')) {
+                $code = $request->get('code');
+                $giftcode = Giftcode::getByCode($code);
+                $result['success'] = $giftcodeService->purchaseFromV2($giftcode);
+            }
         } catch (\Exception $exception){
             $result['data'] = $exception->getMessage();
         }
