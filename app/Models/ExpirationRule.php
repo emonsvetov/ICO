@@ -69,4 +69,9 @@ class ExpirationRule extends Model
 		}
 		return $end_date_sql;
 	}
+	public static function getExpirationRule($id)
+    {
+        $expirationRule = self::find($id);
+        return $expirationRule; 
+    }
 }

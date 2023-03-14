@@ -81,8 +81,11 @@ class GoalPlanService
 		return $newGoalPlan;
 	}
 
-	public function update($data, $goalPlan, $organization, $program)
+	public function update($data, $currentGoalPlan, $organization, $program)
     {
+	
+		pr(self::activateGoalPlan($program->id,$currentGoalPlan ));
+		die;
 		$response=[];
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		/*if( empty($data['date_begin']) )   {
@@ -116,13 +119,126 @@ class GoalPlanService
         // $event_type_needed,
         // ), 0, 9999);*/
 		$data['modified_by']=auth()->user()->id;
-        $updated_goal_plan = $goalPlan->update( $data );
-		$response['goal_plan'] = $goalPlan;
+		//VALIDATE HERE TO for recursively called functions
+		//Code - 
+		$active_state_id = Status::get_goal_active_state ();
+		$future_state_id = Status::get_goal_future_state ();
+		$expired_state_id = Status::get_goal_expired_state ();
+		// This means only the most recent expired plan can be edited
+		if ($currentGoalPlan->state_type_id == $expired_state_id) {
+			if ($data['is_recurring'] && isset ( $currentGoalPlan->next_goal_id ) && $currentGoalPlan->next_goal_id != null && $currentGoalPlan->next_goal_id > 0) {
+				$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id); 
+				//$this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->next_goal_id );
+				if ($nextGoalPlan->state_type_id != $active_state_id && $nextGoalPlan->state_type_id != $future_state_id) {
+					throw new RuntimeException ( 'Only the most recent expired goal plan can be edited.' );
+				}
+			}
+		}
+
+		// read the current goal plans expiration rules
+		$expiration_rule = ExpirationRule::getExpirationRule ($currentGoalPlan->expiration_rule_id );
+		// Don't allow the goal start date to overlap with the previous goal cycle
+		if ($data['is_recurring'] && isset ( $currentGoalPlan->previous_goal_id ) && $currentGoalPlan->previous_goal_id > 0) {
+			$previousGoalPlan = $this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->previous_goal_id ); //TO DO
+			if (isset ( $previousGoalPlan )) {
+				$date1 = new DateTime ( $previousGoalPlan->date_end );
+				$date2 = new DateTime ( $previousGoalPlan->date_begin );
+				if ($date1 > $date2) {
+					throw new InvalidArgumentException ( 'The Goal Plans date_begin cannot be less than the previous goal cycles date_end (' . $previousGoalPlan->date_end . ')' );
+				}
+			}
+		}
+		// If the goal is set to active....
+		if ($currentGoalPlan->state_type_id == $active_state_id) {
+			// Hate to do it like this...
+			// Check if the goal plan is set to recurring. Create\Delete the future goal plan as needed
+			if ($data['is_recurring'] && (! isset ( $currentGoalPlan->next_goal_id ) || $currentGoalPlan->next_goal_id == null || $currentGoalPlan->next_goal_id < 1)) {
+				// TO DO $future_goal_plan_id = $this->create_future_plan ( $data, $expiration_rule ); // TO DO
+			} else if (! $data['is_recurring'] && isset ( $currentGoalPlan->next_goal_id ) && $currentGoalPlan->next_goal_id > 0) {
+				$this->delete_future_plan ( $currentGoalPlan );
+			}
+		}
+
+		/*TO DO
+		if ($data->goal_plan_type_name == GOAL_PLAN_TYPE_EVENT_COUNT) {
+			if (( int ) $goal_plan->achieved_event_template_id > 0) {
+				$this->untie_event_from_goal_plan ( ( int ) $program_account_holder_id, ( int ) $goal_plan->id, ( int ) $goal_plan->achieved_event_template_id );
+			}
+			if (( int ) $goal_plan->exceeded_event_template_id > 0) {
+				$this->untie_event_from_goal_plan ( ( int ) $program_account_holder_id, ( int ) $goal_plan->id, ( int ) $goal_plan->exceeded_event_template_id );
+			}
+		}*/
+
+
+        $updated_goal_plan  = $currentGoalPlan->update( $data );
+		$response['goal_plan'] = $currentGoalPlan; // TO DO testing here
+
+		//$current_goal_plan = $this->read ( $program_account_holder_id, $goal_plan->id );
+		if (self::needsActivated($currentGoalPlan)) {
+			$this->activate_goal_plan ( $program_account_holder_id, $currentGoalPlan ); // TO DO 
+		}
+		if (self::needsExpired ( $currentGoalPlan )) {
+			$this->expire_goal_plan ( $program_account_holder_id, $currentGoalPlan ); // TO DO 
+		}
+		if (self::needsFutured ( $currentGoalPlan )) {
+			$this->future_goal_plan ( $program_account_holder_id, $currentGoalPlan ); // TO DO 
+		}
+
+		// RULES FOR MOVING THE DATES ON THE FUTURE GOAL PLAN
+		if ($data['is_recurring'] && isset ( $currentGoalPlan->next_goal_id ) && $currentGoalPlan->next_goal_id > 0) {
+			//$next_goal_plan = $this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->next_goal_id );
+			$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id); 
+			if (isset ( $nextGoalPlan )) {
+				$date1 = new DateTime ( $nextGoalPlan->date_begin );
+				$date2 = new DateTime ( $data['date_end'] );
+				if ($date1 < $date2) {
+					// throw new InvalidArgumentException('The Goal Plans date_begin cannot be less than the previous goal cycles date_end (' . $previous_goal_plan->date_end . ')');
+					$end_date_sql = $this->write_db->escape ( $goal_plan->date_end );
+					// Store the active goal plan's end date
+					$active_goal_end_date = $goal_plan->date_end;
+					// Create the Future Goal Plan
+					// use the end date of the active goal plan and the expiration rule to set the end date for the future goal goal
+					switch ($expiration_rule->name) {
+						case "Custom" :
+						case "Specified" :
+							// Need to do some math to figure out how many days are between the active goal plans start and end dates
+							$date1 = new DateTime ( $goal_plan->date_begin );
+							$date2 = new DateTime ( $active_goal_end_date );
+							$diff_in_days = $date2->diff ( $date1 )->format ( "%a" );
+							$end_date_sql = "date_add({$this->write_db->escape($active_goal_end_date)}, interval {$diff_in_days} DAY)";
+							break;
+						case "End of Following Year" :
+						case "End of Next Year" :
+						case "1 Year" :
+							$active_goal_end_date = date ( "Y-12-31", strtotime ( date ( "Y-m-d", strtotime ( $goal_plan->date_end ) ) . " +1 year" ) );
+							$end_date_sql = $this->write_db->escape ( $active_goal_end_date );
+							break;
+						case "12 Months" :
+						case "9 Months" :
+						case "6 Months" :
+						case "3 Months" :
+						default :
+							$offset = $expiration_rule->expire_offset;
+							$units = $expiration_rule->expire_units;
+							$start_date = $this->write_db->escape ( $active_goal_end_date );
+							$end_date_sql = "date_add({$start_date}, interval {$offset} {$units})";
+					}
+					$sql = "select {$end_date_sql} as expires";
+					$results = DB::select( DB::raw($sql));
+					 $expiration_date[0]->expires;
+					$nextGoalPlan->date_begin = $data['date_end'];
+					$nextGoalPlan->date_end = $expiration_date[0]->expires;
+					$data = $nextGoalPlan->validated();
+					//pr($nextGoalPlan); TO DO errors
+					$this->update ($data, $currentGoalPlan, $organization, $program);
+				}
+			}
+		}
         if (!empty($updated_goal_plan)) {
             // Assign goal plans after goal plan updated based on INC-206
             //if assign all current participants then run now
             if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
-                $assignResponse =self::assignAllParticipantsNow($goalPlan, $program);
+                $assignResponse =self::assignAllParticipantsNow($currentGoalPlan, $program);
 				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
             }
 		}
@@ -382,5 +498,100 @@ class GoalPlanService
 		
 		return $query;
 	}
+	//Aliases for  needs_activated
+	public static function needsActivated($goalPlan) {
+		$sql = "
+    		select
+    			if(gp.date_end <= now(), 'expired'
+    				, if(now() < gp.date_begin, 'future'
+    				, 'active')
+    			) status
+    		from goal_plans gp
+        		where
+        		gp.id = {$goalPlan->id}
+        		";
+		$result = DB::select( DB::raw($sql));
+		if (! $result) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}
+		return ( bool ) ($result[0]->status == 'active');
+	}
 
+	//Aliases for  needs_expired
+	public static function needsExpired($goalPlan) {
+		$sql = "
+    		select
+    			if(gp.date_end <= now(), 'expired'
+    				, if(now() < gp.date_begin, 'future'
+    				, 'active')
+    			) status
+    		from goal_plans gp
+    		where
+    			gp.id = {$goalPlan->id}
+    	";
+		$result = DB::select( DB::raw($sql));
+		if (! $result) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}
+		return ( bool ) ($result[0]->status == 'expired');
+	}
+	//Aliases for needs_futured
+	public function needsFutured($goalPlan) {
+		$sql = "
+    		select
+    			if(gp.date_end <= now(), 'expired'
+    				, if(now() < gp.date_begin, 'future'
+    				, 'active')
+    			) status
+    		from goal_plans gp
+    		where
+    			gp.id = {$goalPlan->id}
+    	";
+		$result = DB::select( DB::raw($sql));
+		if (! $result) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}
+		return ( bool ) ($result[0]->status == 'future');
+	}
+	//Aliases for activate_goal_plan
+	public function activateGoalPlan($program_id = 0, $goalPlan) {
+		// 1. set the user_goals record to expired
+		// 2. identify the future goal and promote it to active
+		//
+		$expired_state_id = Status::get_goal_expired_state ();
+		$active_state_id = Status::get_goal_active_state ();
+		// advance current the future goal to be active
+		/*$sql = "
+			update goal_plans set
+				state_type_id = {$active_state_id},
+				expired = NULL
+			where
+				id = {$goal_plan->id}		
+                and now() between date_begin and date_end
+		";*/
+		$result= GoalPlan::whereRaw("id = {$goalPlan->id} and now() between date_begin and date_end")->update(['state_type_id'=>$active_state_id,'expired'=>null]);
+
+		//where(['id'=>$goalPlan->id,'now()' =>' between date_begin and date_end'])->update(['state_type_id'=>$active_state_id,'expired'=>null ]);
+		//$result = DB::select( DB::raw($sql));
+		/*if (! $result) {
+			//throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}*/
+		if ($result == 0) {
+			// maybe there isn't a future goal, or it's start date has been changed
+			return false;
+			// TODO: have different cron to look for goal plans that need to be activated?
+		} else if ($result > 1) {
+			throw new RuntimeException ( "Data Corruption: More than 1 record was changed!", 500 );
+		} else {
+			if (isset ( $goalPlan->is_recurring ) && $goalPlan->is_recurring) {
+				if (! isset ( $goalPlan->next_goal_id ) || $goalPlan->next_goal_id <= 0) {
+					// goal plan is recurring, but there is no future goal plan defined
+					$expiration_rule = ExpirationRule::getExpirationRule ($goalPlan->expiration_rule_id );
+					// TO DO $future_goal_plan = $this->create_future_plan ( $goalPlan, $expiration_rule ); //TO DO
+				}
+			}
+			return true;
+		}
+	
+	}
 }

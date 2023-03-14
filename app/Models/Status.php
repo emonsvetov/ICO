@@ -39,4 +39,11 @@ class Status extends Model
     public static function get_goal_active_state()  {
         return self::getSetByContextAndName('Goals', 'Active');
     }
+
+    public static function get_goal_future_state()  {
+        return self::getSetByContextAndName('Goals', 'Future');
+    }
+    public static function get_goal_expired_state()  {
+        return self::getSetByContextAndName('Goals', 'Expired');
+    }
 }

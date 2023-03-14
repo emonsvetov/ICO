@@ -95,33 +95,32 @@ class GoalPlanRequest extends FormRequest
          }
         //$request->goal_measurement_label = '$';
         
-		//Ques - shoud we have to move these in request
-		switch (isset($request['goal_plan_type_id'])) {
-			case GoalPlanType::getIdByTypeEventcount() :
-				// Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
-				$request['factor_before'] = 0.0;
-				$request['factor_after'] = 0.0;
-				//$goal_plan->award_per_progress = false;
-				$request['award_email_per_progress'] = false;
-				break;
-			case GoalPlanType::getIdByTypeRecognition() :
-				// Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
-				$request['factor_before']=0.0;
-				$request['factor_after'] = 0.0;
-				$request['award_per_progress'] = false;
-				$request['award_email_per_progress'] = false;
-				break;
-		}
-        /* In update
-         case GOAL_PLAN_TYPE_PERSONAL :
-				// Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
-				$goal_plan->factor_before = 0.0;
-				$goal_plan->factor_after = 0.0;
-				$goal_plan->award_per_progress = false;
-				$goal_plan->award_email_per_progress = false;
-				break;
-          
-         */
+        if(!$this->goalPlan) { //Create
+            //Ques - shoud we have to move these in request
+            switch (isset($request['goal_plan_type_id'])) {
+                case GoalPlanType::getIdByTypeEventcount() :
+                    // Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
+                    $request['factor_before'] = 0.0;
+                    $request['factor_after'] = 0.0;
+                    //$goal_plan->award_per_progress = false;
+                    $request['award_email_per_progress'] = false;
+                    break;
+                case GoalPlanType::getIdByTypeRecognition() :
+                    // Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
+                    $request['factor_before']=0.0;
+                    $request['factor_after'] = 0.0;
+                    $request['award_per_progress'] = false;
+                    $request['award_email_per_progress'] = false;
+                    break;
+            }
+        } else { //Edit
+            if(isset($request['goal_plan_type_id']) && $request['goal_plan_type_id'] == GoalPlanType::getIdByTypePersonal()) {
+                $request['factor_before']=0.0;
+                $request['factor_after'] = 0.0;
+                $request['award_per_progress'] = false;
+                $request['award_email_per_progress'] = false; 
+            }
+        }
         $this->merge(
             $request
         );
