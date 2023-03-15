@@ -160,10 +160,10 @@ class GoalPlanService
 		if ($currentGoalPlan->state_type_id == $active_state_id) {
 			// Hate to do it like this...
 			// Check if the goal plan is set to recurring. Create\Delete the future goal plan as needed
-			if ($data['is_recurring'] && (! isset ( $currentGoalPlan->next_goal_id ) || $currentGoalPlan->next_goal_id == null || $currentGoalPlan->next_goal_id < 1)) {
+			if ($data['is_recurring'] && empty($currentGoalPlan->next_goal_id)) {
 				// TO DO $future_goal_plan_id = $this->create_future_plan ( $data, $expiration_rule ); // TO DO
-			} else if (! $data['is_recurring'] && isset ( $currentGoalPlan->next_goal_id ) && $currentGoalPlan->next_goal_id > 0) {
-				$this->delete_future_plan ( $currentGoalPlan );
+			} else if (! $data['is_recurring'] && !empty ( $currentGoalPlan->next_goal_id )) {
+				// TO DO $this->delete_future_plan ( $currentGoalPlan );
 			}
 		}
 
@@ -689,6 +689,67 @@ class GoalPlanService
 				//$this->activate_goal_plan ( $program_id, $next_goal_plan );
 			}
 		}
+	
+	}
+	//Aliases for create_future_plan
+	//TO DO 
+	public function createFuturePlan($goalPlan, $expirationRule) {
+		if (! isset ( $expirationRule )) {
+			// if we were not given an expiration rule, go get it from the goal_plan
+			$expiration_rule = ExpirationRule::find($goalPlan->expiration_rule_id);
+			//$expiration_rule = $this->expiration_rules_model->read ( ( int ) $goal_plan->program_account_holder_id, ( int ) $goal_plan->expiration_rule_id );
+		}
+		// TO DO
+		$nextGoalPlan = $this->_new_future_goal ( $goal_plan, $expiration_rule );
+		$state_future_id  = Status::get_goal_future_state ();
+		$active_goal_plan_id = $goalPlan->id;
+		// ------------------------
+		// Create the Future Goal Plan 
+		//TO DO 
+		$future_goal_plan_id = $this->_insert ( $nextGoalPlan, $state_future_id, $expiration_rule );
+		$goalPlan->next_goal_id = $future_goal_plan_id;
+		// Update the active goal plan's next goal id with the future goal plan id
+		// build the query to INSERT an event then run it!
+		$sql = "
+            UPDATE
+                " . GOAL_PLANS_TBL . " gp
+            SET
+                `next_goal_id` = {$future_goal_plan_id}
+            WHERE
+                `id` = {$active_goal_plan_id}
+        ";
+		$this->write_db->query ( $sql );
+		// check if we have insert 1 row, cause if we inserted less than 1, then that's wrong...
+		// and even worst is that we inserted more than 1, cause clearly we are inserting 1 row...
+		if ($this->write_db->affected_rows () < 0) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}
+		// Update the active goal plan's next goal id with the future goal plan id
+		// build the query to INSERT an event then run it!
+		$sql = "
+            UPDATE
+                " . GOAL_PLANS_TBL . " gp
+            SET
+                `previous_goal_id` = {$active_goal_plan_id}
+            WHERE
+                `id` = {$future_goal_plan_id}
+        ";
+		$this->write_db->query ( $sql );
+		// check if we have insert 1 row, cause if we inserted less than 1, then that's wrong...
+		// and even worst is that we inserted more than 1, cause clearly we are inserting 1 row...
+		if ($this->write_db->affected_rows () < 0) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}
+		// All of the participants that were assigned to the goal plan, need to also be assigned to the future goal
+		$participants_with_goal_count = $this->user_goals_model->read_count_by_program_and_goal ( ( int ) $goal_plan->program_account_holder_id, ( int ) $goal_plan->id );
+		$user_goals_to_project_into_the_future = $this->user_goals_model->read_list_by_program_and_goal ( ( int ) $goal_plan->program_account_holder_id, ( int ) $goal_plan->id );
+		if (is_array ( $user_goals_to_project_into_the_future ) && count ( $user_goals_to_project_into_the_future ) > 0) {
+			foreach ( $user_goals_to_project_into_the_future as &$user_goal ) {
+				// Create the user's future goal plan
+				$future_goal_plan_id = $this->user_goals_model->create_future_goal ( $goal_plan, $user_goal );
+			}
+		}
+		return $future_goal_plan_id;
 	
 	}
 
