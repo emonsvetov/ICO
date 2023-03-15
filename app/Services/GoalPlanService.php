@@ -84,7 +84,7 @@ class GoalPlanService
 	public function update($data, $currentGoalPlan, $organization, $program)
     {
 	
-		pr(self::activateGoalPlan($program->id,$currentGoalPlan ));
+		pr(self::expireGoalPlan($program->id,$currentGoalPlan ));
 		die;
 		$response=[];
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
@@ -175,13 +175,13 @@ class GoalPlanService
 
 		//$current_goal_plan = $this->read ( $program_account_holder_id, $goal_plan->id );
 		if (self::needsActivated($currentGoalPlan)) {
-			$this->activate_goal_plan ( $program_account_holder_id, $currentGoalPlan ); // TO DO 
+			self::activateGoalPlan( $program->id, $currentGoalPlan ); // TO DO 
 		}
 		if (self::needsExpired ( $currentGoalPlan )) {
-			$this->expire_goal_plan ( $program_account_holder_id, $currentGoalPlan ); // TO DO 
+			self::expireGoalPlan ( $program->id, $currentGoalPlan ); // TO DO 
 		}
 		if (self::needsFutured ( $currentGoalPlan )) {
-			$this->future_goal_plan ( $program_account_holder_id, $currentGoalPlan ); // TO DO 
+			self::futureGoalPlan( $program->id, $currentGoalPlan ); // TO DO 
 		}
 
 		// RULES FOR MOVING THE DATES ON THE FUTURE GOAL PLAN
@@ -554,7 +554,7 @@ class GoalPlanService
 		return ( bool ) ($result[0]->status == 'future');
 	}
 	//Aliases for activate_goal_plan
-	public function activateGoalPlan($program_id = 0, $goalPlan) {
+	public function activateGoalPlan($program_id, $goalPlan) {
 		// 1. set the user_goals record to expired
 		// 2. identify the future goal and promote it to active
 		//
@@ -594,4 +594,96 @@ class GoalPlanService
 		}
 	
 	}
+	//Aliases for future_goal_plan
+	public function futureGoalPlan($program_id, $goalPlan) {
+		// 1. set the user_goals record to expired
+		// 2. identify the future goal and promote it to active
+		//
+		$future_state_id = Status::get_goal_future_state();
+		$result = GoalPlan::where(['id'=>$goalPlan->id])->update(['state_type_id'=>$future_state_id,'expired'=>null]);
+		/*$sql = "
+        update goal_plans set
+            expired= NULL
+            , state_type_id = {$this->write_db->escape((int)$future_state_id)}
+        where
+            id = {$this->write_db->escape((int)$goal_plan->id)}
+        ";
+		$query = $this->write_db->query ( $sql );
+		if (! $query) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}*/
+		// if (isset($goal_plan->is_recurring) && $goal_plan->is_recurring) {
+		if (isset ( $goalPlan->next_goal_id ) && $goalPlan->next_goal_id > 0) {
+			// advance the future goal to be active 
+			$nextGoalPlan = GoalPlan::getGoalPlan( $goalPlan->next_goal_id); 
+			//$next_goal_plan = $this->read ( $program_id, $next_goal_id );
+			// Only allow 1 future goal plan
+			try {
+				$this->futureGoalPlan ( ( int ) $nextGoalPlan->program_id, $nextGoalPlan );
+			} catch ( Error $x ) {
+				echo "ERROR: {$x->getMessage()}" . PHP_EOL;
+			}
+		}
+		// }
+	}
+	//Aliases for expire_goal_plan
+	public function expireGoalPlan($program_id, $goalPlan) {
+		// 1. set the user_goals record to expired
+		// 2. identify the future goal and promote it to active
+		//
+		//date("Y-m-d H:i:s")
+		$expired_state_id = Status::get_goal_expired_state();
+		$result = GoalPlan::where(['id'=>$goalPlan->id])->update(['state_type_id'=>$expired_state_id,'expired'=>now()]);
+		//pr($result); die;
+		/*$sql = "
+		update goal_plans set
+			expired= now()
+			, state_type_id = {$this->write_db->escape((int)$expired_state_id)}
+		where
+			id = {$this->write_db->escape((int)$goal_plan->id)}
+		";
+		$query = $this->write_db->query ( $sql );
+		if (! $query) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}*/
+		if (isset ( $goalPlan->is_recurring ) && $goalPlan->is_recurring) {
+			if (isset ( $goalPlan->next_goal_id ) && $goalPlan->next_goal_id > 0) {
+				// advance the future goal to be active
+				$next_goal_id = ( int ) $goalPlan->next_goal_id;
+				$nextGoalPlan = GoalPlan::getGoalPlan( $next_goal_id); 
+				$goalPlan->load('goalPlanType');
+				//$next_goal_plan = $this->read ( $program_id, $next_goal_id );
+				
+				//if ($goalPlan->goalPlanType->name == GOAL_PLAN_TYPE_EVENT_COUNT) {
+				if($goalPlan->goal_plan_type_id == GoalPlanType::getIdByTypeEventcount()) {
+					// re-link the events TO DO
+					$goal_plan_events = $this->read_list_goal_plan_events ( ( int ) $program_id, array (
+							( int ) $goal_plan->id 
+					) );
+					foreach ( $goal_plan_events [$goal_plan->id]->events as $event_goal ) {
+						$this->tie_event_to_goal_plan ( ( int ) $program_id, ( int ) $next_goal_id, ( int ) $event_goal->event_template_id );
+					}
+				}
+				// activate it
+				try {
+					self::activateGoalPlan( $program_id, $nextGoalPlan );
+				} catch ( Error $x ) {
+					echo "ERROR: {$x->getMessage()}" . PHP_EOL;
+				}
+			} else {
+				// create a new future goal and tie it back to this one.
+				//$expiration_rule = $this->expiration_rules_model->read ( $program_id, $goal_plan->expiration_rule_id );
+				$expiration_rule = ExpirationRule::find( $goalPlan->expirations_rule_id);
+				//TO DO
+				$future_goal_plan_id = $this->create_future_plan ( $goalPlan, $expiration_rule );
+				//$next_goal_plan = $this->read ( $program_id, $future_goal_plan_id );
+				$nextGoalPlan = GoalPlan::getGoalPlan( $future_goal_plan_id); 
+				self::activateGoalPlan( $program_id, $nextGoalPlan );
+				//$this->activate_goal_plan ( $program_id, $next_goal_plan );
+			}
+		}
+	
+	}
+
+
 }
