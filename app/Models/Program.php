@@ -18,6 +18,10 @@ use App\Models\Currency;
 use App\Models\Account;
 use App\Models\Owner;
 
+/**
+ * @property int account_holder_id
+ * @property int factor_valuation
+ */
 class Program extends BaseModel
 {
     use HasFactory;
@@ -125,7 +129,7 @@ class Program extends BaseModel
         }
         if( empty($data['status_id']) )
         {   //set default status to "Active"
-            $data['status_id'] = self::getIdStatusActive(); 
+            $data['status_id'] = self::getIdStatusActive();
         }
         $program = parent::create($data + ['account_holder_id' => $program_account_holder_id]);
         $liability = FinanceType::getIdByName('Liability');
