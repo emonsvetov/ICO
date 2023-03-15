@@ -83,9 +83,12 @@ class GoalPlanService
 
 	public function update($data, $currentGoalPlan, $organization, $program)
     {
-	
-		pr(self::expireGoalPlan($program->id,$currentGoalPlan ));
-		die;
+		//$data = $currentGoalPlan->validated();
+		//pr($data);
+		//die;
+		//pr(self::expireGoalPlan($program->id,$currentGoalPlan ));
+		//die;
+		//pr($currentGoalPlan->toArray()); die;
 		$response=[];
         //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		/*if( empty($data['date_begin']) )   {
@@ -124,27 +127,32 @@ class GoalPlanService
 		$active_state_id = Status::get_goal_active_state ();
 		$future_state_id = Status::get_goal_future_state ();
 		$expired_state_id = Status::get_goal_expired_state ();
+		//pr($active_state_id);
+		//pr($future_state_id);
+		//pr($expired_state_id);
+		//pr($currentGoalPlan->state_type_id );
 		// This means only the most recent expired plan can be edited
 		if ($currentGoalPlan->state_type_id == $expired_state_id) {
-			if ($data['is_recurring'] && isset ( $currentGoalPlan->next_goal_id ) && $currentGoalPlan->next_goal_id != null && $currentGoalPlan->next_goal_id > 0) {
+			if ($data['is_recurring'] && !empty ( $currentGoalPlan->next_goal_id )) {
 				$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id); 
+				//pr($nextGoalPlan);
 				//$this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->next_goal_id );
 				if ($nextGoalPlan->state_type_id != $active_state_id && $nextGoalPlan->state_type_id != $future_state_id) {
-					throw new RuntimeException ( 'Only the most recent expired goal plan can be edited.' );
+					throw new \RuntimeException ( 'Only the most recent expired goal plan can be edited.' );
 				}
 			}
 		}
-
 		// read the current goal plans expiration rules
 		$expiration_rule = ExpirationRule::getExpirationRule ($currentGoalPlan->expiration_rule_id );
 		// Don't allow the goal start date to overlap with the previous goal cycle
-		if ($data['is_recurring'] && isset ( $currentGoalPlan->previous_goal_id ) && $currentGoalPlan->previous_goal_id > 0) {
-			$previousGoalPlan = $this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->previous_goal_id ); //TO DO
+		if ($data['is_recurring'] && ! empty ( $currentGoalPlan->previous_goal_id )) {
+			$previousGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->previous_goal_id); 
+			//$previousGoalPlan = $this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->previous_goal_id ); //TO DO
 			if (isset ( $previousGoalPlan )) {
 				$date1 = new DateTime ( $previousGoalPlan->date_end );
 				$date2 = new DateTime ( $previousGoalPlan->date_begin );
 				if ($date1 > $date2) {
-					throw new InvalidArgumentException ( 'The Goal Plans date_begin cannot be less than the previous goal cycles date_end (' . $previousGoalPlan->date_end . ')' );
+					throw new \InvalidArgumentException ( 'The Goal Plans date_begin cannot be less than the previous goal cycles date_end (' . $previousGoalPlan->date_end . ')' );
 				}
 			}
 		}
@@ -228,9 +236,8 @@ class GoalPlanService
 					 $expiration_date[0]->expires;
 					$nextGoalPlan->date_begin = $data['date_end'];
 					$nextGoalPlan->date_end = $expiration_date[0]->expires;
-					$data = $nextGoalPlan->validated();
 					//pr($nextGoalPlan); TO DO errors
-					$this->update ($data, $currentGoalPlan, $organization, $program);
+					$this->update ($nextGoalPlan->toArray(), $currentGoalPlan, $organization, $program);
 				}
 			}
 		}
