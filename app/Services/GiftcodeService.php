@@ -12,9 +12,11 @@ use App\Models\Giftcode;
 use App\Models\Merchant;
 use App\Models\Account;
 use App\Models\Owner;
+use Carbon\Carbon;
 use DB;
+use Illuminate\Support\Facades\Log;
 
-class GiftcodeService 
+class GiftcodeService
 {
     use IdExtractor;
 
@@ -38,7 +40,7 @@ class GiftcodeService
                 if( isset($giftcode[$key]) ) unset( $giftcode[$key] );
             }
             $result = Giftcode::createGiftcode(
-                auth()->user(), 
+                auth()->user(),
                 $merchant,
                 $giftcode
             );
@@ -54,5 +56,23 @@ class GiftcodeService
             $response['errors'] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
         }
         return $response;
+    }
+
+    /**
+     * @param Giftcode $giftcode
+     * @return bool
+     */
+    public function purchaseFromV2(Giftcode $giftcode): bool
+    {
+        $result = false;
+        try {
+            $giftcode->purchased_by_v2 = true;
+            $giftcode->purchase_date = Carbon::now()->format('Y-m-d');
+            $result = $giftcode->save();
+        } catch (\Exception $exception){
+            Log::debug($exception->getMessage());
+        }
+
+        return $result;
     }
 }

@@ -13,6 +13,15 @@ class MediumInfo extends BaseModel
     protected $guarded = [];
     protected $table = 'medium_info';
 
+    public function newQuery()
+    {
+        $query = parent::newQuery();
+
+        $query->where('purchased_by_v2', '=', 0);
+
+        return $query;
+    }
+
     public function postings()
     {
         return $this->hasOne(Posting::class, 'medium_info_id');
