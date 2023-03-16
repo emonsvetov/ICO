@@ -101,8 +101,19 @@ class Giftcode extends Model
 
 	public static function createGiftcode($user, $merchant, $giftcode)	{
 
+        // sku_value could be "$10", let's fix that
+        $giftcode['sku_value'] = preg_replace("/[^,.0-9]/", '', $giftcode['sku_value']);
+        $giftcode['sku_value'] = (int) $giftcode['sku_value'];
+
 		if( !$user || !$merchant || !$giftcode ) return;
 		$response = [];
+
+        $currentGiftCode = Giftcode::getByCode($giftcode['code'], false);
+        if ($currentGiftCode){
+            $response['success'] = true;
+            $response['gift_code_id'] = $currentGiftCode->id;
+            return $response;
+        }
 
 		if( !is_object( $user ) && is_numeric( $user ))	{
 			$user = User::find($user);
@@ -335,14 +346,15 @@ class Giftcode extends Model
 
     /**
      * @param string $code
+     * @param bool $exception
      * @return Giftcode|null
      * @throws \Exception
      */
-    public static function getByCode(string $code)
+    public static function getByCode(string $code, bool $exception = true)
     {
         self::$all = true;
         $code = self::where('code', $code)->first();
-        if (!$code){
+        if (!$code && $exception){
             throw new \Exception('Gift Code not found.');
         }
         return $code;
