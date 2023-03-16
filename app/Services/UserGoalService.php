@@ -74,7 +74,7 @@ class UserGoalService
 		$newUserGoal = UserGoal::create($userGoal);
 		return $newUserGoal;
 	}
-	//Aliase for create_future_goal
+	//Aliase for create_future_goal - TO DO - Fix $userGoal
 	public static function createFutureGoal($goalPlan, $userGoal) {
 		// set the new goal plan to begin when the previous one expires
 		//Read next goal plan
@@ -191,5 +191,91 @@ class UserGoalService
 			$msg .= "Failed to create goal plan for user(s):".(impload(",",$response['fail_users'])). ".\n";
 		}
 		return $msg;
+	}
+
+	private static function _selectUserGoalInfo() {
+		$query = DB::table('goal_plans AS gp');
+		$query->addSelect([
+			'gp.id as goal_plan_id',
+			'gp.program_id',
+			'gp.name as plan_name',
+			'gp.email_template_id',
+			'gp.notification_body',
+			'gp.created_by as plan_created_by',
+			'gp.created_at as plan_created',
+			'gp.goal_plan_type_id',
+			'gt.name as plan_type_name',
+			'ug.id as id',
+			'ug.next_user_goal_id as next_user_goal_id',
+			'ug.previous_user_goal_id as previous_user_goal_id',
+			'ug.user_id',
+			'ug.achieved_callback_id',
+			'ug.exceeded_callback_id',
+			'gp.achieved_event_id',
+			'ae.name as achieved_event_name',
+			'ae.event_icon_id as achieved_event_icon',
+
+			'gp.exceeded_event_id',
+			'ee.name as  exceeded_event_name',
+			'ee.event_icon_id as exceeded_event_icon',
+
+			'ug.target_value',
+			'gp.goal_measurement_label',
+			'ug.calc_progress_total',
+			'ug.calc_progress_percentage',
+			'ug.factor_before',
+			'gp.state_type_id',
+			'st.status as goal_state_name',
+			'gp.is_recurring',
+			'gp.award_per_progress',
+			'gp.progress_requires_unique_ref_num',
+			'ug.factor_after',
+			'gp.date_begin',
+			'gp.date_end',
+			'ug.date_met',
+			'ug.created_at',
+			'ug.created_by',
+			'ug.updated_at',
+			'ug.modified_by',
+			'ug.iterations'
+		]);
+		$query->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id');
+		$query->join('user_goals AS ug', 'ug.goal_plan_id', '=', 'gp.id');
+		$query->join('statuses AS st', 'st.id', '=', 'gp.state_type_id'); 
+		$query->join('events AS ae', 'ae.id', '=', 'gp.achieved_event_id');
+		$query->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
+
+		return $query;
+	}
+
+	/* Aliases for read_list_by_program_and_goal() */
+	 
+	public function readListByProgramAndGoal($programId = 0, $goal_plan_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$allowedColumns = array (
+				'name' 
+		);
+		// make sure $order_column is allowed column
+		if (! in_array ( $order_column, $allowedColumns )) {
+			throw new \UnexpectedValueException ( 'Invalid "order_column" passed, column value is not allowed', 400 );
+		}
+		// make sure that the $order_direction is uppercase
+		// cause we want it to be standard SQL :)
+		$order_direction = strtoupper ( $order_direction );
+		// make sure that $order_direction is either ASC or DESC, for the same reason we checked the $order_column
+		if ($order_direction != 'ASC' && $order_direction != 'DESC') {
+			throw new \InvalidArgumentException ( 'Invalid "order_direction" passed, must be either "ASC" or "DESC"', 400 );
+		}
+		// build and run the query
+		$query = self::_selectUserGoalInfo();
+		$query->where('gp.program_id', '=', $programId);
+		$query->where('goal_plan_id', '=', $goal_plan_id);
+		$query->limit($limit)->offset($offset);
+		$query->orderBy('gp.'.$order_column,$order_direction);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
 	}
 }

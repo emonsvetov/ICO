@@ -73,16 +73,21 @@ class GoalPlanService
 
 		$expiration_date = ExpirationRule::compile($expiration_rule, $data['date_begin'], $data['date_end'], isset ( $data['custom_expire_offset'] ) ? $data['custom_expire_offset'] : null, isset ( $data['custom_expire_units'] ) ? $data['custom_expire_units'] : null, isset ( $data['annual_expire_month'] ) ? $data['annual_expire_month'] : null, isset ( $data['annual_expire_day'] ) ? $data['annual_expire_day'] : null );
 
-		$data['date_end'] =  $expiration_date[0]->expires;
+		$data['date_end'] =  $expiration_date;
 
 		// build the query to INSERT an event then run it!
 		$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		if(isset($data['id'])) {
+			unset($data['id']);
+		}
 		$newGoalPlan = GoalPlan::create(  $data );
 		return $newGoalPlan;
 	}
 
 	public function update($data, $currentGoalPlan, $organization, $program)
     {
+		//$expiration_rule = ExpirationRule::getExpirationRule ($currentGoalPlan->expiration_rule_id );
+		//$this->createFuturePlan ($currentGoalPlan,$expiration_rule );
 		//$data = $currentGoalPlan->validated();
 		//pr($data);
 		//die;
@@ -161,9 +166,9 @@ class GoalPlanService
 			// Hate to do it like this...
 			// Check if the goal plan is set to recurring. Create\Delete the future goal plan as needed
 			if ($data['is_recurring'] && empty($currentGoalPlan->next_goal_id)) {
-				// TO DO $future_goal_plan_id = $this->create_future_plan ( $data, $expiration_rule ); // TO DO
+				$futureGoalPlan = $this->createFuturePlan ((object) $data, $expiration_rule ); // TO DO
 			} else if (! $data['is_recurring'] && !empty ( $currentGoalPlan->next_goal_id )) {
-				// TO DO $this->delete_future_plan ( $currentGoalPlan );
+				self::deleteFuturePlan ( $currentGoalPlan );
 			}
 		}
 
@@ -388,7 +393,7 @@ class GoalPlanService
 		$query = self::_selectGoalPlanInfo();
 		$query->where('gp.program_id', '=', $program->id);
 		$query->where('gp.state_type_id', '=', $goal_plan_state_id);
-		$query->limit($limit)->offset($offset)->get();
+		$query->limit($limit)->offset($offset);
 		$query->orderBy($order_column,$order_direction);
 		try {
             $result = $query->get();
@@ -692,66 +697,77 @@ class GoalPlanService
 	
 	}
 	//Aliases for create_future_plan
-	//TO DO 
 	public function createFuturePlan($goalPlan, $expirationRule) {
 		if (! isset ( $expirationRule )) {
 			// if we were not given an expiration rule, go get it from the goal_plan
-			$expiration_rule = ExpirationRule::find($goalPlan->expiration_rule_id);
-			//$expiration_rule = $this->expiration_rules_model->read ( ( int ) $goal_plan->program_account_holder_id, ( int ) $goal_plan->expiration_rule_id );
+			$expirationRule = ExpirationRule::find($goalPlan->expiration_rule_id);
 		}
-		// TO DO
-		$nextGoalPlan = $this->_new_future_goal ( $goal_plan, $expiration_rule );
-		$state_future_id  = Status::get_goal_future_state ();
-		$active_goal_plan_id = $goalPlan->id;
-		// ------------------------
+		$nextGoalPlan = self::_newFutureGoal($goalPlan);
+		$activeGoalPlanId = $goalPlan->id;
+		//pr($nextGoalPlan);
 		// Create the Future Goal Plan 
-		//TO DO 
-		$future_goal_plan_id = $this->_insert ( $nextGoalPlan, $state_future_id, $expiration_rule );
-		$goalPlan->next_goal_id = $future_goal_plan_id;
+		$futureGoalPlan =self::_insert ( $nextGoalPlan->toArray(), $expirationRule );
+		//pr($nextGoalPlan);Check data here
+		$futureGoalPlanId = $futureGoalPlan->id;
+		$goalPlan->next_goal_id = $futureGoalPlanId;
 		// Update the active goal plan's next goal id with the future goal plan id
 		// build the query to INSERT an event then run it!
-		$sql = "
-            UPDATE
-                " . GOAL_PLANS_TBL . " gp
-            SET
-                `next_goal_id` = {$future_goal_plan_id}
-            WHERE
-                `id` = {$active_goal_plan_id}
-        ";
-		$this->write_db->query ( $sql );
+
+		$result = GoalPlan::where(['id'=>$activeGoalPlanId])->update(['next_goal_id'=>$futureGoalPlanId]);
+
 		// check if we have insert 1 row, cause if we inserted less than 1, then that's wrong...
 		// and even worst is that we inserted more than 1, cause clearly we are inserting 1 row...
-		if ($this->write_db->affected_rows () < 0) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		if ($result < 0) {
+			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		// Update the active goal plan's next goal id with the future goal plan id
 		// build the query to INSERT an event then run it!
-		$sql = "
-            UPDATE
-                " . GOAL_PLANS_TBL . " gp
-            SET
-                `previous_goal_id` = {$active_goal_plan_id}
-            WHERE
-                `id` = {$future_goal_plan_id}
-        ";
-		$this->write_db->query ( $sql );
+
+		$result = GoalPlan::where(['id'=>$futureGoalPlanId])->update(['previous_goal_id'=>$activeGoalPlanId]);
+
 		// check if we have insert 1 row, cause if we inserted less than 1, then that's wrong...
 		// and even worst is that we inserted more than 1, cause clearly we are inserting 1 row...
-		if ($this->write_db->affected_rows () < 0) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		if ($result < 0) {
+			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		// All of the participants that were assigned to the goal plan, need to also be assigned to the future goal
-		$participants_with_goal_count = $this->user_goals_model->read_count_by_program_and_goal ( ( int ) $goal_plan->program_account_holder_id, ( int ) $goal_plan->id );
-		$user_goals_to_project_into_the_future = $this->user_goals_model->read_list_by_program_and_goal ( ( int ) $goal_plan->program_account_holder_id, ( int ) $goal_plan->id );
-		if (is_array ( $user_goals_to_project_into_the_future ) && count ( $user_goals_to_project_into_the_future ) > 0) {
-			foreach ( $user_goals_to_project_into_the_future as &$user_goal ) {
+		$userGoalsToProjectIntoTheFuture = $this->userGoalService->readListByProgramAndGoal ($goalPlan->program_id, $goalPlan->id );
+	
+		if (!empty ( $userGoalsToProjectIntoTheFuture ) && $userGoalsToProjectIntoTheFuture->count() > 0) {
+			foreach ( $userGoalsToProjectIntoTheFuture as $UserGoal ) {
 				// Create the user's future goal plan
-				$future_goal_plan_id = $this->user_goals_model->create_future_goal ( $goal_plan, $user_goal );
+				//TO DO - Fix it - not working as $UserGoal  is stdClass object
+				$futureUserGoal = $this->userGoalService::createFutureGoal( $goalPlan, $UserGoal);
 			}
 		}
-		return $future_goal_plan_id;
-	
+
+		return $futureGoalPlan;
+	}
+	/* Copy all essential data from given goal plan into a new GoalPlanObject that can be used on to create a new future goal plan.*/
+	//Aliases for _new_future_goal
+	private function _newFutureGoal($goalPlan) {
+
+		$nextGoalPlan = $goalPlan;
+		// set the new goal plan to begin when the previous one expires
+		$nextGoalPlan->date_begin = $goalPlan->date_end;
+		$nextGoalPlan->date_end = ExpirationRule::speculateNextSpecifiedEndDate ( $goalPlan->date_begin, $goalPlan->date_end );
+		$nextGoalPlan->state_type_id =  Status::get_goal_future_state ();
+		return $nextGoalPlan;
 	}
 
+	//Aliases for delete_future_plan
+	public function deleteFuturePlan($goalPlan) {
+		// Delete the future goal plan
+		GoalPlan::where('id', $goalPlan->next_goal_id)->delete();
+		// Update the active goal plan's next goal id with the future goal plan id
+		// build the query to INSERT an event then run it!
+		$result = GoalPlan::where(['id'=>$goalPlan->id])->update(['next_goal_id'=>null]);
+		
+		// Delete all of the participant goal plans that were assigned to this future plan - Happens via Cascading delete in the DB,
+		//TO DO IN DATABASE MIGRATION - Cascading delete
+		// but we need to null out the "next_user_goal_id" column on the active goal plan
+		$result = UserGoal::where(['goal_plan_id'=>$goalPlan->id])->update(['next_user_goal_id'=>null]);
+
+	}
 
 }

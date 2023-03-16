@@ -19,7 +19,7 @@ class ExpirationRule extends Model
         } catch (\Exception $e) {
             throw new \Exception ( 'Could not get expiration rules. DB query failed with error:' . $e->getMessage(), 400 );
         }
-		return $results;
+		return $results[0]->expires;
 	}
 
     //Alias for get_expiration_date_sql
@@ -74,4 +74,21 @@ class ExpirationRule extends Model
         $expirationRule = self::find($id);
         return $expirationRule; 
     }
+	//Aliases for speculate_next_specified_end_date
+	public static function speculateNextSpecifiedEndDate($start_date, $end_date) {
+		// Need to do some math to figure out how many days are between the active goal plans start and end dates
+		if ($start_date == null) {
+			return null;
+		}
+		if ($end_date === null) {
+			return null;
+		}
+		$date1 = new DateTime ( $start_date );
+		$date2 = new DateTime ( $end_date );
+		$diff_in_days = $date2->diff ( $date1 )->format ( "%a" );
+		$end_date_sql = "date_add({$end_date}, interval {$diff_in_days} DAY)";
+		$results = DB::select( DB::raw("select {$end_date_sql} as expires"));
+		return $results[0]->expires;
+	
+	}
 }
