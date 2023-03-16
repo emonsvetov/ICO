@@ -52,6 +52,18 @@ class CsvImportTypeSeeder extends Seeder
                 'context' => 'Programs',
                 'name' => 'Add Programs',
                 'type' => 'add_programs',
+            ],
+            [
+                'id' => 7,
+                'context' => 'Users',
+                'name' => 'Add and Award Users',
+                'type' => 'add_and_award_users',
+            ],
+            [
+                'id' => 8,
+                'context' => 'Users',
+                'name' => 'Award Users',
+                'type' => 'award_users',
             ]
         ];
 

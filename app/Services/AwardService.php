@@ -135,6 +135,9 @@ class AwardService
             $notificationType = 'BadgeAward';
         }
         if ( $isPeer2peer ){
+            if (!$this->canPeerPayForAwards($program, $awarder, $awardAmount, $userIds)){
+                throw new Exception('Your program\'s account balance is too low to award.');
+            }
             $escrowAccountTypeName = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
             $notificationType = 'PeerAward';
         }
@@ -823,9 +826,9 @@ class AwardService
 		$result = $this->readListUnusedPeerAwards ( $program, $user );
 		return $result;
 	}
-    /** 
+    /**
      * @method readListUnusedPeerAwards - alias to _read_list_unused_peer_awards
-     * 
+     *
 	 * @param Program $program
      * @param User $user
      * @return Collection
@@ -875,7 +878,7 @@ class AwardService
         $query->where('postings.is_credit', '=', 1);
         try {
             $result = $query->get();
-            
+
             if( $result->isNotEmpty() )
             {
                 // Get the points redeemed and expired
@@ -965,12 +968,12 @@ class AwardService
         }
     }
 
-    /** 
+    /**
      * @method reclaimPeerPoints - v2 (recliam_peer_points)
 	 *
 	 * @param Program $program
-	 * @param User $user        
-	 * @param array $reclaimData        
+	 * @param User $user
+	 * @param array $reclaimData
      * */
 
     public function reclaimPeerPoints( Program $program, User $user, $reclaimData) {
