@@ -11,9 +11,7 @@ use App\Models\Traits\UserFilters;
 use App\Models\Status;
 use App\Models\User;
 use App\Http\Traits\MediaUploadTrait;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use ReflectionClass;
 
 class UserService
 {
