@@ -194,7 +194,7 @@ class UserService
         return $user->update( ['user_status_id' => $validated['user_status_id']] );
     }
 
-    public function sendActivationReminderToParticipants()
+    public function getUsersToRemind()
     {
         $userClassForSql = str_replace('\\', '\\\\\\\\', get_class(new User));
         User::$withoutAppends = true;
@@ -224,8 +224,13 @@ class UserService
         });
 
         $query->where('users.user_status_id', '=', User::getIdStatusNew());
-        
-        $users = $query->get();
+
+        return $query->get();
+    }
+
+    public function sendActivationReminderToParticipants()
+    {
+        $users = $this->getUsersToRemind();
         $programUsers = [];
         if($users->isNotEmpty())
         {
@@ -239,9 +244,11 @@ class UserService
                 $user->update(['join_reminder_at' => now()]);
                 $user->token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
             }
+            $programIds = array_keys($programUsers);
+            $programs = Program::whereIn('id', $programIds);
             foreach( $programUsers as $programId => $_users)
             {
-                $program = Program::find($programId);
+                $program = $programs->find($programId);
                 event( new \App\Events\UsersInvited( $_users, $program, true ) );
             }
         }
