@@ -82,23 +82,28 @@ class UserGoalService
 		if(empty($futureGoalPlan))
 		return false;
 
-		$existingUserGoalPlan = UserGoal::where(['user_id' =>$userGoal->user_id, 'goal_plan_id' => $futureGoalPlan->id])->first();
+		
+		if(!empty($userGoal) && !array($userGoal)) {
+			$userGoal = $userGoal->toArray();
+		}
+		$futureUserGoalPlan = $userGoal;
+
+		$existingUserGoalPlan = UserGoal::where(['user_id' =>$userGoal['user_id'], 'goal_plan_id' => $futureGoalPlan->id])->first();
 		
 		if ($existingUserGoalPlan) {
 			//User is already assigned to this goal plan
 			return false;
 		}
-		$futureUserGoalPlan = $userGoal->toArray();
 		unset($futureUserGoalPlan['id']);
 		$futureUserGoalPlan['goal_plan_id'] = $futureGoalPlan->id;
 		// Determine what properties of the user goal to use or the future goal
-		if ($userGoal->target_value == $goalPlan->default_target) {
+		if ($userGoal['target_value'] == $goalPlan->default_target) {
 			$futureUserGoalPlan['target_value'] = $futureGoalPlan->default_target;
 		}
-		if ($userGoal->factor_before == $goalPlan->factor_before) {
+		if ($userGoal['factor_before'] == $goalPlan->factor_before) {
  			$futureUserGoalPlan['factor_before'] = $futureGoalPlan->factor_before;
 		}
-		if ($userGoal->factor_after == $goalPlan->factor_after) {
+		if ($userGoal['factor_after'] == $goalPlan->factor_after) {
 			$futureUserGoalPlan['factor_after'] = $futureGoalPlan->factor_after;
 		}
 		// Create the Future Goal Plan
@@ -108,9 +113,9 @@ class UserGoalService
 		}
 		// Update the active goal plan's next goal id with the future goal plan id
 		$futureUserGoalId = $futureUserGoal->id;
-		UserGoal::where(['id'=>$userGoal->id])->update(['next_user_goal_id'=>$futureUserGoalId]);
+		UserGoal::where(['id'=>$userGoal['id']])->update(['next_user_goal_id'=>$futureUserGoalId]);
 		// Update the future user goal plan's previous user goal with the previous user goal id
-		UserGoal::where(['id'=>$futureUserGoalId])->update(['previous_user_goal_id'=>$userGoal->id]);
+		UserGoal::where(['id'=>$futureUserGoalId])->update(['previous_user_goal_id'=>$userGoal['id']]);
 		return $futureUserGoal;
 	}
 
@@ -194,8 +199,8 @@ class UserGoalService
 	}
 
 	private static function _selectUserGoalInfo() {
-		$query = DB::table('goal_plans AS gp');
-		$query->addSelect([
+		$query = GoalPlan::from( 'goal_plans as gp' )
+		->select([
 			'gp.id as goal_plan_id',
 			'gp.program_id',
 			'gp.name as plan_name',
@@ -238,16 +243,14 @@ class UserGoalService
 			'ug.updated_at',
 			'ug.modified_by',
 			'ug.iterations'
-		]);
-		$query->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id');
-		$query->join('user_goals AS ug', 'ug.goal_plan_id', '=', 'gp.id');
-		$query->join('statuses AS st', 'st.id', '=', 'gp.state_type_id'); 
-		$query->join('events AS ae', 'ae.id', '=', 'gp.achieved_event_id');
-		$query->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
-
+		])
+		->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id')
+		->join('user_goals AS ug', 'ug.goal_plan_id', '=', 'gp.id')
+		->join('statuses AS st', 'st.id', '=', 'gp.state_type_id') 
+		->join('events AS ae', 'ae.id', '=', 'gp.achieved_event_id')
+		->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
 		return $query;
 	}
-
 	/* Aliases for read_list_by_program_and_goal() */
 	 
 	public function readListByProgramAndGoal($programId = 0, $goal_plan_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {

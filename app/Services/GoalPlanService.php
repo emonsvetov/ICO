@@ -83,19 +83,10 @@ class GoalPlanService
 		$newGoalPlan = GoalPlan::create(  $data );
 		return $newGoalPlan;
 	}
-
-	public function update($data, $currentGoalPlan, $organization, $program)
-    {
-		//$expiration_rule = ExpirationRule::getExpirationRule ($currentGoalPlan->expiration_rule_id );
-		//$this->createFuturePlan ($currentGoalPlan,$expiration_rule );
-		//$data = $currentGoalPlan->validated();
-		//pr($data);
-		//die;
-		//pr(self::expireGoalPlan($program->id,$currentGoalPlan ));
-		//die;
-		//pr($currentGoalPlan->toArray()); die;
+	public function editGoalPlan(GoalPlan $goalPlan, $data, $program, $organization) {
 		$response=[];
-        //TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
+		
+		//TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
 		/*if( empty($data['date_begin']) )   {
             $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
          }
@@ -126,33 +117,71 @@ class GoalPlanService
         //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
         // $event_type_needed,
         // ), 0, 9999);*/
+		//$data['modified_by']=auth()->user()->id;
+
 		$data['modified_by']=auth()->user()->id;
+
+		//set fields here
+
+		 //if assign all current participants then run now
+		if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
+			$assignResponse =self::assignAllParticipantsNow($goalPlan, $program);
+			$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
+		}	
+		//Update
+		try {
+			$this->update($goalPlan, $data);
+			/* TO DO
+			* // If the event template was created redirect the user to the edit page
+			if (has_resource_permission(RESOURCE_GOAL_PLANS_TIE_EVENT)) {
+				try {
+					$gpes = $this->goal_plans_model->read_list_goal_plan_events((int) $this->program->account_holder_id, array(
+						(int) $goal_plan_id,
+					));
+					$gpe = $gpes[(int) $goal_plan_id];
+					$this->update_tied_goal_plan_events($goal_plan_id, $gpe, $assigned_events, $unassigned_events);
+				} catch (Exception $e) {
+					$this->_add_error_message($e->getMessage());
+				}
+			}
+			*/
+			//php_includes\application\controllers\manager\program_settings.php
+			//TO DO - Find if goal plan is editable
+			//TO DO - Event goals event_goals code unassigned_events/assigned_events
+			//TO DO - Load events which is different from create goalplan(Pending to discusss)
+		}
+		catch (Exception $e) {
+			
+		}
+		
+	}
+	private function update($goalPlan, $data)
+    {
+		$response=[];
+
 		//VALIDATE HERE TO for recursively called functions
 		//Code - 
 		$active_state_id = Status::get_goal_active_state ();
 		$future_state_id = Status::get_goal_future_state ();
 		$expired_state_id = Status::get_goal_expired_state ();
-		//pr($active_state_id);
-		//pr($future_state_id);
-		//pr($expired_state_id);
-		//pr($currentGoalPlan->state_type_id );
+
 		// This means only the most recent expired plan can be edited
-		if ($currentGoalPlan->state_type_id == $expired_state_id) {
-			if ($data['is_recurring'] && !empty ( $currentGoalPlan->next_goal_id )) {
-				$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id); 
+		if ($goalPlan->state_type_id == $expired_state_id) {
+			if ($data['is_recurring'] && !empty ( $goalPlan->next_goal_id )) {
+				$nextGoalPlan = GoalPlan::getGoalPlan( $goalPlan->next_goal_id); 
 				//pr($nextGoalPlan);
-				//$this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->next_goal_id );
+				//$this->read ( $program_account_holder_id, ( int ) $goalPlan->next_goal_id );
 				if ($nextGoalPlan->state_type_id != $active_state_id && $nextGoalPlan->state_type_id != $future_state_id) {
 					throw new \RuntimeException ( 'Only the most recent expired goal plan can be edited.' );
 				}
 			}
 		}
 		// read the current goal plans expiration rules
-		$expiration_rule = ExpirationRule::getExpirationRule ($currentGoalPlan->expiration_rule_id );
+		$expirationRule = ExpirationRule::getExpirationRule ($goalPlan->expiration_rule_id );
 		// Don't allow the goal start date to overlap with the previous goal cycle
-		if ($data['is_recurring'] && ! empty ( $currentGoalPlan->previous_goal_id )) {
-			$previousGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->previous_goal_id); 
-			//$previousGoalPlan = $this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->previous_goal_id ); //TO DO
+		if ($data['is_recurring'] && ! empty ( $goalPlan->previous_goal_id )) {
+			$previousGoalPlan = GoalPlan::getGoalPlan( $goalPlan->previous_goal_id); 
+			//$previousGoalPlan = $this->read ( $program_account_holder_id, ( int ) $goalPlan->previous_goal_id ); //TO DO
 			if (isset ( $previousGoalPlan )) {
 				$date1 = new DateTime ( $previousGoalPlan->date_end );
 				$date2 = new DateTime ( $previousGoalPlan->date_begin );
@@ -162,13 +191,13 @@ class GoalPlanService
 			}
 		}
 		// If the goal is set to active....
-		if ($currentGoalPlan->state_type_id == $active_state_id) {
+		if ($goalPlan->state_type_id == $active_state_id) {
 			// Hate to do it like this...
 			// Check if the goal plan is set to recurring. Create\Delete the future goal plan as needed
-			if ($data['is_recurring'] && empty($currentGoalPlan->next_goal_id)) {
-				$futureGoalPlan = $this->createFuturePlan ((object) $data, $expiration_rule ); // TO DO
-			} else if (! $data['is_recurring'] && !empty ( $currentGoalPlan->next_goal_id )) {
-				self::deleteFuturePlan ( $currentGoalPlan );
+			if ($data['is_recurring'] && empty($goalPlan->next_goal_id)) {
+				$futureGoalPlan = $this->createFuturePlan ((object) $data, $expirationRule ); // TO DO
+			} else if (! $data['is_recurring'] && !empty ( $goalPlan->next_goal_id )) {
+				self::deleteFuturePlan ( $goalPlan );
 			}
 		}
 
@@ -183,24 +212,24 @@ class GoalPlanService
 		}*/
 
 
-        $updated_goal_plan  = $currentGoalPlan->update( $data );
-		$response['goal_plan'] = $currentGoalPlan; // TO DO testing here
+        $update_result  = $goalPlan->update( $data );
+		$response['goal_plan'] = $goalPlan; 
 
 		//$current_goal_plan = $this->read ( $program_account_holder_id, $goal_plan->id );
-		if (self::needsActivated($currentGoalPlan)) {
-			self::activateGoalPlan( $program->id, $currentGoalPlan ); // TO DO 
+		if (self::needsActivated($goalPlan)) {
+			self::activateGoalPlan( $goalPlan->program_id, $goalPlan ); // TO DO 
 		}
-		if (self::needsExpired ( $currentGoalPlan )) {
-			self::expireGoalPlan ( $program->id, $currentGoalPlan ); // TO DO 
+		if (self::needsExpired ( $goalPlan )) {
+			self::expireGoalPlan ( $goalPlan->program_id, $goalPlan ); // TO DO 
 		}
-		if (self::needsFutured ( $currentGoalPlan )) {
-			self::futureGoalPlan( $program->id, $currentGoalPlan ); // TO DO 
+		if (self::needsFutured ( $goalPlan )) {
+			self::futureGoalPlan( $goalPlan->program_id, $goalPlan ); // TO DO 
 		}
 
 		// RULES FOR MOVING THE DATES ON THE FUTURE GOAL PLAN
-		if ($data['is_recurring'] && isset ( $currentGoalPlan->next_goal_id ) && $currentGoalPlan->next_goal_id > 0) {
-			//$next_goal_plan = $this->read ( $program_account_holder_id, ( int ) $currentGoalPlan->next_goal_id );
-			$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id); 
+		if ($data['is_recurring'] && isset ( $goalPlan->next_goal_id ) && $goalPlan->next_goal_id > 0) {
+			//$next_goal_plan = $this->read ( $program_account_holder_id, ( int ) $goalPlan->next_goal_id );
+			$nextGoalPlan = GoalPlan::getGoalPlan( $goalPlan->next_goal_id); 
 			if (isset ( $nextGoalPlan )) {
 				$date1 = new DateTime ( $nextGoalPlan->date_begin );
 				$date2 = new DateTime ( $data['date_end'] );
@@ -211,7 +240,7 @@ class GoalPlanService
 					$active_goal_end_date = $goal_plan->date_end;
 					// Create the Future Goal Plan
 					// use the end date of the active goal plan and the expiration rule to set the end date for the future goal goal
-					switch ($expiration_rule->name) {
+					switch ($expirationRule->name) {
 						case "Custom" :
 						case "Specified" :
 							// Need to do some math to figure out how many days are between the active goal plans start and end dates
@@ -231,47 +260,22 @@ class GoalPlanService
 						case "6 Months" :
 						case "3 Months" :
 						default :
-							$offset = $expiration_rule->expire_offset;
-							$units = $expiration_rule->expire_units;
+							$offset = $expirationRule->expire_offset;
+							$units = $expirationRule->expire_units;
 							$start_date = $this->write_db->escape ( $active_goal_end_date );
 							$end_date_sql = "date_add({$start_date}, interval {$offset} {$units})";
 					}
 					$sql = "select {$end_date_sql} as expires";
 					$results = DB::select( DB::raw($sql));
-					 $expiration_date[0]->expires;
 					$nextGoalPlan->date_begin = $data['date_end'];
-					$nextGoalPlan->date_end = $expiration_date[0]->expires;
+					$nextGoalPlan->date_end = $results[0]->expires;
 					//pr($nextGoalPlan); TO DO errors
-					$this->update ($nextGoalPlan->toArray(), $currentGoalPlan, $organization, $program);
+					$this->update ($nextGoalPlan, $nextGoalPlan->toArray());
 				}
 			}
 		}
-        if (!empty($updated_goal_plan)) {
-            // Assign goal plans after goal plan updated based on INC-206
-            //if assign all current participants then run now
-            if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
-                $assignResponse =self::assignAllParticipantsNow($currentGoalPlan, $program);
-				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
-            }
-		}
-		/* TO DO
-		 * // If the event template was created redirect the user to the edit page
-			if (has_resource_permission(RESOURCE_GOAL_PLANS_TIE_EVENT)) {
-				try {
-					$gpes = $this->goal_plans_model->read_list_goal_plan_events((int) $this->program->account_holder_id, array(
-						(int) $goal_plan_id,
-					));
-					$gpe = $gpes[(int) $goal_plan_id];
-					$this->update_tied_goal_plan_events($goal_plan_id, $gpe, $assigned_events, $unassigned_events);
-				} catch (Exception $e) {
-					$this->_add_error_message($e->getMessage());
-				}
-			}
-		 */
-		//php_includes\application\controllers\manager\program_settings.php
-		//TO DO - Find if goal plan is editable
-		//TO DO - Event goals event_goals code unassigned_events/assigned_events
-	   //TO DO - Load events which is different from create goalplan(Pending to discusss)
+        
+		
 
 		return $response;
     }
@@ -735,9 +739,23 @@ class GoalPlanService
 	
 		if (!empty ( $userGoalsToProjectIntoTheFuture ) && $userGoalsToProjectIntoTheFuture->count() > 0) {
 			foreach ( $userGoalsToProjectIntoTheFuture as $UserGoal ) {
+				$userGoalData = [
+					'id'=>	$UserGoal->id,
+					'user_id'=>	$UserGoal->user_id,
+					'user_id'=>	$UserGoal->user_id,
+					'goal_plan_id'=> $UserGoal->goal_plan_id,
+					'target_value'=> $UserGoal->target_value,
+					'achieved_callback_id' => $UserGoal->achieved_callback_id,
+					'exceeded_callback_id' => $UserGoal->exceeded_callback_id,
+					'factor_before'=> $UserGoal->factor_before,
+					'factor_after'=> $UserGoal->factor_after,
+					'created_by' => $UserGoal->created_by,
+					'modified_by'=> $UserGoal->created_by,
+					'next_user_goal_id'=> $UserGoal->next_user_goal_id,
+					'previous_user_goal_id'=>$UserGoal->previous_user_goal_id
+				];
 				// Create the user's future goal plan
-				//TO DO - Fix it - not working as $UserGoal  is stdClass object
-				$futureUserGoal = $this->userGoalService::createFutureGoal( $goalPlan, $UserGoal);
+				$futureUserGoal = $this->userGoalService::createFutureGoal( $goalPlan, $userGoalData);
 			}
 		}
 
