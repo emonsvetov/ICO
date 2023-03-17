@@ -35,10 +35,8 @@ class CheckoutController extends Controller
                     ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
                         'code' => $giftCode->code,
                     ]);
-//                    Log::info('V2: ' . $giftCode->code);
-                    if ($responseV2->status() !== 200 ){
-                        Log::debug($responseV2->body());
-                    }
+                    Log::info('V2: ' . $giftCode->code);
+                    Log::debug($responseV2->body());
                 }
             }
 
