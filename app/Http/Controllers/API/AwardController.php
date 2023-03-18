@@ -34,7 +34,7 @@ class AwardController extends Controller
         Program $program,
         User $user,
         AwardService $awardService
-    ) { 
+    ) {
         $limit=9999999;
         $offset=0;
         return response($awardService->readListReclaimablePeerPointsByProgramAndUser(
