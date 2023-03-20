@@ -58,7 +58,7 @@ trait Redeemable
 	}
 
     private static function _redeem_points_for_giftcodes_no_transaction( $params )    {
-        
+
 		extract($params);
 
 		// Note: $code is a "Posting" Model object having "id" as medium_info.id
@@ -74,28 +74,28 @@ trait Redeemable
 				'journal_event_type_id' => $journal_event_type_id,
 				'prime_account_holder_id' => $user->account_holder_id,
 			]);
-	
+
 			//Set FinanceTypes
 			$finance_type_asset_id = FinanceType::getIdByName('Asset', true);
 			if( !$finance_type_asset_id ) return ['errors' => sprintf('Finance type Asset could not be set')];
-	
+
 			$finance_type_liability_id = FinanceType::getIdByName('Liability', true);
 			if( !$finance_type_liability_id ) return ['errors' => sprintf('Finance type Liability could not be set')];
-	
+
 			$finance_type_revenue_id = FinanceType::getIdByName('Revenue', true);
 			if( !$finance_type_revenue_id ) return ['errors' => sprintf('Finance type Revenue could not be set')];
-	
+
 			//Set MediumTypes
-	
+
 			$medium_type_giftcodes_id = MediumType::getIdByName('Gift Codes', true);
 			if( !$medium_type_giftcodes_id ) return ['errors' => sprintf('MediumType Gift Codes could not be set')];
-	
+
 			$medium_type_points_id = MediumType::getIdByName('Points', true);
 			if( !$medium_type_points_id ) return ['errors' => sprintf('MediumType Points could not be set')];
-	
+
 			$medium_type_monies_id = MediumType::getIdByName('Monies', true);
 			if( !$medium_type_monies_id ) return ['errors' => sprintf('MediumType Monies could not be set')];
-	
+
 			$response['postings']['redeemed']['user'] = Account::postings(
 				$user->account_holder_id,
 				'Gift Codes Redeemed',
@@ -112,7 +112,7 @@ trait Redeemable
 				$code->id, // medium_info_id
 				$currency_id
 			);
-	
+
 			$response['postings']['awarded'] = Account::postings(
 				$user->account_holder_id,
 				'Points Awarded',
@@ -129,7 +129,7 @@ trait Redeemable
 				null, // medium_info_id
 				$currency_id
 			);
-	
+
 			$response['postings']['redeemed']['program'] = Account::postings(
 				$program->account_holder_id,
 				'Points Redeemed',
@@ -210,7 +210,7 @@ trait Redeemable
     }
 
     private static function _redeem_monies_for_giftcodes_no_transaction( $params )    {
-        
+
 		extract($params);
 
 		// Note: $code is a "Posting" Model object having "id" as medium_info.id
@@ -226,28 +226,28 @@ trait Redeemable
 				'journal_event_type_id' => $journal_event_type_id,
 				'prime_account_holder_id' => $user->account_holder_id,
 			]);
-	
+
 			//Set FinanceTypes
 			$finance_type_asset_id = FinanceType::getIdByName('Asset', true);
 			if( !$finance_type_asset_id ) return ['errors' => sprintf('Finance type Asset could not be set')];
-	
+
 			$finance_type_liability_id = FinanceType::getIdByName('Liability', true);
 			if( !$finance_type_liability_id ) return ['errors' => sprintf('Finance type Liability could not be set')];
-	
+
 			$finance_type_revenue_id = FinanceType::getIdByName('Revenue', true);
 			if( !$finance_type_revenue_id ) return ['errors' => sprintf('Finance type Revenue could not be set')];
-	
+
 			//Set MediumTypes
-	
+
 			$medium_type_giftcodes_id = MediumType::getIdByName('Gift Codes', true);
 			if( !$medium_type_giftcodes_id ) return ['errors' => sprintf('MediumType Gift Codes could not be set')];
-	
+
 			$medium_type_points_id = MediumType::getIdByName('Points', true);
 			if( !$medium_type_points_id ) return ['errors' => sprintf('MediumType Points could not be set')];
-	
+
 			$medium_type_monies_id = MediumType::getIdByName('Monies', true);
 			if( !$medium_type_monies_id ) return ['errors' => sprintf('MediumType Monies could not be set')];
-	
+
 			$response['postings']['redeemed']['user'] = Account::postings(
 				$user->account_holder_id,
 				'Gift Codes Redeemed',
@@ -264,7 +264,7 @@ trait Redeemable
 				$code->id, // medium_info_id
 				$currency_id
 			);
-	
+
 			$response['postings']['awarded'] = Account::postings(
 				$user->account_holder_id,
 				'Monies Awarded',
@@ -281,7 +281,7 @@ trait Redeemable
 				null, // medium_info_id
 				$currency_id
 			);
-	
+
 			$response['postings']['redeemed']['program'] = Account::postings(
 				$program->account_holder_id,
 				'Monies Redeemed',
@@ -361,7 +361,7 @@ trait Redeemable
 		return $response;
     }
 
-    private function _handle_premium_diff( $params )  {
+    public static function _handle_premium_diff( $params )  {
         extract($params);
         // Determine the premium difference
         $premiumDiff = $code->redemption_value - $code->sku_value;
@@ -370,10 +370,10 @@ trait Redeemable
         $premiumDiff = number_format ( ( float ) $premiumDiff, 4, '.', '' );
         // pr($premiumDiff);
         $sql = "
-        SELECT 
+        SELECT
         je.prime_account_holder_id,
-        p.account_id, 
-        p.posting_amount AS amount, 
+        p.account_id,
+        p.posting_amount AS amount,
         p.qty as qty,
         a.account_type_id
         FROM journal_events AS je
@@ -383,7 +383,7 @@ trait Redeemable
         INNER JOIN account_types AS atn ON(atn.id = a.account_type_id)
         WHERE
         je.id =" . $journal_event_id;
-        
+
         $result = DB::select($sql);
         // get the count for the results
         $num_rows = count($result);
@@ -429,7 +429,7 @@ trait Redeemable
                     DB::statement($sql);
                 }	catch (RuntimeException $e) {
                     throw new RuntimeException ( "SQL query failed, query: {$sql}. Error:" . $e->getMessage(), 500 );
-                }	*/		
+                }	*/
             }
         }
     }
@@ -441,27 +441,27 @@ trait Redeemable
             $response = [];
 
             try {
-    
+
                 $journal_event_type_id = JournalEventType::getIdByType( "Transfer gift codes" );
-    
+
                 $journal_event_id = JournalEvent::insertGetId([
                     'created_at' => now(),
                     'journal_event_type_id' => $journal_event_type_id,
                     'prime_account_holder_id' => $user->account_holder_id,
                 ]);
-        
+
                 //Set FinanceTypes
                 $finance_type_asset_id = FinanceType::getIdByName('Asset', true);
                 if( !$finance_type_asset_id ) return ['errors' => sprintf('Finance type Asset could not be set')];
-        
+
                 //Set MediumTypes
-        
+
                 $medium_type_giftcodes_id = MediumType::getIdByName('Gift Codes', true);
                 if( !$medium_type_giftcodes_id ) return ['errors' => sprintf('MediumType Gift Codes could not be set')];
-        
+
                 $medium_type_monies_id = MediumType::getIdByName('Monies', true);
                 if( !$medium_type_monies_id ) return ['errors' => sprintf('MediumType Monies could not be set')];
-        
+
                 $response['postings']['transfer_code'] = Account::postings(
                     $user->account_holder_id,
                     'Gift Codes Available',
@@ -481,7 +481,7 @@ trait Redeemable
             } catch (Exception $e)	{
                 $response['errors'] = "Error while Models\Traits\Redeemable::_transfer_giftcodes_to_merchant_no_transaction. Message: {$e->getMessage()} in line: {$e->getLine()}";
             }
-    
+
             return $response;
     }
 }
