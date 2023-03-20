@@ -19,6 +19,8 @@ use App\Models\ExternalCallback;
 use App\Models\Status;
 use App\Models\ExpirationRule;
 
+use Validator;
+
 use DB;
 //use App\Services\EmailTemplateService;
 use DateTime;
@@ -52,6 +54,7 @@ class GoalPlanService
 		//Create goal plan
 		$newGoalPlan = self::_insert($data, $expiration_rule);
         
+
 		 $response['goal_plan'] = $newGoalPlan;
 		 
         if (!empty($newGoalPlan->id)) {
@@ -86,39 +89,6 @@ class GoalPlanService
 	public function editGoalPlan(GoalPlan $goalPlan, $data, $program, $organization) {
 		$response=[];
 		
-		//TO DO - not clear /git-clean/core-program/php_includes/application/controllers/manager/program_settings.php
-		/*if( empty($data['date_begin']) )   {
-            $data['date_begin'] = date("Y-m-d"); //default goal plan start start date to be today
-         }
-		// Default custom expire date to 1 year from today
-         if( empty($data['date_end']) )   { //default custom expire date to 1 year from today
-            $data['date_end'] = date('Y-m-d', strtotime('+1 year'));
-         }*/
-		/*TO DO
-		$goal_met_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_MET);
-		$goal_exceeded_program_callbacks = $this->external_callbacks_model->read_list_by_type((int) $this->program->account_holder_id, CALLBACK_TYPE_GOAL_EXCEEDED);
-		$email_templates = $this->email_templates_model->read_list_program_email_templates_by_type((int) $this->program->account_holder_id, "Goal Progress", 0, 9999);
-		$this->view_params['email_templates'] = $email_templates;
-		$empty_callback = new stdClass();
-		$empty_callback->id = 0;
-		$empty_callback->name = $this->lang->line('txt_none');
-		array_unshift($goal_met_program_callbacks, $empty_callback);
-		array_unshift($goal_exceeded_program_callbacks, $empty_callback);	 
-		*/
-        //$request->goal_measurement_label = '$';
-         //$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
-         // All goal plans use standard events except recognition goal
-         /*$event_type_needed = 1;//standard
-         //if Recognition Goal selected then set 
-		if (isset($data['goal_plan_type_id']) && ($data['goal_plan_type_id'] == GoalPlanType::GOAL_PLAN_TYPE_RECOGNITION)) {
-            $event_type_needed = 5; // Badge event type; - TO DO need some constant here
-         }*/
-        /* TO DO - Get the appropriate events for this goal plan type - this is old site code - TO DO
-        //$events = $this->event_templates_model->readListByProgram((int) $this->program->account_holder_id, array(
-        // $event_type_needed,
-        // ), 0, 9999);*/
-		//$data['modified_by']=auth()->user()->id;
-
 		$data['modified_by']=auth()->user()->id;
 
 		//set fields here
@@ -159,13 +129,17 @@ class GoalPlanService
 	}
 	private function update($goalPlan, $data)
     {
-
+		// Read the goal plan type so we can determine how to further validate the submitted data (Code is in GoalPlanRequest)
+		$validator = Validator::make($data, [
+			'achieved_event_id'=>'sometimes|integer|achieved_event_type_standard|achieved_event_type_badge',
+            'exceeded_event_id'=>'required_if:goal_plan_type_id,1|exceeded_event_type_check',
+			'date_begin'=> 'required|date_format:Y-m-d',
+            'date_end'=>'required_if:expiration_rule_id,6|date_format:Y-m-d|after:date_begin', //if expiration_rule_id is specific date
+		]);
+		
 		$response=[];
 		$currentGoalPlan = $goalPlan;
-		
-		//$response['goal_plan'] = $goalPlan; 
-		//VALIDATE HERE TO for recursively called functions
-		//Code - 
+		//pr($goalPlan);
 		$active_state_id = Status::get_goal_active_state ();
 		$future_state_id = Status::get_goal_future_state ();
 		$expired_state_id = Status::get_goal_expired_state ();
@@ -223,8 +197,7 @@ class GoalPlanService
 
 
         
-		//$update_result  = $goalPlan->update( $data );
-		//$response['goal_plan'] = $goalPlan; 
+		//In future goal plan creation some fieds are updated 
 		$currentGoalPlan = GoalPlan::getGoalPlan($goalPlan->id);
 		//$current_goal_plan = $this->read ( $program_account_holder_id, $goal_plan->id );
 		if (self::needsActivated($currentGoalPlan)) {
@@ -281,7 +254,6 @@ class GoalPlanService
 					$nextGoalPlan->date_begin = $goalPlan->date_end;
 					
 					$nextGoalPlan->date_end = $results[0]->expires;
-
 					$this->update ($nextGoalPlan, $nextGoalPlan->toArray());
 				}
 			}
@@ -304,7 +276,6 @@ class GoalPlanService
 	//Aliases for assign_all_participants_now
     public function assignAllParticipantsNow($goalPlan, $program) {
 		//
-		pr($goalPlan);
 	    //$max = 50000;
         //This is temporary solution - TO DO implemntation of original function
 		$response=[];
@@ -317,7 +288,7 @@ class GoalPlanService
 	    $available_statuses = array("Active","TO DO Activation","New");
         $added_info = [];
 	  	// $future_goal_plan_failure = 0;
-	  	$success_user=$fail_user=$success_future_user=$fail_future_user=$already_assigned=[];
+	  	$success_user= $fail_user = $success_future_user = $fail_future_user = $already_assigned = [];
         if(!empty($users)) {
 			$user_goal=[];
 			//pr($goal_plan); die;
@@ -335,15 +306,9 @@ class GoalPlanService
 				}
 			unset($user_goal['date_begin']);
 			unset($user_goal['date_end']);*/
-			$user_goal['goal_plan_id'] =  $goalPlan->id;
-			$user_goal['target_value'] = $goalPlan->default_target;
-			$user_goal['date_begin'] = $goalPlan->date_begin;
-			$user_goal['date_end'] = $goalPlan->date_end;
-			$user_goal['factor_before'] = $goalPlan->factor_before;
-			$user_goal['factor_after'] = $goalPlan->factor_after;
-			$user_goal['created_by'] =  auth()->user()->id; //$goalPlan->created_by;
-			$user_goal['achieved_callback_id'] = $goalPlan->achieved_callback_id;
-			$user_goal['exceeded_callback_id'] = $goalPlan->exceeded_callback_id;
+
+			$user_goal = $this->userGoalService::_copyUserGoalDataFromGoalPlan($goalPlan);
+			
             foreach($users as $user){
 				if (!in_array($user->status->status, $available_statuses)) {
 				 continue;
@@ -724,8 +689,10 @@ class GoalPlanService
 		}
 		$nextGoalPlan = self::_newFutureGoal($goalPlan);
 		$activeGoalPlanId = $goalPlan->id;
-		//pr($nextGoalPlan);
+		pr($nextGoalPlan);
 		// Create the Future Goal Plan 
+		//pr('dsfsd');
+		//pr($nextGoalPlan->toArray());
 		$futureGoalPlan =self::_insert ( $nextGoalPlan->toArray(), $expirationRule );
 		//pr($nextGoalPlan);Check data here
 		$futureGoalPlanId = $futureGoalPlan->id;
@@ -755,21 +722,7 @@ class GoalPlanService
 	
 		if (!empty ( $userGoalsToProjectIntoTheFuture ) && $userGoalsToProjectIntoTheFuture->count() > 0) {
 			foreach ( $userGoalsToProjectIntoTheFuture as $UserGoal ) {
-				$userGoalData = [
-					'id'=>	$UserGoal->id,
-					'user_id'=>	$UserGoal->user_id,
-					'user_id'=>	$UserGoal->user_id,
-					'goal_plan_id'=> $UserGoal->goal_plan_id,
-					'target_value'=> $UserGoal->target_value,
-					'achieved_callback_id' => $UserGoal->achieved_callback_id,
-					'exceeded_callback_id' => $UserGoal->exceeded_callback_id,
-					'factor_before'=> $UserGoal->factor_before,
-					'factor_after'=> $UserGoal->factor_after,
-					'created_by' => $UserGoal->created_by,
-					'modified_by'=> $UserGoal->created_by,
-					'next_user_goal_id'=> $UserGoal->next_user_goal_id,
-					'previous_user_goal_id'=>$UserGoal->previous_user_goal_id
-				];
+				$userGoalData = $this->userGoalService::_convertUserGoalData($UserGoal);
 				// Create the user's future goal plan
 				$futureUserGoal = $this->userGoalService::createFutureGoal( $goalPlan, $userGoalData);
 			}

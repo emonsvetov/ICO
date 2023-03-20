@@ -86,17 +86,15 @@ class GoalPlanRequest extends FormRequest
     protected function prepareForValidation()
     {
         $request = $this->all(); 
-        if( empty($request['date_begin']) )   {
-            $request['date_begin'] = date("Y-m-d"); //default goal plan start date to be today
-         }
-		// Default custom expire date to 1 year from today
-         if( empty($request['date_end']) )   { //default custom expire date to 1 year from today
-            $request['date_end'] = date('Y-m-d', strtotime('+1 year'));
-         }
-        //$request->goal_measurement_label = '$';
-        
         if(!$this->goalPlan) { //Create
-            //Ques - shoud we have to move these in request
+            if( empty($request['date_begin']) )   {
+                $request['date_begin'] = date("Y-m-d"); //default goal plan start date to be today
+            }
+            // Default custom expire date to 1 year from today
+            if( empty($request['date_end']) )   { //default custom expire date to 1 year from today
+                $request['date_end'] = date('Y-m-d', strtotime('+1 year'));
+            }
+        
             switch (isset($request['goal_plan_type_id'])) {
                 case GoalPlanType::getIdByTypeEventcount() :
                     // Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
@@ -173,8 +171,8 @@ class GoalPlanRequest extends FormRequest
             'annual_expire_day'=> 'sometimes|integer|required_if:expiration_rule_id,5|nullable',//|integer',  //if expiration_rule_id is annual integer
             'date_begin'=> 'required|date_format:Y-m-d',
             'date_end'=>'required_if:expiration_rule_id,6|date_format:Y-m-d|after:date_begin', //if expiration_rule_id is specific date
-            'factor_before'=>'nullable|integer|sometimes|required_if:goal_plan_type_id,1|min:0',//|numeric',
-            'factor_after'=>'nullable|integer|required_if:goal_plan_type_id,1|min:0',//|numeric',
+            'factor_before'=>'nullable|numeric|sometimes|required_if:goal_plan_type_id,1|min:0',//|numeric',
+            'factor_after'=>'nullable|numeric|required_if:goal_plan_type_id,1|min:0',//|numeric',
             'is_recurring'=>'sometimes|boolean',
             'award_per_progress'=>'sometimes|boolean',
             'award_email_per_progress'=>'sometimes|boolean',

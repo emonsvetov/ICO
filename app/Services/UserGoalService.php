@@ -57,7 +57,8 @@ class UserGoalService
 		// If we just created a new user goal and the goal plan is recurring, go ahead and create the user's future goal too
 		if ($goalPlan->is_recurring && $goalPlan->next_goal_id) {
 			// Create the user's future goal plan
-			$futureUserGoal = self::createFutureGoal( $goalPlan, $newUserGoalPlan);
+
+			$futureUserGoal = self::createFutureGoal( $goalPlan, self::_convertUserGoalData($newUserGoalPlan));
 			$response['future_user_goal']= $futureUserGoal;
 		}
 		// now we return the response back to the function caller*/
@@ -79,14 +80,14 @@ class UserGoalService
 		// set the new goal plan to begin when the previous one expires
 		//Read next goal plan
 		$futureGoalPlan = GoalPlan::where(['id' =>$goalPlan->next_goal_id])->first();
+
 		if(empty($futureGoalPlan))
 		return false;
-
 		
-		if(!empty($userGoal) && !array($userGoal)) {
-			$userGoal = $userGoal->toArray();
-		}
 		$futureUserGoalPlan = $userGoal;
+
+		//$futureUserGoalPlan['date_begin'] = $futureGoalPlan->date_begin;
+		//$futureUserGoalPlan['date_end'] = $futureGoalPlan->date_end;
 
 		$existingUserGoalPlan = UserGoal::where(['user_id' =>$userGoal['user_id'], 'goal_plan_id' => $futureGoalPlan->id])->first();
 		
@@ -95,7 +96,9 @@ class UserGoalService
 			return false;
 		}
 		unset($futureUserGoalPlan['id']);
+
 		$futureUserGoalPlan['goal_plan_id'] = $futureGoalPlan->id;
+
 		// Determine what properties of the user goal to use or the future goal
 		if ($userGoal['target_value'] == $goalPlan->default_target) {
 			$futureUserGoalPlan['target_value'] = $futureGoalPlan->default_target;
@@ -118,7 +121,35 @@ class UserGoalService
 		UserGoal::where(['id'=>$futureUserGoalId])->update(['previous_user_goal_id'=>$userGoal['id']]);
 		return $futureUserGoal;
 	}
-
+	public static function _copyUserGoalDataFromGoalPlan($goalPlan) {
+		$data=[];
+		$data['goal_plan_id'] =  $goalPlan->id;
+		$data['target_value'] = $goalPlan->default_target;
+		$data['date_begin'] = $goalPlan->date_begin;
+		$data['date_end'] = $goalPlan->date_end;
+		$data['factor_before'] = $goalPlan->factor_before;
+		$data['factor_after'] = $goalPlan->factor_after;
+		$data['created_by'] =  auth()->user()->id; 
+		$data['achieved_callback_id'] = $goalPlan->achieved_callback_id;
+		$data['exceeded_callback_id'] = $goalPlan->exceeded_callback_id;
+		return $data;
+	}
+	public static function _convertUserGoalData($userGoal) {
+		$data=[];
+		$data['id'] =  $userGoal->id;
+		$data['user_id'] =  $userGoal->user_id;
+		$data['goal_plan_id'] =  $userGoal->goal_plan_id;
+		$data['next_user_goal_id'] =  $userGoal->next_user_goal_id;
+		$data['previous_user_goal_id'] =  $userGoal->previous_user_goal_id;
+		$data['target_value'] = $userGoal->target_value;
+		$data['factor_before'] = $userGoal->factor_before;
+		$data['factor_after'] = $userGoal->factor_after;
+		$data['created_by'] =   $userGoal->created_by;
+		$data['modified_by'] =   $userGoal->created_by;
+		$data['achieved_callback_id'] = $userGoal->achieved_callback_id;
+		$data['exceeded_callback_id'] = $userGoal->exceeded_callback_id;
+		return $data;
+	}
 	public function createUserGoalPlans($organization,$program, $data) {
 		$userIds = $data['user_id'] ?? [];
 
@@ -141,8 +172,8 @@ class UserGoalService
 		$userGoalPlan['factor_before'] = $data['factor_before'];
 		$userGoalPlan['factor_after'] = $data['factor_after'];
 		$userGoalPlan['created_by'] = auth()->user()->id;
-		$userGoalPlan['achieved_callback_id'] =$data['achieved_callback_id'];
-		$userGoalPlan['exceeded_callback_id'] = $data['exceeded_callback_id'];
+		$userGoalPlan['achieved_callback_id'] = isset($data['achieved_callback_id']) ? $data['achieved_callback_id']: null;
+		$userGoalPlan['exceeded_callback_id'] = isset($data['exceeded_callback_id']) ? $data['exceeded_callback_id']: null;
 		$successUser=$failUser=$successFutureUser=$failFutureUser=$alreadyAssigned=$addedInfo=[];
 		if(!empty($userIds)) { 
 			$users = User::whereIn('id', $userIds)->get();
