@@ -35,7 +35,7 @@ class ProgramTemplatePolicy
         return $authUser->can('program-template-update');
     }
 
-    public function view(User $user, Organization $organization, Program $program, ProgramTemplate $programTemplate)
+    public function view(User $user, Organization $organization, Program $program, ProgramTemplate $programTemplate = null)
     {
         if( !$this->__preAuthCheck($user, $organization, $program, $programTemplate) ) return false;
         if( $user->isAdmin() ) return true;
