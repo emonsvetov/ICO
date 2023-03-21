@@ -77,7 +77,8 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'role_id',
         'created_at',
         'updated_at',
-        'avatar'
+        'avatar',
+        'join_reminder_at',
     ];
 
     /**
@@ -236,6 +237,16 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     public static function getStatusActive()
     {
         return self::getStatusByName(self::STATUS_ACTIVE);
+    }
+
+    public static function getStatusNew()
+    {
+        return self::getStatusByName(self::STATUS_NEW);
+    }
+
+    public static function getIdStatusNew()
+    {
+        return self::getStatusNew()->id;
     }
 
     /**

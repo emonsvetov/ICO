@@ -6,11 +6,13 @@ use App\Models\Domain;
 
 trait HasProgramRoles
 {
+    public static $withoutAppends = false;
     private $programRoles = null;
-    private $isManager = false;
-    private $isParticipant = false;
     protected function getArrayableAppends()
     {
+        if( self::$withoutAppends ){
+            return [];
+        }
         $this->appends = array_unique(array_merge($this->appends, ['isManager', 'isParticipant']));
         return parent::getArrayableAppends();
     }
