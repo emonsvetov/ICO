@@ -87,6 +87,8 @@ class GoalPlanService
 		return $newGoalPlan;
 	}
 	public function editGoalPlan(GoalPlan $goalPlan, $data, $program, $organization) {
+	//	$t = self::readListGoalPlanEvents($program->id,[32]);
+	//	pr($t); die;
 		$response=[];
 		
 		$data['modified_by']=auth()->user()->id;
@@ -740,6 +742,45 @@ class GoalPlanService
 		// but we need to null out the "next_user_goal_id" column on the active goal plan
 		$result = UserGoal::where(['goal_plan_id'=>$goalPlan->id])->update(['next_user_goal_id'=>null]);
 		return;
+	}
+	//Aliases for read_list_goal_plan_events
+	public function readListGoalPlanEvents($program_id, $goal_plan_ids = array()) {
+		$query = self::_selectGoalPlanInfo();
+		$query->select([
+			'events.name as event_name',
+			'events.id as event_template_id'
+		]);
+		$query->leftJoin('goal_plans_events AS gpe', 'gpe.goal_plans_id', '=', 'gp.id'); 
+		$query->leftJoin('events AS events', 'events.id', '=', 'gpe.event_id');
+	    $query->where('gp.id', 'IN', implode ( ",", $goal_plan_ids ));
+		$query->where('gp.program_id', '=', $program_id);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+		/*$results = $query->result ();
+		$return_data = array ();
+		if (is_array ( $results ) && count ( $results ) > 0) {
+			foreach ( $results as $row ) {
+				$events = array ();
+				if (! isset ( $return_data [$row->id] )) {
+					$return_data [$row->id] = new EventGoalPlanObj ();
+					$return_data [$row->id]->events = array ();
+				}
+				foreach ( $row as $n => $v ) {
+					if (! isset ( $return_data [$row->id]->events [$row->event_template_id] )) {
+						$return_data [$row->id]->events [$row->event_template_id] = new stdClass ();
+					}
+					$return_data [$row->id]->events [$row->event_template_id]->$n = $v;
+				}
+				// add the event name as the value in the events array
+				// $return_data[$row->id]->events[$row->achieved_event_template_id]= $row->event_name;
+			}
+		}
+		return $return_data;*/
+	
 	}
 
 }
