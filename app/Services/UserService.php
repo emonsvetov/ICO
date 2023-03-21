@@ -4,19 +4,14 @@ namespace App\Services;
 
 use App\Http\Requests\UserRequest;
 use App\Models\AccountType;
-use App\Models\JournalEventType;
-use App\Models\Posting;
 use App\Models\Program;
-use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\Filterable;
 use App\Models\Traits\UserFilters;
 use App\Models\Status;
 use App\Models\User;
 use App\Http\Traits\MediaUploadTrait;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
-use ReflectionClass;
 
 class UserService
 {
@@ -195,5 +190,65 @@ class UserService
     public function updateStatus($validated, $user)
     {
         return $user->update( ['user_status_id' => $validated['user_status_id']] );
+    }
+
+    public function getUsersToRemind()
+    {
+        $userClassForSql = str_replace('\\', '\\\\\\\\', get_class(new User));
+        User::$withoutAppends = true;
+        $query = User::select(
+            'users.id',
+            'users.first_name',
+            'users.last_name',
+            'users.email',
+            'users.user_status_id',
+            'roles.name AS roleName',
+            'model_has_roles.program_id',
+        );
+        $query->join('model_has_roles', function ($join) use ($userClassForSql) {
+            $join->on('model_has_roles.model_id', '=', 'users.id');
+            $join->on('model_has_roles.model_type', 'like', DB::raw("'" . $userClassForSql . "'"));
+        });
+        $query->join('roles', 'model_has_roles.role_id', '=', 'roles.id');
+        $query->join('statuses', 'statuses.id', '=', 'users.user_status_id');
+        $query->join('programs', 'programs.id', '=', 'model_has_roles.program_id');
+
+        $query->where('roles.name', 'LIKE', config('roles.participant'));
+
+        $query = $query->where(function ($query1) {
+            $query1
+            ->orWhereNull('users.join_reminder_at')
+            ->orWhere('users.join_reminder_at', '<=', \Carbon\Carbon::now()->subDays(7)->toDateTimeString());
+        });
+
+        $query->where('users.user_status_id', '=', User::getIdStatusNew());
+
+        return $query->get();
+    }
+
+    public function sendActivationReminderToParticipants()
+    {
+        $users = $this->getUsersToRemind();
+        $programUsers = [];
+        if($users->isNotEmpty())
+        {
+            foreach( $users as $user)
+            {
+                if( !isset($programUsers[$user->program_id]) )
+                {
+                    $programUsers[$user->program_id] = [];
+                }
+                $programUsers[$user->program_id][] = $user;
+                $user->update(['join_reminder_at' => now()]);
+                $user->token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+            }
+            $programIds = array_keys($programUsers);
+            $programs = Program::whereIn('id', $programIds);
+            foreach( $programUsers as $programId => $_users)
+            {
+                $program = $programs->find($programId);
+                event( new \App\Events\UsersInvited( $_users, $program, true ) );
+            }
+        }
     }
 }

@@ -7,10 +7,8 @@ use App\Http\Requests\ReclaimPeerPointsRequest;
 use App\Http\Requests\AwardRequest;
 use App\Models\Organization;
 use App\Models\Program;
-use App\Models\Award;
 use App\Models\User;
 use App\Services\AwardService;
-use Exception;
 
 class AwardController extends Controller
 {
@@ -36,7 +34,7 @@ class AwardController extends Controller
         Program $program,
         User $user,
         AwardService $awardService
-    ) { 
+    ) {
         $limit=9999999;
         $offset=0;
         return response($awardService->readListReclaimablePeerPointsByProgramAndUser(
