@@ -174,7 +174,7 @@ class GoalPlanService
 
 		// $goalPlan updated here 
 		$update_result  = $goalPlan->update( $data );
-		
+		$response['goal_plan']= $goalPlan;
 		// If the goal is set to active....
 		if ($currentGoalPlan->state_type_id == $active_state_id) {
 			// Hate to do it like this...
@@ -252,7 +252,7 @@ class GoalPlanService
 					$sql = "select {$end_date_sql} as expires";
 					$results = DB::select( DB::raw($sql));
 					$nextGoalPlan->date_begin = $goalPlan->date_end;
-					
+					//$nextGoalPlan->achieved_event_id  = 3;
 					$nextGoalPlan->date_end = $results[0]->expires;
 					$this->update ($nextGoalPlan, $nextGoalPlan->toArray());
 				}
@@ -628,35 +628,22 @@ class GoalPlanService
 		//date("Y-m-d H:i:s")
 		$expired_state_id = Status::get_goal_expired_state();
 		$result = GoalPlan::where(['id'=>$goalPlan->id])->update(['state_type_id'=>$expired_state_id,'expired'=>now()]);
-		//pr($result); die;
-		/*$sql = "
-		update goal_plans set
-			expired= now()
-			, state_type_id = {$this->write_db->escape((int)$expired_state_id)}
-		where
-			id = {$this->write_db->escape((int)$goal_plan->id)}
-		";
-		$query = $this->write_db->query ( $sql );
-		if (! $query) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
-		}*/
 		if (isset ( $goalPlan->is_recurring ) && $goalPlan->is_recurring) {
-			if (isset ( $goalPlan->next_goal_id ) && $goalPlan->next_goal_id > 0) {
+			if (isset ( $goalPlan->next_goal_id ) && $goalPlan->next_goal_id ) {
 				// advance the future goal to be active
 				$next_goal_id = ( int ) $goalPlan->next_goal_id;
 				$nextGoalPlan = GoalPlan::getGoalPlan( $next_goal_id); 
 				$goalPlan->load('goalPlanType');
-				//$next_goal_plan = $this->read ( $program_id, $next_goal_id );
 				
-				//if ($goalPlan->goalPlanType->name == GOAL_PLAN_TYPE_EVENT_COUNT) {
 				if($goalPlan->goal_plan_type_id == GoalPlanType::getIdByTypeEventcount()) {
 					// re-link the events TO DO
-					$goal_plan_events = $this->read_list_goal_plan_events ( ( int ) $program_id, array (
+					//TO DO
+					/*$goal_plan_events = $this->read_list_goal_plan_events ( ( int ) $program_id, array (
 							( int ) $goal_plan->id 
 					) );
 					foreach ( $goal_plan_events [$goal_plan->id]->events as $event_goal ) {
 						$this->tie_event_to_goal_plan ( ( int ) $program_id, ( int ) $next_goal_id, ( int ) $event_goal->event_template_id );
-					}
+					}*/
 				}
 				// activate it
 				try {
@@ -669,13 +656,9 @@ class GoalPlanService
 				//$expiration_rule = $this->expiration_rules_model->read ( $program_id, $goal_plan->expiration_rule_id );
 				$expiration_rule = ExpirationRule::find( $goalPlan->expirations_rule_id);
 				//TO DO
-				
 				$futureGoalPlan = $this->createFuturePlan ( $goalPlan, $expiration_rule );
-
-				//$next_goal_plan = $this->read ( $program_id, $future_goal_plan_id );
 				$nextGoalPlan = GoalPlan::getGoalPlan( $futureGoalPlan->id); 
 				self::activateGoalPlan( $program_id, $nextGoalPlan );
-				//$this->activate_goal_plan ( $program_id, $next_goal_plan );
 			}
 		}
 	
@@ -689,10 +672,8 @@ class GoalPlanService
 		}
 		$nextGoalPlan = self::_newFutureGoal($goalPlan);
 		$activeGoalPlanId = $goalPlan->id;
-		pr($nextGoalPlan);
+
 		// Create the Future Goal Plan 
-		//pr('dsfsd');
-		//pr($nextGoalPlan->toArray());
 		$futureGoalPlan =self::_insert ( $nextGoalPlan->toArray(), $expirationRule );
 		//pr($nextGoalPlan);Check data here
 		$futureGoalPlanId = $futureGoalPlan->id;
@@ -758,7 +739,7 @@ class GoalPlanService
 		//TO DO IN DATABASE MIGRATION - Cascading delete
 		// but we need to null out the "next_user_goal_id" column on the active goal plan
 		$result = UserGoal::where(['goal_plan_id'=>$goalPlan->id])->update(['next_user_goal_id'=>null]);
-
+		return;
 	}
 
 }
