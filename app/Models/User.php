@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\interfaces\ImageInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -77,7 +78,8 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'role_id',
         'created_at',
         'updated_at',
-        'avatar'
+        'avatar',
+        'join_reminder_at',
     ];
 
     /**
@@ -177,7 +179,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
             $user_id = $this->id;
             $user = $this;
         } else $user_id = null;
-        
+
         if( !$program_id || !$user_id ) return;
         $journal_event_types = array (); // leave $journal_event_types empty to get all  - original comment
         if( gettype($program)!='object' ) {
@@ -238,6 +240,16 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return self::getStatusByName(self::STATUS_ACTIVE);
     }
 
+    public static function getStatusNew()
+    {
+        return self::getStatusByName(self::STATUS_NEW);
+    }
+
+    public static function getIdStatusNew()
+    {
+        return self::getStatusNew()->id;
+    }
+
     /**
      * @inheritDoc
      */
@@ -277,4 +289,27 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 
         return $result;
     }
+
+
+    public static function getAllByProgramsQuery(array $programs)
+    {
+        $userStatus = User::getStatusByName(User::STATUS_DELETED);
+        return User::whereHas('roles', function (Builder $query) use ($programs) {
+            $query->where('name', 'LIKE', config('roles.participant'))
+                ->where('name', 'NOT LIKE', config('roles.manager'))
+                ->whereIn('model_has_roles.program_id', $programs);
+        })
+            ->where('user_status_id', '!=', $userStatus->id);
+    }
+
+    public static function getAllByPrograms(array $programs)
+    {
+        return self::getAllByProgramsQuery($programs)->get();
+    }
+
+    public static function getCountByPrograms(array $programs)
+    {
+        return self::getAllByProgramsQuery($programs)->count();
+    }
+
 }

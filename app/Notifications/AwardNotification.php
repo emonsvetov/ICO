@@ -51,9 +51,9 @@ class AwardNotification extends Notification implements ShouldQueue
         {
             case 'PeerAllocation':
                 return (new PeerAllocationEmail(
-                    $this->data->awardee_first_name, 
-                    $this->data->awardPoints, 
-                    $this->data->awardNotificationBody, 
+                    $this->data->awardee_first_name,
+                    $this->data->awardPoints,
+                    $this->data->awardNotificationBody,
                     $this->data->program,
                 ))->convertToMailMessage();
             break;
@@ -61,15 +61,15 @@ class AwardNotification extends Notification implements ShouldQueue
                 return (new PeerAwardEmail(
                     $this->data->awardee_first_name,
                     $this->data->awarder_first_name,
-                    $this->data->awarder_last_name, 
-                    $this->data->awardPoints, 
+                    $this->data->awarder_last_name,
+                    $this->data->awardPoints,
                     $this->data->availableAwardPoints,
                     $this->data->program
                 ))->convertToMailMessage();
             break;
             case 'BadgeAward':
                 return (new AwardBadgeEmail(
-                    $this->data->awardee_first_name, 
+                    $this->data->awardee_first_name,
                     $this->data->eventName,
                     $this->data->program
                 ))->convertToMailMessage();
@@ -77,9 +77,9 @@ class AwardNotification extends Notification implements ShouldQueue
             case 'Award';
             default:
                 return (new AwardEmail(
-                    $this->data->awardee_first_name, 
-                    $this->data->awardPoints, 
-                    $this->data->awardNotificationBody, 
+                    $this->data->awardee_first_name,
+                    $this->data->awardPoints,
+                    $this->data->awardNotificationBody,
                     $this->data->program
                 ))->convertToMailMessage();
             break;

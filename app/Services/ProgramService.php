@@ -2,6 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\EventXmlData;
+use App\Models\Giftcode;
+use App\Models\JournalEvent;
+use App\Models\JournalEventType;
+use App\Models\Posting;
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
 use App\Services\ProgramTemplateService;
@@ -12,6 +17,7 @@ use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
 use DB;
+use Illuminate\Database\Eloquent\Collection;
 
 class ProgramService
 {
@@ -596,5 +602,43 @@ class ProgramService
     public function getTemplate(Program $program)
     {
         return $this->programTemplateService->getTemplate($program);
+    }
+
+    /**
+     * @param Collection $programsAward
+     * @param string $demoStart
+     * @return void
+     */
+    public function deleteAwards(Collection $programsAward, string $demoStart){
+        foreach ($programsAward as $awardData) {
+            $awardJournalEventId = (int) $awardData->journal_event_id;
+            $primeAccountHolderId = (int) $awardData->recipient_id;
+            $journalEventTypeId = JournalEventType::getIdByType(JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES);
+            $journalEvents = JournalEvent::getByPrimeAndEventType($primeAccountHolderId, $journalEventTypeId, $demoStart);
+
+            if($journalEvents){
+                foreach ($journalEvents as $journalEvent){
+                    $journalEventID = (int) $journalEvent->id;
+                    $postings = Posting::where('journal_event_id', $journalEventID)->get();
+                    $postingIds = $postings->pluck('id');
+                    $mediumInfoIds = $postings->pluck('medium_info_id');
+
+                    Posting::whereIn('id', $postingIds)->delete();
+                    Giftcode::whereIn('id', $mediumInfoIds)->delete();
+                }
+            }
+
+            $journalEvent = JournalEvent::where('id', $awardJournalEventId)->first();
+            $journalEventID = $awardJournalEventId;
+            $eventXmlDataId = $journalEvent ? (int)$journalEvent->event_xml_data_id : null;
+
+            $postings = Posting::where('journal_event_id', $journalEventID)->get();
+            $postingIds = $postings->pluck('id');
+            $postingIds[] = (int)$awardData->posting_id;
+            Posting::whereIn('id', $postingIds)->delete();
+
+            JournalEvent::where('id', $awardJournalEventId)->delete();
+            EventXmlData::where('id', $eventXmlDataId)->delete();
+        }
     }
 }

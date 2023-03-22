@@ -150,7 +150,7 @@ class ReportHelper
         $query->leftJoin('users as awarder', 'awarder.account_holder_id', '=',
             'event_xml_data.awarder_account_holder_id');
 
-        if ($p2p){
+        if ($p2p) {
             $query->where(function ($q) {
                 $q->where('account_types.name', '=', AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS)
                     ->orWhere('account_types.name', '=', AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES);
@@ -331,4 +331,67 @@ class ReportHelper
         return $table;
     }
 
+    /**
+     * Danger! this is used to delete data
+     * @param array $programs
+     * @param array $args
+     * @return Collection|int
+     */
+    public function awardAuditDelete(
+        array $programs,
+        array $args = []
+    ) {
+
+        $count = $args['count'] ?? null;
+        if ($count) {
+            $query = User::select(
+                'postings.id'
+            );
+        } else {
+            $query = User::select([
+                'journal_events.id AS journal_event_id',
+                'users.account_holder_id AS recipient_id',
+                'postings.id AS posting_id',
+                'journal_event_types.type as journal_event_type_name',
+                'account_types.name as account_types_name'
+            ]);
+        }
+
+        $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
+        $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
+
+        $query->join('postings as program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts as program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('account_types as program_account_types', function ($join) {
+            $join->on('program_account_types.id', '=', 'program_accounts.account_type_id');
+        });
+        $query->join('programs', 'programs.account_holder_id', '=', 'program_accounts.account_holder_id');
+
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->leftJoin('users as awarder', 'awarder.account_holder_id', '=',
+            'event_xml_data.awarder_account_holder_id');
+
+        $query->where(function ($q) {
+            $q->where('account_types.name', '=', AccountType::getTypePointsAwarded())
+                ->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded())
+                ->orWhere('account_types.name', '=', AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS)
+                ->orWhere('account_types.name', '=', AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES);
+        });
+        $query->where(function ($q) {
+            $q->where('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT)
+                ->orWhere('journal_event_types.type', '=',
+                    JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT)
+                ->orWhere('journal_event_types.type', '=',
+                    JournalEventType::JOURNAL_EVENT_TYPES_ALLOCATE_PEER_POINTS_TO_RECIPIENT);
+        });
+        $query->whereIn('programs.account_holder_id', $programs);
+
+        if ($count) {
+            return $query->count();
+        }
+        return $query->get();
+    }
 }

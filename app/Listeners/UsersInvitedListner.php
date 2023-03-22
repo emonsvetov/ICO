@@ -3,8 +3,8 @@
 namespace App\Listeners;
 
 use App\Events\UsersInvited;
-use App\Services\UserService;
-use App\Notifications\UserInvitedNotifyAdmin;
+// use App\Services\UserService;
+// use App\Notifications\UserInvitedNotifyAdmin;
 use App\Notifications\UserInvitedNotifyUser;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,10 +17,10 @@ class UsersInvitedListner
      *
      * @return void
      */
-    public function __construct(UserService $userService)
-    {
-        $this->userService = $userService;
-    }
+    // public function __construct(UserService $userService)
+    // {
+    //     $this->userService = $userService;
+    // }
 
     /**
      * Handle the event.
@@ -30,7 +30,7 @@ class UsersInvitedListner
      */
     public function handle(UsersInvited $event)
     {
-        $superAdmins = $this->userService->getSuperAdmins();
+        // $superAdmins = $this->userService->getSuperAdmins();
         foreach($event->recepients as $recepient)   {
             // Notification::send($superAdmins, new UserInvitedNotifyAdmin( $event->sender, $recepient, $event->program )); //Uncomment later
             Notification::send($recepient, new UserInvitedNotifyUser( $event->sender, $recepient, $event->program, $recepient->token ));

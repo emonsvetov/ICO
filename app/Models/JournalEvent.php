@@ -11,7 +11,7 @@ class JournalEvent extends Model
 {
     use HasFactory;
     use SoftDeletes;
-	
+
     protected $guarded = [];
     public $timestamps = true;
 
@@ -20,14 +20,14 @@ class JournalEvent extends Model
 			select
 				count(0) as count
 				, round(sum(posts.posting_amount * posts.qty),2) as total
-	
+
 			from
-				accounts a 
+				accounts a
 				join account_types at on (at.id = a.account_type_id)
 				join postings posts on (posts.account_id = a.id)
 				join journal_events je on (je.id = posts.journal_event_id)
 				join journal_event_types jet on (jet.id = je.journal_event_type_id)
-	
+
 			where
 				a.account_holder_id = :account_holder_id
 				and at.name = :account_type_name
@@ -68,6 +68,14 @@ class JournalEvent extends Model
 
 	public static function backdatePosting( $journal_event_id )
 	{
-		
+
 	}
+
+    public static function getByPrimeAndEventType($prime_account_holder_id, $journal_event_type_id, $demoStart)
+    {
+        return self::where('prime_account_holder_id', $prime_account_holder_id)
+            ->where('journal_event_type_id', $journal_event_type_id)
+            ->where('created_at', '>=', $demoStart)
+            ->get();
+    }
 }

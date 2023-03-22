@@ -80,8 +80,22 @@ class Event extends Model
 
     public static function getEvent($id)
     {
-        $event = Event::find($id);  
-        return $event; 
+        $event = Event::find($id);
+        return $event;
+    }
+
+    public static function getAllByPrograms(Organization $organization, array $programs)
+    {
+        return self::where('organization_id', $organization->id)
+            ->whereIn('program_id', $programs)
+            ->get();
+    }
+
+    public static function getCountByPrograms(Organization $organization, array $programs)
+    {
+        return self::where('organization_id', $organization->id)
+            ->whereIn('program_id', $programs)
+            ->count();
     }
     public static function read($program_id, $id)
     {

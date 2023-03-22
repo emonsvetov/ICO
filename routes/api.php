@@ -215,6 +215,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::patch('/v1/organization/{organization}/program/{program}/move', [App\Http\Controllers\API\ProgramController::class, 'move'])->middleware('can:move,App\Program,organization,program');
     Route::patch('/v1/organization/{organization}/program/{program}/restore', [App\Http\Controllers\API\ProgramController::class, 'restore'])->middleware('can:restore,App\Program,organization,program')->withTrashed();
     Route::delete('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'delete'])->middleware('can:delete,App\Program,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/prepare-live-mode', [App\Http\Controllers\API\ProgramController::class, 'prepareLiveMode'])->middleware('can:liveMode,App\Program,organization,program');
+    Route::post('/v1/organization/{organization}/program/{program}/live-mode', [App\Http\Controllers\API\ProgramController::class, 'liveMode'])->middleware('can:liveMode,App\Program,organization,program');
 
     // Subprogram Routes
     Route::get('/v1/organization/{organization}/program/{program}/subprogram', [App\Http\Controllers\API\SubprogramController::class, 'index'])->middleware('can:viewAny,App\Subprogram,organization,program');

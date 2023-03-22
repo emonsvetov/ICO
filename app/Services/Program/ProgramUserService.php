@@ -9,13 +9,6 @@ use App\Models\Role;
 
 class ProgramUserService
 {
-
-    public function __construct(
-    )
-    {
-        
-    }
-
     public function create(Program $program, $validated )
     {
         $validated['organization_id'] = $program->organization_id;
