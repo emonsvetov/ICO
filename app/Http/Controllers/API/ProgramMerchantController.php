@@ -24,8 +24,8 @@ class ProgramMerchantController extends Controller
 
     public function index( Organization $organization, Program $program )
     {
-        if ( $program->merchants->isNotEmpty() ) 
-        { 
+        if ( $program->merchants->isNotEmpty() )
+        {
             return response( $program->merchants );
         }
 
@@ -37,8 +37,8 @@ class ProgramMerchantController extends Controller
         $user = auth()->user();
         $programMerchant = $program->merchants->find($merchant->id);
 
-        if ( $programMerchant ) 
-        { 
+        if ( $programMerchant )
+        {
             return response( $programMerchant );
         }
 
@@ -60,7 +60,7 @@ class ProgramMerchantController extends Controller
         {
             $columns['cost_to_program'] = $validated['cost_to_program'];
         }
-        
+
         try{
             $program->merchants()->sync( [ $validated['merchant_id'] => $columns ], false);
         }   catch( Exception $e) {
@@ -88,6 +88,6 @@ class ProgramMerchantController extends Controller
 
     public function redeemable(GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )
     {
-        return $giftcodeService->getRedeemable( $merchant );
+        return $giftcodeService->getRedeemable( $merchant, $program->is_demo );
     }
 }

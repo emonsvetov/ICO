@@ -21,6 +21,7 @@ use App\Models\Owner;
 /**
  * @property int $account_holder_id
  * @property int $factor_valuation
+ * @property bool $is_demo
  * @property timestamp $created_at
  */
 class Program extends BaseModel
