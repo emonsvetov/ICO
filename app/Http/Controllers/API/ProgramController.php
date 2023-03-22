@@ -2,7 +2,18 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\Event;
+use App\Models\EventXmlData;
+use App\Models\Giftcode;
+use App\Models\JournalEvent;
+use App\Models\JournalEventType;
+use App\Models\Posting;
+use App\Models\ProgramBudget;
+use App\Models\SocialWallPost;
+use App\Models\User;
 use App\Services\AccountService;
+use App\Services\reports\ReportHelper;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\ProgramPaymentReverseRequest;
 use App\Http\Requests\ProgramTransferMoniesRequest;
@@ -17,26 +28,23 @@ use App\Models\Organization;
 use Illuminate\Http\Request;
 use App\Models\Program;
 use App\Models\Invoice;
-use DB;
 
 class ProgramController extends Controller
 {
-    public function index( Organization $organization, ProgramService $programService, Request $request)
+    public function index(Organization $organization, ProgramService $programService, Request $request)
     {
-        $programs = $programService->index( $organization, $request->all() );
+        $programs = $programService->index($organization, $request->all());
 
-        if ( $programs->isNotEmpty() )
-        {
-            return response( $programs );
+        if ($programs->isNotEmpty()) {
+            return response($programs);
         }
 
-        return response( [] );
+        return response([]);
     }
 
     public function store(ProgramRequest $request, Organization $organization, ProgramService $programService)
     {
-        if ( $organization )
-        {
+        if ($organization) {
             $newProgram = $programService->create(
                 $request->validated() +
                 [
@@ -44,93 +52,195 @@ class ProgramController extends Controller
                     'deposit_fee' => 3,
                 ]
             );
-        }
-        else
-        {
+        } else {
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        if ( !$newProgram )
-        {
+        if ( ! $newProgram) {
             return response(['errors' => 'Program Creation failed'], 422);
         }
 
-        ProgramCreated::dispatch( $newProgram );
+        ProgramCreated::dispatch($newProgram);
 
-        return response([ 'program' => $newProgram ]);
+        return response(['program' => $newProgram]);
     }
 
-    public function show( Organization $organization, Program $program )
+    public function show(Organization $organization, Program $program)
     {
 
-        if ( $program )
-        {
-            if( !request()->get('only') ){
+        if ($program) {
+            if ( ! request()->get('only')) {
                 $program->load(['domains', 'merchants', 'organization', 'address', 'status']);
             }
             // $program->getTemplate();
-            return response( $program );
+            return response($program);
         }
 
-        return response( [] );
+        return response([]);
     }
 
-    public function update(ProgramRequest $request, Organization $organization, Program $program, ProgramService $programService )
-    {
-        $program = $programService->update( $program, $request->validated());
-        return response([ 'program' => $program ]);
+    public function update(
+        ProgramRequest $request,
+        Organization $organization,
+        Program $program,
+        ProgramService $programService
+    ) {
+        $program = $programService->update($program, $request->validated());
+        return response(['program' => $program]);
     }
 
-    public function move(ProgramMoveRequest $request, Organization $organization, Program $program )
+    public function move(ProgramMoveRequest $request, Organization $organization, Program $program)
     {
         // return $request->all();
         // return $request->validated();
-        $program->update( $request->validated() );
-        return response([ 'program' => $program ]);
+        $program->update($request->validated());
+        return response(['program' => $program]);
     }
 
-    public function delete(Organization $organization, Program $program )
+    public function delete(Organization $organization, Program $program)
     {
         $program->delete();
-        $program->update(['status'=>'deleted']);
-        return response([ 'delete' => true ]);
+        $program->update(['status' => 'deleted']);
+        return response(['delete' => true]);
     }
 
-    public function restore(Organization $organization, Program $program )
+    public function restore(Organization $organization, Program $program)
     {
         $program->restore();
-        $program->update(['status'=>'active']);
-        return response([ 'success' => true ]);
+        $program->update(['status' => 'active']);
+        return response(['success' => true]);
     }
 
-    public function getPayments(Organization $organization, Program $program, ProgramPaymentService $programPaymentService)  {
+    public function getPayments(
+        Organization $organization,
+        Program $program,
+        ProgramPaymentService $programPaymentService
+    ) {
         $payments = $programPaymentService->getPayments($program);
         return response($payments);
     }
 
-    public function submitPayments(ProgramPaymentRequest $request, Organization $organization, Program $program, ProgramPaymentService $programPaymentService)  {
+    public function submitPayments(
+        ProgramPaymentRequest $request,
+        Organization $organization,
+        Program $program,
+        ProgramPaymentService $programPaymentService
+    ) {
         $result = $programPaymentService->submitPayments($program, $request->validated());
         return response($result);
     }
 
-    public function reversePayment(ProgramPaymentReverseRequest $request, Organization $organization, Program $program, Invoice $invoice, ProgramPaymentService $programPaymentService)  {
+    public function reversePayment(
+        ProgramPaymentReverseRequest $request,
+        Organization $organization,
+        Program $program,
+        Invoice $invoice,
+        ProgramPaymentService $programPaymentService
+    ) {
         $result = $programPaymentService->reversePayment($program, $invoice, $request->validated());
         return response($result);
     }
 
-    public function getTransferMonies(Organization $organization, Program $program, ProgramService $programService)  {
+    public function getTransferMonies(Organization $organization, Program $program, ProgramService $programService)
+    {
         $result = $programService->getTransferMonies($program);
         return response($result);
     }
 
-    public function submitTransferMonies(ProgramTransferMoniesRequest $request, Organization $organization, Program $program, ProgramService $programService)  {
+    public function submitTransferMonies(
+        ProgramTransferMoniesRequest $request,
+        Organization $organization,
+        Program $program,
+        ProgramService $programService
+    ) {
         $result = $programService->submitTransferMonies($program, $request->validated());
         return response($result);
     }
 
-    public function getBalance(Organization $organization, Program $program, AccountService $accountService)  {
-        $balance = $accountService->readAvailableBalanceForProgram ( $program );
+    public function getBalance(Organization $organization, Program $program, AccountService $accountService)
+    {
+        $balance = $accountService->readAvailableBalanceForProgram($program);
         return response($balance);
+    }
+
+    public function prepareLiveMode(Organization $organization, Program $program, ProgramService $programService)
+    {
+        try {
+            $allPrograms = $program->descendantsAndSelf()->get();
+            $allProgramIds = $allPrograms->pluck('id')->toArray();
+            $allAccountHolderPrograms = $allPrograms->pluck('account_holder_id')->toArray();
+
+            $socialWalls = SocialWallPost::getCountByPrograms($organization, $allProgramIds);
+            $events = Event::getCountByPrograms($organization, $allProgramIds);
+            $budget = ProgramBudget::getSumByPrograms($allProgramIds);
+            $giftCodes = Giftcode::getCountByPrograms($allProgramIds);
+
+            $reporthelper = new ReportHelper();
+            $programsAward = $reporthelper->awardAuditDelete($allAccountHolderPrograms, ['count'=>true]);
+            $participants = User::getCountByPrograms($allProgramIds);
+
+        } catch (\Exception $exception) {
+            return response(['errors' => 'Live Mode failed', 'e' => $exception->getMessage()], 422);
+        }
+
+        return [
+            'participants' => $participants,
+            'socialWalls' => $socialWalls,
+            'events' => $events,
+            'budget' => $budget,
+            'giftCodes' => $giftCodes,
+            'programsAward' => $programsAward,
+        ];
+    }
+
+    public function liveMode(Organization $organization, Program $program, ProgramService $programService)
+    {
+        DB::beginTransaction();
+        $result = ['success' => false];
+        try {
+            $demoStart = date('Y-m-d', strtotime($program->created_at)) . ' 00:00:00';
+            $allPrograms = $program->descendantsAndSelf()->get();
+            $allProgramIds = $allPrograms->pluck('id')->toArray();
+            $allAccountHolderPrograms = $allPrograms->pluck('account_holder_id')->toArray();
+
+            $participants = User::getAllByPrograms($allProgramIds);
+            $userStatus = User::getStatusByName(User::STATUS_DELETED);
+            foreach ($participants as $participant){
+                $detach = false;
+                foreach($participant->programs as $participantProgram){
+                    if ($participant->isManagerToProgram( $participantProgram )){
+                        $detach = true;
+                        break;
+                    }
+                }
+                if ($detach){
+                    $participant->roles()->where('name', 'Participant')->wherePivot('role_id', '=', 4)->detach();
+                } else {
+                    $participant->update(['user_status_id' => $userStatus->id]);
+                }
+            }
+
+            $socialWallsQuery = SocialWallPost::getAllByProgramsQuery($organization, $allProgramIds);
+            $socialWallsQuery->delete();
+
+            $budgetQuery = ProgramBudget::getAllByProgramsQuery($allProgramIds);
+            $budgetQuery->delete();
+
+            $reportHelper = new ReportHelper();
+            $programsAward = $reportHelper->awardAuditDelete($allAccountHolderPrograms);
+            $programService->deleteAwards($programsAward, $demoStart);
+
+            $giftCodeQuery = Giftcode::getAllByProgramsQuery($allProgramIds);
+            $giftCodeQuery->delete();
+            $program->update(['is_demo' => 0]);
+            DB::commit();
+            $result['success'] = true;
+        } catch (\Exception $exception){
+            DB::rollBack();
+            $result['data'] = $exception->getMessage().$exception->getTraceAsString();
+        }
+
+        return response($result);
     }
 
 }

@@ -100,6 +100,7 @@ class UserService
 
     public function getParticipants($program, $paginate = false)
     {
+        $userStatus = User::getStatusByName(User::STATUS_DELETED);
         $program = self::GetModelByMixed($program);
         if ( ! $program->exists()) {
             return;
@@ -109,6 +110,7 @@ class UserService
             $query->where('name', 'LIKE', config('roles.participant'))
                 ->where('model_has_roles.program_id', $program->id);
         });
+        self::$query->where('user_status_id', '!=', $userStatus->id);
         self::_makeParams();
         self::applyFilters();
         if ($paginate) {

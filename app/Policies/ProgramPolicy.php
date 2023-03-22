@@ -130,4 +130,12 @@ class ProgramPolicy
         if( $user->isAdmin() ) return true;
         return $user->can('program-update-status');
     }
+
+    public function liveMode(User $user, Organization $organization, Program $program)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->isManagerToProgram( $program ) || $user->can('program-live-mode');
+    }
+
 }
