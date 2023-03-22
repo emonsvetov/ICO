@@ -19,8 +19,9 @@ use App\Models\Account;
 use App\Models\Owner;
 
 /**
- * @property int account_holder_id
- * @property int factor_valuation
+ * @property int $account_holder_id
+ * @property int $factor_valuation
+ * @property timestamp $created_at
  */
 class Program extends BaseModel
 {
