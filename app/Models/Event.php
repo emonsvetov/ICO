@@ -83,5 +83,10 @@ class Event extends Model
         $event = Event::find($id);  
         return $event; 
     }
+    public static function read($program_id, $id)
+    {
+        $goalPlan = Event::where(['program_id'=> $program_id, 'id'=>$id])->first();
+        return $goalPlan; 
+    }
 
 }
