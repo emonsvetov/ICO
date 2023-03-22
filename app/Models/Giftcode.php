@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
@@ -360,4 +361,21 @@ class Giftcode extends Model
         }
         return $code;
     }
+
+
+    public static function getAllByProgramsQuery(array $programs)
+    {
+        return self::whereIn('redeemed_program_id', $programs);
+    }
+
+    public static function getAllByPrograms(array $programs)
+    {
+        return self::getAllByProgramsQuery($programs)->get();
+    }
+
+    public static function getCountByPrograms(array $programs)
+    {
+        return self::getAllByProgramsQuery($programs)->count();
+    }
+
 }

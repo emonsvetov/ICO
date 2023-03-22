@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Http\Traits\CreatedUpdatedBy;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
@@ -90,6 +91,22 @@ class SocialWallPost extends BaseModel
             ->orderBy('social_wall_posts.created_at', 'DESC')
             ->get();
         return $comments;
+    }
+
+    public static function getAllByProgramsQuery(Organization $organization, array $programs)
+    {
+        return self::where('organization_id', $organization->id)
+            ->whereIn('program_id', $programs);
+    }
+
+    public static function getAllByPrograms(Organization $organization, array $programs)
+    {
+        return self::getAllByProgramsQuery($organization, $programs)->get();
+    }
+
+    public static function getCountByPrograms(Organization $organization, array $programs)
+    {
+        return self::getAllByProgramsQuery($organization, $programs)->count();
     }
 
 }
