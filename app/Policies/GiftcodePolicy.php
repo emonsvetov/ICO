@@ -19,6 +19,9 @@ class GiftcodePolicy
      */
     public function viewAny(User $user)
     {
+        if ($user->isAdmin()) {
+            return true;
+        }
         return $user->can('giftcode-list');
     }
 

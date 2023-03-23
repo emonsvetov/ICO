@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Giftcode;
 use App\Services\GiftcodeService;
 Use Exception;
+use Illuminate\Http\Request;
 
 class GiftcodeController extends Controller
 {
@@ -25,5 +26,20 @@ class GiftcodeController extends Controller
         }
 
         return response( $result );
+    }
+
+    public function purchaseCodes( Request $request, GiftcodeService $giftcodeService)
+    {
+        $date = $request->get('date');
+        $dateFrom = date('Y-m-d', strtotime($date)) . ' 00:00:00';
+        $dateTo = date('Y-m-d', strtotime($date)) . ' 23:59:59';
+
+        $giftcodes = Giftcode::whereNotNull('redeemed_user_id')
+            ->where('redemption_date', '>=', $dateFrom)
+            ->where('redemption_date', '<=', $dateTo)
+            ->get()
+            ->pluck('id');
+
+        return response( $giftcodes );
     }
 }

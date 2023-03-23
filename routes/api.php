@@ -311,6 +311,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // GiftCode
     Route::post('/v1/giftcode/purchase-from-v2', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseFromV2'])->middleware('can:purchaseFromV2,App\Giftcode');
+    Route::post('/v1/giftcode/purchase-codes', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseCodes'])->middleware('can:viewAny,App\Giftcode');
 
     //MerchantOptimalValues
 
