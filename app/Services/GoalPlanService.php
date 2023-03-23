@@ -109,25 +109,24 @@ class GoalPlanService
 			$result = $this->update($goalPlan, $data);
 			return $result;
 			/* TO DO
+			
 			* // If the event template was created redirect the user to the edit page
-			if (has_resource_permission(RESOURCE_GOAL_PLANS_TIE_EVENT)) {
-				try {
-					$gpes = $this->goal_plans_model->read_list_goal_plan_events((int) $this->program->account_holder_id, array(
-						(int) $goal_plan_id,
-					));
-					$gpe = $gpes[(int) $goal_plan_id];
-					
-					$this->update_tied_goal_plan_events($goal_plan_id, $gpe, $assigned_events, $unassigned_events);
+			TO DO if (has_resource_permission(RESOURCE_GOAL_PLANS_TIE_EVENT)) {*/
+				/*try {
+					$gpes = self::readListGoalPlanEvents($program->id,[$goalPlanId]);
+					$gpe = $gpes[(int) $goalPlanId];
+					//TO DO 
+					$this->update_tied_goal_plan_events($goalPlanId, $gpe, $assigned_events, $unassigned_events);
 				} catch (Exception $e) {
 					$this->_add_error_message($e->getMessage());
 				}
-			}
-			*/
+			}*/
+			
 			//php_includes\application\controllers\manager\program_settings.php
 			//TO DO - Find if goal plan is editable
 			//TO DO - Event goals event_goals code unassigned_events/assigned_events
 			//TO DO - Load events which is different from create goalplan(Pending to discusss)
-		}
+		 }
 		catch (Exception $e) {
 			return response(['errors' => $e->getMessage()], 422);	
 		}
@@ -912,5 +911,49 @@ class GoalPlanService
 		// back to the function caller
 		return ( bool ) (( int ) $result[0]->count > 0);
 	}
+
+	//Aliases for update_tied_goal_plan_events
+    /*private function updateTiedGoalPlanEvents($goalPlanId, $gpe, $assigned, $unassigned)
+    {
+        // Get a list of all of the award levels and their amounts that are currently tied to this event from SOAP API
+        // $already_assigned_events = $this->leaderboards_model->read_leaderboard((int)$this->program->account_holder_id, (int)$event_template->id, 0, 999);
+        // get the list of already assigned things from the EventLeaderboardObj
+        // this array does not contain a full EventTemplate object, only the id and the name
+        $already_assigned = $gpe->events;
+        // Determine which award levels need to be tied and/or updated
+        if (is_array($assigned) && count($assigned) > 0 && is_array($already_assigned) && count($already_assigned) > 0) {
+            for ($i = 0; $i < count($assigned); ++$i) {
+                foreach ($already_assigned as $assigned_event_id => $goal_plan) {
+                    // if the assigned award level id appears in the already assigned levels list, set the tied flag
+                    if ($assigned[$i] == $assigned_event_id) {
+                        unset($assigned[$i]);
+                        break;
+                    }
+                }
+            }
+            $assigned = array_values($assigned);
+        }
+        // Determine which award levels need to be untied
+        if (is_array($unassigned) && count($unassigned) > 0 && is_array($already_assigned) && count($already_assigned) > 0) {
+            for ($i = 0; $i < count($unassigned); ++$i) {
+                foreach ($already_assigned as $assigned_event_id => $event) {
+                    // if the assigned award level id appears in the already assigned levels list, set the tied flag
+                    if ($unassigned[$i] == $assigned_event_id) {
+                        // $unassigned[$i]['untie'] = true;
+                        $this->goal_plans_model->untie_event_from_goal_plan((int) $this->program->account_holder_id, (int) $goal_plan_id, (int) $assigned_event_id);
+                        break;
+                    }
+                }
+            }
+        }
+        $can_tie_award_level = has_resource_permission(RESOURCE_GOAL_PLANS_TIE_EVENT);
+        // loop through the assigned award levels and make sure they are tied and update their amounts as needed
+        if (is_array($assigned) && count($assigned) > 0 && $can_tie_award_level) {
+            foreach ($assigned as $assigned_event) {
+                // Try to tie the award level to the event template, this will throw an exception if it is already done
+                $this->goal_plans_model->tie_event_to_goal_plan((int) $this->program->account_holder_id, (int) $goal_plan_id, (int) $assigned_event);
+            }
+        }
+    }*/
 
 }
