@@ -47,6 +47,11 @@ class GoalPlanService
 		//$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
 		
 		//'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
+
+		// check if we have a valid $goal_plan->name format and that it is unique
+		if ($this->isValidGoalPlanByName ( $program->id, $data['name'] )) {
+			throw new \InvalidArgumentException ( 'Invalid "goal_plan->name" passed, goal_plan->name = ' . $goal_plan->name . ' is already taken', 400 );
+		}
 		$data['organization_id'] = $organization->id;
 		$data['program_id'] = $program->id;
 		$data['created_by'] = auth()->user()->id;
@@ -88,8 +93,6 @@ class GoalPlanService
 		return $newGoalPlan;
 	}
 	public function editGoalPlan(GoalPlan $goalPlan, $data, $program, $organization) {
-		//$t = self::readListGoalPlanEvents($program->id,[81,32]);
-		//pr($t); die;
 		$response=[];
 		
 		$data['modified_by']=auth()->user()->id;
@@ -140,13 +143,13 @@ class GoalPlanService
             'date_end'=>'required_if:expiration_rule_id,6|date_format:Y-m-d|after:date_begin', //if expiration_rule_id is specific date
 		]);
 		// check if we have a valid $goal_plan->name format and that it is unique
-		/*if (! $this->isValidGoalPlanByNameNotThisId ( $data['program_id'], $data['name'], $goalPlan->id )) {
-			throw new \InvalidArgumentException ( 'Invalid "goal_plan->name" passed, goal_plan->name = ' .  $data['name'] . ' is already taken', 400 );
-		}*/
+		if (! $this->isValidGoalPlanByNameNotThisId ( $goalPlan->program_id, $data['name'], $goalPlan->id )) {
+			throw new \InvalidArgumentException ( "Invalid 'goal_plan->name' passed, goal_plan->name = '" .  $data['name'] . "' is already taken", 400 );
+		}
 
 		$response=[];
 		$currentGoalPlan = $goalPlan;
-		//pr($goalPlan);
+		
 		$active_state_id = Status::get_goal_active_state ();
 		$future_state_id = Status::get_goal_future_state ();
 		$expired_state_id = Status::get_goal_expired_state ();
@@ -799,7 +802,8 @@ class GoalPlanService
 	public function untieEventFromGoalPlan($programId = 0, $goalPlanId = 0, $eventId = 0) {
 		/* TO DO Required or Not?
 		if (! $this->is_valid_goal_plan ( $program_account_holder_id, $goal_plan_id )) {
-			throw new InvalidArgumentException ( 'Invalid "goal_plan_id" passed, record not found (' . $goal_plan_id . ')', 400 );
+			throw new InvalidArgu
+			mentException ( 'Invalid "goal_plan_id" passed, record not found (' . $goal_plan_id . ')', 400 );
 		}
 		if (! $this->event_templates_model->is_valid_event_template ( $program_account_holder_id, $event_template_id )) {
 			throw new InvalidArgumentException ( 'Invalid "event_template_id" passed, record not found (' . $event_template_id . ')', 400 );
@@ -816,35 +820,27 @@ class GoalPlanService
 	//Aliases for is_valid_goal_plan_by_name_not_this_id
 	public function isValidGoalPlanByNameNotThisId($programId = 0, $goalPlanName = '', $goalPlanId = 0) {
 		
-		$linked_list_ids = implode ( ',', $this->getGoalPlanList ( $goalPlanId ) );
-		// build the query statement to check if we have this $goal_plan_id
-		$sql = "
-			SELECT
-				COUNT(gp.`id`) AS count
-			FROM
-				" . GOAL_PLANS_TBL . " gp
-			WHERE
-				gp.`program_account_holder_id` = {$program_account_holder_id}
-			AND gp.`name` = {$this->read_db->escape($goal_plan_name)}
-			AND
-				gp.`id` NOT IN ({$linked_list_ids});";
-		// run the query that we built above
-		$query = $this->read_db->query ( $sql );
-		// check if we have a valid query object
-		if (! $query || $query->num_rows () < 1) {
+		$linkedListIds = implode ( ',', $this->getGoalPlanList ( $goalPlanId ) );
+		// build the query statement to check if we have this $goalPlanId
+		$query = GoalPlan::from( 'goal_plans as gp' );
+		$query->selectRaw('COUNT(gp.`id`) AS count');
+		$query->where('gp.program_id', '=', $programId);
+		$query->where('gp.name', '=', $goalPlanName);
+		$query->whereRaw("gp.`id` NOT IN ({$linkedListIds})");
+		$result = $query->get();
+		if (! $result || $result->count() < 1) {
 			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		// check if $program_id is in the database and return the resulting boolean
 		// back to the function caller
-		return ( bool ) (( int ) $query->row ()->count == 0);
-	
+		return ( bool ) (( int ) $result[0]->count == 0);
 	}
+
 	/** Returns a list of all of the future and past goal plans that are linked together
 	 * via this id */
 	//Aliases for get_goal_plan_list
-	protected function getGoalPlanList($goal_plan_id) {
-		assert_is_positive_int ( "goal_plan_id", $goal_plan_id );
-		$linked_list_ids = array ();
+	protected function getGoalPlanList($goalPlanId) {
+		$linkedListIds = array ();
 		// Select all of the id's descending the linked list
 		$sql = " SELECT  
                      @r AS _id,
@@ -856,23 +852,18 @@ class GoalPlanService
                      @l := @l + 1 AS lvl
                     FROM    
                         (
-                         SELECT  @r := {$goal_plan_id},
+                         SELECT  @r := {$goalPlanId},
                                  @l := 0
                          ) vars,
                          goal_plans h
                     WHERE    @r <> 0
                     ORDER BY lvl DESC";
 		// run the query that we built above
-		$query = $this->read_db->query ( $sql );
-		// check if we have a valid query object
-		// if (!$query || $query->num_rows() < 1) {
-		// throw new RuntimeException('Internal query failed, please contact the API administrator', 500);
-		// }
-		$descendant_ids = $query->result ();
+		$descendant_ids = DB::select( DB::raw($sql));
 		if (is_array ( $descendant_ids ) && count ( $descendant_ids ) > 0) {
 			foreach ( $descendant_ids as $descendant ) {
 				if (isset ( $descendant->_id ) && $descendant->_id > 0) {
-					$linked_list_ids [] = $descendant->_id;
+					$linkedListIds [] = $descendant->_id;
 				}
 			}
 		}
@@ -887,28 +878,39 @@ class GoalPlanService
                      @l := @l + 1 AS lvl
                     FROM    
                         (
-                         SELECT  @r := {$goal_plan_id},
+                         SELECT  @r := {$goalPlanId},
                                  @l := 0
                          ) vars,
                          goal_plans h
                     WHERE    @r <> 0
                     ORDER BY lvl DESC";
 		// run the query that we built above
-		$query = $this->read_db->query ( $sql );
-		// check if we have a valid query object
-		// if (!$query || $query->num_rows() < 1) {
-		// throw new RuntimeException('Internal query failed, please contact the API administrator', 500);
-		// }
-		$ancestor_ids = $query->result ();
+		$ancestor_ids = DB::select( DB::raw($sql));
 		if (is_array ( $ancestor_ids ) && count ( $ancestor_ids ) > 0) {
 			foreach ( $ancestor_ids as $ancestor ) {
 				if (isset ( $ancestor->_id ) && $ancestor->_id > 0) {
-					$linked_list_ids [] = $ancestor->_id;
+					$linkedListIds [] = $ancestor->_id;
 				}
 			}
 		}
-		return array_unique ( $linked_list_ids );
+		return array_unique ( $linkedListIds );
 	
+	}
+	//Aliases for is_valid_goal_plan_by_name
+	public function isValidGoalPlanByName($programId = 0, $goalPlanName = '') {
+		// build the query statement to check if we have this $goal_plan_id
+		$query = GoalPlan::from( 'goal_plans as gp' );
+		$query->selectRaw('COUNT(gp.`id`) AS count');
+		$query->where('gp.program_id', '=', $programId);
+		$query->where('gp.name', '=', $goalPlanName);
+		$result = $query->get();
+		// check if we have a valid query object
+		if (! $result) {
+			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+		}
+		// check if $program_id is in the database and return the resulting boolean
+		// back to the function caller
+		return ( bool ) (( int ) $result[0]->count > 0);
 	}
 
 }

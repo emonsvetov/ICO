@@ -147,7 +147,7 @@ class GoalPlanRequest extends FormRequest
             'organization_id'=>'required|integer',
             'name'=>[
                 "required",
-                Rule::unique('goal_plans', 'name')->ignore($this->goalPlan)
+                //Rule::unique('goal_plans', 'name')->ignore($this->goalPlan)
             ],
             //'required|string|unique:goal_plans',
             'goal_measurement_label'=>'required|string',
