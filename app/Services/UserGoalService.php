@@ -31,7 +31,7 @@ class UserGoalService
 		if ($dateEnd < $dateBegin) {
 			//$response['error']='Date begin cannot be less than Date end';
 			//return $response;
-			throw new Exception('Date begin cannot be less than Date end');
+			throw new \Exception('Date begin cannot be less than Date end');
 		}
 
 		$currentUserGoalPlan = UserGoal::where(['user_id' =>$userGoal['user_id'], 'goal_plan_id' => $userGoal['goal_plan_id']])->first();
@@ -229,7 +229,20 @@ class UserGoalService
 		}
 		return $msg;
 	}
-
+	/* Alias for read_list_by_program()*/
+	public static function readListByProgram($program, $user, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$query = self::_selectUserGoalInfo();
+		$query->where('gp.program_id', '=', $program->id);
+		$query->where('ug.user_id', '=', $user->id);
+		$query->limit($limit)->offset($offset)->get();
+		$query->orderBy('gp.'.$order_column,$order_direction);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
 	private static function _selectUserGoalInfo() {
 		$query = GoalPlan::from( 'goal_plans as gp' )
 		->select([
@@ -308,7 +321,7 @@ class UserGoalService
             $result = $query->get();
             return $result;
         } catch (Exception $e) {
-            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
 	}
 }
