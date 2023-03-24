@@ -179,6 +179,7 @@ class UserGoalService
 		$response['already_assigned']=$alreadyAssigned;
 		return ['message'=>self::createUserGoalRes($response)];
 	}
+
 	public function createUserGoalRes($response) {
 		$msg='';
 		if(!empty($response['already_assigned'])) {
@@ -191,5 +192,74 @@ class UserGoalService
 			$msg .= "Failed to create goal plan for user(s):".(impload(",",$response['fail_users'])). ".\n";
 		}
 		return $msg;
+	}
+
+	/* Alias for read_list_by_program()*/
+	public static function readListByProgram($program, $user, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$query = self::_SelectUserGoalInfo();
+		$query->where('gp.program_id', '=', $program->id);
+		$query->where('ug.user_id', '=', $user->id);
+		$query->limit($limit)->offset($offset)->get();
+		$query->orderBy('gp.'.$order_column,$order_direction);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+	//Alias for _select_user_goal_info
+	private static function _SelectUserGoalInfo() {
+		$query = DB::table('goal_plans AS gp');
+		$query->addSelect([
+			'gp.id as goal_plan_id',
+			'gp.program_id',
+			'gp.name as plan_name',
+			'gp.email_template_id',
+			'gp.notification_body',
+			'gp.created_by as plan_created_by',
+			'gp.created_at as plan_created',
+			'gp.goal_plan_type_id',
+			'gt.name as goal_plan_type_name',
+			'ug.id as id',
+			'ug.next_user_goal_id as next_user_goal_id',
+			'ug.previous_user_goal_id as previous_user_goal_id',
+			'ug.user_id',
+			'ug.achieved_callback_id',
+			'ug.exceeded_callback_id',
+			'gp.achieved_event_id',
+			'ae.name as achieved_event_name',
+			'ae.event_icon_id as achieved_event_icon',
+			'gp.exceeded_event_id',
+			'ee.name as  exceeded_event_name',
+			'ee.event_icon_id as exceeded_event_icon',	
+			'ug.target_value',
+			'gp.goal_measurement_label',
+			'ug.calc_progress_total',
+			'ug.calc_progress_percentage',
+			'ug.factor_before',
+			'gp.state_type_id', 
+			'st.status as goal_state_type_name',
+			'gp.is_recurring as is_recurring',
+			'gp.award_per_progress',
+			'gp.progress_requires_unique_ref_num',
+			'ug.factor_after',
+			'gp.date_begin',
+			'gp.date_end',
+			'ug.date_met',
+			'ug.created_at',
+			'ug.created_by',
+			'ug.updated_at',
+			'ug.modified_by',
+			'ug.deleted',
+			'ug.iterations',
+		]);
+		$query->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id');
+		$query->join('user_goals AS ug', 'ug.goal_plan_id', '=', 'gp.id');
+		$query->join('statuses AS st', 'st.id', '=', 'gp.state_type_id'); 
+		$query->join('events AS ae', 'ae.id', '=', 'gp.achieved_event_id');
+		$query->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
+
+		return $query;
 	}
 }
