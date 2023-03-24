@@ -791,7 +791,7 @@ class GoalPlanService
 				}
 			}
 		}
-		$newGoalPlan = GoalPlan::create(['event_id'=> $eventId,'goal_plans_id'=> $goalPlanId]);
+		$newGoalPlan = GoalPlansEvent::create(['event_id'=> $eventId,'goal_plans_id'=> $goalPlanId]);
 		if (! $newGoalPlan) {
 			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
