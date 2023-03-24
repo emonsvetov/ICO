@@ -311,6 +311,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // GiftCode
     Route::post('/v1/giftcode/purchase-from-v2', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseFromV2'])->middleware('can:purchaseFromV2,App\Giftcode');
+    Route::post('/v1/giftcode/purchase-codes', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseCodes'])->middleware('can:viewAny,App\Giftcode');
 
     //MerchantOptimalValues
 
@@ -511,6 +512,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/readListByProgramAndUser',
+     [App\Http\Controllers\API\UserGoalController::class, 'readListByProgramAndUser'])->name('api.v1.readListByProgramAndUser')->middleware('can:readListByProgramAndUser,App\UserGoal,organization,program,user');
 
     //External Callback
 

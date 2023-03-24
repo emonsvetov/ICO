@@ -215,6 +215,7 @@ class UserGoalService
 		$response['already_assigned']=$alreadyAssigned;
 		return ['message'=>self::createUserGoalRes($response)];
 	}
+
 	public function createUserGoalRes($response) {
 		$msg='';
 		if(!empty($response['already_assigned'])) {
@@ -240,7 +241,7 @@ class UserGoalService
 			'gp.created_by as plan_created_by',
 			'gp.created_at as plan_created',
 			'gp.goal_plan_type_id',
-			'gt.name as plan_type_name',
+			'gt.name as goal_plan_type_name',
 			'ug.id as id',
 			'ug.next_user_goal_id as next_user_goal_id',
 			'ug.previous_user_goal_id as previous_user_goal_id',
@@ -250,11 +251,9 @@ class UserGoalService
 			'gp.achieved_event_id',
 			'ae.name as achieved_event_name',
 			'ae.event_icon_id as achieved_event_icon',
-
 			'gp.exceeded_event_id',
 			'ee.name as  exceeded_event_name',
 			'ee.event_icon_id as exceeded_event_icon',
-
 			'ug.target_value',
 			'gp.goal_measurement_label',
 			'ug.calc_progress_total',
@@ -282,8 +281,8 @@ class UserGoalService
 		->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
 		return $query;
 	}
-	/* Aliases for read_list_by_program_and_goal() */
-	 
+
+	/* Alias for read_list_by_program_and_goal() */ 
 	public function readListByProgramAndGoal($programId = 0, $goal_plan_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
 		$allowedColumns = array (
 				'name' 
