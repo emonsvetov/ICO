@@ -59,8 +59,6 @@ class GoalPlanService
 		$expiration_rule = ExpirationRule::find($data['expiration_rule_id']);
 		//Create goal plan
 		$newGoalPlan = self::_insert($data, $expiration_rule);
-        
-
 		 $response['goal_plan'] = $newGoalPlan;
 		 
         if (!empty($newGoalPlan->id)) {
@@ -74,9 +72,9 @@ class GoalPlanService
             }
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		}
-			return $response;
+		return $response;
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
-		// unset($validated['custom_email_template']);
+		//unset($validated['custom_email_template']);
     }
 	private static function _insert($data, $expiration_rule) {
 
@@ -97,9 +95,8 @@ class GoalPlanService
 		
 		$data['modified_by']=auth()->user()->id;
 
-		//set fields here
-
-		 //if assign all current participants then run now
+		//set any fields here
+		//if assign all current participants then run now
 		if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
 			$assignResponse =self::assignAllParticipantsNow($goalPlan, $program);
 			$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
@@ -277,11 +274,10 @@ class GoalPlanService
 		}
 		return $msg;
 	}
-	//Aliases for assign_all_participants_now
+	//Alias for assign_all_participants_now
     public function assignAllParticipantsNow($goalPlan, $program) {
-		//
 	    //$max = 50000;
-        //This is temporary solution - TO DO implemntation of original function
+        //This is temporary solution - TO DO implementation of original function
 		$response=[];
         $users =  $this->programService->getParticipants($program, true);
 		if(!empty($users)) {
@@ -295,7 +291,6 @@ class GoalPlanService
 	  	$success_user= $fail_user = $success_future_user = $fail_future_user = $already_assigned = [];
         if(!empty($users)) {
 			$user_goal=[];
-			//pr($goal_plan); die;
 			// Copy the submitted info into the user's goal plan array
 			/*
 				Already in create function 
@@ -354,27 +349,13 @@ class GoalPlanService
 		return $response;
 	}
 
-	 /** 
-     * @method readActiveByProgram - alias to read_active_by_program
-     * 
-	 * @param Program $program
-     * @return Collection
-     * @throws Exception
-     */
+	//Alias to read_active_by_program
 	public static function readActiveByProgram($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
 		$state = Status::get_goal_active_state();
 		return self::readListByProgramAndState ( $program, $state, $offset, $limit, $order_column, $order_direction );
 	
 	}
-
-	 /** 
-     * @method readListByProgramAndState - alias to read_list_by_program_and_state
-     * 
-	 * @param Program $program
-     * @param $goal_plan_state_id
-     * @return Collection
-     * @throws Exception
-     */
+	//Alias to read_list_by_program_and_state
 	public static function readListByProgramAndState($program, $goal_plan_state_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
 		$query = self::_selectGoalPlanInfo();
 		$query->where('gp.program_id', '=', $program->id);
@@ -417,10 +398,7 @@ class GoalPlanService
         } */
 	}
 
-	  /** 
-     * @method _selectGoalPlanInfo - alias to _select_goal_plan_info
-     * @return Collection
-     */
+	//Alias to _select_goal_plan_info
 	private static function _selectGoalPlanInfo() {
 		$query = DB::table('goal_plans AS gp');
 		//$query = GoalPlan::from( 'goal_plans as gp' );
@@ -497,7 +475,7 @@ class GoalPlanService
 		
 		return $query;
 	}
-	//Aliases for  needs_activated
+	//Alias for  needs_activated
 	public static function needsActivated($goalPlan) {
 		$sql = "
     		select
@@ -516,7 +494,7 @@ class GoalPlanService
 		return ( bool ) ($result[0]->status == 'active');
 	}
 
-	//Aliases for  needs_expired
+	//Alias for  needs_expired
 	public static function needsExpired($goalPlan) {
 		$sql = "
     		select
@@ -534,7 +512,7 @@ class GoalPlanService
 		}
 		return ( bool ) ($result[0]->status == 'expired');
 	}
-	//Aliases for needs_futured
+	//Alias for needs_futured
 	public function needsFutured($goalPlan) {
 		$sql = "
     		select
@@ -552,7 +530,7 @@ class GoalPlanService
 		}
 		return ( bool ) ($result[0]->status == 'future');
 	}
-	//Aliases for activate_goal_plan
+	//Alias for activate_goal_plan
 	public function activateGoalPlan($program_id, $goalPlan) {
 		// 1. set the user_goals record to expired
 		// 2. identify the future goal and promote it to active
@@ -580,7 +558,7 @@ class GoalPlanService
 		}
 	
 	}
-	//Aliases for future_goal_plan
+	//Alias for future_goal_plan
 	public function futureGoalPlan($program_id, $goalPlan) {
 		// 1. set the user_goals record to expired
 		// 2. identify the future goal and promote it to active
@@ -600,7 +578,7 @@ class GoalPlanService
 			}
 		}
 	}
-	//Aliases for expire_goal_plan
+	//Alias for expire_goal_plan
 	public function expireGoalPlan($programId, $goalPlan) {
 		// 1. set the user_goals record to expired
 		// 2. identify the future goal and promote it to active
@@ -642,7 +620,7 @@ class GoalPlanService
 		}
 	
 	}
-	//Aliases for create_future_plan
+	//Alias for create_future_plan
 	public function createFuturePlan($goalPlan, $expirationRule) {
 		
 		if (! isset ( $expirationRule )) {
@@ -691,7 +669,7 @@ class GoalPlanService
 		return $futureGoalPlan;
 	}
 	/* Copy all essential data from given goal plan into a new GoalPlanObject that can be used on to create a new future goal plan.*/
-	//Aliases for _new_future_goal
+	//Alias for _new_future_goal
 	private function _newFutureGoal($goalPlan) {
 		$nextGoalPlan = $goalPlan;
 		unset($nextGoalPlan->expired);
@@ -705,7 +683,7 @@ class GoalPlanService
 		return $nextGoalPlan;
 	}
 
-	//Aliases for delete_future_plan
+	//Alias for delete_future_plan
 	public function deleteFuturePlan($goalPlan) {
 		// Delete the future goal plan
 		GoalPlan::where('id', $goalPlan->next_goal_id)->delete();
@@ -719,7 +697,7 @@ class GoalPlanService
 		$result = UserGoal::where(['goal_plan_id'=>$goalPlan->id])->update(['next_user_goal_id'=>null]);
 		return;
 	}
-	//Aliases for read_list_goal_plan_events
+	//Alias for read_list_goal_plan_events
 	public function readListGoalPlanEvents($programId, $goalPlanIds = array()) {
 		$query = self::_selectGoalPlanInfo();
 		$query->addSelect([
@@ -757,7 +735,7 @@ class GoalPlanService
 		return $return_data;
 	}
 
-	//Aliases for tie_event_to_goal_plan
+	//Alias for tie_event_to_goal_plan
 	public function tieEventToGoalPlan($programId = 0, $goalPlanId = 0, $eventId = 0) {
 		
 		/*if (! $this->is_valid_goal_plan ( $program_account_holder_id, $goal_plan_id )) {
@@ -797,7 +775,7 @@ class GoalPlanService
 		}
 		return true;
 	}
-	//Aliases for untie_event_from_goal_plan
+	//Alias for untie_event_from_goal_plan
 	public function untieEventFromGoalPlan($programId = 0, $goalPlanId = 0, $eventId = 0) {
 		/* TO DO Required or Not?
 		if (! $this->is_valid_goal_plan ( $program_account_holder_id, $goal_plan_id )) {
@@ -816,7 +794,7 @@ class GoalPlanService
 		return true;
 	}
 
-	//Aliases for is_valid_goal_plan_by_name_not_this_id
+	//Alias for is_valid_goal_plan_by_name_not_this_id
 	public function isValidGoalPlanByNameNotThisId($programId = 0, $goalPlanName = '', $goalPlanId = 0) {
 		
 		$linkedListIds = implode ( ',', $this->getGoalPlanList ( $goalPlanId ) );
@@ -837,7 +815,7 @@ class GoalPlanService
 
 	/** Returns a list of all of the future and past goal plans that are linked together
 	 * via this id */
-	//Aliases for get_goal_plan_list
+	//Alias for get_goal_plan_list
 	protected function getGoalPlanList($goalPlanId) {
 		$linkedListIds = array ();
 		// Select all of the id's descending the linked list
@@ -895,7 +873,8 @@ class GoalPlanService
 		return array_unique ( $linkedListIds );
 	
 	}
-	//Aliases for is_valid_goal_plan_by_name
+	
+	//Alias for is_valid_goal_plan_by_name
 	public function isValidGoalPlanByName($programId = 0, $goalPlanName = '') {
 		// build the query statement to check if we have this $goal_plan_id
 		$query = GoalPlan::from( 'goal_plans as gp' );
@@ -912,7 +891,7 @@ class GoalPlanService
 		return ( bool ) (( int ) $result[0]->count > 0);
 	}
 
-	//Aliases for update_tied_goal_plan_events
+	//Alias for update_tied_goal_plan_events
     /*private function updateTiedGoalPlanEvents($goalPlanId, $gpe, $assigned, $unassigned)
     {
         // Get a list of all of the award levels and their amounts that are currently tied to this event from SOAP API
