@@ -31,7 +31,7 @@ class UserGoalService
 		if ($dateEnd < $dateBegin) {
 			//$response['error']='Date begin cannot be less than Date end';
 			//return $response;
-			throw new Exception('Date begin cannot be less than Date end');
+			throw new \Exception('Date begin cannot be less than Date end');
 		}
 
 		$currentUserGoalPlan = UserGoal::where(['user_id' =>$userGoal['user_id'], 'goal_plan_id' => $userGoal['goal_plan_id']])->first();
@@ -57,7 +57,8 @@ class UserGoalService
 		// If we just created a new user goal and the goal plan is recurring, go ahead and create the user's future goal too
 		if ($goalPlan->is_recurring && $goalPlan->next_goal_id) {
 			// Create the user's future goal plan
-			$futureUserGoal = self::createFutureGoal( $goalPlan, $newUserGoalPlan);
+
+			$futureUserGoal = self::createFutureGoal( $goalPlan, self::_convertUserGoalData($newUserGoalPlan));
 			$response['future_user_goal']= $futureUserGoal;
 		}
 		// now we return the response back to the function caller*/
@@ -74,31 +75,38 @@ class UserGoalService
 		$newUserGoal = UserGoal::create($userGoal);
 		return $newUserGoal;
 	}
-	//Aliase for create_future_goal
+	//Aliase for create_future_goal - TO DO - Fix $userGoal
 	public static function createFutureGoal($goalPlan, $userGoal) {
 		// set the new goal plan to begin when the previous one expires
 		//Read next goal plan
 		$futureGoalPlan = GoalPlan::where(['id' =>$goalPlan->next_goal_id])->first();
+
 		if(empty($futureGoalPlan))
 		return false;
+		
+		$futureUserGoalPlan = $userGoal;
 
-		$existingUserGoalPlan = UserGoal::where(['user_id' =>$userGoal->user_id, 'goal_plan_id' => $futureGoalPlan->id])->first();
+		//$futureUserGoalPlan['date_begin'] = $futureGoalPlan->date_begin;
+		//$futureUserGoalPlan['date_end'] = $futureGoalPlan->date_end;
+
+		$existingUserGoalPlan = UserGoal::where(['user_id' =>$userGoal['user_id'], 'goal_plan_id' => $futureGoalPlan->id])->first();
 		
 		if ($existingUserGoalPlan) {
 			//User is already assigned to this goal plan
 			return false;
 		}
-		$futureUserGoalPlan = $userGoal->toArray();
 		unset($futureUserGoalPlan['id']);
+
 		$futureUserGoalPlan['goal_plan_id'] = $futureGoalPlan->id;
+
 		// Determine what properties of the user goal to use or the future goal
-		if ($userGoal->target_value == $goalPlan->default_target) {
+		if ($userGoal['target_value'] == $goalPlan->default_target) {
 			$futureUserGoalPlan['target_value'] = $futureGoalPlan->default_target;
 		}
-		if ($userGoal->factor_before == $goalPlan->factor_before) {
+		if ($userGoal['factor_before'] == $goalPlan->factor_before) {
  			$futureUserGoalPlan['factor_before'] = $futureGoalPlan->factor_before;
 		}
-		if ($userGoal->factor_after == $goalPlan->factor_after) {
+		if ($userGoal['factor_after'] == $goalPlan->factor_after) {
 			$futureUserGoalPlan['factor_after'] = $futureGoalPlan->factor_after;
 		}
 		// Create the Future Goal Plan
@@ -108,12 +116,40 @@ class UserGoalService
 		}
 		// Update the active goal plan's next goal id with the future goal plan id
 		$futureUserGoalId = $futureUserGoal->id;
-		UserGoal::where(['id'=>$userGoal->id])->update(['next_user_goal_id'=>$futureUserGoalId]);
+		UserGoal::where(['id'=>$userGoal['id']])->update(['next_user_goal_id'=>$futureUserGoalId]);
 		// Update the future user goal plan's previous user goal with the previous user goal id
-		UserGoal::where(['id'=>$futureUserGoalId])->update(['previous_user_goal_id'=>$userGoal->id]);
+		UserGoal::where(['id'=>$futureUserGoalId])->update(['previous_user_goal_id'=>$userGoal['id']]);
 		return $futureUserGoal;
 	}
-
+	public static function _copyUserGoalDataFromGoalPlan($goalPlan) {
+		$data=[];
+		$data['goal_plan_id'] =  $goalPlan->id;
+		$data['target_value'] = $goalPlan->default_target;
+		$data['date_begin'] = $goalPlan->date_begin;
+		$data['date_end'] = $goalPlan->date_end;
+		$data['factor_before'] = $goalPlan->factor_before;
+		$data['factor_after'] = $goalPlan->factor_after;
+		$data['created_by'] =  auth()->user()->id; 
+		$data['achieved_callback_id'] = $goalPlan->achieved_callback_id;
+		$data['exceeded_callback_id'] = $goalPlan->exceeded_callback_id;
+		return $data;
+	}
+	public static function _convertUserGoalData($userGoal) {
+		$data=[];
+		$data['id'] =  $userGoal->id;
+		$data['user_id'] =  $userGoal->user_id;
+		$data['goal_plan_id'] =  $userGoal->goal_plan_id;
+		$data['next_user_goal_id'] =  $userGoal->next_user_goal_id;
+		$data['previous_user_goal_id'] =  $userGoal->previous_user_goal_id;
+		$data['target_value'] = $userGoal->target_value;
+		$data['factor_before'] = $userGoal->factor_before;
+		$data['factor_after'] = $userGoal->factor_after;
+		$data['created_by'] =   $userGoal->created_by;
+		$data['modified_by'] =   $userGoal->created_by;
+		$data['achieved_callback_id'] = $userGoal->achieved_callback_id;
+		$data['exceeded_callback_id'] = $userGoal->exceeded_callback_id;
+		return $data;
+	}
 	public function createUserGoalPlans($organization,$program, $data) {
 		$userIds = $data['user_id'] ?? [];
 
@@ -136,8 +172,8 @@ class UserGoalService
 		$userGoalPlan['factor_before'] = $data['factor_before'];
 		$userGoalPlan['factor_after'] = $data['factor_after'];
 		$userGoalPlan['created_by'] = auth()->user()->id;
-		$userGoalPlan['achieved_callback_id'] =$data['achieved_callback_id'];
-		$userGoalPlan['exceeded_callback_id'] = $data['exceeded_callback_id'];
+		$userGoalPlan['achieved_callback_id'] = isset($data['achieved_callback_id']) ? $data['achieved_callback_id']: null;
+		$userGoalPlan['exceeded_callback_id'] = isset($data['exceeded_callback_id']) ? $data['exceeded_callback_id']: null;
 		$successUser=$failUser=$successFutureUser=$failFutureUser=$alreadyAssigned=$addedInfo=[];
 		if(!empty($userIds)) { 
 			$users = User::whereIn('id', $userIds)->get();
@@ -179,6 +215,7 @@ class UserGoalService
 		$response['already_assigned']=$alreadyAssigned;
 		return ['message'=>self::createUserGoalRes($response)];
 	}
+
 	public function createUserGoalRes($response) {
 		$msg='';
 		if(!empty($response['already_assigned'])) {
@@ -191,5 +228,100 @@ class UserGoalService
 			$msg .= "Failed to create goal plan for user(s):".(impload(",",$response['fail_users'])). ".\n";
 		}
 		return $msg;
+	}
+	/* Alias for read_list_by_program()*/
+	public static function readListByProgram($program, $user, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$query = self::_selectUserGoalInfo();
+		$query->where('gp.program_id', '=', $program->id);
+		$query->where('ug.user_id', '=', $user->id);
+		$query->limit($limit)->offset($offset)->get();
+		$query->orderBy('gp.'.$order_column,$order_direction);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+	private static function _selectUserGoalInfo() {
+		$query = GoalPlan::from( 'goal_plans as gp' )
+		->select([
+			'gp.id as goal_plan_id',
+			'gp.program_id',
+			'gp.name as plan_name',
+			'gp.email_template_id',
+			'gp.notification_body',
+			'gp.created_by as plan_created_by',
+			'gp.created_at as plan_created',
+			'gp.goal_plan_type_id',
+			'gt.name as goal_plan_type_name',
+			'ug.id as id',
+			'ug.next_user_goal_id as next_user_goal_id',
+			'ug.previous_user_goal_id as previous_user_goal_id',
+			'ug.user_id',
+			'ug.achieved_callback_id',
+			'ug.exceeded_callback_id',
+			'gp.achieved_event_id',
+			'ae.name as achieved_event_name',
+			'ae.event_icon_id as achieved_event_icon',
+			'gp.exceeded_event_id',
+			'ee.name as  exceeded_event_name',
+			'ee.event_icon_id as exceeded_event_icon',
+			'ug.target_value',
+			'gp.goal_measurement_label',
+			'ug.calc_progress_total',
+			'ug.calc_progress_percentage',
+			'ug.factor_before',
+			'gp.state_type_id',
+			'st.status as goal_state_name',
+			'gp.is_recurring',
+			'gp.award_per_progress',
+			'gp.progress_requires_unique_ref_num',
+			'ug.factor_after',
+			'gp.date_begin',
+			'gp.date_end',
+			'ug.date_met',
+			'ug.created_at',
+			'ug.created_by',
+			'ug.updated_at',
+			'ug.modified_by',
+			'ug.iterations'
+		])
+		->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id')
+		->join('user_goals AS ug', 'ug.goal_plan_id', '=', 'gp.id')
+		->join('statuses AS st', 'st.id', '=', 'gp.state_type_id') 
+		->join('events AS ae', 'ae.id', '=', 'gp.achieved_event_id')
+		->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
+		return $query;
+	}
+
+	/* Alias for read_list_by_program_and_goal() */ 
+	public function readListByProgramAndGoal($programId = 0, $goal_plan_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$allowedColumns = array (
+				'name' 
+		);
+		// make sure $order_column is allowed column
+		if (! in_array ( $order_column, $allowedColumns )) {
+			throw new \UnexpectedValueException ( 'Invalid "order_column" passed, column value is not allowed', 400 );
+		}
+		// make sure that the $order_direction is uppercase
+		// cause we want it to be standard SQL :)
+		$order_direction = strtoupper ( $order_direction );
+		// make sure that $order_direction is either ASC or DESC, for the same reason we checked the $order_column
+		if ($order_direction != 'ASC' && $order_direction != 'DESC') {
+			throw new \InvalidArgumentException ( 'Invalid "order_direction" passed, must be either "ASC" or "DESC"', 400 );
+		}
+		// build and run the query
+		$query = self::_selectUserGoalInfo();
+		$query->where('gp.program_id', '=', $programId);
+		$query->where('goal_plan_id', '=', $goal_plan_id);
+		$query->limit($limit)->offset($offset);
+		$query->orderBy('gp.'.$order_column,$order_direction);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
 	}
 }

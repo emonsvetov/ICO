@@ -97,5 +97,10 @@ class Event extends Model
             ->whereIn('program_id', $programs)
             ->count();
     }
+    public static function read($program_id, $id)
+    {
+        $goalPlan = Event::where(['program_id'=> $program_id, 'id'=>$id])->first();
+        return $goalPlan; 
+    }
 
 }

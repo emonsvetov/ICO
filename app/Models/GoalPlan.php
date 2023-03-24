@@ -58,7 +58,7 @@ class GoalPlan extends BaseModel
             $status_id = self::getFutureStatusId();
         return $status_id;
     }
-    public function user_goals()
+    public function userGoal()
     {
         return $this->hasMany(UserGoal::class);
     }
