@@ -50,7 +50,7 @@ class GoalPlanService
 
 		// check if we have a valid $goal_plan->name format and that it is unique
 		if ($this->isValidGoalPlanByName ( $program->id, $data['name'] )) {
-			throw new \InvalidArgumentException ( 'Invalid "goal_plan->name" passed, goal_plan->name = ' . $goal_plan->name . ' is already taken', 400 );
+			throw new \InvalidArgumentException ( 'Invalid goal plan name passed.Goal plan name ' . $data['name'] . ' is already taken', 400 );
 		}
 		$data['organization_id'] = $organization->id;
 		$data['program_id'] = $program->id;
@@ -59,9 +59,13 @@ class GoalPlanService
 		$expiration_rule = ExpirationRule::find($data['expiration_rule_id']);
 		//Create goal plan
 		$newGoalPlan = self::_insert($data, $expiration_rule);
-		 $response['goal_plan'] = $newGoalPlan;
+		$response['goal_plan'] = $newGoalPlan;
 		 
         if (!empty($newGoalPlan->id)) {
+			//this goal has been activated
+			/*TO DO - If someone create goal plan in future or expired then need check and set them also. Currently it is like old system
+			TO DO Get statusid from date_begin & date_end and then apply activate/future/expire goal plan function accordingly*/ 
+			self::activateGoalPlan ( $newGoalPlan->program_id, $newGoalPlan );
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
 			if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
@@ -140,7 +144,7 @@ class GoalPlanService
 		]);
 		// check if we have a valid $goal_plan->name format and that it is unique
 		if (! $this->isValidGoalPlanByNameNotThisId ( $goalPlan->program_id, $data['name'], $goalPlan->id )) {
-			throw new \InvalidArgumentException ( "Invalid 'goal_plan->name' passed, goal_plan->name = '" .  $data['name'] . "' is already taken", 400 );
+			throw new \InvalidArgumentException ( 'Invalid goal plan name passed. Goal plan name ' . $data['name'] . ' is already taken', 400 );
 		}
 
 		$response=[];
