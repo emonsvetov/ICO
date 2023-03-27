@@ -89,7 +89,15 @@ class MerchantController extends Controller
      */
     public function store(MerchantRequest $request)
     {
-        $newMerchant = (new \App\Models\Merchant)->createAccount( $request->validated() );
+        try {
+            $exists = Merchant::where('name', $request->get('name'))->first();
+            if ($exists){
+                throw new \Exception('Merchant already exists.');
+            }
+            $newMerchant = (new \App\Models\Merchant)->createAccount( $request->validated() );
+        } catch (\Exception $exception){
+            return response(['errors' => 'Merchant Creation failed. ' . $exception->getMessage()], 422);
+        }
 
         if ( !$newMerchant )
         {
