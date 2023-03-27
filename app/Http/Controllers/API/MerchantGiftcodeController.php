@@ -38,6 +38,13 @@ class MerchantGiftcodeController extends Controller
 
         $query = Giftcode::where( $where );
 
+        $type = request()->get('type', '');
+        if($type == 'redeemed'){
+            $query->whereNotNull('redemption_datetime');
+        }elseif($type == 'available'){
+            $query->whereNull('redemption_datetime');
+        }
+
         if( $keyword )
         {
             $query = $query->where(function($query1) use($keyword) {
