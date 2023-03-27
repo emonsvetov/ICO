@@ -74,6 +74,7 @@ class GoalPlanService
 				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
 				//$response['assign_all_participants']=$assignResponse;
             }
+			
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		}
 		return $response;
