@@ -58,7 +58,8 @@ class GoalPlanService
 
 		$expiration_rule = ExpirationRule::find($data['expiration_rule_id']);
 		//Create goal plan
-		$newGoalPlan = self::_insert($data, $expiration_rule);
+		$state_future_id = Status::get_goal_future_state ();
+		$newGoalPlan = self::_insert($data, $state_future_id,$expiration_rule);
 		$response['goal_plan'] = $newGoalPlan;
 		 
         if (!empty($newGoalPlan->id)) {
@@ -81,14 +82,15 @@ class GoalPlanService
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		//unset($validated['custom_email_template']);
     }
-	private static function _insert($data, $expiration_rule) {
+	private static function _insert($data, $state_type_id, $expiration_rule) {
 
 		$expiration_date = ExpirationRule::compile($expiration_rule, $data['date_begin'], $data['date_end'], isset ( $data['custom_expire_offset'] ) ? $data['custom_expire_offset'] : null, isset ( $data['custom_expire_units'] ) ? $data['custom_expire_units'] : null, isset ( $data['annual_expire_month'] ) ? $data['annual_expire_month'] : null, isset ( $data['annual_expire_day'] ) ? $data['annual_expire_day'] : null );
 
 		$data['date_end'] =  $expiration_date;
 
 		// build the query to INSERT an event then run it!
-		$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		//$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		$data['state_type_id'] = $state_type_id;
 		if(isset($data['id'])) {
 			unset($data['id']);
 		}
@@ -636,7 +638,8 @@ class GoalPlanService
 		$activeGoalPlanId = $goalPlan->id;
 
 		// Create the Future Goal Plan 
-		$futureGoalPlan =self::_insert ( $nextGoalPlan->toArray(), $expirationRule );
+		$state_future_id = Status::get_goal_future_state ();
+		$futureGoalPlan = self::_insert ( $nextGoalPlan->toArray(), $state_future_id, $expirationRule );
 		//pr($nextGoalPlan);Check data here
 		$futureGoalPlanId = $futureGoalPlan->id;
 		$goalPlan->next_goal_id = $futureGoalPlanId;
