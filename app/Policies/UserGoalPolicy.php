@@ -43,5 +43,31 @@ class UserGoalPolicy
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-list');
     }
+
+    public function readActiveByProgramAndUser(User $authUser, Organization $organization, Program $program, User $user)
+    {
+       // return true;
+        if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
+        {
+            return false;
+        }
+        
+        if($authUser->isAdmin()) return true;
+
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-list');
+    }
+
+    public function view(User $authUser, Organization $organization, Program $program)
+    {
+        // return true;
+        if ( !$this->__authCheck($authUser, $organization, $program ) )
+        {
+            return false;
+        }
+        
+        if($authUser->isAdmin()) return true;
+
+        return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-view');
+    }
     
 }

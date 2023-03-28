@@ -29,4 +29,23 @@ class UserGoalController extends Controller
         $offset = ($page - 1) * $limit;
 		return $userGoalService::readListByProgram($program,$user, $offset, $limit, $order_column, $order_direction);
 	}
+
+	public function readActiveByProgramAndUser(Organization $organization, Program $program, User $user,UserGoalService $userGoalService) {
+		$limit = request()->get('pageSize', 10);
+        $page = request()->get('page', 1);
+        $order_direction = request()->get('order_direction', 'asc');
+        $order_column = request()->get('order_column', 'name');
+        $offset = ($page - 1) * $limit;
+		return $userGoalService::readActiveByProgram($program->id, $user->id, $offset, $limit, $order_column, $order_direction);
+	}
+
+	public function show( Organization $organization, Program $program, UserGoal $userGoal, UserGoalService $userGoalService )
+    {
+        if ( !( $organization->id == $program->organization_id ) )
+        {
+            return response(['errors' => 'Invalid Organization'], 422);
+        }
+        return response( $userGoalService::read($program->id, $userGoal->id) );
+    }
+
 }
