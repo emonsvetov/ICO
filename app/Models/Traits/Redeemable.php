@@ -38,6 +38,10 @@ trait Redeemable
 		->where('medium_info.hold_until', '<=', now())
         ;
 
+        if(isset($filters['medium_info_is_test']) )	{
+            $query->where('medium_info_is_test', '=', $filters['medium_info_is_test']);
+        }
+
 		if( !empty($filters['redemption_value']) )	{
 			$query = $query->where('redemption_value', '=', $filters['redemption_value']);
 		}

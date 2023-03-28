@@ -8,7 +8,7 @@ use App\Models\BaseModel;
 class Invoice extends BaseModel
 {
     use SoftDeletes;
-    
+
     protected $guarded = [];
     public $timestamps = true;
     const DAYS_TO_PAY = 45;
@@ -42,6 +42,11 @@ class Invoice extends BaseModel
         return $this->belongsToMany(JournalEvent::class)->withTimestamps();
     }
 
+    public function invoice_journal_event()
+    {
+        return $this->hasMany(InvoiceJournalEvent::class, 'invoice_id', 'id');
+    }
+
     public static function getProgramMonthlyInvoice4Date($program, $date_begin)
     {
         return self::where('program_id', $program->id)
@@ -49,5 +54,10 @@ class Invoice extends BaseModel
         ->whereHas('invoice_type', function($query) {
             $query->where('name', 'LIKE', 'Monthly');
         })->get();
+    }
+
+    public static function getByProgramId($programId)
+    {
+        return self::where('program_id', $programId)->get();
     }
 }

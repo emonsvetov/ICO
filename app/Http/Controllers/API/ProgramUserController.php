@@ -153,8 +153,7 @@ class ProgramUserController extends Controller
         $page = request()->get('page', 1);
         $offset = ($page - 1) * $limit;
 
-        return response($awardService->readEventHistoryByProgramAndParticipant(
-            $program->account_holder_id,
+        return response($awardService->readEventHistoryByParticipant(
             $user->account_holder_id,
             $limit,
             $offset
