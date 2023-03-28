@@ -7,11 +7,14 @@ use App\Models\EventXmlData;
 use App\Models\Giftcode;
 use App\Models\JournalEvent;
 use App\Models\JournalEventType;
+use App\Models\Leaderboard;
 use App\Models\Posting;
 use App\Models\ProgramBudget;
 use App\Models\SocialWallPost;
 use App\Models\User;
+use App\Models\UserGoal;
 use App\Services\AccountService;
+use App\Services\AwardService;
 use App\Services\reports\ReportHelper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -163,7 +166,7 @@ class ProgramController extends Controller
         return response($balance);
     }
 
-    public function prepareLiveMode(Organization $organization, Program $program, ProgramService $programService)
+    public function prepareLiveMode(Organization $organization, Program $program, ProgramService $programService, AwardService $awardService)
     {
         try {
             $allPrograms = $program->descendantsAndSelf()->get();
@@ -174,22 +177,31 @@ class ProgramController extends Controller
             $events = Event::getCountByPrograms($organization, $allProgramIds);
             $budget = ProgramBudget::getSumByPrograms($allProgramIds);
             $giftCodes = Giftcode::getCountByPrograms($allProgramIds);
-
-            $reporthelper = new ReportHelper();
-            $programsAward = $reporthelper->awardAuditDelete($allAccountHolderPrograms, ['count'=>true]);
-            $participants = User::getCountByPrograms($allProgramIds);
+            $invoices = Invoice::getByProgramId($program->id);
+            $leaderboards = Leaderboard::getByProgramId($program->id);
+            $users = User::getCountByPrograms($allProgramIds);
+            $participants = User::getParticipantsByPrograms($allProgramIds);
+            $awards = 0;
+            foreach ($participants as $participant){
+                $eventHistory = $awardService->readEventHistoryByParticipant(
+                    $participant->account_holder_id, 99999999, 0
+                );
+                $awards += $eventHistory['total'];
+            }
 
         } catch (\Exception $exception) {
             return response(['errors' => 'Live Mode failed', 'e' => $exception->getMessage()], 422);
         }
 
         return [
-            'participants' => $participants,
+            'users' => $users,
             'socialWalls' => $socialWalls,
             'events' => $events,
             'budget' => $budget,
             'giftCodes' => $giftCodes,
-            'programsAward' => $programsAward,
+            'programsAward' => $awards,
+            'invoices' => count($invoices),
+            'leaderboards' => count($leaderboards),
         ];
     }
 
@@ -203,21 +215,11 @@ class ProgramController extends Controller
             $allProgramIds = $allPrograms->pluck('id')->toArray();
             $allAccountHolderPrograms = $allPrograms->pluck('account_holder_id')->toArray();
 
-            $participants = User::getAllByPrograms($allProgramIds);
+            $users = User::getAllByPrograms($allProgramIds);
             $userStatus = User::getStatusByName(User::STATUS_DELETED);
-            foreach ($participants as $participant){
-                $detach = false;
-                foreach($participant->programs as $participantProgram){
-                    if ($participant->isManagerToProgram( $participantProgram )){
-                        $detach = true;
-                        break;
-                    }
-                }
-                if ($detach){
-                    $participant->roles()->where('name', 'Participant')->wherePivot('role_id', '=', 4)->detach();
-                } else {
-                    $participant->update(['user_status_id' => $userStatus->id]);
-                }
+            foreach ($users as $item){
+                $item->roles()->detach();
+                $item->update(['user_status_id' => $userStatus->id]);
             }
 
             $socialWallsQuery = SocialWallPost::getAllByProgramsQuery($organization, $allProgramIds);
@@ -225,6 +227,26 @@ class ProgramController extends Controller
 
             $budgetQuery = ProgramBudget::getAllByProgramsQuery($allProgramIds);
             $budgetQuery->delete();
+
+            $leaderboards = Leaderboard::getByProgramId($program->id);
+            foreach ($leaderboards as $leaderboard){
+                /** @var Leaderboard $leaderboard */
+                $leaderboardJournalEventQuery = $leaderboard->journal_events();
+                Posting::whereIn('journal_event_id', $leaderboardJournalEventQuery->get()->pluck('id'))->delete();
+                $leaderboard->journal_events()->delete();
+                $leaderboard->leaderboard_journal_event()->delete();
+            }
+            Leaderboard::whereIn('id', $leaderboards->pluck('id'))->delete();
+
+            $invoices = Invoice::getByProgramId($program->id);
+            foreach ($invoices as $invoice){
+                /** @var Invoice $invoice */
+                $invoicesJournalEventQuery = $invoice->journal_events();
+                Posting::whereIn('journal_event_id', $invoicesJournalEventQuery->get()->pluck('id'))->delete();
+                $invoice->journal_events()->delete();
+                $invoice->invoice_journal_event()->delete();
+            }
+            Invoice::whereIn('id', $invoices->pluck('id'))->delete();
 
             $reportHelper = new ReportHelper();
             $programsAward = $reportHelper->awardAuditDelete($allAccountHolderPrograms);

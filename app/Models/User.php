@@ -295,9 +295,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         $userStatus = User::getStatusByName(User::STATUS_DELETED);
         return User::whereHas('roles', function (Builder $query) use ($programs) {
-            $query->where('name', 'LIKE', config('roles.participant'))
-                ->where('name', 'NOT LIKE', config('roles.manager'))
-                ->whereIn('model_has_roles.program_id', $programs);
+            $query->whereIn('model_has_roles.program_id', $programs);
         })
             ->where('user_status_id', '!=', $userStatus->id);
     }
@@ -311,5 +309,18 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return self::getAllByProgramsQuery($programs)->count();
     }
+
+    public static function getParticipantsByPrograms(array $programs)
+    {
+        $userStatus = User::getStatusByName(User::STATUS_DELETED);
+        $query = User::whereHas('roles', function (Builder $query) use ($programs) {
+            $query->where('name', 'LIKE', config('roles.participant'))
+                ->where('name', 'NOT LIKE', config('roles.manager'))
+                ->whereIn('model_has_roles.program_id', $programs);
+        })
+            ->where('user_status_id', '!=', $userStatus->id);
+        return $query->get();
+    }
+
 
 }

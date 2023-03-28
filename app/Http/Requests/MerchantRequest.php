@@ -48,7 +48,8 @@ class MerchantRequest extends FormRequest
             'toa_id' => 'sometimes|boolean',
             'status' => 'sometimes|boolean',
             'display_popup' => 'sometimes|boolean',
-            'deleted' => 'sometimes|boolean'
+            'deleted' => 'sometimes|boolean',
+            'v2_merchant_id' => 'sometimes|integer'
         ];
     }
 }

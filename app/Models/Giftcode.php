@@ -175,7 +175,7 @@ class Giftcode extends Model
 		return self::_read_redeemable_list_by_merchant( $merchant, $filters );
 	}
 
-	public static function getRedeemableListByMerchantAndRedemptionValue($merchant, $redemption_value = 0, $end_date = '') { // $end_date = '2022-10-01' - what is that?
+	public static function getRedeemableListByMerchantAndRedemptionValue($merchant, $redemption_value = 0, $end_date = '', $args = []) { // $end_date = '2022-10-01' - what is that?
 		// pr($end_date );die;
 		$filters = [];
 		if( (float) $redemption_value > 0 )	{
@@ -184,6 +184,9 @@ class Giftcode extends Model
 		if( isValidDate($end_date) )	{
 			$filters['end_date'] = $end_date;
 		}
+        if (isset($args['medium_info_is_test'])){
+            $filters['medium_info_is_test'] = $args['medium_info_is_test'];
+        }
 
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
 	}

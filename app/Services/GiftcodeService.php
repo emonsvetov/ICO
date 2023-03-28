@@ -20,13 +20,17 @@ class GiftcodeService
 {
     use IdExtractor;
 
-    public function getRedeemable(Merchant $merchant)   {
+    public function getRedeemable(Merchant $merchant, $is_demo = true)   {
         $merchant_id = self::extractId($merchant);
         if( !$merchant_id ) return;
         $where = [
             'merchant_id' => $merchant_id,
             'redemption_date' => null,
+            'medium_info_is_test' => 1
         ];
+        if ($is_demo){
+            $where['medium_info_is_test'] = 1;
+        }
         $giftcodes = Giftcode::getRedeemableListByMerchant($merchant, $where );
         return new GiftcodeCollection( $giftcodes );
     }

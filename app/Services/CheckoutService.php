@@ -18,12 +18,13 @@ use App\Models\Merchant;
 use App\Models\Country;
 use App\Models\State;
 
-class CheckoutService 
+class CheckoutService
 {
     use IdExtractor;
 
     public function processOrder( $cart, $program )   {
 
+        $is_demo = true;
 		// return Merchant::getRoot( 6 );
 
 		// pr($cart);
@@ -103,7 +104,14 @@ class CheckoutService
 			// pr($merchant);
 
             if (in_array ( $merchant->id, $merchantsCostToProgram )) {
-				$gift_code_values_response = Giftcode::getRedeemableListByMerchant ( $merchant );
+                $where = [];
+                if ($is_demo){
+                    $where = [
+                        'medium_info_is_test' => 1
+                    ];
+                }
+
+				$gift_code_values_response = Giftcode::getRedeemableListByMerchant ( $merchant, $where );
 				//pr($gift_code_values_response);
 				foreach ( $gift_code_values_response as $giftCode ) {
 					$skuValue = ( int ) $giftCode->sku_value;
@@ -123,7 +131,7 @@ class CheckoutService
 				//pr($redemption_value_total);
 			}
 
-            // pr($redemption_value_total);     
+            // pr($redemption_value_total);
 
             $merchants_info[$merchant->id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
@@ -147,7 +155,7 @@ class CheckoutService
 			if ( count ( $external_callbacks ) > 0 ) {
 				//$debug['$external_callbacks'] = $external_callbacks;
 				// Do not check this merchant's inventory level they use a callback to get giftcodes on the fly
-				//Lets save for later use, 
+				//Lets save for later use,
 				$all_external_callbacks[$gift_code->gift_code_provider_account_holder_id] = $external_callbacks;
 			} else {
 				//$debug['no_external_callback'] = $external_callbacks;
@@ -158,7 +166,13 @@ class CheckoutService
 				// pr($gift_code->gift_code_provider_account_holder_id);
 				// pr( in_array ( $merchant->account_holder_id, $merchantsCostToProgram ) );
 				if (in_array ( $merchant->id, $merchantsCostToProgram )) {
-					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $redemptionValue );
+                    $where = [];
+                    if ($is_demo){
+                        $where = [
+                            'medium_info_is_test' => 1
+                        ];
+                    }
+					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $redemptionValue, '', $where );
 					if (! isset ( $denomination_list ) || count ( $denomination_list ) < 1) {
 						// throw new RuntimeException ( 'Out of inventory' );
 						$response['errors'][] = 'Out of inventory';
@@ -275,9 +289,9 @@ class CheckoutService
 					$reserved_code = Giftcode::holdGiftcode ([
 						'user_account_holder_id' => $user->account_holder_id,
 						// 'program' => $program,
-						// 'merchant_account_holder_id' => $gift_code2->gift_code_provider_account_holder_id, 
-						'merchant_account_holder_id' => $gift_code2->merchant_account_holder_id, 
-						'redemption_value' => $gift_code2->redemption_value, 
+						// 'merchant_account_holder_id' => $gift_code2->gift_code_provider_account_holder_id,
+						'merchant_account_holder_id' => $gift_code2->merchant_account_holder_id,
+						'redemption_value' => $gift_code2->redemption_value,
 						'sku_value' => $gift_code2->sku_value,
 						'merchants' => $merchants->toArray(),
 						'merchant_id' => $gift_code2->merchant_id,
@@ -423,7 +437,7 @@ class CheckoutService
 				}
 
 				$response['redeem_result'] = $result;
-				
+
 				if( !empty($result['success']) )	{
 					$journalId = $result['journal_event_id'];
 				}	else	{
@@ -462,7 +476,7 @@ class CheckoutService
 			DB::commit();
 			DB::statement("UNLOCK TABLES;");
 		}
-		
+
 		if (isset ( $order_address ) && is_object ( $order_address )) {
 			// $user_info = $user->toArray();
 			$mail_to = "support@incentco.com";
@@ -489,7 +503,7 @@ class CheckoutService
 				'ship_to_state' => $ship_to_state,
 				'ship_to_country' => $ship_to_country,
 			];
-			
+
 			try {
 				event( new OrderShippingRequest($data, $order_id) );
 			}   catch(\Exception $e) {
@@ -502,7 +516,7 @@ class CheckoutService
 			$percentage_alerts = array (
 					0,
 					25,
-					50 
+					50
 			);
 			$alerts_to_send = array ();
 			foreach ( $redeem_merchant_info as $merchant_id => &$details ) {
@@ -521,7 +535,7 @@ class CheckoutService
 											'merchant_id' => $merchant_id,
 											'percentage_alert_value' => $percent,
 											'code_count' => $count_after,
-											'code_value' => $code_value 
+											'code_value' => $code_value
 									);
 								}
 							}
@@ -533,7 +547,7 @@ class CheckoutService
 				foreach ( $alerts_to_send as $alert ) {
 					// send all alerts collected before
 					$merchant = ($_merchant = get_merchant_by_id($merchants, $alert['merchant_id'])) ? $_merchant : Merchant::find($alert['merchant_id']);
-					
+
 					self::_merchant_denomination_alert ( config('global.default_email'), $merchant, $alert['code_count'], $alert['percentage_alert_value'], $alert['code_value'] );
 				}
 			}
@@ -579,7 +593,7 @@ class CheckoutService
 			'code_percentage' => $code_percentage,
 			'redemption_value' => $redemption_value
 		];
-		
+
 		try {
 			event( new MerchantDenominationAlert($data) );
 			return true;

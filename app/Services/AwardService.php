@@ -558,8 +558,7 @@ class AwardService
         return true;
     }
 
-    public function readEventHistoryByProgramAndParticipant(
-        int $program_account_holder_id,
+    public function readEventHistoryByParticipant(
         int $participant_account_holder_id,
         int $limit = 0,
         int $offset = 0,

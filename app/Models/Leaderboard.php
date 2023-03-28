@@ -45,4 +45,20 @@ class Leaderboard extends BaseModel
     {
         return $this->belongsTo(LeaderboardType::class, 'leaderboard_type_id');
     }
+
+    public function journal_events()
+    {
+        return $this->belongsToMany(JournalEvent::class, 'leaderboard_journal_event')->withTimestamps();
+    }
+
+    public function leaderboard_journal_event()
+    {
+        return $this->hasMany(LeaderboardJournalEvent::class, 'leaderboard_id', 'id');
+    }
+
+    public static function getByProgramId($programId)
+    {
+        return self::where('program_id', $programId)->get();
+    }
+
 }
