@@ -69,5 +69,18 @@ class UserGoalPolicy
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-view');
     }
+
+    public function readUserGoalProgressDetail(User $authUser, Organization $organization, Program $program)
+    {
+         // return true;
+         if ( !$this->__authCheck($authUser, $organization, $program ) )
+         {
+             return false;
+         }
+         
+         if($authUser->isAdmin()) return true;
+ 
+         return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-progress-view');
+    }
     
 }

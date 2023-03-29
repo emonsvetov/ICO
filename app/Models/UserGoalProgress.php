@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\GoalPlanType;
 use App\Models\GoalPlan;
 
-class UserGoal extends Model
+
+class UserGoalProgress extends Model
 {
 	/*protected $fillable = [
 		'goal_plan_id',

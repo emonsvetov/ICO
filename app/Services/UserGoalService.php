@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\UserGoal;
 use App\Models\GoalPlanType;
 use App\Models\Status;
+use App\Models\UserGoalProgress;
 Use Exception;
 use DB;
 use DateTime;
@@ -371,6 +372,31 @@ class UserGoalService
 		$query = self::_selectUserGoalInfo();
 		$query->where('gp.program_id', '=', $program_id);
 		$query->where('ug.id', '=', $user_goal_id);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+
+	/* Alias for read_user_goal_progress_detail() */ 
+	public static function readUserGoalProgressDetail($program_id, $user_goal_id, $offset = 0, $limit = 0) {
+		$query = UserGoalProgress::from('user_goal_progress as p')
+		->select([
+			'p.*',
+			'ug.target_value',
+			'ug.calc_progress_total',
+			'ug.calc_progress_percentage',
+		])
+		//pr($query); die;
+		->join('user_goals AS ug', 'ug.id', '=', 'p.user_goal_id')
+		->join('goal_plans AS gp', 'gp.id', '=', 'ug.goal_plan_id')	
+		->where('p.user_goal_id', '=', $user_goal_id)
+		->where('gp.program_id', '=', $program_id)
+		->limit($limit)->offset($offset)
+		->orderBy('p.iteration')
+		->orderBy('p.created_at');
 		try {
             $result = $query->get();
             return $result;

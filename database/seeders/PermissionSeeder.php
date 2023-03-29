@@ -170,6 +170,7 @@ class PermissionSeeder extends Seeder
             'external-callback-list',
             'user-goal-list',
             'user-goal-view',
+            'user-goal-progress-view',
         ];
 
         foreach ($permissions as $permission) {

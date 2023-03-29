@@ -48,4 +48,11 @@ class UserGoalController extends Controller
         return response( $userGoalService::read($program->id, $userGoal->id) );
     }
 
+	public function readUserGoalProgressDetail(Organization $organization, Program $program, UserGoal $userGoal, UserGoalService $userGoalService) {
+		$limit = request()->get('pageSize', 10);
+        $page = request()->get('page', 1);
+        $offset = ($page - 1) * $limit;
+		return $userGoalService::readUserGoalProgressDetail($program->id, $userGoal->id, $offset, $limit);
+	}
+
 }
