@@ -63,7 +63,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
             if (!in_array($program->account_holder_id, $programIds)){
                 continue;
             }
-            $table[$program_id]->participants_count = $participant_count;
+            if (isset($table[$program_id])){
+                $table[$program_id]->participants_count = $participant_count;
+            }
         }
 
         $args = [];
@@ -295,6 +297,8 @@ class ReportProgramStatusService extends ReportServiceAbstract
             }
         }
 
+
+
         foreach ($table as $data) {
             if ($data->depth != 0){
                 $pathArr = explode('.', $data->path);
@@ -302,7 +306,9 @@ class ReportProgramStatusService extends ReportServiceAbstract
                 {
                     if ($item != $data->id){
                         $tableKey = array_search($item, array_map(function($v){return $v->id;},$table));
-
+                        if (!$tableKey){
+                            continue;
+                        }
                         $table[$tableKey]->participants_count += $data->participants_count;
                         $table[$tableKey]->new_participants_count += $data->new_participants_count;
                         $table[$tableKey]->awards_count += $data->awards_count;
