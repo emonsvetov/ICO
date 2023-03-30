@@ -24,7 +24,7 @@ use Database\Seeders\PaymentMethodSeeder;
 use Database\Seeders\EmailTemplateTypeSeeder;
 use Database\Seeders\ExpirationRuleSeeder;
 use Database\Seeders\GoalPlanTypeSeeder;
-use Database\Seeders\MediaTypesSeeder;
+// use Database\Seeders\MediaTypesSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -58,7 +58,7 @@ class DatabaseSeeder extends Seeder
             EmailTemplateTypeSeeder::class,
             ExpirationRuleSeeder::class,
             GoalPlanTypeSeeder::class,
-            MediaTypesSeeder::class,
+            // MediaTypesSeeder::class,
         ]);
     }
 }
