@@ -9,6 +9,8 @@ use App\Models\Program;
 use App\Models\User;
 use App\Models\UserGoal;
 use App\Models\GoalPlanType;
+use App\Models\Status;
+use App\Models\UserGoalProgress;
 Use Exception;
 use DB;
 use DateTime;
@@ -52,7 +54,7 @@ class UserGoalService
 			}
 			$response['user_goal_plan']=$newUserGoalPlan;
 		} else {
-			$newUserGoalPlan = $currentUserGoalPlan;
+			$newUserGoalPlan = clone $currentUserGoalPlan;
 		}
 		// If we just created a new user goal and the goal plan is recurring, go ahead and create the user's future goal too
 		if ($goalPlan->is_recurring && $goalPlan->next_goal_id) {
@@ -84,7 +86,7 @@ class UserGoalService
 		if(empty($futureGoalPlan))
 		return false;
 		
-		$futureUserGoalPlan = $userGoal;
+		$futureUserGoalPlan = $userGoal; //array assignment
 
 		//$futureUserGoalPlan['date_begin'] = $futureGoalPlan->date_begin;
 		//$futureUserGoalPlan['date_end'] = $futureGoalPlan->date_end;
@@ -155,7 +157,7 @@ class UserGoalService
 
         if( sizeof($userIds) <=0 )
         {
-            throw new InvalidArgumentException ( 'Invalid or no participants (s) selected', 400 );
+            throw new \InvalidArgumentException ( 'Invalid or no participants (s) selected', 400 );
         }
 		// Read the program's goal plan, then copy over the necessary values
 		$goalPlan = GoalPlan::getGoalPlan( $data['goal_plan_id']);
@@ -324,4 +326,83 @@ class UserGoalService
             throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
 	}
+
+
+	/* Alias for read_active_by_program() */ 
+	public static function readActiveByProgram($programId = 0, $userId = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
+		$state = Status::get_goal_active_state ();
+		return self::readUserGoalByState ( $programId, $userId, $state, $offset, $limit, $order_column, $order_direction );
+	}
+
+	/* Alias for read_user_goal_by_state() */ 
+	public static function readUserGoalByState($program_id = 0, $user_id = 0, $goal_plan_state_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc', $include_deleted = false) {
+		// make sure that the $order_direction is uppercase
+		// cause we want it to be standard SQL :)
+		$order_direction = strtoupper ( $order_direction );
+		// make sure that $order_direction is either ASC or DESC, for the same reason we checked the $order_column
+		if ($order_direction != 'ASC' && $order_direction != 'DESC') {
+			throw new \InvalidArgumentException ( 'Invalid "order_direction" passed, must be either "ASC" or "DESC"', 400 );
+		}
+		$allowed_columns = array (
+				'name' 
+		);
+		// make sure $order_column is allowed column
+		if (! in_array ( $order_column, $allowed_columns )) {
+			throw new \UnexpectedValueException ( 'Invalid "order_column" passed, column value is not allowed', 400 );
+		}
+		// build and run the query
+		$query = self::_selectUserGoalInfo();
+		$query->where('gp.program_id', '=', $program_id);
+		$query->where('ug.user_id', '=', $user_id);
+		$query->where('gp.state_type_id', '=', $goal_plan_state_id);
+		if (! $include_deleted) {
+			$query->whereNull('ug.deleted');
+		}
+		$query->limit($limit)->offset($offset);
+		$query->orderBy('gp.'.$order_column,$order_direction);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+
+	public static function read($program_id = 0, $user_goal_id = 0) {
+		$query = self::_selectUserGoalInfo();
+		$query->where('gp.program_id', '=', $program_id);
+		$query->where('ug.id', '=', $user_goal_id);
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+
+	/* Alias for read_user_goal_progress_detail() */ 
+	public static function readUserGoalProgressDetail($program_id, $user_goal_id, $offset = 0, $limit = 0) {
+		$query = UserGoalProgress::from('user_goal_progress as p')
+		->select([
+			'p.*',
+			'ug.target_value',
+			'ug.calc_progress_total',
+			'ug.calc_progress_percentage',
+		])
+		//pr($query); die;
+		->join('user_goals AS ug', 'ug.id', '=', 'p.user_goal_id')
+		->join('goal_plans AS gp', 'gp.id', '=', 'ug.goal_plan_id')	
+		->where('p.user_goal_id', '=', $user_goal_id)
+		->where('gp.program_id', '=', $program_id)
+		->limit($limit)->offset($offset)
+		->orderBy('p.iteration')
+		->orderBy('p.created_at');
+		try {
+            $result = $query->get();
+            return $result;
+        } catch (Exception $e) {
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
+
 }

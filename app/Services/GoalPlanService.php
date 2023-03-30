@@ -50,7 +50,7 @@ class GoalPlanService
 
 		// check if we have a valid $goal_plan->name format and that it is unique
 		if ($this->isValidGoalPlanByName ( $program->id, $data['name'] )) {
-			throw new \InvalidArgumentException ( 'Invalid "goal_plan->name" passed, goal_plan->name = ' . $goal_plan->name . ' is already taken', 400 );
+			throw new \InvalidArgumentException ( 'Invalid goal plan name passed.Goal plan name ' . $data['name'] . ' is already taken', 400 );
 		}
 		$data['organization_id'] = $organization->id;
 		$data['program_id'] = $program->id;
@@ -58,10 +58,15 @@ class GoalPlanService
 
 		$expiration_rule = ExpirationRule::find($data['expiration_rule_id']);
 		//Create goal plan
-		$newGoalPlan = self::_insert($data, $expiration_rule);
-		 $response['goal_plan'] = $newGoalPlan;
+		$state_future_id = Status::get_goal_future_state ();
+		$newGoalPlan = self::_insert($data, $state_future_id,$expiration_rule);
+		$response['goal_plan'] = $newGoalPlan;
 		 
         if (!empty($newGoalPlan->id)) {
+			//this goal has been activated
+			/*TO DO - If someone create goal plan in future or expired then need check and set them also. Currently it is like old system
+			TO DO Get statusid from date_begin & date_end and then apply activate/future/expire goal plan function accordingly*/ 
+			self::activateGoalPlan ( $newGoalPlan->program_id, $newGoalPlan );
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
 			if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
@@ -70,20 +75,22 @@ class GoalPlanService
 				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
 				//$response['assign_all_participants']=$assignResponse;
             }
+			
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		}
 		return $response;
 		//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		//unset($validated['custom_email_template']);
     }
-	private static function _insert($data, $expiration_rule) {
+	private static function _insert($data, $state_type_id, $expiration_rule) {
 
 		$expiration_date = ExpirationRule::compile($expiration_rule, $data['date_begin'], $data['date_end'], isset ( $data['custom_expire_offset'] ) ? $data['custom_expire_offset'] : null, isset ( $data['custom_expire_units'] ) ? $data['custom_expire_units'] : null, isset ( $data['annual_expire_month'] ) ? $data['annual_expire_month'] : null, isset ( $data['annual_expire_day'] ) ? $data['annual_expire_day'] : null );
 
 		$data['date_end'] =  $expiration_date;
 
 		// build the query to INSERT an event then run it!
-		$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		//$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
+		$data['state_type_id'] = $state_type_id;
 		if(isset($data['id'])) {
 			unset($data['id']);
 		}
@@ -140,11 +147,11 @@ class GoalPlanService
 		]);
 		// check if we have a valid $goal_plan->name format and that it is unique
 		if (! $this->isValidGoalPlanByNameNotThisId ( $goalPlan->program_id, $data['name'], $goalPlan->id )) {
-			throw new \InvalidArgumentException ( "Invalid 'goal_plan->name' passed, goal_plan->name = '" .  $data['name'] . "' is already taken", 400 );
+			throw new \InvalidArgumentException ( 'Invalid goal plan name passed. Goal plan name ' . $data['name'] . ' is already taken', 400 );
 		}
 
 		$response=[];
-		$currentGoalPlan = $goalPlan;
+		$currentGoalPlan = clone $goalPlan;
 		
 		$active_state_id = Status::get_goal_active_state ();
 		$future_state_id = Status::get_goal_future_state ();
@@ -366,7 +373,7 @@ class GoalPlanService
             $result = $query->get();
             return $result;
         } catch (Exception $e) {
-            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
 		// build and run the query
 		/*$sql = "
@@ -489,7 +496,7 @@ class GoalPlanService
         		";
 		$result = DB::select( DB::raw($sql));
 		if (! $result) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		return ( bool ) ($result[0]->status == 'active');
 	}
@@ -508,7 +515,7 @@ class GoalPlanService
     	";
 		$result = DB::select( DB::raw($sql));
 		if (! $result) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		return ( bool ) ($result[0]->status == 'expired');
 	}
@@ -526,7 +533,7 @@ class GoalPlanService
     	";
 		$result = DB::select( DB::raw($sql));
 		if (! $result) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		return ( bool ) ($result[0]->status == 'future');
 	}
@@ -545,7 +552,7 @@ class GoalPlanService
 			return false;
 			// TODO: have different cron to look for goal plans that need to be activated?
 		} else if ($result > 1) {
-			throw new RuntimeException ( "Data Corruption: More than 1 record was changed!", 500 );
+			throw new \RuntimeException ( "Data Corruption: More than 1 record was changed!", 500 );
 		} else {
 			if (isset ( $goalPlan->is_recurring ) && $goalPlan->is_recurring) {
 				if (! isset ( $goalPlan->next_goal_id ) || $goalPlan->next_goal_id <= 0) {
@@ -631,7 +638,8 @@ class GoalPlanService
 		$activeGoalPlanId = $goalPlan->id;
 
 		// Create the Future Goal Plan 
-		$futureGoalPlan =self::_insert ( $nextGoalPlan->toArray(), $expirationRule );
+		$state_future_id = Status::get_goal_future_state ();
+		$futureGoalPlan = self::_insert ( $nextGoalPlan->toArray(), $state_future_id, $expirationRule );
 		//pr($nextGoalPlan);Check data here
 		$futureGoalPlanId = $futureGoalPlan->id;
 		$goalPlan->next_goal_id = $futureGoalPlanId;
@@ -671,14 +679,17 @@ class GoalPlanService
 	/* Copy all essential data from given goal plan into a new GoalPlanObject that can be used on to create a new future goal plan.*/
 	//Alias for _new_future_goal
 	private function _newFutureGoal($goalPlan) {
-		$nextGoalPlan = $goalPlan;
+		$nextGoalPlan = clone $goalPlan;
 		unset($nextGoalPlan->expired);
 		unset($nextGoalPlan->created_at);
 		unset($nextGoalPlan->updated_at);
 		$nextGoalPlan->modified_by = auth()->user()->id;
 		// set the new goal plan to begin when the previous one expires
-		$nextGoalPlan->date_begin = $goalPlan->date_end;
+
 		$nextGoalPlan->date_end = ExpirationRule::speculateNextSpecifiedEndDate ( $goalPlan->date_begin, $goalPlan->date_end );
+		//Do this after above calculation
+		$nextGoalPlan->date_begin = $goalPlan->date_end;
+
 		$nextGoalPlan->state_type_id =  Status::get_goal_future_state ();
 		return $nextGoalPlan;
 	}
@@ -712,7 +723,7 @@ class GoalPlanService
 		try {
             $results = $query->get();
         } catch (Exception $e) {
-            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
 		//TO DO - Check other possible ways to achieve this
 		$return_data = array ();
@@ -754,7 +765,7 @@ class GoalPlanService
 		// Do not allow events of type Activation to be added
 		$event = Event::read( $programId, $eventId)->load("eventType");
 		if (! in_array ( $event->eventType->name, $allowed_event_types )) {
-			throw new InvalidArgumentException ( 'Invalid "event_id" passed, only events of these types can be assigned to a leaderboard: ' . implode ( ', ', $allowed_event_types ), 400 );
+			throw new \InvalidArgumentException ( 'Invalid "event_id" passed, only events of these types can be assigned to a leaderboard: ' . implode ( ', ', $allowed_event_types ), 400 );
 		}
 		// Do not allow an event to be tied more than once
 		
@@ -789,7 +800,7 @@ class GoalPlanService
 			$result = GoalPlansEvent::where(['event_id'=> $eventId, 'goal_plans_id'=> $goalPlanId])->delete();
 
         } catch (Exception $e) {
-            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+            throw new \Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
         }
 		return true;
 	}
@@ -806,7 +817,7 @@ class GoalPlanService
 		$query->whereRaw("gp.`id` NOT IN ({$linkedListIds})");
 		$result = $query->get();
 		if (! $result || $result->count() < 1) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		// check if $program_id is in the database and return the resulting boolean
 		// back to the function caller
@@ -884,7 +895,7 @@ class GoalPlanService
 		$result = $query->get();
 		// check if we have a valid query object
 		if (! $result) {
-			throw new RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
+			throw new \RuntimeException ( 'Internal query failed, please contact the API administrator', 500 );
 		}
 		// check if $program_id is in the database and return the resulting boolean
 		// back to the function caller
