@@ -165,8 +165,6 @@ class PermissionSeeder extends Seeder
             'referral-delete',
             'referral-update',
             'referral-view',
-            'program-user-read-reclaimable-peer-points',
-            'program-user-reclaim-peer-points',
             'external-callback-list',
             'user-goal-list',
             'user-goal-view',
