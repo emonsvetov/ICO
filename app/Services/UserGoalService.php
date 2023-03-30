@@ -54,7 +54,7 @@ class UserGoalService
 			}
 			$response['user_goal_plan']=$newUserGoalPlan;
 		} else {
-			$newUserGoalPlan = $currentUserGoalPlan;
+			$newUserGoalPlan = clone $currentUserGoalPlan;
 		}
 		// If we just created a new user goal and the goal plan is recurring, go ahead and create the user's future goal too
 		if ($goalPlan->is_recurring && $goalPlan->next_goal_id) {
@@ -86,7 +86,7 @@ class UserGoalService
 		if(empty($futureGoalPlan))
 		return false;
 		
-		$futureUserGoalPlan = $userGoal;
+		$futureUserGoalPlan = $userGoal; //array assignment
 
 		//$futureUserGoalPlan['date_begin'] = $futureGoalPlan->date_begin;
 		//$futureUserGoalPlan['date_end'] = $futureGoalPlan->date_end;
@@ -157,7 +157,7 @@ class UserGoalService
 
         if( sizeof($userIds) <=0 )
         {
-            throw new InvalidArgumentException ( 'Invalid or no participants (s) selected', 400 );
+            throw new \InvalidArgumentException ( 'Invalid or no participants (s) selected', 400 );
         }
 		// Read the program's goal plan, then copy over the necessary values
 		$goalPlan = GoalPlan::getGoalPlan( $data['goal_plan_id']);
