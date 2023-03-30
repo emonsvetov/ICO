@@ -171,8 +171,8 @@ class UserGoalService
 		$userGoalPlan['target_value'] = $data['target_value'];
 		$userGoalPlan['date_begin'] = $data['date_begin'];
 		$userGoalPlan['date_end'] = $data['date_end'];
-		$userGoalPlan['factor_before'] = $data['factor_before'];
-		$userGoalPlan['factor_after'] = $data['factor_after'];
+		$userGoalPlan['factor_before'] = isset($data['factor_before']) ? $data['factor_before'] : 0;
+		$userGoalPlan['factor_after'] = isset($data['factor_after']) ? $data['factor_after'] : 0;
 		$userGoalPlan['created_by'] = auth()->user()->id;
 		$userGoalPlan['achieved_callback_id'] = isset($data['achieved_callback_id']) ? $data['achieved_callback_id']: null;
 		$userGoalPlan['exceeded_callback_id'] = isset($data['exceeded_callback_id']) ? $data['exceeded_callback_id']: null;
