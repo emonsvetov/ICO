@@ -92,7 +92,7 @@ class MerchantController extends Controller
         try {
             $exists = Merchant::where('name', $request->get('name'))->first();
             if ($exists){
-                throw new \Exception('Merchant already exists.');
+                return response([ 'merchant' => $exists ])
             }
             $newMerchant = (new \App\Models\Merchant)->createAccount( $request->validated() );
         } catch (\Exception $exception){
