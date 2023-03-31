@@ -15,7 +15,6 @@ use Database\Seeders\StatusSeeder;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\OrganizationSeeder;
 use Database\Seeders\OwnerSeeder;
-use Database\Seeders\AccountHolderPatcher;
 use Database\Seeders\CallbackTypeSeeder;
 use Database\Seeders\CountrySeeder;
 use Database\Seeders\StateSeeder;
@@ -23,6 +22,9 @@ use Database\Seeders\LeaderboardTypeSeeder;
 use Database\Seeders\InvoiceTypeSeeder;
 use Database\Seeders\PaymentMethodSeeder;
 use Database\Seeders\EmailTemplateTypeSeeder;
+use Database\Seeders\ExpirationRuleSeeder;
+use Database\Seeders\GoalPlanTypeSeeder;
+// use Database\Seeders\MediaTypesSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -35,6 +37,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             OwnerSeeder::class,
+            OrganizationSeeder::class,
             PermissionSeeder::class,
             RoleSeeder::class,
             EventTypeSeeder::class,
@@ -45,7 +48,6 @@ class DatabaseSeeder extends Seeder
             CurrencySeeder::class,
             StatusSeeder::class,
             UserSeeder::class,
-            OrganizationSeeder::class,
             CallbackTypeSeeder::class,
             CountrySeeder::class,
             StateSeeder::class,
@@ -53,7 +55,10 @@ class DatabaseSeeder extends Seeder
             CsvImportTypeSeeder::class,
             InvoiceTypeSeeder::class,
             PaymentMethodSeeder::class,
-            EmailTemplateTypeSeeder::class
+            EmailTemplateTypeSeeder::class,
+            ExpirationRuleSeeder::class,
+            GoalPlanTypeSeeder::class,
+            // MediaTypesSeeder::class,
         ]);
     }
 }

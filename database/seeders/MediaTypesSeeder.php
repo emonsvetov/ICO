@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\ProgramMediaType;
 use Illuminate\Database\Seeder;
 
-class MediaTypes extends Seeder
+class MediaTypesSeeder extends Seeder
 {
     /**
      * Run the database seeds.
