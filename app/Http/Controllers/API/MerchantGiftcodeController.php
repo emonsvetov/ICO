@@ -23,6 +23,20 @@ class MerchantGiftcodeController extends Controller
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
+        $from = request()->get('from', null);
+
+        $fromDate = '';
+        if($from){
+            $fromDate = substr($from,4,11);
+            $fromDate = date('Y-m-d', strtotime($fromDate)) . ' 00:00:00';
+        }
+
+        $to = request()->get('to', null);
+        $toDate = '';
+        if($to){
+            $toDate = substr($to, 4, 11);
+            $toDate = date('Y-m-d', strtotime($toDate)) . ' 23:59:59';
+        }
 
         $where = ['merchant_id' => $merchant->id];
 
@@ -41,6 +55,12 @@ class MerchantGiftcodeController extends Controller
         $type = request()->get('type', '');
         if($type == 'redeemed'){
             $query->whereNotNull('redemption_datetime');
+            if($fromDate){
+                $query->where('redemption_datetime', '>=', $fromDate);
+            }
+            if($toDate){
+                $query->where('redemption_datetime', '<=', $toDate );
+            }
         }elseif($type == 'available'){
             $query->whereNull('redemption_datetime');
         }
