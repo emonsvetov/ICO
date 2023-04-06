@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\DB;
 use App\Http\Requests\ProgramMerchantRequest;
 use App\Http\Resources\GiftcodeCollection;
 use App\Http\Controllers\Controller;
@@ -11,7 +12,6 @@ use App\Models\Organization;
 use App\Models\Merchant;
 use App\Models\Program;
 Use Exception;
-use DB;
 
 class ProgramMerchantController extends Controller
 {
@@ -88,6 +88,9 @@ class ProgramMerchantController extends Controller
 
     public function redeemable(GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )
     {
-        return $giftcodeService->getRedeemable( $merchant, $program->is_demo );
+        DB::enableQueryLog();
+        $data = $giftcodeService->getRedeemable( $merchant, $program->is_demo );
+        $query = DB::getQueryLog();
+        return ['data' => $data, 'query'=>$query];
     }
 }
