@@ -24,6 +24,7 @@ class ProgramRequest extends FormRequest
     public function rules()
     {
         return [
+            'account_holder_id'    => 'sometimes|integer',
             'parent_id'            => 'nullable|integer',
             'name'                  => 'required|string',
             'type'                  => 'required|string',
