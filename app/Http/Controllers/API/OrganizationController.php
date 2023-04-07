@@ -16,8 +16,8 @@ class OrganizationController extends Controller
     {
         $organization = Organization::orderBy('name')->get();
 
-        if ( $organization->isNotEmpty() ) 
-        { 
+        if ( $organization->isNotEmpty() )
+        {
             return response( $organization );
         }
 
@@ -27,6 +27,13 @@ class OrganizationController extends Controller
     public function store(OrganizationRequest $request)
     {
 
+        if($request->get('name')){
+            $exists = Organization::where('name', $request->get('name'))->first();
+            if ($exists){
+                return response([ 'organization' => $exists ]);
+            }
+        }
+
         $organization = Organization::create( $request->validated() );
 
         if ( !$organization )
@@ -35,14 +42,14 @@ class OrganizationController extends Controller
         }
 
         OrganizationCreated::dispatch($organization);
-        
+
         return response([ 'organization' => $organization ]);
     }
 
     public function show(Organization $organization)
     {
-        if ( $organization ) 
-        { 
+        if ( $organization )
+        {
             return response( $organization );
         }
 
@@ -51,8 +58,8 @@ class OrganizationController extends Controller
 
     public function update(OrganizationRequest $request, Organization $organization)
     {
-        if ( ! $organization->exists ) 
-        { 
+        if ( ! $organization->exists )
+        {
             return response(['errors' => 'No Organization Found'], 404);
         }
 
