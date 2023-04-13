@@ -122,7 +122,7 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 	protected $_ci;
 
 	/** Generate data table to Portfolio Status Report
-	 * 
+	 *
 	 * @param array $propertyList
 	 *        list of properties
 	 * @param string $timestampFrom
@@ -141,27 +141,27 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 		}
 		if (isset ( $params [self::PROGRAMS] )) {
 			$this->programList = is_array ( $params [self::PROGRAMS] ) ? $params [self::PROGRAMS] : array (
-					$params [self::PROGRAMS] 
+					$params [self::PROGRAMS]
 			);
 		}
 		if (isset ( $params [self::MERCHANTS] )) {
 			$this->merchantList = is_array ( $params [self::MERCHANTS] ) ? $params [self::MERCHANTS] : array (
-					$params [self::MERCHANTS] 
+					$params [self::MERCHANTS]
 			);
 		}
 		if (isset ( $params [self::USERS] )) {
 			$this->userList = is_array ( $params [self::USERS] ) ? $params [self::USERS] : array (
-					$params [self::USERS] 
+					$params [self::USERS]
 			);
 		}
 		if (isset ( $params [self::AWARD_LEVEL_IDS] )) {
 			$this->awardLevelsList = is_array ( $params [self::AWARD_LEVEL_IDS] ) ? $params [self::AWARD_LEVEL_IDS] : array (
-					$params [self::AWARD_LEVEL_IDS] 
+					$params [self::AWARD_LEVEL_IDS]
 			);
 		}
 		if (isset ( $params [self::AWARD_LEVEL_NAMES] )) {
 			$this->awardLevelsNamesList = is_array ( $params [self::AWARD_LEVEL_NAMES] ) ? $params [self::AWARD_LEVEL_NAMES] : array (
-					$params [self::AWARD_LEVEL_NAMES] 
+					$params [self::AWARD_LEVEL_NAMES]
 			);
 		}
 		if (isset ( $params [self::SQL_LIMIT] )) {
@@ -178,7 +178,7 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 		}
 		if (isset ( $params [self::SQL_ORDER_BY] )) {
 			$this->order_by = is_array ( $params [self::SQL_ORDER_BY] ) ? $params [self::SQL_ORDER_BY] : array (
-					$params [self::SQL_ORDER_BY] 
+					$params [self::SQL_ORDER_BY]
 			);
 		}
 		if (isset ( $params [self::SQL_ORDER_BY_DIR] )) {
@@ -186,22 +186,22 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 		}
 		if (isset ( $params [self::SQL_GROUP_BY] )) {
 			$this->group_by = is_array ( $params [self::SQL_GROUP_BY] ) ? $params [self::SQL_GROUP_BY] : array (
-					$params [self::SQL_GROUP_BY] 
+					$params [self::SQL_GROUP_BY]
 			);
 		}
 		if (isset ( $params [self::ACCOUNT_HOLDER_IDS] )) {
 			$this->account_holder_ids = is_array ( $params [self::ACCOUNT_HOLDER_IDS] ) ? $params [self::ACCOUNT_HOLDER_IDS] : array (
-					$params [self::ACCOUNT_HOLDER_IDS] 
+					$params [self::ACCOUNT_HOLDER_IDS]
 			);
 		}
 		if (isset ( $params [self::ACCOUNT_TYPES] )) {
 			$this->account_types = is_array ( $params [self::ACCOUNT_TYPES] ) ? $params [self::ACCOUNT_TYPES] : array (
-					$params [self::ACCOUNT_TYPES] 
+					$params [self::ACCOUNT_TYPES]
 			);
 		}
 		if (isset ( $params [self::JOURNAL_EVENT_TYPES] )) {
 			$this->journal_event_types = is_array ( $params [self::JOURNAL_EVENT_TYPES] ) ? $params [self::JOURNAL_EVENT_TYPES] : array (
-					$params [self::JOURNAL_EVENT_TYPES] 
+					$params [self::JOURNAL_EVENT_TYPES]
 			);
 		}
 		if (isset ( $params [self::FIELD_REPORT_KEY] )) {
@@ -214,46 +214,46 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 			$this->reclaim_details = $params [self::RECLAIM_DETAILS];
 		}
 	}
-	
+
 	/** set parameters for base query
-	 * 
+	 *
 	 * @param array $args         */
 	public function setParams(Array $args) {
 		$this->params = $args;
-	
+
 	}
 
 	/** get base query parameters
 	 * if parameters is not specify then using default parameters
-	 * 
+	 *
 	 * @return array */
 	public function getParams() {
 		if ($this->params == null) {
 			$this->setDefaultParams ();
 		}
 		return $this->params;
-	
+
 	}
 
 	/** Data table
-	 * 
+	 *
 	 * @return array data table */
 	public function getTable() {
 		if (is_null ( $this->table )) {
 			$this->calc ();
 		}
 		return $this->table;
-	
+
 	}
 
 	public function getTimestampFrom() {
 		return $this->timestampFrom;
-	
+
 	}
 
 	public function getTimestampTo() {
 		return $this->timestampTo;
-	
+
 	}
 
 	/** setup default parameters */
@@ -302,15 +302,15 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 	}
 
 	/** basic sql without any filters
-	 * 
+	 *
 	 * @throws AppException */
 	protected function getBaseSql() {
 		throw new \RuntimeException ( get_class ( $this ) . ' > getBaseSql is not implemented' );
-	
+
 	}
 
 	/** get sql where filter
-	 * 
+	 *
 	 * @return array */
 	protected function getWhereFilters() {
 		return array ();
@@ -320,11 +320,11 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 	protected function calc() {
 		$this->table = array ();
 		$this->getDataDateRange ();
-	
+
 	}
 
 	/** Calculate simple data using query and filters
-	 * 
+	 *
 	 * @param array $params
 	 *        arguments to query
 	 * @return array */
@@ -333,7 +333,7 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 		$sql = $this->addSqlFilters ( $sql );
 		$res = $this->doSql ( $sql );
 		return $res;
-	
+
 	}
 
 	protected function selectQuery($sql) {
@@ -349,8 +349,8 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 	}
 
 	/** execute sql query
-	 * 
-	 * @param string $sql        
+	 *
+	 * @param string $sql
 	 * @return array
 	 * @throws AppException when error in sql query */
 	protected function doSql($sql) {
@@ -359,11 +359,11 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 			throw new RuntimeException ( get_class ( $this ) . '::doSql > Error in SQL' );
 		}
 		return $res;
-	
+
 	}
 
 	/** add sql filters to sql string
-	 * 
+	 *
 	 * @param string $sql
 	 *        sql-string
 	 * @return string */
@@ -386,6 +386,6 @@ abstract class ReportServiceAbstractBase implements ReportServiceInterface
 			$sql .= $this->params [self::SQL_LIMIT];
 		}
 		return $sql;
-	
+
 	}
 }

@@ -14,7 +14,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
     /**
      * @inheritDoc
      */
-    protected function getBaseSql(): Builder
+    protected function getBaseQuery(): Builder
     {
         return DB::table(function ($query) {
             $query->from('programs');
@@ -256,7 +256,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
     protected function calc(): array
     {
         $this->table = [];
-        $query = $this->getBaseSql();
+        $query = $this->getBaseQuery();
         $this->table['total'] = count($query->get()->toArray());
         $query = $this->setLimit($query);
         $this->table['data'] = $query->get()->toArray();

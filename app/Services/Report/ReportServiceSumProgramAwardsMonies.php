@@ -1,12 +1,18 @@
 <?php
 namespace App\Services\Report;
+use Illuminate\Support\Facades\DB;
 
 use App\Services\Report\ReportServiceSumProgramAwardsPoints;
 
 class ReportServiceSumProgramAwardsMonies extends ReportServiceSumProgramAwardsPoints
 {
+    public function __construct(array $params = [])
+    {
+        parent::__construct($params);
+        DB::statement("SET SQL_MODE=''");
+    }
 	/** get sql where filter
-	 * 
+	 *
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
@@ -23,6 +29,5 @@ class ReportServiceSumProgramAwardsMonies extends ReportServiceSumProgramAwardsP
 			$where [] = "p.id IN (" . implode ( ',', $this->params [self::PROGRAMS] ) . ")";
 		}
 		return $where;
-	
 	}
 }

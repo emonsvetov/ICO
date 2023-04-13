@@ -1,10 +1,10 @@
 <?php
 namespace App\Services\Report;
-use App\Services\Report\ReportServiceAbstractBase;
+// use App\Services\Report\ReportServiceAbstractBase;
+use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
 
 class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstractBase
 {
-
 	const FIELD_COST_BASIS = "cost_basis";
 
 	const FIELD_PREMIUM = "premium";
@@ -15,9 +15,11 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstra
 		$this->params [self::SQL_GROUP_BY] = array (
 				'a.account_holder_id',
 				'atypes.id',
-				'jet.id' 
+				'jet.id',
+				'jet.type',
+				'atypes.name',
 		);
-	
+
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */
@@ -28,13 +30,13 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstra
 			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_COST_BASIS] = $row->{self::FIELD_COST_BASIS};
 			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_PREMIUM] = $row->{self::FIELD_PREMIUM};
 		}
-	
+
 	}
 
 	/** basic sql without any filters */
-	protected function getBaseSql() {
+	protected function getBaseSql(): string {
 		$sql = "
-                SELECT 
+                SELECT
                     COALESCE(SUM(mi.cost_basis), 0) AS " . self::FIELD_COST_BASIS . ",
                     COALESCE(SUM(mi.redemption_value - mi.sku_value), 0) AS " . self::FIELD_PREMIUM . ",
                                 jet.type AS " . self::FIELD_JOURNAL_EVENT_TYPE . ",
@@ -59,11 +61,11 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstra
                             INNER JOIN
                         merchants m ON m.account_holder_id = merchant_account.account_holder_id";
 		return $sql;
-	
+
 	}
 
 	/** get sql where filter
-	 * 
+	 *
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
@@ -80,6 +82,6 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstra
 		$where [] = "posts.created_at >= '{$this->params[self::DATE_BEGIN]}'";
 		$where [] = "posts.created_at <= '{$this->params[self::DATE_END]}'";
 		return $where;
-	
+
 	}
 }

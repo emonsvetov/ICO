@@ -194,7 +194,7 @@ class Program extends BaseModel
         if( $with_rank )    {
             //TODO
         }
-        return self::whereIn('id', $programIds)->get();
+        return self::whereIn('account_holder_id', $programIds)->get();
     }
 
     public function create_setup_fee_account()   {
