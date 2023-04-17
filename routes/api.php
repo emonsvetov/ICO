@@ -524,7 +524,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
      Route::get('/v1/organization/{organization}/program/{program}/readUserGoalProgressDetail/{userGoal}',
      [App\Http\Controllers\API\UserGoalController::class, 'readUserGoalProgressDetail'])->name('api.v1.readUserGoalProgressDetail')->middleware('can:readUserGoalProgressDetail,App\UserGoal,organization,program,userGoal');
-     
+
     //External Callback
 
     Route::get('/v1/external-callback',[App\Http\Controllers\API\ExternalCallbackController::class, 'index'])->middleware('can:viewAny,App\ExternalCallback');

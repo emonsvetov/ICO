@@ -6,7 +6,7 @@ use App\Services\Report\ReportServiceSumProgramAwardsPoints;
 class ReportServiceSumProgramAwardsMonies extends ReportServiceSumProgramAwardsPoints
 {
 	/** get sql where filter
-	 * 
+	 *
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
@@ -23,6 +23,5 @@ class ReportServiceSumProgramAwardsMonies extends ReportServiceSumProgramAwardsP
 			$where [] = "p.id IN (" . implode ( ',', $this->params [self::PROGRAMS] ) . ")";
 		}
 		return $where;
-	
 	}
 }

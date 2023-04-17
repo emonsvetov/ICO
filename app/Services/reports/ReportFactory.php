@@ -2,15 +2,10 @@
 
 namespace App\Services\reports;
 
-use http\Exception\InvalidArgumentException;
-use http\Exception\RuntimeException;
-
 class ReportFactory
 {
-
     public function build(string $title = '', array $params = [])
     {
-
         $programs = isset($params['programs']) ? $params['programs'] : null;
         $programs = $programs ? explode(',', $programs) : [];
         $merchants = isset($params['merchants']) ? $params['merchants'] : null;
@@ -26,8 +21,10 @@ class ReportFactory
         $createdOnly = $params['createdOnly'] ?? null;
         $group = $params['group'] ?? null;
         $order = $params['order'] ?? null;
+        $paginate = false;
 
         if ($paramPage && $paramLimit) {
+            $paginate = true;
             $offset = ($paramPage - 1) * $paramLimit;
             $limit = $paramLimit;
         }
@@ -46,10 +43,11 @@ class ReportFactory
             'createdOnly' => $createdOnly,
             'group' => $group,
             'order' => $order,
+            'paginate' => $paginate,
         ];
 
         if (empty($title)) {
-            throw new InvalidArgumentException('Invalid Report Title.');
+            throw new \InvalidArgumentException('Invalid Report Title.');
         } else {
             $resultTitle = '';
             $tmpTitle = explode('-', $title);
@@ -67,6 +65,4 @@ class ReportFactory
             }
         }
     }
-
-
 }

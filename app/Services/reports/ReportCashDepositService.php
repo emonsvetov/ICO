@@ -12,7 +12,7 @@ class ReportCashDepositService extends ReportServiceAbstract
     /**
      * @inheritDoc
      */
-    protected function getBaseSql(): Builder
+    protected function getBaseQuery(): Builder
     {
         return DB::table(function ($subQuery) {
             $subQuery->from('postings');
