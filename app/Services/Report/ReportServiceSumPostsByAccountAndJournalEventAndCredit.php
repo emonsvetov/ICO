@@ -1,11 +1,7 @@
 <?php
 namespace App\Services\Report;
 
-use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\DB;
-// use App\Services\Report\ReportServiceAbstractBase;
 use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
-
 
 class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServiceAbstractBase
 {

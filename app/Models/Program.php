@@ -189,12 +189,12 @@ class Program extends BaseModel
         return $program;
     }
 
-    public static function read_programs($programIds, $with_rank = false)  {
-        if( !$programIds ) return;
+    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false)  {
+        if( !$programAccountHolderIds ) return;
         if( $with_rank )    {
             //TODO
         }
-        return self::whereIn('account_holder_id', $programIds)->get();
+        return self::whereIn('account_holder_id', $programAccountHolderIds)->get();
     }
 
     public function create_setup_fee_account()   {

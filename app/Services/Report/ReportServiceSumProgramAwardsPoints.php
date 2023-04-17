@@ -1,20 +1,23 @@
 <?php
 namespace App\Services\Report;
-use App\Services\Report\ReportServiceAbstractBase;
+
+use Illuminate\Support\Facades\DB;
+use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
 
 class ReportServiceSumProgramAwardsPoints extends ReportServiceAbstractBase
 {
 	/** setup default parameters */
 	protected function setDefaultParams() {
+        DB::statement("SET SQL_MODE=''");
 		parent::setDefaultParams ();
 		if (! isset ( $this->params [self::SQL_GROUP_BY] ) || ! is_array ( $this->params [self::SQL_GROUP_BY] ) || count ( $this->params [self::SQL_GROUP_BY] ) < 1) {
 			$this->params [self::SQL_GROUP_BY] = array (
 					'p.account_holder_id',
 					'atypes.name',
-					'jet.type' 
+					'jet.type'
 			);
 		}
-	
+
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */
@@ -30,11 +33,12 @@ class ReportServiceSumProgramAwardsPoints extends ReportServiceAbstractBase
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
 			}
 		}
-	
+
 	}
 
 	/** basic sql without any filters */
-	protected function getBaseSql() {
+	protected function getBaseSql(): string
+    {
 		$sql = "
                 SELECT
                     COALESCE(SUM(posts.posting_amount), 0) AS " . self::FIELD_VALUE . ",
@@ -56,11 +60,11 @@ class ReportServiceSumProgramAwardsPoints extends ReportServiceAbstractBase
                     join `programs` `p` ON ((`p`.`account_holder_id` = `program_accounts`.`account_holder_id`)))
                     ";
 		return $sql;
-	
+
 	}
 
 	/** get sql where filter
-	 * 
+	 *
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
@@ -77,6 +81,6 @@ class ReportServiceSumProgramAwardsPoints extends ReportServiceAbstractBase
 			$where [] = "p.account_holder_id IN (" . implode ( ',', $this->params [self::PROGRAMS] ) . ")";
 		}
 		return $where;
-	
+
 	}
 }

@@ -53,6 +53,7 @@ abstract class ReportServiceAbstract
 
     public function __construct(array $params = [])
     {
+
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
         $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];

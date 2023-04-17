@@ -6,7 +6,6 @@ use App\Services\Report\ReportServiceSumProgramCostOfGiftCodesRedeemedFee;
 use App\Services\Report\ReportServiceSumProgramCostOfGiftCodesRedeemed;
 use App\Services\Report\ReportServiceSumProgramAwardsPoints;
 use App\Services\Report\ReportServiceSumProgramAwardsMonies;
-// use App\Services\Report\ReportServiceAbstractBase;
 use App\Models\JournalEventType;
 use App\Models\AccountType;
 use App\Models\Program;
@@ -23,7 +22,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
             // dd($this->params [self::PROGRAMS]);
 			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true );
-            // dd($ranked_programs->toArray());
+            // dd($ranked_programs->pluck('account_holder_id'));
 			if ( $ranked_programs->isNotEmpty() ) {
 				$account_holder_ids = [];
 				$defaultValues = [
@@ -364,8 +363,9 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					}
 				}
 				// Get the monies awards
-				$subreport_params [self::ACCOUNT_TYPES] = array ();
-				$subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
+				$subreport_params [self::ACCOUNT_TYPES] = [];
+				$subreport_params [self::JOURNAL_EVENT_TYPES] = [];
+
 				$points_report = new ReportServiceSumProgramAwardsMonies ( $subreport_params );
 
 				$points_report_table = $points_report->getTable ();
@@ -381,8 +381,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					}
 				}
 				// Get the points awards
-				$subreport_params [self::ACCOUNT_TYPES] = array ();
-				$subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
+				$subreport_params[self::ACCOUNT_TYPES] = [];
+				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
 				$points_report = new ReportServiceSumProgramAwardsPoints ( $subreport_params );
 				$points_report_table = $points_report->getTable ();
                 // dd($points_report_table);
@@ -398,8 +398,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				}
 
 				// Get the points awards
-				$subreport_params [self::ACCOUNT_TYPES] = array ();
-				$subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
+				$subreport_params[self::ACCOUNT_TYPES] = [];
+				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
 				$premium_fee = new ReportServiceSumProgramCostOfGiftCodesRedeemedFee ( $subreport_params );
 				$premium_fee_report_table = $premium_fee->getTable ();
 				// pr($premium_fee_report_table);
