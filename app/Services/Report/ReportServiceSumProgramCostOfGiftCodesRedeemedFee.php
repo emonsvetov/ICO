@@ -1,6 +1,6 @@
 <?php
 namespace App\Services\Report;
-use App\Services\Report\ReportServiceAbstractBase;
+use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
 
 class ReportServiceSumProgramCostOfGiftCodesRedeemedFee extends ReportServiceAbstractBase
 {
@@ -26,9 +26,10 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemedFee extends ReportServiceAbs
 	}
 
 	/** basic sql without any filters */
-	protected function getBaseSql() {
+	protected function getBaseSql(): string
+    {
 		$sql = "
-                SELECT 
+                SELECT
                     COALESCE(SUM(mi.redemption_value - mi.sku_value), 0) AS " . self::FIELD_PREMIUM_FEE . "
                     FROM
                         " . POSTINGS . " AS posts
@@ -53,11 +54,11 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemedFee extends ReportServiceAbs
 	 "
                         ;
 		return $sql;
-	
+
 	}
 
 	/** get sql where filter
-	 * 
+	 *
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
@@ -75,6 +76,6 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemedFee extends ReportServiceAbs
 		$where [] = "posts.created_at >= '{$this->params[self::DATE_BEGIN]}'";
 		$where [] = "posts.created_at <= '{$this->params[self::DATE_END]}'";
 		return $where;
-	
+
 	}
 }

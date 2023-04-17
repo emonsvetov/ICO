@@ -33,7 +33,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
     private $total = [];
 
 
-    protected function getBaseSql(): Builder
+    protected function getBaseQuery(): Builder
     {
         $report_key = $this->params[self::FIELD_REPORT_KEY] ?? self::FIELD_REDEMPTION_VALUE;
 

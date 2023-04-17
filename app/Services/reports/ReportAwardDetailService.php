@@ -12,7 +12,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
     /**
      * @inheritDoc
      */
-    protected function getBaseSql(): Builder
+    protected function getBaseQuery(): Builder
     {
         $query = DB::table('users');
         $query->join('program_user', 'program_user.user_id', '=', 'users.id');

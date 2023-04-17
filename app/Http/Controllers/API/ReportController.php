@@ -51,7 +51,8 @@ class ReportController extends Controller
             $response = $report->getReport();
             return response($response);
         } catch (\Exception $e) {
-            return response(['errors' => 'Error report generate', 'e' => $e->getMessage()], 422);
+            $msg = sprintf('%s in line %d of file %s', $e->getMessage(), $e->getLine(), $e->getFile());
+            return response(['errors' => 'Error report generate', 'e' => $msg], 422);
         }
     }
 }

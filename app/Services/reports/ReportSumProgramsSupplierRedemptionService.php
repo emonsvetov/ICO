@@ -4,15 +4,8 @@ namespace App\Services\reports;
 
 use App\Models\AccountType;
 use App\Models\JournalEventType;
-use App\Models\MediumInfo;
-use App\Models\Merchant;
-use App\Models\OptimalValue;
-use App\Models\Posting;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Expr\Cast\Object_;
-use PhpParser\Node\Expr\PostInc;
-use stdClass;
 
 class ReportSumProgramsSupplierRedemptionService extends ReportServiceAbstract
 {
@@ -20,7 +13,7 @@ class ReportSumProgramsSupplierRedemptionService extends ReportServiceAbstract
     const FIELD_TOTAL_DOLLAR_VALUE_REDEEMED = 'total_dollar_value_redeemed';
     const FIELD_TOTAL_DOLLAR_VALUE_REBATED = 'total_dollar_value_rebated';
 
-    protected function getBaseSql(): Builder
+    protected function getBaseQuery(): Builder
     {
         $query = DB::table('users');
         $query->addSelect(

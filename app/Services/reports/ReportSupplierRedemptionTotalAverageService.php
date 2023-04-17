@@ -2,20 +2,14 @@
 
 namespace App\Services\reports;
 
-use App\Models\MediumInfo;
-use App\Models\Merchant;
-use App\Models\OptimalValue;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Expr\Cast\Object_;
-use stdClass;
 
 class ReportSupplierRedemptionTotalAverageService extends ReportServiceAbstract
 {
     const FIELD_AVG_DISCOUNT_PERCENT = 'avg_discount_percent';
 
-
-    protected function getBaseSql(): Builder
+    protected function getBaseQuery(): Builder
     {
         $query = DB::table('merchants');
         $query->join('medium_info', 'medium_info.merchant_id', '=', 'merchants.id');
