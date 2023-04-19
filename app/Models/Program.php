@@ -33,6 +33,8 @@ class Program extends BaseModel
     use Treeable;
     use HasRecursiveRelationships;
 
+    public $table = 'programs_live';
+
     protected $guarded = [];
 
     const STATUS_ACTIVE = 'Active';
@@ -56,7 +58,12 @@ class Program extends BaseModel
 
     public function children()
     {
-        return $this->hasMany(Program::class, 'parent_id')->with(['children', 'status']);
+        return $this->hasMany(Program::class, 'parent_id')->with(['children']);
+    }
+
+    public function childrenMinimal()
+    {
+        return $this->hasMany(Program::class, 'parent_id')->select(['id', 'name', 'parent_id'])->with(['childrenMinimal']);
     }
 
     public function events()

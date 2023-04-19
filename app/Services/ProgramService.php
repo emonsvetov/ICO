@@ -154,21 +154,22 @@ class ProgramService
 
         if ($minimal) {
             $query = $query->select('id', 'name');
+            // $query = $query->without(['status']);
         }
 
         if ($tree) {
             if ($minimal) {
                 $query = $query->with([
-                    'children' => function ($query) use ($notIn) {
+                    'childrenMinimal' => function ($query) use ($notIn) {
                         $subquery = $query->select('id', 'name', 'parent_id');
                         if ($notIn) {
                             $subquery = $subquery->whereNotIn('id', $notIn);
                         }
-                        $subquery->with(['status']);
+                        $subquery->without(['status']);
                         return $subquery;
                     },
-                    'status'
-                ]);
+                    // 'status'
+                ])->without('status');
             } else {
                 $subquery = $query->with([
                     'children' => function ($query) {
@@ -198,10 +199,11 @@ class ProgramService
         if (!$all) {
             $query->whereNull('parent_id');
         }
-        $query->withOrganization($organization);
+        // $query->withOrganization($organization);
 
         if ($params['minimal']) {
             $results = $query->get();
+            $results = childrenize($results); //"minimal" is supposed to have limited fields so the self hasmany association is named "childrenMinimal" which is renamed here back to "children", the default name of the children property
             if ($params['flatlist']) {
                 $newResults = _flatten($results);
                 return $newResults;
