@@ -280,18 +280,34 @@ if(!function_exists('compare_floats')) {
     }
 }
 
-if(!function_exists('childrenize'))  {
-    function childrenize($collection, string $field = 'childrenMinimal')
+if(!function_exists('childrenizeCollection'))  {
+    function childrenizeCollection($collection, string $field = 'childrenMinimal')
     {
 		if(!isset($newCollection)) $newCollection = collect();
         foreach( $collection as $model ) {
-            $model->children = $model->childrenMinimal;
-            $newCollection = $newCollection->push($model);
-            if ( !$model->childrenMinimal->isEmpty() ) {
-                $newCollection = $newCollection->merge(childrenize($model->childrenMinimal));
+            if( isset($model->$field))
+            {
+                $model->children = $model->$field;
+                $newCollection = $newCollection->push($model);
+                if ( !$model->$field->isEmpty() ) {
+                    $newCollection = $newCollection->merge(childrenizeCollection($model->$field));
+                }
+                unset($model->$field);
             }
-            unset($model->childrenMinimal);
         }
-		return $newCollection;
+        if( !$newCollection->isEmpty() ) return $newCollection;
+        return $collection;
     }
+}
+
+function childrenizeModel( $model )
+{
+    if( isset($model->childrenMinimal) )
+    {
+        $model->children = $model->childrenMinimal;
+        $model->children = childrenizeCollection($model->children);
+        unset($model->childrenMinimal);
+    }
+
+    return $model;
 }

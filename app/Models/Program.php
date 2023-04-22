@@ -40,6 +40,7 @@ class Program extends BaseModel
     const STATUS_ACTIVE = 'Active';
     const STATUS_DELETED = 'Deleted';
     const STATUS_LOCKED = 'Locked';
+    const MIN_FIELDS = ['id', 'name', 'parent_id', 'organization_id', 'account_holder_id'];
 
     public function resolveSoftDeletableRouteBinding($value, $field = null)
     {
@@ -63,7 +64,7 @@ class Program extends BaseModel
 
     public function childrenMinimal()
     {
-        return $this->hasMany(Program::class, 'parent_id')->select(['id', 'name', 'parent_id'])->with(['childrenMinimal']);
+        return $this->hasMany(Program::class, 'parent_id')->select(self::MIN_FIELDS)->with(['childrenMinimal']);
     }
 
     public function events()

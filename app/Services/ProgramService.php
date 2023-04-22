@@ -58,7 +58,8 @@ class ProgramService
         'paginate' => true,
         'tree' => true, //whether to return data in tree format
         'flatlist' => false, //whether to return data in tree format
-        'except' => [], //array of primary keys
+        'except' => [], //array of primary keys,
+        'minimalFields' => Program::MIN_FIELDS
     ];
 
     private function _buildParams($override = [])
@@ -70,12 +71,14 @@ class ProgramService
         $keyword = ! empty($override['keyword']) ? $override['keyword'] : request()->get('keyword', '');
         $sortby = ! empty($override['sortby']) ? $override['sortby'] : request()->get('sortby', 'id');
         $direction = ! empty($override['direction']) ? $override['direction'] : request()->get('direction', 'asc');
-        $tree = isset($override['tree']) ? $override['tree'] : request()->get('tree', true);
-        $minimal = ! empty($override['minimal']) ? $override['minimal'] : request()->get('minimal', false);
-        $flatlist = ! empty($override['flatlist']) ? $override['flatlist'] : request()->get('flatlist', false);
+        $tree = filter_var(!empty($override['tree']) ? $override['tree'] : request()->get('tree', true), FILTER_VALIDATE_BOOLEAN);
+        $minimal = filter_var(!empty($override['minimal']) ? $override['minimal'] : request()->get('minimal', false), FILTER_VALIDATE_BOOLEAN);
+        $flatlist = filter_var(!empty($override['flatlist']) ? $override['flatlist'] : request()->get('flatlist', false), FILTER_VALIDATE_BOOLEAN);
         $except = ! empty($override['except']) ? $override['except'] : request()->get('except', '');
         $limit = ! empty($override['limit']) ? $override['limit'] : request()->get('limit', 10);
-        $paginate = ! empty($override['paginate']) ? $override['paginate'] : request()->get('paginate', true);
+        $paginate = filter_var(!empty($override['paginate']) ? $override['paginate'] : request()->get('paginate', true), FILTER_VALIDATE_BOOLEAN);
+        $all = filter_var(!empty($override['all']) ? $override['all'] : request()->get('all', false), FILTER_VALIDATE_BOOLEAN);
+
         $params['orgId'] = $orgId;
         $params['status'] = $status;
         $params['keyword'] = $keyword;
@@ -87,6 +90,8 @@ class ProgramService
         $params['paginate'] = $paginate;
         $params['flatlist'] = $flatlist;
         $params['except'] = $except;
+        $params['all'] = $all;
+        // dd($params);
         // pr($params);
         return $params;
     }
@@ -153,23 +158,20 @@ class ProgramService
         }
 
         if ($minimal) {
-            $query = $query->select('id', 'name');
-            // $query = $query->without(['status']);
+            $query = $query->select($minimalFields);
         }
 
         if ($tree) {
             if ($minimal) {
                 $query = $query->with([
-                    'childrenMinimal' => function ($query) use ($notIn) {
-                        $subquery = $query->select('id', 'name', 'parent_id');
+                    'childrenMinimal' => function ($query) use ($notIn, $minimalFields) {
+                        $subquery = $query->select($minimalFields);
                         if ($notIn) {
                             $subquery = $subquery->whereNotIn('id', $notIn);
                         }
-                        $subquery->without(['status']);
                         return $subquery;
-                    },
-                    // 'status'
-                ])->without('status');
+                    }
+                ]);
             } else {
                 $subquery = $query->with([
                     'children' => function ($query) {
@@ -184,33 +186,49 @@ class ProgramService
                 return $subquery;
             }
         }
-
-        $query = $query->withOrganization($organization, true)->orderByRaw($orderByRaw);
-
+        $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
         return $query;
-
     }
 
     public function index($organization, $params = [])
     {
-        $all = $params['all'] ?? false;
-        $params = array_merge($this->_buildParams(), $params);
+        $params = $this->_buildParams($params);
+        // pr($params);
+        // exit;
         $query = $this->_buildQuery($organization, $params);
-        if (!$all) {
+        if ( !$params['all'] ) {
             $query->whereNull('parent_id');
         }
+
         // $query->withOrganization($organization);
 
-        if ($params['minimal']) {
-            $results = $query->get();
-            $results = childrenize($results); //"minimal" is supposed to have limited fields so the self hasmany association is named "childrenMinimal" which is renamed here back to "children", the default name of the children property
-            if ($params['flatlist']) {
-                $newResults = _flatten($results);
-                return $newResults;
+        // if ($params['minimal']) {
+        //     $results = $query->get();
+        //     if ($params['flatlist']) {
+        //         $newResults = _flatten($results);
+        //         return $newResults;
+        //     }
+        //     $results = childrenizeCollection($results);
+        //     return $results;
+        // }
+
+        if( $params['paginate'] ) {
+            $results = $query->paginate( $params['limit']);
+            if ($params['minimal']) {
+                $results->getCollection()->transform(function ($value) {
+                    $value = childrenizeModel($value);
+                    return $value;
+                });
             }
-            return $results;
+        } else {
+            $results = $query->get();
+            if ($params['minimal']) {
+                $results = childrenizeCollection($results);
+            }
+            if ($params['flatlist']) {
+                $results = _flatten($results);
+            }
         }
-        $results = $query->paginate( $params['limit']);
         return $results;
     }
 
@@ -220,22 +238,25 @@ class ProgramService
         $query = $this->_buildQuery($organization, $params)
             ->where('parent_id', $program->id)
             ->withOrganization($organization, true);
+            // hierarchy=1&
+        // if ($params['minimal']) {
+        //     $results = $query->get();
+        //     if ($params['flatlist']) {
+        //         $newResults = _flatten($results);
+        //         return $newResults;
+        //     }
 
-        if ($params['minimal']) {
-            $results = $query->get();
-            if ($params['flatlist']) {
-                $newResults = _flatten($results);
-                return $newResults;
-            }
-
-            return $results;
-        }
-
-        // if( $params['paginate'] ) {
-        //     return $query->paginate( $params['limit']);
+        //     return $results;
         // }
 
-        $results = $query->paginate($params['limit']);
+        if( $params['paginate'] ) {
+            return $query->paginate( $params['limit']);
+        }
+        $results = $query->get();
+        if ($params['flatlist']) {
+            $newResults = _flatten($results);
+            return $newResults;
+        }
         return $results;
     }
 
