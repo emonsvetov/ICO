@@ -252,6 +252,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 							foreach ( $programs_debits_report_table as $account_type_name => $account ) {
 								if (is_array ( $account ) && count ( $account ) > 0) {
 									foreach ( $account as $journal_event_type => $amount ) {
+                                        $amount = number_format((float)$amount, 2, '.', '');
 										switch ($account_type_name) {
 											case AccountType::ACCOUNT_TYPE_POINTS_REDEEMED :
 											case AccountType::ACCOUNT_TYPE_MONIES_REDEEMED :
@@ -313,6 +314,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 									foreach ( $account as $journal_event_type => $sum_row ) {
 										if (is_array ( $sum_row ) && count ( $sum_row ) > 0) {
 											foreach ( $sum_row as $sum_type => $amount ) {
+                                                $amount = number_format((float)$amount, 2, '.', '');
 												switch ($sum_type) {
 													case ReportServiceSumProgramCostOfGiftCodesRedeemed::FIELD_COST_BASIS :
 														switch ($account_type_name) {
