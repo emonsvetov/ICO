@@ -25,12 +25,14 @@ class ReportServiceSumProgramAwardsPoints extends ReportServiceAbstractBase
 		$data = $this->calcByDateRange ( $this->getParams () );
 		// Organize the data table so it is easier to look stuff up later
 		if (in_array ( self::FIELD_MONTH, $this->params [self::SQL_GROUP_BY] )) {
-			foreach ( $data as $row ) {
+			foreach ( $data as $i => $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [$row->{self::FIELD_MONTH}] = $row->{self::FIELD_VALUE};
+                unset($this->table[$i]);
 			}
 		} else {
-			foreach ( $data as $row ) {
+			foreach ( $data as $i => $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
+                unset($this->table[$i]);
 			}
 		}
 
