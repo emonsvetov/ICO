@@ -30,7 +30,7 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstra
 		foreach ( $data as $i => $row ) {
 			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_COST_BASIS] = $row->{self::FIELD_COST_BASIS};
 			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_PREMIUM] = $row->{self::FIELD_PREMIUM};
-            unset($data[$i]);
+            unset($this->table[$i]);
 		}
         pr($this->table);
         exit;
