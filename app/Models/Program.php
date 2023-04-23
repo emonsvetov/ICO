@@ -33,7 +33,7 @@ class Program extends BaseModel
     use Treeable;
     use HasRecursiveRelationships;
 
-    public $table = 'programs_live';
+    // public $table = 'programs_live';
 
     protected $guarded = [];
 
