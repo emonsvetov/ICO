@@ -163,6 +163,7 @@ abstract class ReportServiceAbstract
             // $this->table['data'] = $query;
             $this->table = $query;
         }
+        pr(get_class($this));
         if(get_class($this) == 'ReportServiceSumProgramCostOfGiftCodesRedeemed')
         {
             pr($this->table);
