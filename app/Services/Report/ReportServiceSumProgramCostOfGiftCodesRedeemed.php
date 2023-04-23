@@ -24,12 +24,13 @@ class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstra
 
 	/** Calculate data by date range (timestampFrom|To) */
 	protected function getDataDateRange() {
-		$data = $this->calcByDateRange ( $this->getParams () );
+		$data = & $this->calcByDateRange ( $this->getParams () );
 		// Organize the data table so it is easier to look stuff up later
         pr($this->table);
-		foreach ( $data as $row ) {
+		foreach ( $data as $i => $row ) {
 			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_COST_BASIS] = $row->{self::FIELD_COST_BASIS};
 			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_PREMIUM] = $row->{self::FIELD_PREMIUM};
+            unset($data[$i]);
 		}
         pr($this->table);
         exit;
