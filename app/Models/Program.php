@@ -33,11 +33,14 @@ class Program extends BaseModel
     use Treeable;
     use HasRecursiveRelationships;
 
+    // public $table = 'programs_live';
+
     protected $guarded = [];
 
     const STATUS_ACTIVE = 'Active';
     const STATUS_DELETED = 'Deleted';
     const STATUS_LOCKED = 'Locked';
+    const MIN_FIELDS = ['id', 'name', 'parent_id', 'organization_id', 'account_holder_id'];
 
     public function resolveSoftDeletableRouteBinding($value, $field = null)
     {
@@ -56,7 +59,12 @@ class Program extends BaseModel
 
     public function children()
     {
-        return $this->hasMany(Program::class, 'parent_id')->with(['children', 'status']);
+        return $this->hasMany(Program::class, 'parent_id')->with(['children']);
+    }
+
+    public function childrenMinimal()
+    {
+        return $this->hasMany(Program::class, 'parent_id')->select(self::MIN_FIELDS)->with(['childrenMinimal']);
     }
 
     public function events()
