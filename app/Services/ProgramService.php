@@ -200,18 +200,6 @@ class ProgramService
             $query->whereNull('parent_id');
         }
 
-        // $query->withOrganization($organization);
-
-        // if ($params['minimal']) {
-        //     $results = $query->get();
-        //     if ($params['flatlist']) {
-        //         $newResults = _flatten($results);
-        //         return $newResults;
-        //     }
-        //     $results = childrenizeCollection($results);
-        //     return $results;
-        // }
-
         if( $params['paginate'] ) {
             $results = $query->paginate( $params['limit']);
             if ($params['minimal']) {
