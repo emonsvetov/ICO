@@ -137,96 +137,96 @@ if (! function_exists ( 'account_type_parser' )) {
 		$account_type_data = array (
 				'Cash' => array (
 						DEBIT => 1,
-						CREDIT => - 1 
+						CREDIT => - 1
 				),
 				'Equity' => array (
 						DEBIT => 1,
-						CREDIT => - 1 
+						CREDIT => - 1
 				),
 				'Escrow' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Gift Codes Available' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Gift Codes Pending' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Gift Codes Redeemed' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Gift Codes Spent' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Income' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Awarded' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Deposits' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Due to Owner' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Fees' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Paid to Progam' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Pending' => array (
 						DEBIT => 1,
-						CREDIT => - 1 
+						CREDIT => - 1
 				),
 				'Monies Redeemed' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Shared' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Transaction' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Monies Setup' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Points Available' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Points Awarded' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Points Pending' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Points Redeemed' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
+						CREDIT => 1
 				),
 				'Points Fees' => array (
 						DEBIT => - 1,
-						CREDIT => 1 
-				) 
+						CREDIT => 1
+				)
 		);
 		// loop the data passed
 		foreach ( $data as $key => $value ) {
@@ -239,17 +239,17 @@ if (! function_exists ( 'account_type_parser' )) {
 			}
 		}
 		return $data;
-	
+
 	}
 }
-if (! function_exists ( 'toSql' )) 
+if (! function_exists ( 'toSql' ))
 {
 	function toSql($log)
     {
 		$newLog = [];
 		foreach($log as $query)	{
 			$newLog[] = \Str::replaceArray(
-				'?', array_map(function ($a) { return is_numeric($a) ? $a : "'$a'"; }, $query['bindings']), 
+				'?', array_map(function ($a) { return is_numeric($a) ? $a : "'$a'"; }, $query['bindings']),
 				$query['query']
 			);
 		}
@@ -263,10 +263,10 @@ if(!function_exists('getEntrataAcademicYear')) {
 		if(empty($date)){
 			$date = date('Y-m-d');
 		}
-		$fiscalYear = date('Y-09-01');		
+		$fiscalYear = date('Y-09-01');
 		if(date("m", strtotime($date)) < 9){
 			$year = date('Y')-1;
-			$fiscalYear = $year.'-09-01';	
+			$fiscalYear = $year.'-09-01';
 		}
 		return $fiscalYear;
 	}
@@ -278,4 +278,36 @@ if(!function_exists('compare_floats')) {
             return 0;
         return ($a > $b) ? - 1 : 1;
     }
+}
+
+if(!function_exists('childrenizeCollection'))  {
+    function childrenizeCollection($collection, string $field = 'childrenMinimal')
+    {
+		if(!isset($newCollection)) $newCollection = collect();
+        foreach( $collection as $model ) {
+            if( isset($model->$field))
+            {
+                $model->children = $model->$field;
+                $newCollection = $newCollection->push($model);
+                if ( !$model->$field->isEmpty() ) {
+                    $newCollection = $newCollection->merge(childrenizeCollection($model->$field));
+                }
+                unset($model->$field);
+            }
+        }
+        if( !$newCollection->isEmpty() ) return $newCollection;
+        return $collection;
+    }
+}
+
+function childrenizeModel( $model )
+{
+    if( isset($model->childrenMinimal) )
+    {
+        $model->children = $model->childrenMinimal;
+        $model->children = childrenizeCollection($model->children);
+        unset($model->childrenMinimal);
+    }
+
+    return $model;
 }
