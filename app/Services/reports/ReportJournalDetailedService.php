@@ -302,7 +302,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				);
 				$cost_of_redeemed_report = new ReportServiceSumProgramCostOfGiftCodesRedeemed ( $subreport_params );
 				$cost_of_redeemed_report_table = $cost_of_redeemed_report->getTable ();
-                pr($cost_of_redeemed_report_table);
 				if (is_array ( $cost_of_redeemed_report_table ) && count ( $cost_of_redeemed_report_table ) > 0) {
 					foreach ( $cost_of_redeemed_report_table as $program_account_holder_id => $programs_cost_of_redeemed_report_table ) {
 						// Get an easier reference to the program
