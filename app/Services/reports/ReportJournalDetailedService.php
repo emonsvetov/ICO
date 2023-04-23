@@ -104,6 +104,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 							foreach ( $programs_credits_report_table as $account_type_name => $account ) {
 								if (is_array ( $account ) && count ( $account ) > 0) {
 									foreach ( $account as $journal_event_type => $amount ) {
+                                        $amount = number_format((float)$amount, 2, '.', '');
 										switch ($account_type_name) {
 											case AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS :
 											case AccountType::ACCOUNT_TYPE_PROMOTIONAL_POINTS :
