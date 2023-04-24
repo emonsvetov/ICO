@@ -281,13 +281,14 @@ class ProgramController extends Controller
 
     public function hierarchy(Organization $organization, ProgramService $programService, Request $request)
     {
-        $programs = $programService->getHierarchy($organization);
+        dd("HERE");
+        // $programs = $programService->getHierarchy($organization);
 
-        dd($programs);
+        // dd($programs);
 
-        if ($programs->isNotEmpty()) {
-            return response($programs);
-        }
+        // if ($programs->isNotEmpty()) {
+        //     return response($programs);
+        // }
 
         return response([]);
     }
