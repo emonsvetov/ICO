@@ -281,7 +281,6 @@ class ProgramController extends Controller
 
     public function hierarchy(Organization $organization, ProgramService $programService, Request $request)
     {
-
         if(request()->get('refresh'))
         {
             cache()->forget('hierarchy_list_of_all_programs');
