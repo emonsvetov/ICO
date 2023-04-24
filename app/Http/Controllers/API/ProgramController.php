@@ -273,4 +273,20 @@ class ProgramController extends Controller
         return response($result);
     }
 
+   /**
+     * Get (cached) full hierarchy or tree of programs with minimal options
+     *
+     * @return array
+     */
+
+    public function hierarchy(Organization $organization, ProgramService $programService, Request $request)
+    {
+        $programs = $programService->getHierarchy($organization);
+
+        if ($programs->isNotEmpty()) {
+            return response($programs);
+        }
+
+        return response([]);
+    }
 }

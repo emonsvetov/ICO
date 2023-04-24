@@ -426,4 +426,91 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 	protected function getDataDateRange() {
 		$this->calcByDateRange ( $this->getParams () );
 	}
+
+    public function getCsvHeaders(): array
+    {
+        return [
+            [
+                'label' => 'Program',
+                'key' => 'name'
+            ],
+            [
+                'label' => 'Setup Fee',
+                'key' => 'setup_fee'
+            ],
+            [
+                'label' => 'Fixed Fee',
+                'key' => 'fixed_fee'
+            ],
+            [
+                'label' => 'Admin Fee',
+                'key' => 'admin_fee'
+            ],
+            [
+                'label' => 'Usage Fee',
+                'key' => 'usage_fee'
+            ],
+            [
+                'label' => 'Deposit Fee',
+                'key' => 'deposit_fee'
+            ],
+            [
+                'label' => 'Transaction Fees',
+                'key' => 'transaction_fee'
+            ],
+            [
+                'label' => 'Refunded Transaction Fees',
+                'key' => 'refunded_transaction_fee'
+            ],
+            [
+                'label' => 'Deposits',
+                'key' => 'deposits'
+            ],
+            [
+                'label' => 'Points Purchased',
+                'key' => 'points_purchased'
+            ],
+            [
+                'label' => 'Reclaims',
+                'key' => 'reclaims'
+            ],
+            [
+                'label' => 'Award Credit Reclaimed',
+                'key' => 'award_credit_reclaims'
+            ],
+            [
+                'label' => 'Points Redeemed',
+                'key' => 'points_redeemed'
+            ],
+            [
+                'label' => 'Discount Rebate Credited to Program',
+                'key' => 'discount_rebate_credited_to_program'
+            ],
+            [
+                'label' => 'Total Spend Rebate Credited to Program',
+                'key' => 'total_spend_rebate'
+            ],
+            [
+                'label' => 'Expiration Rebate Credited to Program',
+                'key' => 'expiration_rebate_credited_to_program'
+            ],
+            [
+                'label' => 'Premium From Codes Redeemed',
+                'key' => 'codes_redeemed_premium'
+            ],
+            [
+                'label' => 'Premium Fee',
+                'key' => 'premium_fee'
+            ],
+            [
+                'label' => 'Cost of Codes Redeemed',
+                'key' => 'codes_redeemed_cost'
+            ],
+            [
+                'label' => 'Convenience Fees',
+                'key' => 'convenience_fees'
+            ],
+
+        ];
+    }
 }
