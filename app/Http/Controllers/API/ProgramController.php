@@ -283,6 +283,8 @@ class ProgramController extends Controller
     {
         $programs = $programService->getHierarchy($organization);
 
+        dd($programs);
+
         if ($programs->isNotEmpty()) {
             return response($programs);
         }
