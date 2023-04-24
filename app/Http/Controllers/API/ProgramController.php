@@ -292,10 +292,14 @@ class ProgramController extends Controller
                 return $subquery;
             }
         ]);
-        $result = $query->get();
-        return ["Wuery"];
-        return $result->toArray();
-        return response(childrenizeCollection($result));
+        try {
+            $result = $query->get();
+            return response(childrenizeCollection($result));
+        } catch (\Exception $e) {
+            return sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile());
+        }
+
+        dd("END");
 
         if(request()->get('refresh'))
         {
