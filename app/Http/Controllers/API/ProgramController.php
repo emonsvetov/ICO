@@ -293,6 +293,7 @@ class ProgramController extends Controller
             }
         ]);
         $result = $query->get();
+        return ["Wuery"];
         return $result->toArray();
         return response(childrenizeCollection($result));
 
