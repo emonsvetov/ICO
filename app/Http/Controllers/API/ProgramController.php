@@ -286,6 +286,7 @@ class ProgramController extends Controller
         $query = Program::query();
         $query->whereNull('parent_id');
         $query = $query->select($minimalFields);
+        return $minimalFields;
         $query = $query->with([
             'childrenMinimal' => function ($query) use ($minimalFields) {
                 $subquery = $query->select($minimalFields);
