@@ -282,25 +282,6 @@ class ProgramController extends Controller
     public function hierarchy(Organization $organization, ProgramService $programService, Request $request)
     {
 
-        $minimalFields = Program::MIN_FIELDS;
-        $query = Program::query();
-        $query->whereNull('parent_id');
-        $query = $query->select($minimalFields);
-        $query = $query->with([
-            'childrenMinimal' => function ($query) use ($minimalFields) {
-                $subquery = $query->select($minimalFields);
-                return $subquery;
-            }
-        ]);
-        try {
-            $result = $query->get();
-            return response(childrenizeCollection($result));
-        } catch (\Exception $e) {
-            return sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile());
-        }
-
-        dd("END");
-
         if(request()->get('refresh'))
         {
             cache()->forget('hierarchy_list_of_all_programs');

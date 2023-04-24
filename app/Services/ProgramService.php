@@ -222,18 +222,22 @@ class ProgramService
 
     public function getHierarchy($organization)
     {
-        $minimalFields = Program::MIN_FIELDS;
-        $query = Program::query();
-        $query->whereNull('parent_id');
-        $query = $query->select($minimalFields);
-        $query = $query->with([
-            'childrenMinimal' => function ($query) use ($minimalFields) {
-                $subquery = $query->select($minimalFields);
-                return $subquery;
-            }
-        ]);
-        $result = $query->get();
-        return childrenizeCollection($result);
+        try {
+            $minimalFields = Program::MIN_FIELDS;
+            $query = Program::query();
+            $query->whereNull('parent_id');
+            $query = $query->select($minimalFields);
+            $query = $query->with([
+                'childrenMinimal' => function ($query) use ($minimalFields) {
+                    $subquery = $query->select($minimalFields);
+                    return $subquery;
+                }
+            ]);
+            $result = $query->get();
+            return childrenizeCollection($result);
+        } catch (\Exception $e) {
+            throw new \Exception(sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile()));
+        }
     }
 
     public function getSubprograms($organization, $program, $params = [])
