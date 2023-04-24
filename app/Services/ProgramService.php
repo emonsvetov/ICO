@@ -238,7 +238,8 @@ class ProgramService
                 }
             ]);
             $result = $query->get();
-            $result = childrenizeCollection($result);
+            pr($result->toArray());
+            // $result = childrenizeCollection($result);
             return $result;
         // });
         // return $result;
