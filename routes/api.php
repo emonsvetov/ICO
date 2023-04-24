@@ -209,6 +209,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Program routes
     Route::get('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'index'])->middleware('can:viewAny,App\Program,organization');
+    Route::get('/v1/organization/{organization}/program/hierarchy', [App\Http\Controllers\API\ProgramController::class, 'hierarchy'])->middleware('can:viewAny,App\Program,organization');
     Route::post('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'store'])->middleware('can:create,App\Program,organization');
     Route::get('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'show'])->middleware('can:view,App\Program,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'update'])->middleware('can:update,App\Program,organization,program');
