@@ -283,10 +283,10 @@ class ProgramController extends Controller
     {
         if(request()->get('refresh'))
         {
-            cache()->forget('hierarchy_list_of_all_programs');
+            cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
         }
 
-        $result = cache()->remember('hierarchy_list_of_all_programs', 3600, function () use($programService, $organization) {
+        $result = cache()->remember(Program::CACHE_FULL_HIERARCHY_NAME, 3600, function () use($programService, $organization) {
             return $programService->getHierarchy($organization)->toArray();
         });
 
