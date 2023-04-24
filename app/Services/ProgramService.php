@@ -222,28 +222,18 @@ class ProgramService
 
     public function getHierarchy($organization)
     {
-        return ["sdfsd"];
-        // if(request()->get('refresh'))
-        // {
-        //     cache()->forget('hierarchy_list_of_all_programs');
-        // }
-        // $result = cache()->remember('hierarchy_list_of_all_programs', 3600, function () {
-            // $minimalFields = Program::MIN_FIELDS;
-            // $query = Program::query();
-            // $query->whereNull('parent_id');
-            // $query = $query->select($minimalFields);
-            // $query = $query->with([
-            //     'childrenMinimal' => function ($query) use ($minimalFields) {
-            //         $subquery = $query->select($minimalFields);
-            //         return $subquery;
-            //     }
-            // ]);
-            // $result = $query->get();
-            // dd($result->toArray());
-            // $result = childrenizeCollection($result);
-            // return $result;
-        // });
-        // return $result;
+        $minimalFields = Program::MIN_FIELDS;
+        $query = Program::query();
+        $query->whereNull('parent_id');
+        $query = $query->select($minimalFields);
+        $query = $query->with([
+            'childrenMinimal' => function ($query) use ($minimalFields) {
+                $subquery = $query->select($minimalFields);
+                return $subquery;
+            }
+        ]);
+        $result = $query->get();
+        return childrenizeCollection($result);
     }
 
     public function getSubprograms($organization, $program, $params = [])
