@@ -91,6 +91,32 @@ abstract class ReportServiceAbstract
         return $date ? date($format, strtotime($date)) : '';
     }
 
+    public function getReport()
+    {
+        if ($this->params[self::EXPORT_CSV]) {
+            return $this->getReportForCSV();
+        } else {
+            return $this->getTable();
+        }
+    }
+
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data = $this->getTable();
+        $data['data'] = $data;
+        $data['total'] = count($data);
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
+    }
+
+    protected function getCsvHeaders(): array
+    {
+        return [];
+    }
+
     /**
      * Data table
      *
@@ -225,30 +251,6 @@ abstract class ReportServiceAbstract
         return $query;
     }
 
-    public function getReport()
-    {
-        if ($this->params[self::EXPORT_CSV]) {
-            return $this->getReportForCSV();
-        } else {
-            return $this->getTable();
-        }
-    }
-
-    protected function getReportForCSV(): array
-    {
-        $this->isExport = true;
-        $this->params[self::SQL_LIMIT] = null;
-        $this->params[self::SQL_OFFSET] = null;
-        $data = $this->getTable();
-        $data['headers'] = $this->getCsvHeaders();
-        return $data;
-    }
-
-    protected function getCsvHeaders(): array
-    {
-        return [];
-    }
-
     /**
      * Get basic sql without any filters
      *
@@ -279,7 +281,6 @@ abstract class ReportServiceAbstract
 	public function getParams() {
 		$this->setDefaultParams ();
 		return $this->params;
-
 	}
 
 	protected function addSqlFilters($sql) {
