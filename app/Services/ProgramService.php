@@ -222,11 +222,11 @@ class ProgramService
 
     public function getHierarchy($organization)
     {
-        if(request()->get('refresh'))
-        {
-            cache()->forget('hierarchy_list_of_all_programs');
-        }
-        $result = cache()->remember('hierarchy_list_of_all_programs', 3600, function () {
+        // if(request()->get('refresh'))
+        // {
+        //     cache()->forget('hierarchy_list_of_all_programs');
+        // }
+        // $result = cache()->remember('hierarchy_list_of_all_programs', 3600, function () {
             $minimalFields = Program::MIN_FIELDS;
             $query = Program::query();
             $query->whereNull('parent_id');
@@ -240,8 +240,8 @@ class ProgramService
             $result = $query->get();
             $result = childrenizeCollection($result);
             return $result;
-        });
-        return $result;
+        // });
+        // return $result;
     }
 
     public function getSubprograms($organization, $program, $params = [])
