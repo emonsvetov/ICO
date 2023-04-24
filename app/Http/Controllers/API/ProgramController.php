@@ -293,7 +293,7 @@ class ProgramController extends Controller
             }
         ]);
         $result = $query->get();
-        return childrenizeCollection($result);
+        return response(childrenizeCollection($result));
 
         if(request()->get('refresh'))
         {
