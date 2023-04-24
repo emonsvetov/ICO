@@ -286,7 +286,6 @@ class ProgramController extends Controller
         $query = Program::query();
         $query->whereNull('parent_id');
         $query = $query->select($minimalFields);
-        return $minimalFields;
         $query = $query->with([
             'childrenMinimal' => function ($query) use ($minimalFields) {
                 $subquery = $query->select($minimalFields);
@@ -294,6 +293,7 @@ class ProgramController extends Controller
             }
         ]);
         $result = $query->get();
+        return $result->toArray();
         return response(childrenizeCollection($result));
 
         if(request()->get('refresh'))
