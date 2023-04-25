@@ -14,7 +14,7 @@ use App\Models\Owner;
 trait ChargeFeeTrait {
 
     private function chargeFee($journal_event_type, $program, $amount, $quantity)    {
-        
+
         // $owner_account_holder_id = Owner::find(1)->account_holder_id;
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
         $program_account_holder_id = ( int ) $program->account_holder_id;
