@@ -33,7 +33,7 @@ class Program extends BaseModel
     use Treeable;
     use HasRecursiveRelationships;
 
-    public $table = 'programs_live';
+    // public $table = 'programs_live';
 
     protected $guarded = [];
 
@@ -41,6 +41,7 @@ class Program extends BaseModel
     const STATUS_DELETED = 'Deleted';
     const STATUS_LOCKED = 'Locked';
     const MIN_FIELDS = ['id', 'name', 'parent_id', 'account_holder_id'];
+    const CACHE_FULL_HIERARCHY_NAME = 'hierarchy_list_of_all_programs';
 
     public function resolveSoftDeletableRouteBinding($value, $field = null)
     {

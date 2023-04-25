@@ -16,6 +16,10 @@ use App\Services\UserService;
 use App\Models\Status;
 use App\Models\Event;
 use App\Models\Program;
+use App\Models\AccountHolder;
+use App\Models\FinanceType;
+use App\Models\MediumType;
+use App\Models\Account;
 use DB;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -220,13 +224,124 @@ class ProgramService
         return $results;
     }
 
+    public function create($data)
+    {
+        if (isset($data['status'])) { //If status present in "string" format
+            $data['status_id'] = Program::getStatusIdByName($data['status']);
+            unset($data['status']);
+        }
+        else if(empty($data['status_id'])) //if, the status_id also not set
+        {
+            //Set default status
+            $data['status_id'] = Program::getIdStatusActive();
+        }
+
+        if(isset($data['account_holder_id'])){
+            $program_account_holder_id = $data['account_holder_id'];
+        }else{
+            $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
+        }
+
+        if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
+            $data['allow_creditcard_deposits'] = 1;
+        }
+        if(!isset($data['expiration_rule_id']))   {
+            $data['expiration_rule_id'] = 3; //End of Next Year
+        }
+        if (!empty($data['status'])) { //If status present in string format
+            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : Program::getStatusIdByName($data['status']);
+            unset($data['status']);
+        }
+        if( empty($data['status_id']) )
+        {   //set default status to "Active"
+            $data['status_id'] = Program::getIdStatusActive();
+        }
+        $program = Program::create($data + ['account_holder_id' => $program_account_holder_id]);
+        $liability = FinanceType::getIdByName('Liability');
+        $asset = FinanceType::getIdByName('Asset', true);
+        $monies_mt = MediumType::getIdByName('Monies', true);
+        $default_accounts = array (
+            array (
+                    'account_type' => 'Monies Deposits',
+                    'finance_type' => $liability,
+                    'medium_type' => $monies_mt
+            ),
+            array (
+                    'account_type' => 'Monies Due to Owner',
+                    'finance_type' => $asset,
+                    'medium_type' => $monies_mt
+            ),
+            array (
+                    'account_type' => 'Monies Fees',
+                    'finance_type' => $liability,
+                    'medium_type' => $monies_mt
+            ),
+            array (
+                    'account_type' => 'Monies Paid to Progam',
+                    'finance_type' => $liability,
+                    'medium_type' => $monies_mt
+            ),
+            array (
+                    'account_type' => 'Monies Redeemed',
+                    'finance_type' => $liability,
+                    'medium_type' => $monies_mt
+            ),
+            array (
+                    'account_type' => 'Monies Shared',
+                    'finance_type' => $liability,
+                    'medium_type' => $monies_mt
+            ),
+            array (
+                    'account_type' => 'Monies Transaction',
+                    'finance_type' => $liability,
+                    'medium_type' => $monies_mt
+            )
+        );
+
+        Account::create_multi_accounts ( $program_account_holder_id, $default_accounts );
+
+        //TODO ??
+        // $this->tie_sub_program ( $program_account_holder_id, $program_account_holder_id );
+
+        // $default_participant_role_id = Role::getIdByNameAndOrg("Participant", $program->organization_id);
+
+        // $this->award_levels_model->create ( $program_account_holder_id, 'default' );
+
+        $program->create_setup_fee_account();
+        cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
+        return $program;
+    }
+
+    public function update($program, $data)
+    {
+        if (isset($data['address'])) {
+            if ($program->address()->exists()) {
+                $program->address()->update($data['address']);
+            } else {
+                $program->address()->create($data['address']);
+            }
+            unset($data['address']);
+        }
+        if (!empty($data['status'])) { //If status present in string format
+            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : Program::getStatusIdByName($data['status']);
+            unset($data['status']);
+        }
+        if( empty($data['status_id']) )
+        {   //set default status to "Active"
+            $data['status_id'] = Program::getIdStatusActive();
+        }
+        if($program->update($data)) {
+            if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
+                $program->create_setup_fee_account();
+            }
+            cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
+            return $program;
+        }
+    }
+
     public function getHierarchy($organization)
     {
-        if(request()->get('refresh'))
-        {
-            cache()->forget('hierarchy_list_of_all_programs');
-        }
-        $result = cache()->remember('hierarchy_list_of_all_programs', 3600, function () {
+        try {
             $minimalFields = Program::MIN_FIELDS;
             $query = Program::query();
             $query->whereNull('parent_id');
@@ -238,10 +353,10 @@ class ProgramService
                 }
             ]);
             $result = $query->get();
-            $result = childrenizeCollection($result);
-            return $result;
-        });
-        return $result;
+            return childrenizeCollection($result);
+        } catch (\Exception $e) {
+            throw new \Exception(sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile()));
+        }
     }
 
     public function getSubprograms($organization, $program, $params = [])
@@ -353,6 +468,7 @@ class ProgramService
         }
         $program->parent_id = null;
         $program->save();
+        cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
     }
 
     public function unlinkNode($organization, $program)
@@ -366,6 +482,7 @@ class ProgramService
         }
         $program->parent_id = null;
         $program->save();
+        cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
     }
 
     public function listAvailableProgramsToAdd($organization, $domain)
@@ -409,46 +526,6 @@ class ProgramService
             return $program->descendantsAndSelf()->get()->toTree();
         }
         return $program->descendants()->get()->toTree();
-    }
-
-    public function create($data)
-    {
-        if (isset($data['status'])) { //If status present in "string" format
-            $data['status_id'] = Program::getStatusIdByName($data['status']);
-            unset($data['status']);
-        }
-        else if(empty($data['status_id'])) //if, the status_id also not set
-        {
-            //Set default status
-            $data['status_id'] = Program::getIdStatusActive();
-        }
-        return Program::createAccount($data);
-    }
-
-    public function update($program, $data)
-    {
-        if (isset($data['address'])) {
-            if ($program->address()->exists()) {
-                $program->address()->update($data['address']);
-            } else {
-                $program->address()->create($data['address']);
-            }
-            unset($data['address']);
-        }
-        if (!empty($data['status'])) { //If status present in string format
-            $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : Program::getStatusIdByName($data['status']);
-            unset($data['status']);
-        }
-        if( empty($data['status_id']) )
-        {   //set default status to "Active"
-            $data['status_id'] = Program::getIdStatusActive();
-        }
-        if($program->update($data)) {
-            if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
-                $program->create_setup_fee_account();
-            }
-            return $program;
-        }
     }
 
     /**
@@ -631,6 +708,7 @@ class ProgramService
 
     public function updateStatus($validated, $program)
     {
+        cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
         return $program->update( ['status_id' => $validated['program_status_id']] );
     }
 

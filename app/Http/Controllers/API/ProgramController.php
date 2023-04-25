@@ -281,12 +281,15 @@ class ProgramController extends Controller
 
     public function hierarchy(Organization $organization, ProgramService $programService, Request $request)
     {
-        $programs = $programService->getHierarchy($organization);
-
-        if ($programs->isNotEmpty()) {
-            return response($programs);
+        if(request()->get('refresh'))
+        {
+            cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
         }
 
-        return response([]);
+        $result = cache()->remember(Program::CACHE_FULL_HIERARCHY_NAME, 3600, function () use($programService, $organization) {
+            return $programService->getHierarchy($organization)->toArray();
+        });
+
+        return response($result);
     }
 }
