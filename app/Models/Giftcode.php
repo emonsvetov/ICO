@@ -28,9 +28,11 @@ class Giftcode extends Model
     {
         $query = parent::newQuery();
 
+        /*
         if (self::$all === false){
             $query->where('purchased_by_v2', '=', 0);
         }
+        */
 
         return $query;
     }
@@ -83,9 +85,15 @@ class Giftcode extends Model
 		}
 		$sql .= " AND
                         `hold_until` <= now()";
+		$sql .= " AND
+                        `purchased_by_v2` = 0";
+
+		if(env('APP_ENV') != 'production'){
+		    $sql .= " AND medium_info_is_test = 1";
+        }
+
 		$sql .= " group by
-                        sku_value, redemption_value, merchant_id
-        ";
+                        sku_value, redemption_value, merchant_id";
 		// add order by
 		$sql .= "
                     ORDER BY
@@ -123,11 +131,17 @@ class Giftcode extends Model
 			$merchant = Merchant::find($merchant);
 		}
 		if( !empty($giftcode['purchase_date']))	{
-			$giftcode['purchase_date'] = Carbon::createFromFormat('d/m/Y', $giftcode['purchase_date'])->format('Y-m-d');
+			$giftcode['purchase_date'] = $giftcode['purchase_date']; //Carbon::createFromFormat('d/m/Y', $giftcode['purchase_date'])->format('Y-m-d');
 		}
 
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
 		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
+
+		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
+
+		if(env('APP_ENV') != 'production'){
+		    $giftcode['medium_info_is_test'] = 1;
+        }
 
 		$gift_code_id = self::insertGetId(
 			$giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
@@ -185,6 +199,9 @@ class Giftcode extends Model
 		}
         if (isset($args['medium_info_is_test'])){
             $filters['medium_info_is_test'] = $args['medium_info_is_test'];
+        }
+        if (isset($args['purchased_by_v2'])){
+            $filters['purchased_by_v2'] = $args['purchased_by_v2'];
         }
 
 		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
@@ -257,9 +274,15 @@ class Giftcode extends Model
 		->where('medium_info.redemption_value', $redemption_value)
 		->where('medium_info.sku_value', $sku_value)
 		->where('medium_info.hold_until', '<=', now())
+        ->whereNull('medium_info.redemption_date')
+        ->where('medium_info.purchased_by_v2', '=', 0)
 		->orderBy('medium_info.id')
-		->limit(1)
-		;
+		->limit(1);
+
+		if(env('APP_ENV') != 'production'){
+		    $query->where('medium_info_is_test', '=', 1);
+        }
+
 		return $query->first();
 	}
 
@@ -316,7 +339,7 @@ class Giftcode extends Model
 		->orderBy('medium_info.purchase_date')
 		->orderBy('medium_info.id')
 		->groupBy('medium_info.id')
-		;
+        ;
 		return $query->first();
 	}
 

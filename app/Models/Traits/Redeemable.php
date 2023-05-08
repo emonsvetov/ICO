@@ -50,6 +50,14 @@ trait Redeemable
 			$query = $query->where('sku_value', '=', $filters['sku_value']);
 		}
 
+		if( isset($filters['redemption_date']) && $filters['redemption_date'] == 'null' )	{
+			$query = $query->whereNull('redemption_date');
+		}
+
+		if( isset($filters['purchased_by_v2']))	{
+			$query = $query->where('purchased_by_v2', '=', $filters['purchased_by_v2']);
+		}
+
 		if( !empty($filters['end_date']) && isValidDate($filters['end_date']) )	{
 			$query = $query->where('purchase_date', '<=', $filters['end_date']);
 			$query = $query->where(function($query1) use($filters) {

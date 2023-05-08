@@ -29,14 +29,27 @@ class CheckoutController extends Controller
                 $giftCodes = $response['gift_codes_redeemed_for'];
                 foreach ($giftCodes as $codeItem) {
                     $giftCodeId = (int)$codeItem->id;
+
                     $giftCode = Giftcode::find($giftCodeId);
-                    $responseV2 = Http::withHeaders([
-                        'X-API-KEY' => env('V2_API_KEY'),
-                    ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
-                        'code' => $giftCode->code,
-                    ]);
-                    Log::info('V2: ' . $giftCode->code);
-                    Log::debug($responseV2->body());
+                    /**
+                     *  "redeemed_program_id": 1,
+                        "redeemed_user_id": 120,
+                    $redeemed_program_id = null;
+                    $redeemed_program = Program::find($giftCode->redeemed_program_id);
+                    return response(['errors' => $redeemed_program], 422);
+                     *
+                     */
+
+                    if($giftCode->v2_merchant_id){
+                        $responseV2 = Http::withHeaders([
+                            'X-API-KEY' => env('V2_API_KEY'),
+                        ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
+                            'code' => $giftCode->code,
+                            'redeemed_merchant_account_holder_id' => $giftCode->v2_merchant_id
+                        ]);
+                        Log::info('V2: ' . $giftCode->code);
+                        Log::debug($responseV2->body());
+                    }
                 }
             }
 

@@ -40,6 +40,10 @@ class MerchantGiftcodeController extends Controller
 
         $where = ['merchant_id' => $merchant->id];
 
+        if(env('APP_ENV') != 'production'){
+		    $where['medium_info_is_test'] = 1;
+        }
+
         if( $sortby == "name" )
         {
             $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
@@ -54,7 +58,11 @@ class MerchantGiftcodeController extends Controller
 
         $type = request()->get('type', '');
         if($type == 'redeemed'){
-            $query->whereNotNull('redemption_datetime');
+            $query->where(function ($q) {
+                $q->whereNotNull('redemption_datetime');
+                $q->orWhere('purchased_by_v2', '=' , 1);
+            });
+
             if($fromDate){
                 $query->where('redemption_datetime', '>=', $fromDate);
             }
@@ -62,7 +70,10 @@ class MerchantGiftcodeController extends Controller
                 $query->where('redemption_datetime', '<=', $toDate );
             }
         }elseif($type == 'available'){
-            $query->whereNull('redemption_datetime');
+            $query->where(function ($q) {
+                $q->whereNull('redemption_datetime');
+                $q->where('purchased_by_v2', '=' , 0);
+            });
         }
 
         if( $keyword )
@@ -97,9 +108,6 @@ class MerchantGiftcodeController extends Controller
         $csvData = $this->CsvToArray($fileContents);
         $imported = [];
 
-        $defaultValues = [
-            'medium_info_is_test' => 0
-        ];
         foreach( $csvData as $row ) {
             $imported[] = $giftcodeService->createGiftcode($merchant, $row );
         }
