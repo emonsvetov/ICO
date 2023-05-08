@@ -25,10 +25,10 @@ class GiftcodeService
         if( !$merchant_id ) return;
         $where = [
             'merchant_id' => $merchant_id,
-            'redemption_date' => null,
-            'medium_info_is_test' => 1
+            'redemption_date' => 'null',
+            'purchased_by_v2' => 0
         ];
-        if ($is_demo){
+        if ($is_demo || env('APP_ENV') != 'production' ){
             $where['medium_info_is_test'] = 1;
         }
         $giftcodes = Giftcode::getRedeemableListByMerchant($merchant, $where );

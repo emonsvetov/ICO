@@ -19,6 +19,8 @@ class GiftcodeController extends Controller
             if (env('V2_GIFTCODE_SYNC_ENABLE')) {
                 $code = $request->get('code');
                 $giftcode = Giftcode::getByCode($code);
+
+                $result['gift_code'] = $giftcode;
                 $result['success'] = $giftcodeService->purchaseFromV2($giftcode);
             }
         } catch (\Exception $exception){
