@@ -20,6 +20,25 @@ defined ( 'MERCHANTS' ) or define ( 'MERCHANTS', 'merchants' );
 defined ( 'PROGRAMS' ) or define ( 'PROGRAMS', 'programs' );
 defined ( 'PROGRAM_MERCHANT' ) or define ( 'PROGRAM_MERCHANT', 'program_merchant' );
 
+defined ( 'PROGRAM_PATHS' ) or define ( 'PROGRAM_PATHS', 'program_paths' );
+defined ( 'PROGRAMS_EXTRA' ) or define ( 'PROGRAMS_EXTRA', 'programs_extra' );
+defined ( 'PROGRAM_TYPES_TBL' ) or define ( 'PROGRAM_TYPES_TBL', 'program_types' );
+defined ( 'STATE_TYPES_TBL' ) or define ( 'STATE_TYPES_TBL', 'state_types' );
+defined ( 'TOKENS' ) or define ( 'TOKENS', 'tokens' );
+defined ( 'TOKEN_TYPES' ) or define ( 'TOKEN_TYPES', 'token_types' );
+defined ( 'PROGRAM_STATE_DELETED' ) or define ( 'PROGRAM_STATE_DELETED', 'Deleted' );
+defined ( 'TOKEN_TYPE_SIGNUP' ) or define ( 'TOKEN_TYPE_SIGNUP', 'signup' );
+
+defined ( 'CONFIG_FIELDS' ) or define ( 'CONFIG_FIELDS', 'config_fields' );
+defined ( 'CUSTOM_FIELD_TYPES' ) or define ( 'CUSTOM_FIELD_TYPES', 'custom_field_types' );
+defined ( 'CONFIG_FIELDS_HAS_RULES' ) or define ( 'CONFIG_FIELDS_HAS_RULES', 'config_fields_has_rules' );
+defined ( 'CUSTOM_FIELD_RULES' ) or define ( 'CUSTOM_FIELD_RULES', 'custom_field_rules' );
+defined ( 'PROGRAMS_CONFIG_FIELDS' ) or define ( 'PROGRAMS_CONFIG_FIELDS', 'programs_config_fields' );
+defined ( 'DOMAINS' ) or define ( 'DOMAINS', 'domains' );
+defined ( 'ACCOUNT_HOLDERS' ) or define ( 'ACCOUNT_HOLDERS', 'account_holders' );
+defined ( 'DOMAINS_HAS_PROGRAMS' ) or define ( 'DOMAINS_HAS_PROGRAMS', 'domains_has_programs' );
+
+
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING', 'Reversal program pays for monies pending' );
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE', 'Reversal program pays for deposit fee' );
 defined ( 'ALLOWED_HTML_TAGS' ) or define ( 'ALLOWED_HTML_TAGS', '<strong><b><p><br>' );
@@ -304,4 +323,57 @@ function childrenizeModel( $model )
     }
 
     return $model;
+}
+
+if (! function_exists ( "cast_fieldtypes" )) {
+	function cast_fieldtypes($record, $fieldTypes) {
+		foreach ( $record as $fieldName => $value ) {
+			if (isset ( $fieldTypes [$fieldName] )) {
+				$type = $fieldTypes [$fieldName];
+				$value = $record->$fieldName;
+				switch ($type) {
+					case 'boolean' :
+					case 'bool' :
+						$value = ( bool ) $value;
+						break;
+					case 'integer' :
+					case 'int' :
+						$value = ( int ) $value;
+						break;
+					case 'float' :
+						$value = ( float ) $value;
+						break;
+					case 'string' :
+						$value = ( string ) $value;
+						break;
+					default :
+						break;
+				}
+				$record->$fieldName = $value;
+			}
+		}
+		return $record;
+	}
+}
+
+if (! function_exists ( 'sort_programs_by_rank_for_view' )) {
+	function sort_programs_by_rank_for_view(&$sorted_programs, $programs) {
+		foreach ( $programs as $program ) {
+			$path = explode ( ',', $program->rank );
+			if (count ( $path ) > 1) {
+				$index = array_shift ( $path );
+				$program->path = count($path);
+				$program->rank = implode ( ',', $path );
+				if (! isset ( $sorted_programs [$index] ['sub_programs'] )) {
+					$sorted_programs [$index] ['sub_programs'] = array ();
+				}
+				$sub_program_array = sort_programs_by_rank_for_view ( $sorted_programs [$index] ['sub_programs'], array (
+						$program
+				) );
+			} else {
+				$sorted_programs [$path [0]] ['program'] = $program;
+			}
+		}
+		return $sorted_programs;
+	}
 }

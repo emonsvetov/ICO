@@ -236,11 +236,7 @@ class ProgramService
             $data['status_id'] = Program::getIdStatusActive();
         }
 
-        if(isset($data['account_holder_id'])){
-            $program_account_holder_id = $data['account_holder_id'];
-        }else{
-            $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
-        }
+        $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
 
         if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
             $data['allow_creditcard_deposits'] = 1;

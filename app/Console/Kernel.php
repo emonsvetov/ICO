@@ -5,7 +5,7 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
-use App\Jobs\v2migrate\MigrateUsersJob;
+// use App\Jobs\v2migrate\MigrateUsersJob;
 
 class Kernel extends ConsoleKernel
 {
