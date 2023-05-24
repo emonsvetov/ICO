@@ -35,6 +35,9 @@ class AddMissingFieldsV2V31 extends Migration
         Schema::table('domains', function (Blueprint $table) {
             $table->integer('v2_domain_id')->nullable();
         });
+        Schema::table('invoices', function (Blueprint $table) {
+            $table->integer('v2_invoice_id')->nullable();
+        });
 
         /**************** v2 updates **************/
         Schema::connection('v2')->table('users', function($table) {
@@ -53,6 +56,9 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::connection('v2')->table('domains', function($table) {
             $table->integer('v3_domain_id')->nullable();
+        });
+        Schema::connection('v2')->table('invoices', function($table) {
+            $table->integer('v3_invoice_id')->nullable();
         });
     }
 
@@ -91,6 +97,10 @@ class AddMissingFieldsV2V31 extends Migration
             $table->dropColumn('v2_domain_id');
         });
 
+        Schema::table('invoices', function (Blueprint $table) {
+            $table->dropColumn('v2_invoice_id');
+        });
+
         /**************** V2 updates **************/
 
         Schema::connection('v2')->table('users', function($table) {
@@ -109,6 +119,9 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::connection('v2')->table('domains', function($table) {
             $table->dropColumn('v3_domain_id');
+        });
+        Schema::connection('v2')->table('invoices', function($table) {
+            $table->dropColumn('v3_invoice_id');
         });
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Program;
 use App\Models\Domain;
 use App\Models\DomainIP;
 use App\Models\Event;
+use App\Models\Invoice;
 use App\Models\Leaderboard;
 use stdClass;
 
@@ -395,6 +396,33 @@ trait CreateProgramTrait
                     $newLeaderboard = Leaderboard::create($leaderboardData);
                     $this->v2db->statement("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
                     print("Leaderboard:{$newLeaderboard->id} created for program: {$newProgram->id}\n");
+                }
+            }
+
+            $v2Invoices = $this->v2db->select("SELECT * FROM `invoices` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
+            if( $v2Invoices ) {
+                foreach( $v2Invoices as $v2Invoice ) {
+                    //Create invoice
+                    $invoiceData = [
+                        'program_id' => $newProgram->id,
+                        'key' => $v2Invoice->key,
+                        'seq' => $v2Invoice->seq,
+                        'invoice_type_id' => $v2Invoice->invoice_type_id,
+                        'payment_method_id' => $v2Invoice->payment_method_id,
+                        'date_begin' => $v2Invoice->date_begin,
+                        'date_end' => $v2Invoice->date_end,
+                        'date_due' => $v2Invoice->date_due,
+                        'amount' => $v2Invoice->invoice_amount,
+                        'participants' => $v2Invoice->participants,
+                        'new_participants' => $v2Invoice->new_participants,
+                        'managers' => $v2Invoice->managers,
+                        'created_at' => $v2Invoice->created,
+                        'v2_invoice_id' => $v2Invoice->id,
+                    ];
+
+                    $newInvoice = Invoice::create($invoiceData);
+                    $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$newInvoice->id} WHERE `id` = {$v2Invoice->id}");
+                    print("Invoice:{$newInvoice->id} created for v2 invoice: {$v2Invoice->id}\n");
                 }
             }
 
