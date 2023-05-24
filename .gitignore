@@ -18,3 +18,4 @@ yarn-error.log
 php_errors.log
 .idea
 /storage/invoices
+.vscode/
