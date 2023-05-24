@@ -23,8 +23,6 @@ class CheckoutService
     use IdExtractor;
 
     public function processOrder( $cart, $program )   {
-
-        $is_demo = true;
 		// return Merchant::getRoot( 6 );
 
 		// pr($cart);
@@ -104,8 +102,10 @@ class CheckoutService
 			// pr($merchant);
 
             if (in_array ( $merchant->id, $merchantsCostToProgram )) {
-                $where = [];
-                if ($is_demo){
+                $where = [
+                    'purchased_by_v2' => 0
+                ];
+                if( $program->is_demo || env('APP_ENV') != 'production'){
                     $where = [
                         'medium_info_is_test' => 1
                     ];
@@ -166,8 +166,10 @@ class CheckoutService
 				// pr($gift_code->gift_code_provider_account_holder_id);
 				// pr( in_array ( $merchant->account_holder_id, $merchantsCostToProgram ) );
 				if (in_array ( $merchant->id, $merchantsCostToProgram )) {
-                    $where = [];
-                    if ($is_demo){
+                    $where = [
+                        'purchased_by_v2' => 0
+                    ];
+                    if( $program->is_demo || env('APP_ENV') != 'production'){
                         $where = [
                             'medium_info_is_test' => 1
                         ];
