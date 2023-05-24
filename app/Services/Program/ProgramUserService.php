@@ -22,8 +22,8 @@ class ProgramUserService
                 $user->syncProgramRoles($program->id, $validated['roles']);
             }
             if (!empty($validated['send_invite'])) {
-                $participantRoleId = Role::getParticipantRoleId();
-                if( in_array($participantRoleId, $validated['roles']))
+                // $participantRoleId = Role::getParticipantRoleId();
+                // if( in_array($participantRoleId, $validated['roles']))
                 {
                     $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
                     event(new UserInvited($user, $program, $token));
