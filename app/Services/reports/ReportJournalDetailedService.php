@@ -44,7 +44,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'codes_redeemed_cost' => 0,
 					'codes_redeemed_premium' => 0,
 					'convenience_fees' => 0,
-					'premium_fee' => 0
+					'premium_fee' => 0,
+					'net_points_purchased' => 0
 				];
 				foreach ( $ranked_programs as $program ) {
 					array_push($account_holder_ids, $program->account_holder_id);
@@ -419,7 +420,23 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 			}
 		}
 
+        //Remove entries with 0 total
+
+        foreach($this->table as $program_account_holder_id => $program) {
+            $rowTotal = 0;
+            foreach($defaultValues as $key => $value) {
+                $rowTotal += $program->{$key};
+            }
+            if( $rowTotal <= 0) {
+                unset($this->table[$program_account_holder_id]);
+            }
+        }
+
+        //Calculate and add "net_points_purchased"
         $this->table = array_values($this->table);
+        foreach( $this->table as $i => $program) {
+            $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
+        }
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */
