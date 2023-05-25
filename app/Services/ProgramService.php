@@ -75,13 +75,15 @@ class ProgramService
         $keyword = ! empty($override['keyword']) ? $override['keyword'] : request()->get('keyword', '');
         $sortby = ! empty($override['sortby']) ? $override['sortby'] : request()->get('sortby', 'id');
         $direction = ! empty($override['direction']) ? $override['direction'] : request()->get('direction', 'asc');
-        $tree = filter_var(!empty($override['tree']) ? $override['tree'] : request()->get('tree', true), FILTER_VALIDATE_BOOLEAN);
-        $minimal = filter_var(!empty($override['minimal']) ? $override['minimal'] : request()->get('minimal', false), FILTER_VALIDATE_BOOLEAN);
-        $flatlist = filter_var(!empty($override['flatlist']) ? $override['flatlist'] : request()->get('flatlist', false), FILTER_VALIDATE_BOOLEAN);
-        $except = ! empty($override['except']) ? $override['except'] : request()->get('except', '');
-        $limit = ! empty($override['limit']) ? $override['limit'] : request()->get('limit', 10);
-        $paginate = filter_var(!empty($override['paginate']) ? $override['paginate'] : request()->get('paginate', true), FILTER_VALIDATE_BOOLEAN);
-        $all = filter_var(!empty($override['all']) ? $override['all'] : request()->get('all', false), FILTER_VALIDATE_BOOLEAN);
+        $tree = filter_var(isset($override['tree']) ? $override['tree'] : request()->get('tree', true), FILTER_VALIDATE_BOOLEAN);
+        $minimal = filter_var(isset($override['minimal']) ? $override['minimal'] : request()->get('minimal', false), FILTER_VALIDATE_BOOLEAN);
+        $flatlist = filter_var(isset($override['flatlist']) ? $override['flatlist'] : request()->get('flatlist', false), FILTER_VALIDATE_BOOLEAN);
+        $except = isset($override['except']) ? $override['except'] : request()->get('except', '');
+        $limit = isset($override['limit']) ? $override['limit'] : request()->get('limit', 10);
+
+        $paginate = filter_var(isset($override['paginate']) ? $override['paginate'] : request()->get('paginate', true), FILTER_VALIDATE_BOOLEAN);
+
+        $all = filter_var(isset($override['all']) ? $override['all'] : request()->get('all', false), FILTER_VALIDATE_BOOLEAN);
 
         $params['orgId'] = $orgId;
         $params['status'] = $status;
@@ -177,17 +179,16 @@ class ProgramService
                     }
                 ]);
             } else {
-                $subquery = $query->with([
-                    'children' => function ($query) {
-                        $query->with(['status']);
-                        return $query;
+                $query = $query->with([
+                    'children' => function ($subquery) {
+                        $subquery->with(['status']);
+                        return $subquery;
                     },
                     'status'
                 ]);
                 if ($notIn) {
-                    $subquery = $subquery->whereNotIn('id', $notIn);
+                    $query = $query->whereNotIn('id', $notIn);
                 }
-                return $subquery;
             }
         }
         $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
@@ -197,8 +198,6 @@ class ProgramService
     public function index($organization, $params = [])
     {
         $params = $this->_buildParams($params);
-        // pr($params);
-        // exit;
         $query = $this->_buildQuery($organization, $params);
         if ( !$params['all'] ) {
             $query->whereNull('parent_id');
@@ -396,7 +395,8 @@ class ProgramService
         $programs = $this->index($organization, [
             'except' => $exclude->toArray(),
             'minimal' => true,
-            'flatlist' => true
+            'flatlist' => true,
+            'paginate' => 0
         ]);
         // return $programs;
         $subprograms = $this->getSubprograms($organization, $program);
