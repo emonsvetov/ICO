@@ -179,17 +179,16 @@ class ProgramService
                     }
                 ]);
             } else {
-                $subquery = $query->with([
-                    'children' => function ($query) {
-                        $query->with(['status']);
-                        return $query;
+                $query = $query->with([
+                    'children' => function ($subquery) {
+                        $subquery->with(['status']);
+                        return $subquery;
                     },
                     'status'
                 ]);
                 if ($notIn) {
-                    $subquery = $subquery->whereNotIn('id', $notIn);
+                    $query = $query->whereNotIn('id', $notIn);
                 }
-                return $subquery;
             }
         }
         $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
