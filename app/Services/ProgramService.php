@@ -154,7 +154,7 @@ class ProgramService
             if (is_array($except)) {
                 $notIn = $except;
             } elseif (strpos($except, ',')) {
-                $notIn = explode( trim($except) );
+                $notIn = explode( trim($except), ',' );
             } elseif ((int)$except) {
                 $notIn = [$except];
             }

@@ -261,6 +261,8 @@ trait CreateProgramTrait
         // pr($data);
         // exit;
 
+        $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
+
         try{
             $newProgram = $this->programService->create(
                 $data +
@@ -277,6 +279,9 @@ trait CreateProgramTrait
 
             $this->v2db->statement("UPDATE ". PROGRAMS . " SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id}");
 
+            //Log Import Map
+            $importMap['program'][$v2Program->account_holder_id] = $newProgram->id;
+
             print("V2 Program updated with v3 identifiying fields v3_organization_id, v3_program_id\n");
 
             if( !$parent_id ) { //Pull and Assign Domains if it is a root program(?)
@@ -284,6 +289,11 @@ trait CreateProgramTrait
 
                 if( $domains ) {
                     foreach ($domains as $domain) {
+                        if( (int) $domain->v3_domain_id ) {
+                            print("Domain:{$domain->id} exists in v3 as: {$domain->v3_domain_id}. Skipping..\n");
+                            //TODO: update?!
+                            continue;
+                        }
                         //Find check
                         print("Finding domain {$domain->name} for Program\n");
                         $v3Domain = Domain::where('name', trim($domain->name))->first();
@@ -298,6 +308,9 @@ trait CreateProgramTrait
                             $v3Domain->programs()->sync( [$newProgram->id], false);
                             $this->v2db->statement("UPDATE domains SET `v3_domain_id` = {$v3Domain->id} WHERE `access_key` = {$domain->access_key}");
                             print("New Domain {$domain->name} created & synched\n");
+
+                            //Log Import Map
+                            $importMap['domain'][$domain->access_key] = $v3Domain->id;
                         } else {
                             print("Domain {$domain->name} found\n");
                         }
@@ -314,6 +327,7 @@ trait CreateProgramTrait
                                             'domain_id' => $v3Domain->id
                                         ]);
                                         print("Domain IP {$newDomainIp->ip_address} inserted for domain:{$v3Domain->name}\n");
+                                        $importMap['domain'][$domain->access_key]['domainIp'][$domainIp->id] = $newDomainIp->id;
                                     }
                                 }
                             }
@@ -324,22 +338,25 @@ trait CreateProgramTrait
 
             // Pull addresses
 
-            $addresses = $this->v2db->select("SELECT * FROM `address` WHERE `account_holder_id` = {$v2Program->account_holder_id}");
-            if( $addresses ) {
-                foreach( $addresses as $address ) {
-                    $addressData = [
-                        'account_holder_id' => $newProgram->account_holder_id,
-                        'address' => $address->address,
-                        'address_ext' => $address->address_ext,
-                        'city' => $address->city,
-                        'state_id' => $address->state_id,
-                        'zip' => $address->zip,
-                        'country_id' => $address->country_id,
-                        'created_at' => now()
-                    ];
+            {
+                $addresses = $this->v2db->select("SELECT * FROM `address` WHERE `account_holder_id` = {$v2Program->account_holder_id}");
+                if( $addresses ) {
+                    foreach( $addresses as $address ) {
+                        $addressData = [
+                            'account_holder_id' => $newProgram->account_holder_id,
+                            'address' => $address->address,
+                            'address_ext' => $address->address_ext,
+                            'city' => $address->city,
+                            'state_id' => $address->state_id,
+                            'zip' => $address->zip,
+                            'country_id' => $address->country_id,
+                            'created_at' => now()
+                        ];
 
-                    Address::create($addressData);
-                    print("Address created for new Program: {$newProgram->id}\n");
+                        $newAddress = Address::create($addressData);
+                        print("Address created for new Program: {$newProgram->id}\n");
+                        $importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
+                    }
                 }
             }
 
@@ -347,41 +364,53 @@ trait CreateProgramTrait
 
             $v2Events = $this->v2db->select("SELECT * FROM `event_templates` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
             if( $v2Events ) {
-                foreach( $v2Events as $event ) {
+                foreach( $v2Events as $v2Event ) {
+                    if( (int) $v2Event->v3_event_id ) {
+                        print("Event:{$v2Event->id} exists in v3 as: {$v2Event->v3_event_id}. Skipping..\n");
+                        //TODO: update?!
+                        continue;
+                    }
                     $eventData = [
                         'organization_id' => $newProgram->organization_id,
                         'program_id' => $newProgram->id,
-                        'name' => $event->name,
-                        'event_type_id' => $event->event_type_id,
-                        'enable' => ((int)$event->event_state_id) == 13 ? 1 : 0,
-                        'amount_override' => $event->amount_override,
-                        'award_message_editable' => $event->award_message_editable,
-                        'ledger_code' => $event->ledger_code,
-                        'amount_override' => $event->amount_override,
-                        'post_to_social_wall' => $event->post_to_social_wall,
-                        'award_message_editable' => $event->award_message_editable,
-                        'is_promotional' => $event->is_promotional,
-                        'is_birthday_award' => $event->is_birthday_award,
-                        'is_work_anniversary_award' => $event->is_work_anniversary_award,
-                        'include_in_budget' => $event->include_in_budget,
-                        'enable_schedule_award' => $event->enable_schedule_awards,
-                        'message' => $event->notification_body,
-                        'initiate_award_to_award' => $event->initiate_award_to_award,
-                        'only_internal_redeemable' => $event->only_internal_redeemable,
-                        'is_team_award' => $event->is_team_award,
+                        'name' => $v2Event->name,
+                        'event_type_id' => $v2Event->event_type_id,
+                        'enable' => ((int)$v2Event->event_state_id) == 13 ? 1 : 0,
+                        'amount_override' => $v2Event->amount_override,
+                        'award_message_editable' => $v2Event->award_message_editable,
+                        'ledger_code' => $v2Event->ledger_code,
+                        'amount_override' => $v2Event->amount_override,
+                        'post_to_social_wall' => $v2Event->post_to_social_wall,
+                        'award_message_editable' => $v2Event->award_message_editable,
+                        'is_promotional' => $v2Event->is_promotional,
+                        'is_birthday_award' => $v2Event->is_birthday_award,
+                        'is_work_anniversary_award' => $v2Event->is_work_anniversary_award,
+                        'include_in_budget' => $v2Event->include_in_budget,
+                        'enable_schedule_award' => $v2Event->enable_schedule_awards,
+                        'message' => $v2Event->notification_body,
+                        'initiate_award_to_award' => $v2Event->initiate_award_to_award,
+                        'only_internal_redeemable' => $v2Event->only_internal_redeemable,
+                        'is_team_award' => $v2Event->is_team_award,
                         'max_awardable_amount' => 0,
-                        'v2_event_id' => $event->id,
+                        'v2_event_id' => $v2Event->id,
                     ];
 
                     $newEvent = Event::create($eventData);
-                    $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$event->id}");
+                    $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
                     print("Event:{$newEvent->id} created for new Program: {$newProgram->id}\n");
+
+                    $importMap['program'][$v2Program->account_holder_id]['event'][$v2Event->id] = $newEvent->id;
                 }
             }
 
             $v2Leaderboards = $this->v2db->select("SELECT * FROM `leaderboards` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
             if( $v2Leaderboards ) {
                 foreach( $v2Leaderboards as $v2Leaderboard ) {
+                    if( (int) $v2Leaderboard->v3_leaderboard_id ) {
+                        print("Leaderboard:{$v2Leaderboard->id} exists in v3 as: {$v2Leaderboard->v3_leaderboard_id}. Skipping..\n");
+                        //TODO: update?!
+                        continue;
+                    }
                     //Create leaderboard
                     $leaderboardData = [
                         'organization_id' => $newProgram->organization_id,
@@ -392,16 +421,40 @@ trait CreateProgramTrait
                         'one_leaderboard' => $v2Leaderboard->one_leaderboard,
                         'v2_leaderboard_id' => $v2Leaderboard->id,
                     ];
-
                     $newLeaderboard = Leaderboard::create($leaderboardData);
+                    //Update v3 reference field in v2 table
                     $this->v2db->statement("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
                     print("Leaderboard:{$newLeaderboard->id} created for program: {$newProgram->id}\n");
+
+                    //Log importing
+                    $importMap['program'][$v2Program->account_holder_id]['leaderboard'][$v2Leaderboard->id] = $newLeaderboard->id;
+
+                    print("Looking for Leaderboard Events for v2 Leaderboard:{$v2Leaderboard->id}\n");
+                    //Find LeaderboardEvent relations in v2 table
+                    $v2LeaderboardEvents = $this->v2db->select("SELECT e.id, e.v3_event_id FROM `leaderboards_events` le JOIN event_templates e on e.id = le.event_template_id WHERE `leaderboard_id` = {$v2Leaderboard->id}");
+                    if( $v2LeaderboardEvents ) {
+                        $v3EventIdToSync = [];
+                        foreach( $v2LeaderboardEvents as $v2LeaderboardEvent ) {
+                            if( $v2LeaderboardEvent->v3_event_id ) {
+                                // Note: "v3_event_id" from "event_templates" table. Assuming that program event has already been imported and thus "v3_event_id" field is already updated in v2 "event_templates" table before we run importer for LeaderboardEvents
+                                array_push($v3EventIdToSync, $v2LeaderboardEvent->v3_event_id);
+                            }
+                        }
+                        if( $v3EventIdToSync ) {
+                            $newLeaderboard->events()->sync($v3EventIdToSync, false);
+                        }
+                    }
                 }
             }
 
             $v2Invoices = $this->v2db->select("SELECT * FROM `invoices` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
             if( $v2Invoices ) {
                 foreach( $v2Invoices as $v2Invoice ) {
+                    if( (int) $v2Invoice->v3_invoice_id ) {
+                        print("Invoice:{$v2Invoice->id} exists in v3 as: {$v2Invoice->v3_invoice_id}. Skipping..\n");
+                        //TODO: update?!
+                        continue;
+                    }
                     //Create invoice
                     $invoiceData = [
                         'program_id' => $newProgram->id,

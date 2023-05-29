@@ -12,20 +12,22 @@ use App\Models\Organization;
 
 class MigrateProgramsService extends MigrationService
 {
+    private ProgramService $programService;
+
     use CreateProgramTrait;
 
     public bool $overwriteProgram = false;
     public int $importedProgramsCount = 0;
     public array $importedPrograms = [];
-    // public $programService;
 
-    // private function __construct(ProgramService $programService)
-    // {
-    //     $this->programService = $programService;
-    //     parent::__construct();
-    // }
+    public function __construct(ProgramService $programService)
+    {
+        parent::__construct();
+        $this->programService = $programService;
+    }
 
     public function migrate() {
+        print("Starting Programs migration()");exit;
         $v2RootPrograms = $this->read_list_all_root_program_ids();
         // pr($v2RootPrograms);
         // exit;

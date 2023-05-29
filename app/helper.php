@@ -54,6 +54,7 @@ defined ( 'TBL_MERCHANTS' ) or define ('TBL_MERCHANTS', 'merchants' );
 defined ( 'TBL_STATE_TYPES' ) or define ('TBL_STATE_TYPES', 'statuses' );
 defined ( 'TBL_USERS' ) or define ('TBL_USERS', 'users' );
 
+defined ( 'MERCHANT_PATHS' ) or define ('MERCHANT_PATHS', 'merchant_paths' );
 
 if(!function_exists('pr'))  {
     function pr($d)    {
@@ -375,5 +376,27 @@ if (! function_exists ( 'sort_programs_by_rank_for_view' )) {
 			}
 		}
 		return $sorted_programs;
+	}
+}
+
+if (! function_exists ( 'sort_result_by_rank' )) {
+	function sort_result_by_rank(&$sorted_result, $result, $keyName = 'items') {
+		foreach ( $result as $row ) {
+			$path = explode ( ',', $row->rank );
+			if (count ( $path ) > 1) {
+				$index = array_shift ( $path );
+				$row->path = count($path);
+				$row->rank = implode ( ',', $path );
+				if (! isset ( $sorted_result[$index]['sub_'.$keyName])) {
+					$sorted_result[$index]['sub_'.$keyName] = [];
+				}
+				$sub_program_array = sort_result_by_rank ( $sorted_result[$index]['sub_' . $keyName], array (
+					$row
+                ), $keyName );
+			} else {
+				$sorted_result[$path[0]][$keyName] = $row;
+			}
+		}
+		return $sorted_result;
 	}
 }

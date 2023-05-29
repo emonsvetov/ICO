@@ -38,6 +38,9 @@ class AddMissingFieldsV2V31 extends Migration
         Schema::table('invoices', function (Blueprint $table) {
             $table->integer('v2_invoice_id')->nullable();
         });
+        Schema::table('merchants', function (Blueprint $table) {
+            $table->integer('v2_account_holder_id')->nullable();
+        });
 
         /**************** v2 updates **************/
         Schema::connection('v2')->table('users', function($table) {
@@ -59,6 +62,9 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::connection('v2')->table('invoices', function($table) {
             $table->integer('v3_invoice_id')->nullable();
+        });
+        Schema::connection('v2')->table('merchants', function($table) {
+            $table->integer('v3_merchant_id')->nullable();
         });
     }
 
@@ -88,17 +94,17 @@ class AddMissingFieldsV2V31 extends Migration
             $table->dropColumn('is_team_award');
             $table->renameColumn('is_work_anniversary_award', 'is_anniversary_award');
         });
-
         Schema::table('leaderboards', function (Blueprint $table) {
             $table->dropColumn('v2_leaderboard_id');
         });
-
         Schema::table('domains', function (Blueprint $table) {
             $table->dropColumn('v2_domain_id');
         });
-
         Schema::table('invoices', function (Blueprint $table) {
             $table->dropColumn('v2_invoice_id');
+        });
+        Schema::table('merchants', function (Blueprint $table) {
+            $table->dropColumn('v2_account_holder_id');
         });
 
         /**************** V2 updates **************/
@@ -122,6 +128,9 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::connection('v2')->table('invoices', function($table) {
             $table->dropColumn('v3_invoice_id');
+        });
+        Schema::connection('v2')->table('merchants', function($table) {
+            $table->dropColumn('v3_merchant_id');
         });
     }
 }
