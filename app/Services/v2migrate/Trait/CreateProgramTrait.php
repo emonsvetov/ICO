@@ -261,8 +261,6 @@ trait CreateProgramTrait
         // pr($data);
         // exit;
 
-        $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
-
         try{
             $newProgram = $this->programService->create(
                 $data +
@@ -274,18 +272,15 @@ trait CreateProgramTrait
 
             print("New V3 Program created for V2 Program: {$v2Program->account_holder_id}=>{$newProgram->id}\n");
 
-            $this->importedPrograms[] = $newProgram;
-            $this->importedProgramsCount++;
-
             $this->v2db->statement("UPDATE ". PROGRAMS . " SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id}");
 
             //Log Import Map
-            $importMap['program'][$v2Program->account_holder_id] = $newProgram->id;
+            $this->importMap['program'][$v2Program->account_holder_id]['program'] = $newProgram->toArray();
 
             print("V2 Program updated with v3 identifiying fields v3_organization_id, v3_program_id\n");
 
             if( !$parent_id ) { //Pull and Assign Domains if it is a root program(?)
-                $domains = $this->v2db->select("SELECT d.name, d.access_key, d.secret_key FROM `domains` d JOIN domains_has_programs dhp on dhp.domains_access_key = d.access_key JOIN programs p on p.account_holder_id = dhp.programs_id where p.account_holder_id = {$v2Program->account_holder_id}");
+                $domains = $this->v2db->select("SELECT d.* FROM `domains` d JOIN domains_has_programs dhp on dhp.domains_access_key = d.access_key JOIN programs p on p.account_holder_id = dhp.programs_id where p.account_holder_id = {$v2Program->account_holder_id}");
 
                 if( $domains ) {
                     foreach ($domains as $domain) {
@@ -310,7 +305,7 @@ trait CreateProgramTrait
                             print("New Domain {$domain->name} created & synched\n");
 
                             //Log Import Map
-                            $importMap['domain'][$domain->access_key] = $v3Domain->id;
+                            $this->importMap['domain'][$domain->access_key] = $v3Domain->id;
                         } else {
                             print("Domain {$domain->name} found\n");
                         }
@@ -327,7 +322,7 @@ trait CreateProgramTrait
                                             'domain_id' => $v3Domain->id
                                         ]);
                                         print("Domain IP {$newDomainIp->ip_address} inserted for domain:{$v3Domain->name}\n");
-                                        $importMap['domain'][$domain->access_key]['domainIp'][$domainIp->id] = $newDomainIp->id;
+                                        $this->importMap['domain'][$domain->access_key]['domainIp'][$domainIp->id] = $newDomainIp->id;
                                     }
                                 }
                             }
@@ -355,7 +350,7 @@ trait CreateProgramTrait
 
                         $newAddress = Address::create($addressData);
                         print("Address created for new Program: {$newProgram->id}\n");
-                        $importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
+                        $this->importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
                     }
                 }
             }
@@ -399,7 +394,7 @@ trait CreateProgramTrait
                     $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
                     print("Event:{$newEvent->id} created for new Program: {$newProgram->id}\n");
 
-                    $importMap['program'][$v2Program->account_holder_id]['event'][$v2Event->id] = $newEvent->id;
+                    $this->importMap['program'][$v2Program->account_holder_id]['event'][$v2Event->id] = $newEvent->id;
                 }
             }
 
@@ -427,7 +422,7 @@ trait CreateProgramTrait
                     print("Leaderboard:{$newLeaderboard->id} created for program: {$newProgram->id}\n");
 
                     //Log importing
-                    $importMap['program'][$v2Program->account_holder_id]['leaderboard'][$v2Leaderboard->id] = $newLeaderboard->id;
+                    $this->importMap['program'][$v2Program->account_holder_id]['leaderboard'][$v2Leaderboard->id] = $newLeaderboard->id;
 
                     print("Looking for Leaderboard Events for v2 Leaderboard:{$v2Leaderboard->id}\n");
                     //Find LeaderboardEvent relations in v2 table
@@ -509,7 +504,7 @@ trait CreateProgramTrait
                     $nextProgram->sub_programs = isset($subprogram['sub_programs']) ?  (object) $subprogram['sub_programs'] : null;
                     // pr("nextProgram of SubProgram");
                     // pr($nextProgram->account_holder_id);
-                    $this->createProgram($v3_organization_id, $nextProgram, $newProgram->id);
+                    return $this->createProgram($v3_organization_id, $nextProgram, $newProgram->id);
                 }
             }
         } catch(Exception $e)    {
@@ -519,6 +514,6 @@ trait CreateProgramTrait
         // pr("End of the program:");
         // pr($v2Program->account_holder_id);
         // pr( "****************************************************************************************************************");
-        return $this->importedPrograms;
+        return $newProgram;
     }
 }

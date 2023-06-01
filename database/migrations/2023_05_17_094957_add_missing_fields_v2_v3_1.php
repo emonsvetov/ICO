@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 class AddMissingFieldsV2V31 extends Migration
 {
@@ -40,6 +41,8 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::table('merchants', function (Blueprint $table) {
             $table->integer('v2_account_holder_id')->nullable();
+            $table->string('logo')->nullable()->change();
+            $table->string('icon')->nullable()->change();
         });
 
         /**************** v2 updates **************/
@@ -65,6 +68,8 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::connection('v2')->table('merchants', function($table) {
             $table->integer('v3_merchant_id')->nullable();
+            $table->string('logo')->nullable()->default(null)->change();
+            $table->string('icon')->nullable()->default(null)->change();
         });
     }
 
@@ -76,7 +81,6 @@ class AddMissingFieldsV2V31 extends Migration
     public function down()
     {
         /**************** V3 updates **************/
-
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('v2_parent_program_id');
             $table->dropColumn('v2_account_holder_id');
@@ -105,6 +109,8 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::table('merchants', function (Blueprint $table) {
             $table->dropColumn('v2_account_holder_id');
+            $table->string('logo')->nullable(false)->change();
+            $table->string('icon')->nullable(false)->change();
         });
 
         /**************** V2 updates **************/
@@ -134,3 +140,45 @@ class AddMissingFieldsV2V31 extends Migration
         });
     }
 }
+
+/***
+-- V3 Updaets --
+ALTER TABLE `users`
+  DROP `v2_parent_program_id`,
+  DROP `v2_account_holder_id`,
+  DROP `previous_user_status_id`,
+  DROP `hire_date`;
+ALTER TABLE `programs`
+  DROP `v2_account_holder_id`;
+ALTER TABLE `events`
+  DROP `v2_event_id`,
+  DROP `icon`,
+  DROP `is_team_award`;
+ALTER TABLE `events` CHANGE `is_work_anniversary_award` `is_anniversary_award` TINYINT(1) NOT NULL DEFAULT '0';
+ALTER TABLE `leaderboards`
+  DROP `v2_leaderboard_id`;
+ALTER TABLE `domains`
+  DROP `v2_domain_id`;
+ALTER TABLE `invoices`
+  DROP `v2_invoice_id`;
+ALTER TABLE `merchants`
+  DROP `v2_account_holder_id`;
+
+-- V2 Updaets --
+ALTER TABLE `users`
+  DROP `v3_user_id`,
+  DROP `v3_organization_id`;
+ALTER TABLE `programs`
+  DROP `v3_program_id`,
+  DROP `v3_organization_id`;
+ALTER TABLE `event_templates`
+  DROP `v3_event_id`;
+ALTER TABLE `leaderboards`
+  DROP `v3_leaderboard_id`;
+ALTER TABLE `domains`
+  DROP `v3_domain_id`;
+ALTER TABLE `invoices`
+  DROP `v3_invoice_id`;
+ALTER TABLE `merchants`
+  DROP `v3_merchant_id`;
+ */

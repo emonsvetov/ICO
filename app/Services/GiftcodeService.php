@@ -3,15 +3,8 @@ namespace App\Services;
 
 use App\Http\Resources\GiftcodeCollection;
 use App\Models\Traits\IdExtractor;
-use App\Models\JournalEventType;
-use App\Models\JournalEvent;
-use App\Models\FinanceType;
-use App\Models\MediumType;
-use App\Models\Currency;
 use App\Models\Giftcode;
 use App\Models\Merchant;
-use App\Models\Account;
-use App\Models\Owner;
 use Carbon\Carbon;
 use DB;
 use Illuminate\Support\Facades\Log;

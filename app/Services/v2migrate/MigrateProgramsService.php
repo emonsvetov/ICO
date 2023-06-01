@@ -19,6 +19,7 @@ class MigrateProgramsService extends MigrationService
     public bool $overwriteProgram = false;
     public int $importedProgramsCount = 0;
     public array $importedPrograms = [];
+    public array $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
 
     public function __construct(ProgramService $programService)
     {
@@ -27,7 +28,7 @@ class MigrateProgramsService extends MigrationService
     }
 
     public function migrate() {
-        print("Starting Programs migration()");exit;
+        print("Starting Programs migration()");
         $v2RootPrograms = $this->read_list_all_root_program_ids();
         // pr($v2RootPrograms);
         // exit;
@@ -54,8 +55,12 @@ class MigrateProgramsService extends MigrationService
                         }
                         if( empty($rootProgram->v3_program_id) ) {
                             try{
-                                $newPrograms = $this->createProgram($rootProgram->v3_organization_id, $rootProgram);
-                                pr($this->importedProgramsCount);
+                                $newProgram = $this->createProgram($rootProgram->v3_organization_id, $rootProgram);
+                                if( $newProgram ) {
+                                    $this->importedPrograms[] = $newProgram;
+                                    $this->importedProgramsCount++;
+                                }
+                                // pr($this->importedProgramsCount);
                                 // pr($newPrograms);
                             } catch(Exception $e)    {
                                 throw new Exception( sprintf("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
@@ -66,16 +71,18 @@ class MigrateProgramsService extends MigrationService
                     throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
                 }
             }
-            // DB::commit();
-            // $this->v2db->commit();
+            DB::commit();
+            $this->v2db->commit();
         } catch (Exception $e) {
             DB::rollback();
             $this->v2db->rollBack();
             throw new Exception("Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
         }
-        DB::rollback();
-        $this->v2db->rollBack();
-        pr($this->importedProgramsCount . " programs migrated");
+        // DB::rollback();
+        // $this->v2db->rollBack();
+        print($this->importedProgramsCount . " programs migrated");
+        print("Rendering Import Map..");
+        print_r($this->importMap);
     }
     public function read_list_all_root_program_ids($arguments = array()) {
         $query = "

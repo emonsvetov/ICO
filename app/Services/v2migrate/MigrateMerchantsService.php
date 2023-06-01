@@ -9,19 +9,25 @@ use App\Http\Traits\MerchantMediaUploadTrait;
 use App\Services\MerchantService;
 use App\Models\Organization;
 use App\Models\Merchant;
+use App\Models\Program;
 
 class MigrateMerchantsService extends MigrationService
 {
     use MerchantMediaUploadTrait;
     private MerchantService $merchantService;
+    private MigrateGiftcodesService $migrateGiftcodesService;
+    public $programMerchants = [];
 
-    public function __construct(MerchantService $merchantService)
+    public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
         $this->merchantService = $merchantService;
+        $this->migrateGiftcodesService = $migrateGiftcodesService;
         parent::__construct();
     }
 
     public function migrate() {
+        $this->migrateGiftcodesService->sync();
+        exit;
         print("In MigrateMerchantsService.php start migrate()");
         // $v2Merchants = $this->v2db->select("SELECT * FROM `merchants`");
         $merchant_tree = array ();
@@ -31,11 +37,31 @@ class MigrateMerchantsService extends MigrationService
         }
         // pr($v2MerchantHierarchy);
         if( $v2MerchantHierarchy ) {
-            foreach ($v2MerchantHierarchy as $v2MerchantAccountHolderId => $v2MerchantNode) {
-                // pr($v2MerchantAccountHolderId);
-                // pr($v2ListItem);
-                $this->migrateMerchant($v2MerchantNode);
-                exit;
+            DB::beginTransaction();
+            $this->v2db->beginTransaction();
+            try {
+                foreach ($v2MerchantHierarchy as $v2MerchantAccountHolderId => $v2MerchantNode) {
+                    // pr($v2MerchantAccountHolderId);
+                    // pr($v2ListItem);
+                    $this->migrateMerchant($v2MerchantNode);
+                    // if( $this->importedCount > 3 ) exit;
+                }
+                // pr($this->programMerchants);
+                if( $this->programMerchants ) {
+                    $proramIds = array_keys($this->programMerchants);
+                    $programs = Program::whereIn('id', $proramIds)->get();
+                    foreach($programs as $program) {
+                        print("Syncing \"programs_merchants\" for program:{$program->id}");
+                        // pr($this->programMerchants[$program->id]);
+                        $program->merchants()->sync($this->programMerchants[$program->id], false);
+                    }
+                }
+                DB::commit();
+                $this->v2db->commit();
+            }catch(Exception $e)    {
+                DB::rollback();
+                $this->v2db->rollBack();
+                throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
             }
         }
     }
@@ -58,8 +84,8 @@ class MigrateMerchantsService extends MigrationService
                 print("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Updating..\n");
                 if( !$v3Merchant->v2_account_holder_id ) {
                     $v3Merchant->v2_account_holder_id = $v2Merchant->account_holder_id;
-                    // $v3Merchant->save();
-                    // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                    $v3Merchant->save();
+                    $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
                 }
                 //TODO: more updates?!
             }   else {
@@ -82,8 +108,8 @@ class MigrateMerchantsService extends MigrationService
                     'requires_shipping' => $v2Merchant->requires_shipping,
                     'physical_order' => $v2Merchant->physical_order,
                     'is_premium' => $v2Merchant->is_premium,
-                    'use_tango_api' => $v2Merchant->use_tango_api,
-                    'toa_id' => $v2Merchant->toa_id,
+                    'use_tango_api' => (int) $v2Merchant->use_tango_api,
+                    'toa_id' => (int) $v2Merchant->toa_id,
                     'status' => $v2Merchant->status,
                     'display_popup' => $v2Merchant->display_popup,
                     'updated_at' => $v2Merchant->updated_at,
@@ -91,24 +117,51 @@ class MigrateMerchantsService extends MigrationService
                 ];
 
                 $newMerchant = (new \App\Models\Merchant)->createAccount( $v3MerchantData );
+                //Update v2 for reference column
+                $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$newMerchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
 
-                $icons = [];
+                if( $newMerchant ) {
 
-                foreach(Merchant::MEDIA_FIELDS as $mediaField) {
-                    if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
-                        $icons[$mediaField] = $v2Merchant->{$mediaField};
+                    $icons = [];
+
+                    foreach(Merchant::MEDIA_FIELDS as $mediaField) {
+                        if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
+                            $icons[$mediaField] = $v2Merchant->{$mediaField};
+                        }
                     }
-                }
 
-                if( $icons ) {
-                    $uploads = $this->handleMerchantMediaUpload( null, $newMerchant, false, $icons );
-                    if( $uploads )   {
-                        $newMerchant->update( $uploads );
+                    if( $icons ) {
+                        print("Logo/Icons detected. Uploading, be patient..\n");
+                        $uploads = $this->handleMerchantMediaUpload( null, $newMerchant, false, $icons );
+                        if( $uploads )   {
+                            print(sprintf("%d Logo/Icons uploaded successfully.\n", count($uploads)));
+                            $newMerchant->update( $uploads );
+                        }
                     }
+                    $this->importedCount++;
+                    print("New merchant for v2Merchant: {$v2Merchant->account_holder_id} created successfully!\n");
+
+                    $this->readProgramMerchantRelations( $v2Merchant->account_holder_id );
                 }
             }
+        }
+    }
 
-            print("To create new merchant for v2Merchant: {$v2Merchant->account_holder_id}\n");
+    private function readProgramMerchantRelations( $v2_account_holder_id ) {
+        $sql = "SELECT p.v3_program_id, m.v3_merchant_id, pm.* FROM `programs` p JOIN `program_merchant` pm ON p.account_holder_id = pm.program_id JOIN `merchants` m on m.account_holder_id=pm.merchant_id WHERE pm.merchant_id={$v2_account_holder_id} AND p.v3_program_id IS NOT NULL AND m.v3_merchant_id IS NOT NULL";
+
+        //$this->v2db->statement("SET SQL_MODE=''");
+        $result = $this->v2db->select($sql);
+        if( $result && sizeof($result) > 0) {
+            foreach( $result as $row) {
+                if( !isset($this->programMerchants[$row->v3_program_id])) {
+                    $this->programMerchants[$row->v3_program_id] = [];
+                }
+                $this->programMerchants[$row->v3_program_id][$row->v3_merchant_id] = [
+                    'featured' => $row->featured,
+                    'cost_to_program' => $row->cost_to_program
+                ];
+            }
         }
     }
 
