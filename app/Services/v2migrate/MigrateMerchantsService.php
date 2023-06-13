@@ -26,8 +26,6 @@ class MigrateMerchantsService extends MigrationService
     }
 
     public function migrate() {
-        $this->migrateGiftcodesService->sync();
-        exit;
         print("In MigrateMerchantsService.php start migrate()");
         // $v2Merchants = $this->v2db->select("SELECT * FROM `merchants`");
         $merchant_tree = array ();

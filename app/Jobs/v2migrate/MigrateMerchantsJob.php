@@ -32,8 +32,8 @@ class MigrateMerchantsJob implements ShouldQueue
      */
     public function handle( MigrateMerchantsService $migrateMerchantsService )
     {
-        \Log::info("Migrate Merchants Job starts!");
+        print("Migrate Merchants Job starts!");
         $migrateMerchantsService->migrate();
-        \Log::info("Migrate Merchants Job ends!");
+        print("Migrate Merchants Job ends!");
     }
 }

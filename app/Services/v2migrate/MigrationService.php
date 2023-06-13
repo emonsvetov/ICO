@@ -11,6 +11,7 @@ class MigrationService
     public bool $overwrite = false;
     public int $importedCount = 0;
     public array $imported = [];
+    public bool $printSql = false;
 
     protected function __construct()
     {

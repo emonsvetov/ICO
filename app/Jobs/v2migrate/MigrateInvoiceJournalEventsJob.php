@@ -9,9 +9,9 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-use App\Services\v2migrate\MigrateProgramsService;
+use App\Services\v2migrate\MigrateInvoiceJournalEventsService;
 
-class MigrateProgramsJob implements ShouldQueue
+class MigrateInvoiceJournalEventsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -30,9 +30,9 @@ class MigrateProgramsJob implements ShouldQueue
      *
      * @return void
      */
-    public function handle( MigrateProgramsService $migrateProgramsService )
+    public function handle( MigrateInvoiceJournalEventsService $migrateInvoiceJournalEventsService )
     {
-        \Log::info("Migrate Programs Job starts!");
-        $migrateProgramsService->migrate();
+        \Log::info("Migrate InvoiceJournalEvents Job starts!");
+        $migrateInvoiceJournalEventsService->migrate();
     }
 }

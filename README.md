@@ -14,6 +14,23 @@ Use Singuler name for Controller name. For example `MerchantController.php`
 
 `php artisan make:policy MerchantPolicy --model=Merchant`
 
+## v2 to v3 Migrations
+
+    # Migrate Programs
+    `php artisan v2migrate:programs`
+
+    # Migrate Merchants
+    `php artisan v2migrate:merchants`
+
+    # Migrate/Sync Giftcodes
+    `php artisan v2migrate:giftcodes`
+
+    # Migrate/Sync invoice-journal-events
+    `php artisan v2migrate:invoice-journal-events`
+
+# Migrate Users
+`php artisan v2migrate:users`
+
 ## Migrations
 
 # Creating Migrations

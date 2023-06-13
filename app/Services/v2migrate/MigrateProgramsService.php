@@ -9,47 +9,102 @@ use App\Services\v2migrate\Trait\CreateProgramTrait;
 use App\Events\OrganizationCreated;
 use App\Services\ProgramService;
 use App\Models\Organization;
+use App\Models\JournalEvent;
+use App\Models\Program;
+use App\Models\Account;
+use App\Models\Posting;
 
 class MigrateProgramsService extends MigrationService
 {
     private ProgramService $programService;
+    private MigrateProgramAccountsService $migrateProgramAccountsService;
 
     use CreateProgramTrait;
 
+    public $offset = 0;
+    public $limit = 10;
+    public $iteration = 0;
+    public $count = 0;
     public bool $overwriteProgram = false;
     public int $importedProgramsCount = 0;
     public array $importedPrograms = [];
     public array $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
+    public array $cacheJournalEventsMap = [];
+    public bool $printSql = true;
 
-    public function __construct(ProgramService $programService)
+    public function __construct(ProgramService $programService, MigrateProgramAccountsService $migrateProgramAccountsService)
     {
         parent::__construct();
         $this->programService = $programService;
+        $this->migrateProgramAccountsService = $migrateProgramAccountsService;
+    }
+
+    public function migrateInvoiceJournalEvents()
+    {
+        DB::beginTransaction();
+        $this->v2db->beginTransaction();
+        $sql = sprintf("SELECT * FROM `invoice_journal_events` ije JOIN journal_events je ON je.id=ije.journal_event_id JOIN invoices inv ON inv.id = ije.invoice_id WHERE je.v3_journal_event_id IS NOT NULL AND inv.v3_invoice_id IS NOT NULL LIMIT %d, %d", $this->offset, $this->limit);
+        $v2InvoiceJournalEvents = $this->v2db->select($sql);
+        if( $countV2InvoiceJournalEvents = sizeof($v2InvoiceJournalEvents) > 0 )   {
+            printf("Found %d InvoiceJournalEvents in iteration:%d\n", $countV2InvoiceJournalEvents, $this->iteration);
+            foreach( $v2InvoiceJournalEvents as $v2InvoiceJournalEvent) {
+                print_r($v2InvoiceJournalEvent);
+            }
+        }
     }
 
     public function migrate() {
-        print("Starting Programs migration()");
+
+        printf("Starting program migration iteration: %d\n", $this->iteration++);
+
         $v2RootPrograms = $this->read_list_all_root_program_ids();
-        // pr($v2RootPrograms);
-        // exit;
+        if( !$v2RootPrograms ) {
+            printf("No user found in iteration %d\n", $this->iteration);
+        }
+
+        $this->migratePrograms($v2RootPrograms);
+
+        $this->offset = $this->offset + $this->limit;
+        // if( $this->count >= 20 ) exit;
+        if( count($v2RootPrograms) >= $this->limit) {
+            $this->migrate();
+        }
+
+        // DB::rollback();
+        // $this->v2db->rollBack();
+        print($this->importedProgramsCount . " programs migrated\n");
+        print("Rendering Import Map..\n");
+        print_r($this->importMap);
+    }
+
+    public function migratePrograms($v2RootPrograms) {
+
         DB::beginTransaction();
         $this->v2db->beginTransaction();
 
         try {
             foreach ($v2RootPrograms as $v2RootProgram) {
-                // pr($v2RootProgram);
                 try{
                     $rootProgram = $this->get_program_info ( $v2RootProgram->account_holder_id );
                     if( $rootProgram ) {
+                        printf("Starting migrations for root program \"%s\n", $rootProgram->name);
                         if( !property_exists($rootProgram, "v3_program_id") || !property_exists($rootProgram, "v3_organization_id" ) ) {
-                            throw new Exception( "v3_account_holder_id and v3_organization_id are required in v2 table to sync properly. Termininating!");
+                            throw new Exception( "v2Fields \"v3_account_holder_id\" and \"v3_organization_id\" are required in v2 table to sync properly. Termininating!");
                             exit;
                         }
                         if( empty($rootProgram->v3_organization_id) ) {
                             //Create organization
-                            $organization = Organization::create([
-                                'name' => $rootProgram->name
-                            ]);
+                            try {
+                                $organization = Organization::create([
+                                    'name' => $rootProgram->name
+                                ]);
+                            } catch (Exception $e) {
+                                if( strpos($e->getMessage(), 'Duplicate entry') > 0 && strpos($e->getMessage(), 'organizations_name_unique') > 0) {
+                                    $organization = Organization::create([
+                                        'name' => $rootProgram->name . '__' . rand()
+                                    ]);
+                                }
+                            }
                             $rootProgram->v3_organization_id = $organization->id;
                             OrganizationCreated::dispatch($organization);
                         }
@@ -57,17 +112,20 @@ class MigrateProgramsService extends MigrationService
                             try{
                                 $newProgram = $this->createProgram($rootProgram->v3_organization_id, $rootProgram);
                                 if( $newProgram ) {
+                                    printf("Created new v2 program for program \"%s\n", $rootProgram->name);
                                     $this->importedPrograms[] = $newProgram;
                                     $this->importedProgramsCount++;
                                 }
                                 // pr($this->importedProgramsCount);
                                 // pr($newPrograms);
                             } catch(Exception $e)    {
-                                throw new Exception( sprintf("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
+                                throw new Exception( sprintf("Error creating new program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
                             }
+                        }   else {
+                            printf("\"v3_program_id\" exists for root program \"%s\". Skipping..\n", $rootProgram->name);
                         }
                     }
-                }catch(Exception $e)    {
+                } catch(Exception $e)    {
                     throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
                 }
             }
@@ -78,12 +136,8 @@ class MigrateProgramsService extends MigrationService
             $this->v2db->rollBack();
             throw new Exception("Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
         }
-        // DB::rollback();
-        // $this->v2db->rollBack();
-        print($this->importedProgramsCount . " programs migrated");
-        print("Rendering Import Map..");
-        print_r($this->importMap);
     }
+
     public function read_list_all_root_program_ids($arguments = array()) {
         $query = "
         SELECT `" . PROGRAMS . "`.account_holder_id
@@ -100,7 +154,7 @@ class MigrateProgramsService extends MigrationService
         if(isset($arguments['label']) && $arguments['label'] != '') {
             $query .= " AND ". PROGRAMS .".label = '" . $arguments['label'] . "'";
         }
-        $query .= " AND account_holder_id=203952 LIMIT 10";
+        $query .= " LIMIT {$this->offset}, {$this->limit}";
         try{
             return $this->v2db->select($query);
         } catch(\Exception $e) {
@@ -254,8 +308,7 @@ class MigrateProgramsService extends MigrationService
 		// set query to get extra program info
 		$sql = "
 			SELECT
-			p.*,
-                d.name as default_domain_name
+			p.*, d.name as default_domain_name
 			FROM
 				" . PROGRAMS_EXTRA . " AS p
                         LEFT JOIN " . DOMAINS . " AS d ON d.access_key = p.default_domain_access_key

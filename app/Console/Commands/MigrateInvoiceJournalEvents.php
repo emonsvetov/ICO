@@ -4,23 +4,23 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 
-use App\Jobs\v2migrate\MigrateUsersJob;
+use App\Jobs\v2migrate\MigrateInvoiceJournalEventsJob;
 
-class MigrateUsers extends Command
+class MigrateInvoiceJournalEvents extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'v2migrate:users {--id=*}';
+    protected $signature = 'v2migrate:invoice-journal-events';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command to migrate users';
+    protected $description = 'Command to migrate "invoice_journal_events" table relations. This SHOULD ONLY BE run after a successful migration of all programs.';
 
     /**
      * Create a new command instance.
@@ -35,10 +35,7 @@ class MigrateUsers extends Command
      */
     public function handle()
     {
-        // pr($this->arguments());
-        // pr($this->options());
-        // exit;
-        dispatch(new MigrateUsersJob( $this->options() ));
+        dispatch(new MigrateInvoiceJournalEventsJob());
         return 0;
     }
 }
