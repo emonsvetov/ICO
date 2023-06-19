@@ -26,7 +26,7 @@ class MigrateMerchantsService extends MigrationService
     }
 
     public function migrate() {
-        print("In MigrateMerchantsService.php start migrate()");
+        $this->printf("In MigrateMerchantsService.php start migrate\n");
         // $v2Merchants = $this->v2db->select("SELECT * FROM `merchants`");
         $merchant_tree = array ();
         $v2MerchantHierarchy = $this->read_list_hierarchy();
@@ -49,7 +49,7 @@ class MigrateMerchantsService extends MigrationService
                     $proramIds = array_keys($this->programMerchants);
                     $programs = Program::whereIn('id', $proramIds)->get();
                     foreach($programs as $program) {
-                        print("Syncing \"programs_merchants\" for program:{$program->id}");
+                        $this->printf("Syncing \"programs_merchants\" for program:{$program->id}");
                         // pr($this->programMerchants[$program->id]);
                         $program->merchants()->sync($this->programMerchants[$program->id], false);
                     }
@@ -65,6 +65,7 @@ class MigrateMerchantsService extends MigrationService
     }
 
     private function migrateMerchant($v2MerchantNode, $parent_id = null) {
+        $this->setDebug(true);
         if( isset($v2MerchantNode['merchant']) ) {
             $v2Merchant = $v2MerchantNode['merchant'];
             if( !property_exists($v2Merchant, "v3_merchant_id") ) {
@@ -72,17 +73,19 @@ class MigrateMerchantsService extends MigrationService
                 exit;
             }
             if( $v2Merchant->v3_merchant_id ) {
-                print("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Skipping..\n");
+                $this->printf("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Skipping..\n");
                 //TODO: update?!
                 return;
             }
-            print("Finding Merchant {$v2Merchant->name} in v3\n");
+            $this->printf("Finding Merchant {$v2Merchant->name} in v3\n");
             $v3Merchant = Merchant::where('name', trim($v2Merchant->name))->first();
             if( $v3Merchant ) {
-                print("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Updating..\n");
+                $this->printf("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Updating..\n");
                 if( !$v3Merchant->v2_account_holder_id ) {
                     $v3Merchant->v2_account_holder_id = $v2Merchant->account_holder_id;
                     $v3Merchant->save();
+                }
+                if( !$v2Merchant->v3_merchant_id ) {
                     $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
                 }
                 //TODO: more updates?!
@@ -129,15 +132,15 @@ class MigrateMerchantsService extends MigrationService
                     }
 
                     if( $icons ) {
-                        print("Logo/Icons detected. Uploading, be patient..\n");
+                        $this->printf("Logo/Icons detected. Uploading, be patient..\n");
                         $uploads = $this->handleMerchantMediaUpload( null, $newMerchant, false, $icons );
                         if( $uploads )   {
-                            print(sprintf("%d Logo/Icons uploaded successfully.\n", count($uploads)));
+                            $this->printf(sprintf("%d Logo/Icons uploaded successfully.\n", count($uploads)));
                             $newMerchant->update( $uploads );
                         }
                     }
                     $this->importedCount++;
-                    print("New merchant for v2Merchant: {$v2Merchant->account_holder_id} created successfully!\n");
+                    $this->printf("New merchant for v2Merchant: {$v2Merchant->account_holder_id} created successfully!\n");
 
                     $this->readProgramMerchantRelations( $v2Merchant->account_holder_id );
                 }

@@ -12,85 +12,114 @@ use App\Models\Role;
 
 class MigrateUsersService extends MigrationService
 {
+    private MigrateUserRoleService $migrateUserRoleService;
+
     public $offset = 0;
-    public $limit = 1;
+    public $limit = 1000;
     public $iteration = 0;
     public $count = 0;
     public bool $printSql = false;
     public bool $resycnRoles = true;
-    public $rolesCache = [];
 
-    public function __construct()
+    public function __construct(MigrateUserRoleService $migrateUserRoleService)
     {
         parent::__construct();
+        $this->migrateUserRoleService = $migrateUserRoleService;
     }
 
     public function migrate()  {
         $this->v2db->statement("SET SQL_MODE=''");
-        $this->migrateUsers();
-        echo "Migrate users start!";
+        // $this->migrateUserRoleService->migrate();
+        $this->migrateNonDuplicateUsers();
+        $this->offset = $this->iteration = 0;
+        // $this->migrateDuplicateUsers();
     }
 
-    public function getUsersByDuplicateEmail() {
-        print("Getting users by duplicate email address\n");
-        $users = $this->v2db->select("SELECT account_holder_id, email, count(email) email_count FROM users WHERE (email != '' AND email IS NOT NULL) GROUP BY email HAVING email_count >1");
+    private function getDuplicateUsersIdentifiedByEmail() {
+        $this->printf("Getting users by duplicate email address, iteration:%s\n", ++$this->iteration);
+        $sql = sprintf("SELECT account_holder_id, email, count(email) email_count FROM users WHERE (email != '' AND email IS NOT NULL) GROUP BY email HAVING email_count > 1 LIMIT %d, %d", $this->offset, $this->limit);
+        $users = $this->v2db->select( $sql );
         if( ($count = sizeof($users)) > 0) {
-            printf("Found %d users by duplicate email address\n", $count);
+            $this->printf("Found %d users by duplicate email address\n", $count);
             foreach ($users as $user) {
-                printf(" -- %s %d times\n", $user->email, $user->email_count);
+                $this->printf(" -- %s %d times\n", $user->email, $user->email_count);
             }
+            return $users;
         }
     }
 
-    public function migrateUsers() {
+    private function getNonDuplicateUsersIdentifiedByEmail() {
+        $sql = sprintf("SELECT account_holder_id, v3_user_id, email, first_name, last_name, employee_number, division_name, position_title, position_grade, created, updated, count(email) email_count, supervisor_employee_number, last_location, last_login, birth_month, birth_day, user_state_id, update_id, activated, deactivated, parent_program_id, password, office_geo_location, hire_date FROM users WHERE (email != '' AND email IS NOT NULL) AND (v3_user_id IS NULL OR v3_user_id = 0 ) GROUP BY email HAVING email_count = 1 LIMIT %d, %d", $this->offset, $this->limit);
+        $v2Users = $this->v2db->select($sql);
+
+        $this->printf("SQL:%s\n", $sql);
+
+        // pr($v2Users);
+        // exit;
+
+        return $v2Users;
+    }
+    public function migrateDuplicateUsers() {
         $this->iteration++;
-        $users = $this->getNonDuplicateUsersIdentifiedByEmail();
+        $users = $this->getDuplicateUsersIdentifiedByEmail();
         if( !$users ) {
-            printf("No user found in iteration %d", $this->iteration);
+            $this->printf("No user found in iteration %d\n", $this->iteration);
             return;
         }
         foreach( $users as $v2User) {
             try {
                 $this->migrateSingleUser($v2User);
-                DB::commit();
-                $this->v2db->commit();
-                if( $this->count >= 1 ) exit;
+                // DB::commit();
+                // $this->v2db->commit();
+                // if( $this->count >= 1 ) exit;
             } catch(Exception $e) {
                 print($e->getMessage());
-                DB::rollback();
-                $this->v2db->rollBack();
-                exit;
+                // DB::rollback();
+                // $this->v2db->rollBack();
             }
-            printf("--------------------------------------------------\n");
+            $this->printf("--------------------------------------------------\n");
         }
         if( count($users) >= $this->limit) {
             $this->offset = $this->offset + $this->limit;
-            $this->migrateUsers();
+            $this->migrateDuplicateUsers();
         }
     }
 
-    public function getNonDuplicateUsersIdentifiedByEmail() {
-        $sql = sprintf("SELECT account_holder_id, v3_user_id, email, first_name, last_name, employee_number, division_name, position_title, position_grade, created, updated, count(email) email_count, supervisor_employee_number, last_location, last_login, birth_month, birth_day, user_state_id, update_id, activated, deactivated, parent_program_id, password, office_geo_location, hire_date FROM users WHERE (email != '' AND email IS NOT NULL) AND (v3_user_id IS NULL OR v3_user_id = 0 )  GROUP BY email HAVING email_count = 1 LIMIT %d, %d", $this->offset, $this->limit);
-        $v2Users = $this->v2db->select($sql);
-        if($this->isPrintSql()) {
-            printf("SQL:%s\n", $sql);
+    public function migrateNonDuplicateUsers() {
+        $this->iteration++;
+        $users = $this->getNonDuplicateUsersIdentifiedByEmail();
+        if( !$users ) {
+            $this->printf("No user found in iteration %d\n", $this->iteration);
+            return;
+        }
+        foreach( $users as $v2User) {
+            try {
+                $this->migrateSingleUser($v2User);
+                // DB::commit();
+                // $this->v2db->commit();
+                // if( $this->count >= 1 ) exit;
+            } catch(Exception $e) {
+                print($e->getMessage());
+                // DB::rollback();
+                // $this->v2db->rollBack();
+            }
+            $this->printf("--------------------------------------------------\n");
         }
 
-        return $v2Users;
-    }
-    public function getV2UserRoles( $v2_user_account_holder_id )    {
-        $sql = sprintf("SELECT `r`.*, `r`.`owner_id` AS `program_account_holder_id`, `rhu`.`users_id`, `rt`.`type` AS role_name, `p`.`name` AS `program_name`, `p`.`v3_program_id` FROM `roles_has_users` `rhu` LEFT JOIN `roles` `r` ON `rhu`.`roles_id`=`r`.`id` LEFT JOIN `role_types` `rt` ON `r`.`role_type_id`=`rt`.`id` LEFT JOIN `programs` `p` ON `p`.`account_holder_id`=`r`.`owner_id` WHERE `rhu`.`users_id`=%d", $v2_user_account_holder_id);
-        $v2UserRoles = $this->v2db->select($sql);
-        if( $this->isPrintSql() ) {
-            printf("SQL:%s\n", $sql);
+        $this->executeV2SQL(); //execute if any
+        $this->executeV3SQL(); //execute if any
+
+        if( count($users) >= $this->limit) {
+            $this->offset = $this->offset + $this->limit;
+            $this->migrateNonDuplicateUsers();
         }
-        return $v2UserRoles;
     }
+
     public function createUser($v2User) {
         $v3User = User::where('email', $v2User->email)->first();
         if( !$v3User ) {
             // pr($v2User);
-            printf(" - User with email %s does not exist in v3. Preparing to import..\n",  $v2User->email);
+            $this->printf(" - User with email %s does not exist in v3. Preparing to import..\n",  $v2User->email);
             if( (int)$v2User->birth_month && (int)$v2User->birth_day) {
                 $dob = "1970-" . ((int)$v2User->birth_month < 10 ? "0" . (int)$v2User->birth_month :  $v2User->birth_month) . "-" . ( (int) $v2User->birth_day < 10 ? "0" . (int)$v2User->birth_day :  $v2User->birth_day);
             }   else {
@@ -121,7 +150,7 @@ class MigrateUsersService extends MigrationService
                 'last_login' => $v2User->last_login,
                 'v2_parent_program_id' => $v2User->parent_program_id,
                 'v2_account_holder_id' => $v2User->account_holder_id,
-                'hire_date' => $v2User->hire_date,
+                'hire_date' => $v2User->hire_date && $v2User->hire_date != '0000-00-00' ? $v2User->hire_date : null,
             ];
             $formRequest = new UserRequest();
             $validator = Validator::make($data, $formRequest->rules());
@@ -130,94 +159,52 @@ class MigrateUsersService extends MigrationService
             }
             return User::createAccount( $data );
         } else {
-            printf(" - User with email %s exists in v3. Skipping.",  $v2User->email);
+            $this->printf(" - User with email %s exists in v3. Skipping.\n",  $v2User->email);
         }
     }
     public function migrateSingleUser( $v2User) {
         if( !$v2User || !$v2User->email ) return;
 
-        printf("* Starting migration of user:%d with email:%s\n", $v2User->account_holder_id,$v2User->email);
+        $this->setDebug(true);
+
+        $this->printf("* Starting migration of user:%d with email:%s\n", $v2User->account_holder_id,$v2User->email);
+
         $isNewUser = false;
         if( $v2User->v3_user_id ) {
-            printf(" - User with email %s exist in v3.\n",  $v2User->email);
+            $this->printf(" - User with email %s exist in v3.\n",  $v2User->email);
             //TODO - Check for the update??
             $v3User = User::find( $v2User->v3_user_id );
             // return;
         }   else {
-            $v3User = $this->createUser($v2User);
-            printf(" - New User with email %s created in v3.\n",  $v2User->email);
-            $this->v2db->statement(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d", $v3User->id, $v2User->account_holder_id));
-            $isNewUser = true;
-        }
-
-        if( $v3User ) {
-            if( $isNewUser || $this->resycnRoles ) {
-                $v2UserRoles = $this->getV2UserRoles($v2User->account_holder_id);
-                // $v2UserRoles = $this->getV2UserRoles(204298);
-                // pr($v2UserRoles);
-                if( sizeof($v2UserRoles) > 0) {
-                    printf(" - Roles for user %s found. Preparing to create new roles.\n",  $v2User->email);
-                    $newProgramRoles = [];
-                    foreach( $v2UserRoles as $v2UserRole ) {
-                        if( !$v2UserRole->v3_program_id )   {
-                            printf(" - Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. juming to next user.\n",  $v2User->email);
-                            // throw new Exception("Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Aborting user migration process.\n");
-                            continue; //TO BE REMOVED since we do not want to go with incomplete user roles
-                        }
-                        $v2RoleName = $v2UserRole->role_name;
-                        printf(" - Looking for role \"%s\" in v3.\n",  $v2RoleName);
-                        switch ($v2RoleName) {
-                            case Role::ROLE_PARTICIPANT:
-                                continue 2;
-                                if( isset($this->rolesCache[$v2UserRole->id]) )   {
-                                    $v3RoleId = $this->rolesCache[$v2UserRole->id];
-                                }   else {
-                                    $v3RoleId = Role::getIdByName($v2RoleName);
-                                    if( !$v3RoleId ) {
-                                        printf("Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email);
-                                        continue 2;
-                                    }
-                                    $this->rolesCache[$v2UserRole->id] = $v3RoleId;
-                                }
-
-                                if( $v3RoleId ) {
-                                    if( !isset( $newProgramRoles[$v2UserRole->v3_program_id] )) {
-                                        $newProgramRoles[$v2UserRole->v3_program_id] = [];
-                                    }
-                                    $newProgramRoles[$v2UserRole->v3_program_id][] = $v3RoleId;
-                                }
-
-                                // pr($v3RoleId);
-                                break;
-
-                            default:
-                                // throw new Exception("Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Aborting user migration process.\n");
-                                printf("Unknown role found. Aborting..\n");
-                                break;
-                        }
-                    }
-                    if( $newProgramRoles ) {
-                        pr($newProgramRoles);
-                        exit;
-                        $v3User->programs()->sync( array_keys($newProgramRoles) );
-                        foreach($newProgramRoles as $programId => $programRoles) {
-                            $v3User->syncProgramRoles($programId, $programRoles);
-                        }
-                        printf("Program roles synced for v3user:%d.\n", $v3User->id);
-                        $this->count++;
-                    }
-                }
+            $v3User = User::where( 'v2_account_holder_id', $v2User->account_holder_id )->first();
+            if( !$v3User ) {
+                $v3User = $this->createUser($v2User);
+                $this->printf(" - New User with email %s created in v3.\n",  $v2User->email);
+                $isNewUser = true;
+            }   else {
+                $this->printf(" - User with email %s found by \"v2_account_holder_id\" in v3.\n",  $v2User->email);
             }
         }
-    }
-    private function isPrintSql() {
-        return $this->printSql;
+
+        $this->setDebug(false);
+
+        // Update v2User reference field for v3Id
+        if( !$v2User->v3_user_id ) {
+            $this->addV2SQL(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
+        }
+
+        // Migrate roles if applies
+        if( $v3User ) {
+            if( $isNewUser || $this->resycnRoles ) {
+                $this->migrateUserRoleService->migrate($v2User, $v3User);
+            }
+        }
     }
     private function tmpFunc_getRolesCountForUsers()  {
         $sql = sprintf("SELECT users_id, count(roles_id) AS roles_count FROM roles_has_users WHERE 1=1 GROUP BY roles_id HAVING roles_count > 1 ORDER BY roles_count DESC");
         $results = $this->v2db->select($sql);
         if( $this->isPrintSql() ) {
-            printf("SQL:%s\n", $sql);
+            $this->printf("SQL:%s\n", $sql);
         }
         return $results;//204298,244119
 

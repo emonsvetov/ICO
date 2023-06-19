@@ -37,10 +37,10 @@ class MigrateProgramAccountsService extends MigrationService
             throw new Exception("Missing or null \"v2_account_holder_id\"\n");
         }
         printf("Migrating accounts for program: \"%s\"\n", $program->name);
-        if( $this->useTransactions ) {
-            DB::beginTransaction();
-            $this->v2db->beginTransaction();
-        }
+        // if( $this->useTransactions ) {
+        //     DB::beginTransaction();
+        //     $this->v2db->beginTransaction();
+        // }
 
         try {
             $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $program->v2_account_holder_id);
@@ -139,22 +139,22 @@ class MigrateProgramAccountsService extends MigrationService
                                 }
                             }
                         }   else {
-                            printf(" - No journal_events+postings found for program:\"%s\" & account:\"%s\".\n",$countJEAndPostings, $program->name, $v2Account->id);
+                            printf(" - No journal_events+postings found for program:\"%s\" & account:\"%s\".\n", $program->name, $v2Account->id);
                         }
                     }
                 }
             }   else {
                 printf("No accounts found for program: \"%s\"\n", $program->name);
             }
-            if( $this->useTransactions ) {
-                DB::commit();
-                $this->v2db->commit();
-            }
+            // if( $this->useTransactions ) {
+            //     DB::commit();
+            //     $this->v2db->commit();
+            // }
         } catch (Exception $e) {
-            if( $this->useTransactions ) {
-                DB::rollback();
-                $this->v2db->rollBack();
-            }
+            // if( $this->useTransactions ) {
+            //     DB::rollback();
+            //     $this->v2db->rollBack();
+            // }
             throw new Exception("Error migrating v2 accounts into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
         }
     }

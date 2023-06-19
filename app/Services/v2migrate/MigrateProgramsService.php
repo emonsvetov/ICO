@@ -22,7 +22,7 @@ class MigrateProgramsService extends MigrationService
     use CreateProgramTrait;
 
     public $offset = 0;
-    public $limit = 10;
+    public $limit = 9999;
     public $iteration = 0;
     public $count = 0;
     public bool $overwriteProgram = false;
@@ -39,20 +39,6 @@ class MigrateProgramsService extends MigrationService
         $this->migrateProgramAccountsService = $migrateProgramAccountsService;
     }
 
-    public function migrateInvoiceJournalEvents()
-    {
-        DB::beginTransaction();
-        $this->v2db->beginTransaction();
-        $sql = sprintf("SELECT * FROM `invoice_journal_events` ije JOIN journal_events je ON je.id=ije.journal_event_id JOIN invoices inv ON inv.id = ije.invoice_id WHERE je.v3_journal_event_id IS NOT NULL AND inv.v3_invoice_id IS NOT NULL LIMIT %d, %d", $this->offset, $this->limit);
-        $v2InvoiceJournalEvents = $this->v2db->select($sql);
-        if( $countV2InvoiceJournalEvents = sizeof($v2InvoiceJournalEvents) > 0 )   {
-            printf("Found %d InvoiceJournalEvents in iteration:%d\n", $countV2InvoiceJournalEvents, $this->iteration);
-            foreach( $v2InvoiceJournalEvents as $v2InvoiceJournalEvent) {
-                print_r($v2InvoiceJournalEvent);
-            }
-        }
-    }
-
     public function migrate() {
 
         printf("Starting program migration iteration: %d\n", $this->iteration++);
@@ -61,6 +47,8 @@ class MigrateProgramsService extends MigrationService
         if( !$v2RootPrograms ) {
             printf("No user found in iteration %d\n", $this->iteration);
         }
+
+        printf("%s programs found in iteration %d\n", count($v2RootPrograms), $this->iteration);
 
         $this->migratePrograms($v2RootPrograms);
 
@@ -79,15 +67,15 @@ class MigrateProgramsService extends MigrationService
 
     public function migratePrograms($v2RootPrograms) {
 
-        DB::beginTransaction();
-        $this->v2db->beginTransaction();
+        // DB::beginTransaction();
+        // $this->v2db->beginTransaction();
 
         try {
             foreach ($v2RootPrograms as $v2RootProgram) {
                 try{
                     $rootProgram = $this->get_program_info ( $v2RootProgram->account_holder_id );
                     if( $rootProgram ) {
-                        printf("Starting migrations for root program \"%s\n", $rootProgram->name);
+                        printf("Starting migrations for root program \"%s\"\n", $rootProgram->name);
                         if( !property_exists($rootProgram, "v3_program_id") || !property_exists($rootProgram, "v3_organization_id" ) ) {
                             throw new Exception( "v2Fields \"v3_account_holder_id\" and \"v3_organization_id\" are required in v2 table to sync properly. Termininating!");
                             exit;
@@ -129,11 +117,11 @@ class MigrateProgramsService extends MigrationService
                     throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
                 }
             }
-            DB::commit();
-            $this->v2db->commit();
+            // DB::commit();
+            // $this->v2db->commit();
         } catch (Exception $e) {
-            DB::rollback();
-            $this->v2db->rollBack();
+            // DB::rollback();
+            // $this->v2db->rollBack();
             throw new Exception("Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
         }
     }
@@ -155,6 +143,7 @@ class MigrateProgramsService extends MigrationService
             $query .= " AND ". PROGRAMS .".label = '" . $arguments['label'] . "'";
         }
         $query .= " LIMIT {$this->offset}, {$this->limit}";
+
         try{
             return $this->v2db->select($query);
         } catch(\Exception $e) {

@@ -16,20 +16,24 @@ Use Singuler name for Controller name. For example `MerchantController.php`
 
 ## v2 to v3 Migrations
 
-    # Migrate Programs
-    `php artisan v2migrate:programs`
+# Migrate Programs
+`php artisan v2migrate:programs`
+    - Creates Organizations, Programs & Subprograms, Domains (Create, Assign Domains, Domain Ips etc), Addresses, Events, Leaderboards, LeaderboardEvents, Invoices, Accounts, JounralEvents & Postings.
 
-    # Migrate Merchants
-    `php artisan v2migrate:merchants`
+# Migrate Merchants
+`php artisan v2migrate:merchants`
 
-    # Migrate/Sync Giftcodes
-    `php artisan v2migrate:giftcodes`
+# Migrate/Sync Giftcodes
+`php artisan v2migrate:giftcodes`
 
-    # Migrate/Sync invoice-journal-events
-    `php artisan v2migrate:invoice-journal-events`
+# Migrate/Sync invoice-journal-events
+`php artisan v2migrate:invoice-journal-events`
 
 # Migrate Users
 `php artisan v2migrate:users`
+
+# Migrate PhysicalOrders
+`php artisan v2migrate:physicalorders`
 
 ## Migrations
 
