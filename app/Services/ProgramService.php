@@ -506,7 +506,7 @@ class ProgramService
             $constraint = function ($query) {
                 $query->whereNull('parent_id');
             };
-            $query = Program::treeOf($constraint)->where('organization_id', $organization->id);
+            $query = Program::treeOf($constraint)->withOrganization( $organization );
         }
 
         if ($keyword) {
