@@ -3,6 +3,7 @@ namespace App\Models\Traits;
 
 use App\Models\Program;
 use App\Models\Domain;
+use FontLib\TrueType\Collection;
 
 trait HasProgramRoles
 {
@@ -42,13 +43,13 @@ trait HasProgramRoles
     }
 
     public function getAllProgramRolesByDomain( $domain )   {
-        $allRoles = [];
+        $allRoles = collect();
         $domain =  Domain::getModelByMixed($domain);
         //Lets try to find it in associated programs aka parent programs
         foreach( $domain->programs as $program)    {
             $programRoles = $this->getProgramRolesByProgram($program);
-            if( $programRoles ) {
-                $allRoles = array_merge($allRoles, $programRoles);
+            if( $programRoles->isNotEmpty() ) {
+                $allRoles = $allRoles->merge($programRoles);
                 // return $programRoles;
             }
         }
@@ -59,9 +60,9 @@ trait HasProgramRoles
             if( !$descendants->isEmpty() ) {
                 foreach( $descendants as $child)    {
                     $programRoles = $this->getProgramRolesByProgram($child);
-                    if( $programRoles ) {
+                    if( !$programRoles->isEmpty() ) {
                         // pr($programRoles);
-                        $allRoles = array_merge($allRoles, $programRoles);
+                        $allRoles = $allRoles->merge($programRoles);
                         // return $programRoles;
                     }
                 }
@@ -78,13 +79,14 @@ trait HasProgramRoles
 
         if( !$program ) {
             if( $domain ) {
-                $programRoles = $this->getProgramRolesByDomain( $domain );
-            }   
+                // $programRoles = $this->getProgramRolesByDomain( $domain );
+                $programRoles = $this->getAllProgramRolesByDomain( $domain );
+            }
             else {
                 $programRoles = $this->getAllProgramRoles();
             }
         }
-        else 
+        else
         {
             if( $domain ) {
                 $programRoles = $this->getProgramRolesByDomainAndProgram($program, $domain);
@@ -170,7 +172,7 @@ trait HasProgramRoles
                 $program = Program::where( 'id', $programId )->select('id', 'name')->first();
                 $programs[$programId] = $program;
             }
-            else 
+            else
             {
                 $program = $programs[$programId];
             }
@@ -179,7 +181,7 @@ trait HasProgramRoles
             }
             $programRoles[$program->id]['roles'][$roleId] = $_role;
         }
-        
+
         return $programRoles;
     }
     public function hasRolesInProgram( $roles, $program) {
@@ -227,7 +229,7 @@ trait HasProgramRoles
         return $roles;
     }
 
-    public function hasRoleInProgram( $roleName, $program): bool 
+    public function hasRoleInProgram( $roleName, $program): bool
     {
         if( trim($roleName) == "" || !$program ) return false;
         $program = Program::getModelByMixed($program);
@@ -296,6 +298,6 @@ trait HasProgramRoles
                 $newRoles[$role_id] = $columns;
             }
             $this->roles()->attach( $newRoles );
-        } 
+        }
     }
 }
