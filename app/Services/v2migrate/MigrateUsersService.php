@@ -38,13 +38,13 @@ class MigrateUsersService extends MigrationService
     }
 
     private function getDuplicateUsersIdentifiedByEmail() {
-        $this->printf("Finding users by duplicate email address, iteration:%s\n", ++$this->iteration);
+        $this->printf("Finding users by duplicate email addresses, iteration:%s\n", ++$this->iteration);
         $sql = sprintf("SELECT account_holder_id, email, count(email) email_count FROM users WHERE (email != '' AND email IS NOT NULL) GROUP BY email HAVING email_count > 1 LIMIT %d, %d", $this->offset, $this->limit);
         $users = $this->v2db->select( $sql );
         if( ($count = sizeof($users)) > 0) {
             $this->printf("Found %d users by duplicate email address\n", $count);
             foreach ($users as $user) {
-                $this->printf(" -- %s(%d) %d times\n", $user->email, $user->account_holder_id, $user->email_count);
+                $this->printf(" -- %s, %d times\n", $user->email, $user->email_count);
             }
             return $users;
         }
@@ -75,11 +75,11 @@ class MigrateUsersService extends MigrationService
                 // DB::rollback();
                 // $this->v2db->rollBack();
             }
-            $this->printf("--------------------------------------------------\n");
+            $this->printf("-------------\n");
         }
         $this->executeV2SQL(); //execute if any
         $this->executeV3SQL(); //execute if any
-        exit;
+        $this->printf("-------------------------------------------------\n");
         if( count($users) >= $this->limit) {
             $this->offset = $this->offset + $this->limit;
             $this->migrateDuplicateUsers();
@@ -127,7 +127,7 @@ class MigrateUsersService extends MigrationService
     }
 
     public function migrateSingleDuplicateUser( $v2DuplicateUser )    {
-        $sql = sprintf("SELECT u.* FROM `users` u WHERE `email`='%s' AND u.v3_user_id IS NULL", $v2DuplicateUser->email);
+        $sql = sprintf("SELECT u.* FROM `users` u WHERE `email`='%s'", $v2DuplicateUser->email);
         $v3Users = $this->v2db->select($sql);
         $this->printf($sql . "\n");
         $this->printf("Found %d users with email:%s\n", count($v3Users), $v2DuplicateUser->email);
@@ -259,6 +259,7 @@ class MigrateUsersService extends MigrationService
             'v2_parent_program_id' => $v2User->parent_program_id,
             'v2_account_holder_id' => $v2User->account_holder_id,
             'hire_date' => $v2User->hire_date && $v2User->hire_date != '0000-00-00' ? $v2User->hire_date : null,
+            'email_verified_at' => $v2User->activated
         ];
         $formRequest = new UserRequest();
         $validator = Validator::make($data, $formRequest->rules());

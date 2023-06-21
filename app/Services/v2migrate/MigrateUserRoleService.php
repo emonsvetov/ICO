@@ -60,7 +60,7 @@ class MigrateUserRoleService extends MigrationService
             $newProgramRoles = [];
             foreach( $v2UserRoles as $v2UserRole ) {
                 if( !$v2UserRole->v3_program_id )   {
-                    $this->printf(" - Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. juming to next user.\n",  $v2User->email);
+                    $this->printf(" - Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Skipping.\n",  $v2User->email);
                     // throw new Exception("Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Aborting user migration process.\n");
                     continue; //TO BE REMOVED? since we do not want to go with incomplete user roles?
                 }
