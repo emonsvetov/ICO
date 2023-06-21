@@ -14,7 +14,7 @@ class MigrationService
     public bool $printSql = true;
     public string $v2Sql = '';
     public string $v3Sql = '';
-    public bool $debug = false;
+    public bool $debug = true;
 
     protected function __construct()
     {

@@ -9,7 +9,7 @@ use App\Models\EventXmlData;
 class MigrateEventXmlDataService extends MigrationService
 {
     public $offset = 0;
-    public $limit = 10;
+    public $limit = 1000;
     public $iteration = 0;
     public $count = 0;
 
@@ -71,7 +71,7 @@ class MigrateEventXmlDataService extends MigrationService
 
     public function getEventXmlDataToMigrate() {
         printf("EventXmlData migration iteration:%d\n", ++$this->iteration);
-        $sql = sprintf("SELECT exd.*, e.v3_event_id, u.v3_user_id  FROM `event_xml_data` exd LEFT JOIN event_templates e ON e.id = exd.event_template_id LEFT JOIN users u ON u.account_holder_id=exd.awarder_account_holder_id where exd.v3_id IS NULL AND e.v3_event_id IS NOT NULL AND u.v3_user_id IS NOT NULL LIMIT {$this->offset},{$this->limit}");
+        $sql = sprintf("SELECT exd.*, e.v3_event_id, u.v3_user_id  FROM `event_xml_data` exd LEFT JOIN event_templates e ON e.id = exd.event_template_id LEFT JOIN users u ON u.account_holder_id=exd.awarder_account_holder_id where exd.v3_id IS NULL LIMIT {$this->offset},{$this->limit}");
         $this->printf("SQL:%s\n", $sql);
         return $this->v2db->select($sql);
     }

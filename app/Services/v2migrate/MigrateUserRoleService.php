@@ -50,10 +50,10 @@ class MigrateUserRoleService extends MigrationService
     }
     public function migrate($v2User, $v3User) {
     // public function migrate() {
-        $v2UserRoles = $this->getV2UserRoles(203610);
+        // $v2UserRoles = $this->getV2UserRoles(203610);
         // $v2User = new stdClass;
 
-        // $v2UserRoles = $this->getV2UserRoles($v2User->account_holder_id);
+        $v2UserRoles = $this->getV2UserRoles($v2User->account_holder_id);
         // $v2UserRoles = $this->getV2UserRoles(204298);
         if( sizeof($v2UserRoles) > 0) {
             $this->printf(" - %d roles found for user %s. Preparing to import roles.\n",  sizeof($v2UserRoles), $v2User->email);
@@ -98,7 +98,8 @@ class MigrateUserRoleService extends MigrationService
             }
 
             if( $newProgramRoles ) {
-                // pr($newProgramRoles);
+                pr($v3User->id);
+                pr($newProgramRoles);
                 $v3User->programs()->sync( array_keys($newProgramRoles) );
                 foreach($newProgramRoles as $programId => $programRoles) {
                     $v3User->syncProgramRoles($programId, $programRoles);
