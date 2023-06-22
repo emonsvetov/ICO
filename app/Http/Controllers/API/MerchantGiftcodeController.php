@@ -21,7 +21,7 @@ class MerchantGiftcodeController extends Controller
     public function index( Merchant $merchant )
     {
         $keyword = request()->get('keyword');
-        $sortby = request()->get('sortby', 'id');
+        $sortby = request()->get('sortby',  'id');
         $direction = request()->get('direction', 'asc');
         $from = request()->get('from', null);
 
