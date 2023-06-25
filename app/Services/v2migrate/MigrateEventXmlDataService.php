@@ -37,7 +37,7 @@ class MigrateEventXmlDataService extends MigrationService
         $this->executeV2SQL();
         $this->executeV3SQL();
         if( $this->iteration > 1 ) exit;
-        if( count($eventXmlData) >= $this->limit) {
+        if( count($eventXmlData) >= $this->limit ) {
             $this->offset = $this->offset + $this->limit;
             $this->migrateEventXmlData();
         }

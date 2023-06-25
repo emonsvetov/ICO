@@ -42,6 +42,7 @@ class MigrateMerchantsService extends MigrationService
                     // pr($v2MerchantAccountHolderId);
                     // pr($v2ListItem);
                     $this->migrateMerchant($v2MerchantNode);
+                    $this->executeV2SQL();
                     // if( $this->importedCount > 3 ) exit;
                 }
                 // pr($this->programMerchants);
