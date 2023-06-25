@@ -41,11 +41,11 @@ class MigrationService
     }
 
     protected function addV2SQL( $sql ) {
-        $this->v2Sql .= "
+        $this->v2Sql .= ";
         ". $sql;
     }
     protected function addV3SQL( $sql ) {
-        $this->v3Sql .= "
+        $this->v3Sql .= ";
         ". $sql;
     }
 
@@ -53,6 +53,7 @@ class MigrationService
         if( !empty( trim( $this->v2Sql)) )   {
             $this->v2db->unprepared( $this->v2db->raw($this->v2Sql) );
             $this->printf("Custom v2 DB:statement run.\n");
+            $this->v2Sql = '';
         }
     }
 
@@ -60,6 +61,7 @@ class MigrationService
         if( !empty( trim( $this->v3Sql)) )   {
             DB::unprepared( DB::raw($this->v3Sql) );
             $this->printf("Custom v3 DB:statement run.\n");
+            $this->v3Sql = '';
         }
     }
 }

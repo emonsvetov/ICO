@@ -35,8 +35,8 @@ class MigrateMerchantsService extends MigrationService
         }
         // pr($v2MerchantHierarchy);
         if( $v2MerchantHierarchy ) {
-            DB::beginTransaction();
-            $this->v2db->beginTransaction();
+            // DB::beginTransaction();
+            // $this->v2db->beginTransaction();
             try {
                 foreach ($v2MerchantHierarchy as $v2MerchantAccountHolderId => $v2MerchantNode) {
                     // pr($v2MerchantAccountHolderId);
@@ -54,11 +54,12 @@ class MigrateMerchantsService extends MigrationService
                         $program->merchants()->sync($this->programMerchants[$program->id], false);
                     }
                 }
-                DB::commit();
-                $this->v2db->commit();
+                // DB::commit();
+                // $this->v2db->commit();
+                $this->executeV2SQL();
             }catch(Exception $e)    {
-                DB::rollback();
-                $this->v2db->rollBack();
+                // DB::rollback();
+                // $this->v2db->rollBack();
                 throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
             }
         }
@@ -86,7 +87,8 @@ class MigrateMerchantsService extends MigrationService
                     $v3Merchant->save();
                 }
                 if( !$v2Merchant->v3_merchant_id ) {
-                    $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                    // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                    $this->addV2SQL("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
                 }
                 //TODO: more updates?!
             }   else {
@@ -119,7 +121,8 @@ class MigrateMerchantsService extends MigrationService
 
                 $newMerchant = (new \App\Models\Merchant)->createAccount( $v3MerchantData );
                 //Update v2 for reference column
-                $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$newMerchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$newMerchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                $this->addV2SQL("UPDATE `merchants` SET `v3_merchant_id` = {$newMerchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
 
                 if( $newMerchant ) {
 

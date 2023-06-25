@@ -29,8 +29,8 @@ class MigrateInvoiceJournalEventsService extends MigrationService
 
     public function migrateInvoiceJournalEvents()
     {
-        DB::beginTransaction();
-        $this->v2db->beginTransaction();
+        // DB::beginTransaction();
+        // $this->v2db->beginTransaction();
         try{
             $cacheInvoiceJournalEvents = [];
             $sql = sprintf("SELECT * FROM `invoice_journal_events` ije JOIN journal_events je ON je.id=ije.journal_event_id JOIN invoices inv ON inv.id = ije.invoice_id WHERE je.v3_journal_event_id IS NOT NULL AND inv.v3_invoice_id IS NOT NULL LIMIT %d, %d", $this->offset, $this->limit);
@@ -56,16 +56,16 @@ class MigrateInvoiceJournalEventsService extends MigrationService
                     }
                 }
             }
-            DB::commit();
-            $this->v2db->commit();
+            // DB::commit();
+            // $this->v2db->commit();
             if( $countV2InvoiceJournalEvents >= $this->limit) {
                 if( $this->count >= 20 ) exit;
                 $this->offset = $this->offset + $this->limit;
                 $this->migrateInvoiceJournalEvents();
             }
         }   catch (Exception $e) {
-            DB::rollback();
-            $this->v2db->rollBack();
+            // DB::rollback();
+            // $this->v2db->rollBack();
             printf("Could not import InvoiceJournalEvents for error:\"%s\" in iteration %d.\n", $e->getMessage(), $this->iteration);
         }
     }

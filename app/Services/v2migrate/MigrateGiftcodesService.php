@@ -55,8 +55,8 @@ class MigrateGiftcodesService extends MigrationService
         printf("SQL:%s\n", $sql);
         printf("%d codes found for syncing\n", count($results));
 
-        DB::beginTransaction();
-        $this->v2db->beginTransaction();
+        // DB::beginTransaction();
+        // $this->v2db->beginTransaction();
         try {
             foreach ($results as $row) {
                 if( $row->v3_medium_info_id ) {
@@ -65,7 +65,8 @@ class MigrateGiftcodesService extends MigrationService
                         if( $giftCode ) { //v3 version of giftcode exists
                             if( $giftCode->redemption_date ) {
                                 print("code:{v2:$row->id} purchase/used in {v3:$row->v3_medium_info_id}. Updating v2 version..\n");
-                                $this->v2db->statement("UPDATE `medium_info` SET `redemption_date` = '{$giftCode->redemption_date}', `purchased_by_v3` = 1 WHERE `id` = {$row->id}");
+                                // $this->v2db->statement("UPDATE `medium_info` SET `redemption_date` = '{$giftCode->redemption_date}', `purchased_by_v3` = 1 WHERE `id` = {$row->id}");
+                                $this->addV2SQL("UPDATE `medium_info` SET `redemption_date` = '{$giftCode->redemption_date}', `purchased_by_v3` = 1 WHERE `id` = {$row->id}");
                                 continue;
                             }
                         }
@@ -75,7 +76,8 @@ class MigrateGiftcodesService extends MigrationService
                         print("Found an used code:{v2:$row->id} as {v3:$row->v3_medium_info_id}. Removing code from v3!?\n");
                         //Here "redemption_date" NOT NULL means that this code was previously synched with v3 but now it is marked is redeemed, hence we need to remove it from our current v3 repository of gift codes.
                         $this->removeGiftcodeFromV3($giftCode);
-                        $this->v2db->statement("UPDATE `medium_info` SET `v3_medium_info_id` = NULL WHERE `id` = {$row->id}");
+                        // $this->v2db->statement("UPDATE `medium_info` SET `v3_medium_info_id` = NULL WHERE `id` = {$row->id}");
+                        $this->addV2SQL("UPDATE `medium_info` SET `v3_medium_info_id` = NULL WHERE `id` = {$row->id}");
                         print(" -- updated v2 medium info \"v3_medium_info_id\" to be null\n");
                     }
                     continue;
@@ -126,22 +128,24 @@ class MigrateGiftcodesService extends MigrationService
                     if(isset($response['success'])) {
                         $newGiftcodeId = $response['gift_code_id'];
                         print("Code imported, v2:{$row->id}=>v3:{$newGiftcodeId}. \n");
-                        $this->v2db->statement("UPDATE `medium_info` SET `v3_medium_info_id` = {$newGiftcodeId} WHERE `id` = {$row->id}");
+                        // $this->v2db->statement("UPDATE `medium_info` SET `v3_medium_info_id` = {$newGiftcodeId} WHERE `id` = {$row->id}");
+                        $this->addV2SQL("UPDATE `medium_info` SET `v3_medium_info_id` = {$newGiftcodeId} WHERE `id` = {$row->id}");
                         $this->count++;
                         // if( $this->count >= 3) exit;
                     }
                 }
             }
-            DB::commit();
-            $this->v2db->commit();
+            // DB::commit();
+            // $this->v2db->commit();
+            $this->executeV2SQL();
             if( count($results) >= $this->limit) {
                 $this->offset = $this->offset + $this->limit;
                 // if( $this->count >= 200 ) exit;
                 $this->minimalSync();
             }
         } catch(Exception $e)    {
-            DB::rollback();
-            $this->v2db->rollBack();
+            // DB::rollback();
+            // $this->v2db->rollBack();
             throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}\n");
         }
     }

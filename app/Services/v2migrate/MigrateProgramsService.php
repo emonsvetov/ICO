@@ -117,6 +117,8 @@ class MigrateProgramsService extends MigrationService
                     throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
                 }
             }
+            $this->executeV2SQL();
+            $this->executeV3SQL();
             // DB::commit();
             // $this->v2db->commit();
         } catch (Exception $e) {

@@ -79,7 +79,8 @@ class MigrateProgramAccountsService extends MigrationService
                         ]);
                     }
 
-                    $this->v2db->statement(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
+                    // $this->v2db->statement(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
+                    $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
 
                     if( $v3AccountId ) {
                         $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.* FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id where accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp DESC, postings.posting_timestamp DESC", $program->v2_account_holder_id, $v2Account->id);
@@ -116,7 +117,8 @@ class MigrateProgramAccountsService extends MigrationService
 
                                     printf(" - New Journal Event \"%d\" created for v2 journal event \"%d\"\n",$v3JournalEventId, $row->journal_event_id);
 
-                                    $this->v2db->statement(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEventId, $row->journal_event_id));
+                                    // $this->v2db->statement(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEventId, $row->journal_event_id));
+                                    $this->addV2SQL(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEventId, $row->journal_event_id));
 
                                     $this->cacheJournalEventsMap[$row->journal_event_id] = $v3JournalEventId;
 
@@ -133,7 +135,8 @@ class MigrateProgramAccountsService extends MigrationService
 
                                     printf(" - New Posting \"%d\" created for v2 posting \"%d\"\n",$v3PostingId, $row->posting_id);
 
-                                    $this->v2db->statement(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
+                                    // $this->v2db->statement(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
+                                    $this->addV2SQL(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
                                 }   else {
                                     printf(" - journal_events/postings already imported with v3_journal_event_id:%s, v3_posting_id:%s.\n", $row->v3_journal_event_id, $row->v3_posting_id);
                                 }
@@ -143,6 +146,7 @@ class MigrateProgramAccountsService extends MigrationService
                         }
                     }
                 }
+                $this->executeV2SQL();
             }   else {
                 printf("No accounts found for program: \"%s\"\n", $program->name);
             }
