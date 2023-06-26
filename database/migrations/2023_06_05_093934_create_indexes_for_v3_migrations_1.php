@@ -27,7 +27,7 @@ class CreateIndexesForV3Migrations1 extends Migration
             $table->index('sku_value');
             $table->index('code');
             $table->index('pin');
-            $table->index('redemption_url');
+            // $table->index('redemption_url');
             $table->index('v3_medium_info_id');
         });
         Schema::connection('v2')->table('merchants', function($table) {
