@@ -18,7 +18,7 @@ class CreateIndexesForV3Migrations1 extends Migration
             $table->index('v2_account_holder_id');
         });
 
-        Schema::create('medium_info', function (Blueprint $table) {
+        Schema::table('medium_info', function (Blueprint $table) {
             $table->index('merchant_id');
             $table->index('redeemed_merchant_id');
             $table->index('redeemed_program_id');
