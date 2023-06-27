@@ -117,8 +117,8 @@ class MigrateProgramAccountsService extends MigrationService
 
                                     printf(" - New Journal Event \"%d\" created for v2 journal event \"%d\"\n",$v3JournalEventId, $row->journal_event_id);
 
-                                    // $this->v2db->statement(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEventId, $row->journal_event_id));
-                                    $this->addV2SQL(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEventId, $row->journal_event_id));
+                                    $this->v2db->statement(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEventId, $row->journal_event_id));
+                                    // $this->addV2SQL(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEventId, $row->journal_event_id));
 
                                     $this->cacheJournalEventsMap[$row->journal_event_id] = $v3JournalEventId;
 
@@ -135,8 +135,8 @@ class MigrateProgramAccountsService extends MigrationService
 
                                     printf(" - New Posting \"%d\" created for v2 posting \"%d\"\n",$v3PostingId, $row->posting_id);
 
-                                    // $this->v2db->statement(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
-                                    $this->addV2SQL(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
+                                    $this->v2db->statement(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
+                                    // $this->addV2SQL(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
                                 }   else {
                                     printf(" - journal_events/postings already imported with v3_journal_event_id:%s, v3_posting_id:%s.\n", $row->v3_journal_event_id, $row->v3_posting_id);
                                 }

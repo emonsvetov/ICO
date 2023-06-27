@@ -39,14 +39,17 @@ class MigrationService
         $format = array_shift( $argv );
         vprintf( $format, $argv );
     }
+
     protected  function prepareSQL($sql) {
         $sql = trim($sql);
         return $sql . (str_ends_with($sql, ';') ? '' : ';' );
     }
+
     protected function addV2SQL( $sql ) {
         $this->v2Sql .= "
         ". $this->prepareSQL($sql);
     }
+
     protected function addV3SQL( $sql ) {
         $this->v3Sql .= "
         ". $this->prepareSQL($sql);
