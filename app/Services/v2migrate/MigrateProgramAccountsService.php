@@ -33,7 +33,7 @@ class MigrateProgramAccountsService extends MigrationService
         if( !$program ) {
             throw new Exception("Invalid program passed to \"migrateAccounts\" method\n");
         }
-        if( !$program->v2_account_holder_id) {
+        if( !$program->v2_account_holder_id ) {
             throw new Exception("Missing or null \"v2_account_holder_id\"\n");
         }
         printf("Migrating accounts for program: \"%s\"\n", $program->name);
@@ -51,39 +51,40 @@ class MigrateProgramAccountsService extends MigrationService
                 // pr(implode(",", $v2AccountIds->toArray()));
                 // exit;
                 foreach( $v2Accounts as $v2Account) {
+                    $createNewAccount = true;
+                    $newAccountCreated = false;
                     if( $v2Account->v3_account_id ) {
                         printf("v2 account:%d exists in v3 as:%d. Skipping.\n", $v2Account->id, $v2Account->v3_account_id);
-                        continue;
+                        $createNewAccount = false;
                     }
-                    // if($v2Account->id != 4667) continue;
-                    // pr($v2Account);
-                    $v3Account = Account::where([
-                        'account_holder_id' => $program->account_holder_id,
-                        'account_type_id' => $v2Account->account_type_id,
-                        'finance_type_id' => $v2Account->finance_type_id,
-                        'medium_type_id' => $v2Account->medium_type_id,
-                        'currency_type_id' => $v2Account->currency_type_id,
-                    ])->first();
-                    if( $v3Account ) {
-                        printf("Accounts combination %d-%d-%d-%d exists for program: \"%s\". Skipping..\n",$v2Account->account_type_id, $v2Account->finance_type_id, $v2Account->medium_type_id, $v2Account->currency_type_id, $program->name);
-                        $v3AccountId = $v3Account->id;
-                    }   else {
-                        printf("Accounts combination %d-%d-%d-%d does not exist for program: \"%s\". Creating..\n",$v2Account->account_type_id, $v2Account->finance_type_id, $v2Account->medium_type_id, $v2Account->currency_type_id, $program->name);
-                        $v3AccountId = Account::getIdByColumns([
+                    if( $createNewAccount ) {
+                        $v3Account = Account::where([
                             'account_holder_id' => $program->account_holder_id,
                             'account_type_id' => $v2Account->account_type_id,
                             'finance_type_id' => $v2Account->finance_type_id,
                             'medium_type_id' => $v2Account->medium_type_id,
                             'currency_type_id' => $v2Account->currency_type_id,
-                            'v2_account_id' => $v2Account->id,
-                        ]);
+                        ])->first();
+                        if( $v3Account ) {
+                            printf("Accounts combination %d-%d-%d-%d exists for program: \"%s\". Skipping..\n",$v2Account->account_type_id, $v2Account->finance_type_id, $v2Account->medium_type_id, $v2Account->currency_type_id, $program->name);
+                            $v3AccountId = $v3Account->id;
+                            $createNewAccount = false;
+                        }   else {
+                            printf("Accounts combination %d-%d-%d-%d does not exist for program: \"%s\". Creating..\n",$v2Account->account_type_id, $v2Account->finance_type_id, $v2Account->medium_type_id, $v2Account->currency_type_id, $program->name);
+                            $v3AccountId = Account::getIdByColumns([
+                                'account_holder_id' => $program->account_holder_id,
+                                'account_type_id' => $v2Account->account_type_id,
+                                'finance_type_id' => $v2Account->finance_type_id,
+                                'medium_type_id' => $v2Account->medium_type_id,
+                                'currency_type_id' => $v2Account->currency_type_id,
+                                'v2_account_id' => $v2Account->id,
+                            ]);
+                            $newAccountCreated = true;
+                        }
                     }
 
-                    // $this->v2db->statement(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
-                    $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
-
                     if( $v3AccountId ) {
-                        $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.* FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id where accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp DESC, postings.posting_timestamp DESC", $program->v2_account_holder_id, $v2Account->id);
+                        $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.* FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id where accounts.account_holder_id = %d AND accounts.id=%d AND je.v3_journal_event_id IS NULL ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $program->v2_account_holder_id, $v2Account->id);
                         printf(" - Fetching journal_events+postings for program:\"%s\" & account:\"%s\". Please wait...\n", $program->name, $v2Account->id);
                         $results = $this->v2db->select($sql);
                         if( $this->printSql ) {
@@ -136,13 +137,15 @@ class MigrateProgramAccountsService extends MigrationService
                                     printf(" - New Posting \"%d\" created for v2 posting \"%d\"\n",$v3PostingId, $row->posting_id);
 
                                     $this->v2db->statement(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
-                                    // $this->addV2SQL(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3PostingId, $row->posting_id));
                                 }   else {
                                     printf(" - journal_events/postings already imported with v3_journal_event_id:%s, v3_posting_id:%s.\n", $row->v3_journal_event_id, $row->v3_posting_id);
                                 }
                             }
                         }   else {
                             printf(" - No journal_events+postings found for program:\"%s\" & account:\"%s\".\n", $program->name, $v2Account->id);
+                        }
+                        if( $newAccountCreated ) {
+                            $this->v2db->statement(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
                         }
                     }
                 }

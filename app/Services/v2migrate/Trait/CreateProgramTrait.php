@@ -24,14 +24,19 @@ trait CreateProgramTrait
 
         //Check for existence
 
-        $exists = Program::where("v2_account_holder_id", $v2Program->account_holder_id)->exists();
+        $exists = Program::where("v2_account_holder_id", $v2Program->account_holder_id)->first();
 
         if( $exists ) {
             printf(" - v2Program %s exists!\n", $v2Program->account_holder_id);
+
+            printf(" - Checking and migrating pending accounts!\n");
+            $this->migrateProgramAccountsService->useTransactions = false;
+            $this->migrateProgramAccountsService->migrateAccounts( $exists );
             if( !$this->overwriteProgram ) {
                 printf(" - v2Program %s is not set to update.\n", $v2Program->account_holder_id);
                 return;
             }
+            return;
             //TODO - update?
         }
 
@@ -307,8 +312,7 @@ trait CreateProgramTrait
 
             print(" - New V3 Program created for V2 Program: {$v2Program->account_holder_id}=>{$newProgram->id}\n");
 
-            // $this->v2db->statement("UPDATE ". PROGRAMS . " SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id}");
-            $this->addV2SQL("UPDATE ". PROGRAMS . " SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id};");
+            $this->v2db->statement("UPDATE ". PROGRAMS . " SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id}");
 
             //Log Import Map
             $this->importMap['program'][$v2Program->account_holder_id]['program'] = $newProgram->toArray();
@@ -337,9 +341,8 @@ trait CreateProgramTrait
                                 'v2_domain_id' => $domain->access_key
                             ]);
                             $v3Domain->programs()->sync( [$newProgram->id], false);
-                            // $this->v2db->statement("UPDATE domains SET `v3_domain_id` = {$v3Domain->id} WHERE `access_key` = {$domain->access_key}");
-                            $this->addV2SQL("UPDATE domains SET `v3_domain_id` = {$v3Domain->id} WHERE `access_key` = {$domain->access_key}");
-                            print(" -  - New Domain {$domain->name} created & synched\n");
+
+                            $this->v2db->statement("UPDATE domains SET `v3_domain_id` = {$v3Domain->id} WHERE `access_key` = {$domain->access_key}");
 
                             //Log Import Map
                             $this->importMap['domain'][$domain->access_key] = $v3Domain->id;
@@ -436,8 +439,9 @@ trait CreateProgramTrait
                     ];
 
                     $newEvent = Event::create($eventData);
-                    // $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
-                    $this->addV2SQL("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
+
+                    $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
+
                     print(" -  - Event:{$newEvent->id} created for new Program: {$newProgram->id}\n");
 
                     $this->importMap['program'][$v2Program->account_holder_id]['event'][$v2Event->id] = $newEvent->id;
@@ -467,8 +471,8 @@ trait CreateProgramTrait
                     ];
                     $newLeaderboard = Leaderboard::create($leaderboardData);
                     //Update v3 reference field in v2 table
-                    // $this->v2db->statement("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
-                    $this->addV2SQL("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
+                    $this->v2db->statement("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
+
                     print(" -  - Leaderboard:{$newLeaderboard->id} created for program: {$newProgram->id}\n");
 
                     //Log importing
@@ -521,8 +525,7 @@ trait CreateProgramTrait
                     ];
 
                     $newInvoice = Invoice::create($invoiceData);
-                    // $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$newInvoice->id} WHERE `id` = {$v2Invoice->id}");
-                    $this->addV2SQL("UPDATE `invoices` SET `v3_invoice_id` = {$newInvoice->id} WHERE `id` = {$v2Invoice->id};");
+                    $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$newInvoice->id} WHERE `id` = {$v2Invoice->id}");
                     print(" -  - Invoice:{$newInvoice->id} created for v2 invoice: {$v2Invoice->id}\n");
                 }
             }
