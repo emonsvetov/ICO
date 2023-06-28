@@ -60,12 +60,12 @@ class Program extends BaseModel
 
     public function children()
     {
-        return $this->hasMany(Program::class, 'parent_id')->with(['children']);
+        return $this->hasMany(Program::class, 'parent_id')->with(['children', 'status']);
     }
 
     public function childrenMinimal()
     {
-        return $this->hasMany(Program::class, 'parent_id')->select(self::MIN_FIELDS)->with(['childrenMinimal']);
+        return $this->hasMany(Program::class, 'parent_id')->select(self::MIN_FIELDS)->with(['childrenMinimal', 'status']);
     }
 
     public function events()
