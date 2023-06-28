@@ -176,7 +176,8 @@ class ProgramService
                             $subquery = $subquery->whereNotIn('id', $notIn);
                         }
                         return $subquery;
-                    }
+                    },
+                    'status'
                 ]);
             } else {
                 $query = $query->with([
