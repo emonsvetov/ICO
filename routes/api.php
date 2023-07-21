@@ -1,9 +1,11 @@
 <?php
 
+use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
+
 use App\Http\Controllers\API\SocialWallPostController;
 use App\Http\Controllers\API\SocialWallPostTypeController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,6 +17,15 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+Route::group(
+    ['prefix' => 'v1', 'namespace' => 'Api'],
+    function(Router $router){
+        Route::get('/', function(){
+            return "Did you forget where you placed your keys??";
+        });
+    }
+);
 
 /*
 WARNING WARNING WARNING
