@@ -55,13 +55,16 @@ class DomainService
 
     public function getDomain()
     {
-        if(isset($this->domain))
-        return $this->domain;
+        if(isset($this->domain) && $this->domain) {
+            return $this->domain;
+        }
     }
 
     public function getDomainName()
     {
-        return $this->getDomain()->name;
+        if( $this->isValidDomain() ) {
+            return ($domain = $this->getDomain()) ? $domain->name : null;
+        }
     }
     public function setReferer($referer)
     {
@@ -103,7 +106,7 @@ class DomainService
             {
                 $this->setIsValidDomain(true);
                 $this->setDomain($domain);
-            }   
+            }
             else
             {
                 $this->setIsValidDomain(false);
@@ -121,7 +124,7 @@ class DomainService
         {
             $this->setReferer((object) $refs);
             $domain = $this->getDomainByName( $refs['host'] );
-            if( $domain && $domain->exists() ) 
+            if( $domain && $domain->exists() )
             {
                 $this->setIsValidDomain(true);
                 $this->setDomain( $domain );
@@ -184,14 +187,14 @@ class DomainService
     {
         return $this->requestDomainPort = $port;
     }
-    
+
     public function getRequestDomainPort()
     {
         return $this->requestDomainPort;
     }
 
     private function hostIsAdminApp()
-    {   
+    {
         return $this->hostService->isAdminApp();
     }
 
@@ -298,7 +301,7 @@ class DomainService
             {
                 return true;
             }
-            
+
             if( !$this->isValidDomain() )
             {
                 throw new \InvalidArgumentException ('Domain is not a valid system domain');
