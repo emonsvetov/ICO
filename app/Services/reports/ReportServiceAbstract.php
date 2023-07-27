@@ -53,6 +53,7 @@ abstract class ReportServiceAbstract
 
     public function __construct(array $params = [])
     {
+        DB::statement("SET SQL_MODE=''"); //TODO - To be removed, correct query instead
 
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
@@ -127,13 +128,18 @@ abstract class ReportServiceAbstract
         if (empty($this->table)) {
             $this->calc();
         }
+        // pr($this->table);
         // pr($this->params[self::PAGINATE]);
         if( $this->params[self::PAGINATE] )
         {
-            return [
-                'data' => $this->table,
-                'total' => $this->query instanceof Builder ? $this->query->count() : count($this->table),
-            ];
+            if( isset($this->table['data']) && isset($this->table['total']))    {
+                return $this->table; //Already paginated in child class
+            }   else {
+                return [
+                    'data' => $this->table,
+                    'total' => $this->query instanceof Builder ? $this->query->count() : count($this->table),
+                ];
+            }
         }
         return $this->table;
     }

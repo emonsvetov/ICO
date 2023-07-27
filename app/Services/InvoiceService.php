@@ -5,6 +5,7 @@ use App\Services\Program\ReadCompiledInvoiceService;
 use App\Services\Program\ReadInvoicePaymentsService;
 use App\Services\Program\CreateInvoiceService;
 use App\Services\InvoicePaymentService;
+use App\Services\reports\ReportFactory;
 use App\Models\Traits\InvoiceFilters;
 use App\Models\Traits\Filterable;
 use App\Models\JournalEventType;
@@ -20,7 +21,7 @@ use App\Models\Account;
 use App\Models\Report;
 use App\Models\Owner;
 
-class InvoiceService 
+class InvoiceService
 {
     use Filterable, InvoiceFilters;
 
@@ -30,12 +31,14 @@ class InvoiceService
 		InvoicePaymentService $invoicePaymentService,
         ReadInvoicePaymentsService $readInvoicePaymentsService,
         ReadCompiledInvoiceService $readCompiledInvoiceService,
+        ReportFactory $reportFactory
     ) {
         $this->programService = $programService;
         $this->createInvoiceService = $createInvoiceService;
         $this->invoicePaymentService = $invoicePaymentService;
         $this->readInvoicePaymentsService = $readInvoicePaymentsService;
         $this->readCompiledInvoiceService = $readCompiledInvoiceService;
+        $this->reportFactory = $reportFactory;
     }
 
     public function index( $program, $paginate = true ) {
@@ -78,6 +81,7 @@ class InvoiceService
             if ($deposit_fee > 0) {
             	$invoice = $this->chargeForDepositFee ($invoice, $user, $program, $deposit_fee_amount);
             }
+            // sleep(2); //To Remove
         }
 	}
 
@@ -165,7 +169,7 @@ class InvoiceService
 	public function getPayableInvoice(Invoice $invoice)   {
 		if( !$invoice->exists() ) return null;
 		$view_params = [];
-		
+
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
         $invoice = $this->readCompiledInvoiceService->get($invoice);
 
@@ -183,7 +187,9 @@ class InvoiceService
 		foreach ( $invoice->invoices as $statement ) {
 			$invoice_program_ids [] = ( int ) $statement ['info']->program_id;
 		}
-		$report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
+		// $report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
+        $report = $this->reportFactory->build("JournalDetailed", ['programs' => $invoice_program_ids, 'from' => $invoice->date_begin, 'to' => $invoice->date_end]);
+        $report_data = $report->getReport();
 
 		foreach ( $invoice->invoices as $statement ) {
 			// Create a line item for the program
@@ -205,13 +211,13 @@ class InvoiceService
 						'admin_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
 						'usage_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
 						'setup_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
-						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
+						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE
 				);
 				// pr($report_items_to_charge);
 				// Mapping of the refund items to pull out of the journal report and the corresponding charge that should be credited for it
 				$report_items_to_refund = array (
 						'reclaims' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
-						'refunded_transaction_fees' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE 
+						'refunded_transaction_fees' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE
 				);
 				// pr($report_items_to_refund);
 				// exit;
@@ -223,7 +229,7 @@ class InvoiceService
 						'admin_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
 						'usage_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
 						'setup_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
-						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
+						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE
 				);
 				// Mapping of the refund items to pull out of the journal report and the corresponding charge that should be credited for it
 				$report_items_to_refund = array ();

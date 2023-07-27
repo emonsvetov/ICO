@@ -7,7 +7,9 @@ class ReportFactory
     public function build(string $title = '', array $params = [])
     {
         $programs = isset($params['programs']) ? $params['programs'] : null;
-        $programs = $programs ? explode(',', $programs) : [];
+        if( is_string( $programs ) && $programs )    {
+            $programs = $programs ? explode(',', $programs) : [];
+        }
         $merchants = isset($params['merchants']) ? $params['merchants'] : null;
         $merchants = $merchants ? explode(',', $merchants) : [];
         $dateFrom = isset($params['from']) ? date('Y-m-d 00:00:00', strtotime($params['from'])) : '';

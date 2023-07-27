@@ -34,7 +34,7 @@ class InvoiceController extends Controller
     public function store(InvoiceRequest $request, Organization $organization, Program $program )
     {
         $newAward = Invoice::create(
-            (object) ($request->validated() + 
+            (object) ($request->validated() +
             [
                 'organization_id' => $organization->id,
                 'program_id' => $program->id

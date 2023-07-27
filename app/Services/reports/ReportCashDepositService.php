@@ -91,7 +91,7 @@ class ReportCashDepositService extends ReportServiceAbstract
                 ) as 'Credit Card Convenience Fee'
                 "),
             ]);
-//            $subQuery->where('account_types.name', '=', AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER);
+            //$subQuery->where('account_types.name', '=',  AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER);
             $subQuery->whereIn('journal_event_types.type', [
                 JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING,
                 JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE,
