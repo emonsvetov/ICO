@@ -292,4 +292,8 @@ class ProgramController extends Controller
 
         return response($result);
     }
+    public function downloadMoneyTranferTemplate(Organization $organization, Program $program, ProgramService $programService)
+    {
+        return response()->stream( ...($programService->getTransferTemplateCSV($program)) );
+    }
 }
