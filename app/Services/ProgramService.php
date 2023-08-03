@@ -2,26 +2,27 @@
 
 namespace App\Services;
 
-use App\Models\EventXmlData;
-use App\Models\Giftcode;
-use App\Models\JournalEvent;
-use App\Models\JournalEventType;
-use App\Models\Posting;
+use DB;
+use Illuminate\Database\Eloquent\Collection;
+
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
 use App\Services\ProgramTemplateService;
 use App\Models\Traits\IdExtractor;
+use App\Models\JournalEventType;
 use App\Services\AccountService;
 use App\Services\UserService;
-use App\Models\Status;
-use App\Models\Event;
-use App\Models\Program;
 use App\Models\AccountHolder;
+use App\Models\EventXmlData;
+use App\Models\JournalEvent;
 use App\Models\FinanceType;
 use App\Models\MediumType;
+use App\Models\Giftcode;
 use App\Models\Account;
-use DB;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\Program;
+use App\Models\Posting;
+use App\Models\Status;
+use App\Models\Event;
 
 class ProgramService
 {
@@ -34,6 +35,7 @@ class ProgramService
 
     private UserService $userService;
     private AccountService $accountService;
+    private InvoiceService $InvoiceService;
     private ProgramTemplateService $programTemplateService;
     private TransferMoniesService $transferMoniesService;
     private ProgramsTransactionFeeService $programsTransactionFeeService;

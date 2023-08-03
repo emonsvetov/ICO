@@ -22,11 +22,13 @@ use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\ProgramPaymentReverseRequest;
 use App\Http\Requests\ProgramTransferMoniesRequest;
 use App\Http\Requests\ProgramPaymentRequest;
+use App\Http\Requests\ProgramDepositRequest;
 use App\Http\Requests\ProgramMoveRequest;
 use App\Services\ProgramPaymentService;
 use App\Http\Requests\ProgramRequest;
 use App\Http\Controllers\Controller;
 use App\Services\ProgramService;
+use App\Services\InvoiceService;
 use App\Events\ProgramCreated;
 use App\Models\Organization;
 use Illuminate\Http\Request;
@@ -295,5 +297,12 @@ class ProgramController extends Controller
     public function downloadMoneyTranferTemplate(Organization $organization, Program $program, ProgramService $programService)
     {
         return response()->stream( ...($programService->getTransferTemplateCSV($program)) );
+    }
+    public function creditcardDeposit(Organization $organization, Program $program, ProgramDepositRequest $request, InvoiceService $invoiceService)
+    {
+        $result = ['success'=>true];
+        // return response( $result );
+        $result = $invoiceService->processCreditcardDepositRequest($program, $request->validated());
+        return response( $result );
     }
 }

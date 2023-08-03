@@ -305,3 +305,10 @@ function childrenizeModel( $model )
 
     return $model;
 }
+
+function compute_program_fee_by_type($key, $program, $amount) {
+    if( !isset($program[$key]) || (float) $program[$key] <= 0 ) return 0;
+    $v_fee = $program[$key] / 100.0;
+    $v_fee_amount = $v_fee * $amount;
+    return $v_fee_amount;
+}

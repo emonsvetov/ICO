@@ -11,6 +11,11 @@ use DB;
 
 class ReadCompiledInvoiceService
 {
+    private ProgramService $programService;
+    private StatementService $statementService;
+    private ReadInvoicePaymentsService $readInvoicePaymentsService;
+    private ReadInvoiceJournalSummaryService $readInvoiceJournalSummaryService;
+
 	public function __construct(
 		ProgramService $programService,
         StatementService $statementService,
@@ -52,7 +57,7 @@ class ReadCompiledInvoiceService
 		$invoice->statement = $invoice_statement;
 		$invoice->invoices = [
 			[
-				'info' => $invoice_statement, 
+				'info' => $invoice_statement,
 				'name' => $invoice->program->name
 			]
 		];
@@ -84,7 +89,7 @@ class ReadCompiledInvoiceService
 			$invoice->invoices = array_merge($invoice->invoices, $subprogramInvoices);
 		}
 
-		// DHF-135 - suppress all $0 invoices from being created 
+		// DHF-135 - suppress all $0 invoices from being created
 		if ($invoice->invoice_type->name == InvoiceType::INVOICE_TYPE_MONTHLY && isset($journal_summary['grand_total'])) {
 			$invoice->custom_invoice_amount = $journal_summary['grand_total'];
 		}else{
@@ -118,7 +123,7 @@ class ReadCompiledInvoiceService
 		$statement->program_account_holder_id = $invoice->program->account_holder_id;
 		$statement->payments = $this->readInvoicePaymentsService->get ( $invoice );
 		$qry_statement = "
-        SELECT 
+        SELECT
             a.account_holder_id,
             atypes.name as account_type_name,
             ftypes.name as finance_type_name,
@@ -127,15 +132,15 @@ class ReadCompiledInvoiceService
             c.type as currency,
             jet.type as journal_event_type,
             ifnull(je.notes, '') as notes,
-            sum(posts.qty) as qty, 
-            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea, 
+            sum(posts.qty) as qty,
+            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea,
             sum(posts.qty * posts.posting_amount) as amount,
             exml.name as event_name,
             posts.created_at as posting_timestamp
         	FROM programs p
             INNER JOIN invoices i ON i.program_id = p.id
             INNER JOIN invoice_types t ON t.id = i.invoice_type_id and t.name = :invoice_type_name
-            INNER JOIN invoice_journal_event inv_journal ON inv_journal.invoice_id = i.id 
+            INNER JOIN invoice_journal_event inv_journal ON inv_journal.invoice_id = i.id
             INNER JOIN journal_events je ON je.id = inv_journal.journal_event_id
             INNER JOIN journal_event_types jet ON jet.id = je.journal_event_type_id
             INNER JOIN postings posts ON posts.journal_event_id = je.id
@@ -158,7 +163,7 @@ class ReadCompiledInvoiceService
 		// throw new Exception($qry_statement);
 		// we execute query for reading the invoice of the program
 		DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
-		
+
         try {
 			$statement_data_credits = DB::select( DB::raw($qry_statement), array(
 				'invoice_type_name' => $invoice_type_name,
@@ -176,7 +181,7 @@ class ReadCompiledInvoiceService
 		);
 		$reversal_types = implode(',', $reversal_types);
 		$qry_statement = "
-        SELECT 
+        SELECT
             a.account_holder_id,
             atypes.name as account_type_name,
             ftypes.name as finance_type_name,
@@ -185,14 +190,14 @@ class ReadCompiledInvoiceService
             c.type as currency,
             jet.type as journal_event_type,
        		ifnull(je.notes, '') as notes,
-            sum(posts.qty) as qty, 
-            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea, 
+            sum(posts.qty) as qty,
+            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea,
             sum(posts.qty * posts.posting_amount) as amount,
             exml.name as event_name
         FROM programs p
             INNER JOIN invoices i ON i.program_id = p.id
             INNER JOIN invoice_types t ON t.id = i.invoice_type_id and t.name = :invoice_type_name
-            INNER JOIN invoice_journal_event inv_journal ON inv_journal.invoice_id = i.id 
+            INNER JOIN invoice_journal_event inv_journal ON inv_journal.invoice_id = i.id
             INNER JOIN journal_events je ON je.id = inv_journal.journal_event_id
             INNER JOIN journal_event_types jet ON jet.id = je.journal_event_type_id
             INNER JOIN postings posts ON posts.journal_event_id = je.id
@@ -207,7 +212,7 @@ class ReadCompiledInvoiceService
             AND i.id = :invoice_id
             AND atypes.name = 'Monies Due to Owner'
 			AND posts.is_credit = 0
-			AND jet.type NOT IN (:reversal_types) 
+			AND jet.type NOT IN (:reversal_types)
         GROUP BY
             exml.name, atypes.id, posts.posting_amount, jet.type
         ORDER BY
@@ -230,7 +235,7 @@ class ReadCompiledInvoiceService
 		// return;
 
 		$qry_statement = "
-        SELECT 
+        SELECT
             a.account_holder_id,
             atypes.name as account_type_name,
             ftypes.name as finance_type_name,
@@ -239,14 +244,14 @@ class ReadCompiledInvoiceService
             c.type as currency,
             jet.type as journal_event_type,
        		ifnull(je.notes, '') as notes,
-            sum(posts.qty) as qty, 
-            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea, 
+            sum(posts.qty) as qty,
+            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea,
             sum(posts.qty * posts.posting_amount) as amount,
             exml.name as event_name
         FROM programs p
             INNER JOIN invoices i ON i.program_id = p.id
             INNER JOIN invoice_types t ON t.id = i.invoice_type_id and t.name = :invoice_type_name
-            INNER JOIN invoice_journal_event inv_journal ON inv_journal.invoice_id = i.id 
+            INNER JOIN invoice_journal_event inv_journal ON inv_journal.invoice_id = i.id
             INNER JOIN journal_events je ON je.id = inv_journal.journal_event_id
             INNER JOIN journal_event_types jet ON jet.id = je.journal_event_type_id
             INNER JOIN postings posts ON posts.journal_event_id = je.id
@@ -261,7 +266,7 @@ class ReadCompiledInvoiceService
             AND i.id = :invoice_id
             AND atypes.name = 'Monies Due to Owner'
 			AND posts.is_credit = 0
-			AND jet.type IN (:reversal_types) 
+			AND jet.type IN (:reversal_types)
         GROUP BY
             exml.name, atypes.id, posts.posting_amount, jet.type
         ORDER BY
