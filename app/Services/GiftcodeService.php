@@ -31,7 +31,12 @@ class GiftcodeService
         if ($is_demo || env('APP_ENV') != 'production' ){
             $where['medium_info_is_test'] = 1;
         }
-        $giftcodes = Giftcode::getRedeemableListByMerchant($merchant, $where );
+        $orders = [
+            'column' => 'medium_info.virtual_inventory',
+            'direction' => 'ASC'
+        ];
+        $giftcodes = Giftcode::getRedeemableListByMerchant($merchant, $where, $orders);
+
         return new GiftcodeCollection( $giftcodes );
     }
 

@@ -119,7 +119,6 @@ class DomainService
         $referer = request()->headers->get('referer');
         if( ! $referer ) return;
         $refs = parse_url( $referer );
-
         if( $refs && !empty($refs['host']) )
         {
             $this->setReferer((object) $refs);
