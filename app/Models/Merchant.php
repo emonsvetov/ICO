@@ -124,4 +124,9 @@ class Merchant extends Model
         return self::tree()->depthFirst()->get();
     }
 
+    public static function getByMerchantCode($code)
+    {
+        return self::where('merchant_code', $code)->first();
+    }
+
 }

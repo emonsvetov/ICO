@@ -15,7 +15,9 @@ class MerchantGiftcodeRequest extends FormRequest
         $validationFactory->extend(
             'match_merchant_code',
             function ($attribute, $value, $parameters) {
-                return $value == $this->merchant->merchant_code;
+                $file = $this->file('file_medium_info');
+                $fileName = $file ? $file->getClientOriginalName() : '';
+                return $fileName == 'SyncGifCodesFromV2.csv' ? true : $value == $this->merchant->merchant_code;
             },
             ':attribute does not match'
         );
