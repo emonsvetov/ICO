@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 use Aws\S3\S3Client;
 
-class CSVimportService 
+class CSVimportService
 {
 
     public $errors;
@@ -27,7 +27,7 @@ class CSVimportService
         $this->supplied_constants = $supplied_constants;
 
         $mapArray = json_decode($mapping, true);
-        
+
         //To detect Mac line endings
         ini_set('auto_detect_line_endings',TRUE);
 
@@ -48,7 +48,7 @@ class CSVimportService
         {
             $handle = fopen($filepath, 'r');
         }
-        else 
+        else
         {
             $client = new S3Client([
                 'credentials' => [
@@ -67,21 +67,21 @@ class CSVimportService
 
             $handle = fopen("s3://{$bucket}/{$key}", 'r');
         }
-        
+
         $line = 0;
         $saveData = [];
         $this->errors = [];
 
         if ($handle)
         {
-            try 
+            try
             {
-                while ( ($filedata = fgetcsv($handle)) !== FALSE ) 
+                while ( ($filedata = fgetcsv($handle)) !== FALSE )
                 {
-                    if ($line == 0) 
+                    if ($line == 0)
                     {
                         #First line set the csv header to the key index e.g. $headers['first name'] = 2
-                        foreach ($filedata as $key => $value) 
+                        foreach ($filedata as $key => $value)
                         {
                             $headers[trim($value)] = $key;
                         }
@@ -90,7 +90,7 @@ class CSVimportService
                     }
                     // return $mapArray;
 
-                    foreach ($mapArray as $formRequest => $fieldsToMap) 
+                    foreach ($mapArray as $formRequest => $fieldsToMap)
                     {
                         #instantiate the form request
                         $requestClassPath = "App\Http\Requests\\" . $formRequest;
@@ -108,10 +108,10 @@ class CSVimportService
                         {
                             $saveData[$formRequest][$line] = [];
                         }
-                        
+
                         foreach ($fieldsToMap as $dbField => $csvField)
-                        {                    
-                            
+                        {
+
                             $csvFieldValue = isset($headers[$csvField]) ? trim($filedata[$headers[$csvField]]) : NULL;
 
                             if ( !empty( $fieldsWithImportRules[$dbField] ) )
@@ -119,16 +119,16 @@ class CSVimportService
                                 # Get the rules
                                 $saveData[$formRequest][$line][$dbField] = $this->getImportRule( $formRequest, $fieldsWithImportRules[$dbField], $csvFieldValue, $dbField, $line );
                             }
-                            else 
+                            else
                             {
                                 # Each [table][database field] = csv file value
                                 $saveData[$formRequest][$line][$dbField] =  ($csvFieldValue !== '') ? $csvFieldValue : NULL;
-                            } 
+                            }
 
                             $this->currentRowData[$dbField] = $saveData[$formRequest][$line][$dbField];
                         }
 
-                        # Validate the data against the form request. 
+                        # Validate the data against the form request.
                         // if (method_exists($formRequestClass, '_rules'))
                         // {
                         //     $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestClass->_rules() );
@@ -139,24 +139,24 @@ class CSVimportService
                         // }
 
                         $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
-                        
+
                         $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestRules );
 
-                        if ($validator->fails()) 
+                        if ($validator->fails())
                         {
                             $this->errors['Line ' . $line][][$formRequest] = $validator->errors()->toArray();
                         }
                         else {
-                            $saveData[$formRequest][$line] = $validator->validated();    
+                            $saveData[$formRequest][$line] = $validator->validated();
                         }
-                        
+
                     }
 
                     $return[] = $saveData;
                     $line++;
                 }
 
-                
+
                 if (!empty($setups))
                 {
                     $notifArray = json_decode($setups, true);
@@ -188,17 +188,17 @@ class CSVimportService
 
                         $validator  = Validator::make( $saveData['setups'][$formRequest], $formRequestClass->setups() );
 
-                        if ($validator->fails()) 
+                        if ($validator->fails())
                         {
                             $this->errors['Setups'][$formRequest][] = $validator->errors()->toArray();
                         }
                         else {
-                            $saveData['setups'][$formRequest] = $validator->validated();    
+                            $saveData['setups'][$formRequest] = $validator->validated();
                         }
                     }
                 }
-            } 
-            catch (\Throwable $e) 
+            }
+            catch (\Throwable $e)
             {
                 $this->errors = 'CSVimportService with error: ' . $e->getMessage() . ' in line ' . $e->getLine();
             }
@@ -207,9 +207,9 @@ class CSVimportService
         {
             $this->errors = 'CSVimportService cannot read CSV file';
         }
-        
+
         fclose($handle);
-        
+
         ini_set('auto_detect_line_endings',FALSE);
 
         if( !empty($this->errors) )
@@ -234,28 +234,27 @@ class CSVimportService
         return $rules;
     }
 
-
     public function getImportRule($formRequest, $importRule, $csvValue, $dbField, $line)
     {
         if ( str_contains($importRule, 'hide:true') )
         {
             //$formRules[$key] = 'aaa';
         }
-        elseif ( str_contains($importRule, 'mustComeFromModel:') ) 
+        elseif ( str_contains($importRule, 'mustComeFromModel:') )
         {
             $matchWith = $this->rule_mustComeFromModel($importRule, $csvValue);
-            
+
             if ( !empty($matchWith[trim(strtoupper($csvValue))]) )
             {
                 return (str_contains($importRule, 'dataType:array')) ? array($matchWith[trim(strtoupper($csvValue))]) : $matchWith[trim(strtoupper($csvValue))];
                 // return $matchWith[trim(strtoupper($csvValue))];
             }
-            else 
+            else
             {
                 $this->errors['Line ' . $line][][$formRequest][$dbField][]="'$csvValue' did not match existing fields";
-                return NULL;    
+                return NULL;
             }
-            
+
         }
         elseif ( str_contains($importRule, 'mustExistInModel:') )
         {
@@ -268,9 +267,9 @@ class CSVimportService
 
             if ( !empty($existsInModel) )
             {
-                return $existsInModel; 
+                return $existsInModel;
             }
-            else 
+            else
             {
                 $this->errors['Line ' . $line][][$formRequest][$dbField][]="'$csvValue' does not exist";
             }
@@ -278,12 +277,12 @@ class CSVimportService
         elseif ( str_contains($importRule, 'date_format:') )
         {
             $formattedDate = $this->rule_date_format($importRule, $csvValue);
-            
+
             if ( !empty($formattedDate) )
             {
-                return $formattedDate; 
+                return $formattedDate;
             }
-            else 
+            else
             {
                 $this->errors['Line ' . $line][][$formRequest][$dbField][]="'$csvValue' is not a valid date ";
             }
@@ -297,15 +296,15 @@ class CSVimportService
     public function getImportRules($importRules)
     {
         $formRules = [];
-        foreach ($importRules as $key => $ruleSets) 
+        foreach ($importRules as $key => $ruleSets)
         {
-            
+
             if ( str_contains($ruleSets, 'hide:true') )
             {
                 $formRules[$key] = 'aaa';
-                
+
             }
-            elseif ( str_contains($ruleSets, 'matchWith:') ) 
+            elseif ( str_contains($ruleSets, 'matchWith:') )
             {
                 $formRules[$key] = $this->rule_matchWith($ruleSets);
             }
@@ -323,7 +322,7 @@ class CSVimportService
         $whereConditions = [];
         $matchlist = [];
 
-        foreach ( $rules as $ruleSet) 
+        foreach ( $rules as $ruleSet)
         {
             $rule = explode(':', $ruleSet);
 
@@ -331,12 +330,12 @@ class CSVimportService
             {
                 $modelName = $rule[1];
             }
-            elseif ( $rule[0] == 'use' ) 
+            elseif ( $rule[0] == 'use' )
             {
                 $select[] = $rule[1];
                 $use = $rule[1];
             }
-            elseif ( $rule[0] == 'matchWith' ) 
+            elseif ( $rule[0] == 'matchWith' )
             {
                 $select[] = $rule[1];
                 $matchWith = $rule[1];
@@ -347,7 +346,7 @@ class CSVimportService
             {
                 $whereConditions[] = explode(',', $rule[1]);
             }
-            
+
         }
 
         $modelPath = "App\Models\\" . $modelName;
@@ -356,7 +355,7 @@ class CSVimportService
 
         $query = $model::select($select);
 
-        foreach ($whereConditions as $where) 
+        foreach ($whereConditions as $where)
         {
             $query = $query->where($where[0], $where[1], $this->supplied_constants[$where[2]]);
         }
@@ -366,11 +365,11 @@ class CSVimportService
         {
             $query = $query->where($matchCondition[0], $matchCondition[1]);
         }
-        
+
         $allMatchWith = $query->first();
 
         return is_null($allMatchWith) ? null : $allMatchWith[$use];
-       
+
     }
 
 
@@ -383,7 +382,7 @@ class CSVimportService
         $matchlist = [];
         $orWhereNullConditions = [];
 
-        foreach ( $rules as $ruleSet) 
+        foreach ( $rules as $ruleSet)
         {
             $rule = explode(':', $ruleSet);
 
@@ -391,12 +390,12 @@ class CSVimportService
             {
                 $modelName = $rule[1];
             }
-            elseif ( $rule[0] == 'use' ) 
+            elseif ( $rule[0] == 'use' )
             {
                 $select[] = $rule[1];
                 $use = $rule[1];
             }
-            elseif ( $rule[0] == 'matchWith' ) 
+            elseif ( $rule[0] == 'matchWith' )
             {
                 $select[] = $rule[1];
                 $matchWith = $rule[1];
@@ -421,7 +420,7 @@ class CSVimportService
                 $filter[2] = $this->currentRowData[$filter[2]];
                 $whereConditions[] = $filter;
             }
-            
+
         }
 
         $modelPath = "App\Models\\" . $modelName;
@@ -430,8 +429,8 @@ class CSVimportService
 
         $query = $model::select($select);
 
-        foreach ($whereConditions as $where) 
-        {            
+        foreach ($whereConditions as $where)
+        {
             $query = $query->where($where[0],$where[1],$where[2]);
         }
 
@@ -440,16 +439,16 @@ class CSVimportService
             $query = $query->orWhereNull($orWhereNull);
         }
 
-        
+
         $allMatchWith = $query->get();
 
         //dd($allMatchWith->toArray());
 
-        foreach ($allMatchWith as $value) 
+        foreach ($allMatchWith as $value)
         {
             $matchlist[strtoupper($value[$matchWith])] = $value[$use];
         }
-        
+
         return $matchlist;
     }
 
@@ -466,17 +465,17 @@ class CSVimportService
                 $format = $rule[1];
             }
         }
-        
+
         try
         {
             $date = new DateTime($csvValue);
             return $date->format($format);
         }
-        catch (\Throwable $e) 
+        catch (\Throwable $e)
         {
             return false;
         }
-        
+
         // $day = $date->format('d');
         // $month = $date->format('m');
         // $year = $date->format('Y');
@@ -485,14 +484,14 @@ class CSVimportService
         // {
         //     return $date->format($format);
         // }
-        
+
         // return false;
     }
 
 
     public function getImportSetup($formRequest, $setupRule, $value, $field)
     {
-        if ( str_contains($setupRule, 'mustComeFromList:')) 
+        if ( str_contains($setupRule, 'mustComeFromList:'))
         {
             $listValues = $this->rule_mustComeFromList($setupRule, $value);
             if (in_array(strtoupper($value), $listValues))
@@ -504,21 +503,21 @@ class CSVimportService
                 $this->errors['Setups'][$formRequest][$field][] = "'$value' does not exist";
             }
         }
-        elseif ( str_contains($setupRule, 'mustComeFromModel:') ) 
+        elseif ( str_contains($setupRule, 'mustComeFromModel:') )
         {
             $matchWith = $this->rule_mustComeFromModel($setupRule, $value);
-            
+
             if ( !empty($matchWith[trim(strtoupper($value))]) )
             {
                 return (str_contains($setupRule, 'dataType:array')) ? array($matchWith[trim(strtoupper($value))]) : $matchWith[trim(strtoupper($value))];
                 // return $matchWith[trim(strtoupper($value))];
             }
-            else 
+            else
             {
                 $this->errors['Setups'][$formRequest][$field][] = "'$value' does not exist";
-                return NULL;    
+                return NULL;
             }
-            
+
         }
         else
         {
@@ -530,7 +529,7 @@ class CSVimportService
     {
         $rules = explode('|', $ruleSets);
 
-        foreach ( $rules as $ruleSet) 
+        foreach ( $rules as $ruleSet)
         {
             $rule = explode(':', $ruleSet);
 
@@ -539,21 +538,21 @@ class CSVimportService
                 $items = explode(',', $rule[1]);
             }
         }
-        
+
         return array_map('strtoupper', $items);
     }
 
     # DELETE BELOW
-    
+
     /**
-     * 
+     *
      * getFieldsToMap() is used to get the headers of a CSV file along with the fields to which those headers should match with
-     * 
+     *
      * @param file The uploaded file from the request
      * @param class The form request class used to validate the data e.g. new \App\Http\Requests\UserRequest
      * @param class Addiotnal form request class. Add as many as you want e.g. new \App\Http\Requests\OrganizationRequest
      * @param class Addiotnal form request class. Add as many as you want e.g. new \App\Http\Requests\ProgramRequest
-     * 
+     *
      * @return array [CSVheaders] contains all the headers of the first line of the CSV file. [fieldsToMap] contains all fields that can be mapped
      */
 /*
@@ -562,13 +561,13 @@ class CSVimportService
         $parameters = func_get_args();
 
 
-        foreach ($parameters as $key => $parameter) 
+        foreach ($parameters as $key => $parameter)
         {
             if ( $key === 0 )
             {
                 $result['CSVheaders'] = $this->getHeaders($parameter);
             }
-            else 
+            else
             {
                 if ( method_exists($parameter, 'importRules') )
                 {
@@ -582,16 +581,16 @@ class CSVimportService
 
         return $result;
     }
-    
-    public function getHeaders( $requestFile ) 
+
+    public function getHeaders( $requestFile )
     {
-        
+
         //To detect Mac line endings
         ini_set('auto_detect_line_endings',TRUE);
 
         $filepath = $requestFile->getRealPath();
 
-        $handle = fopen($filepath, 'r');        
+        $handle = fopen($filepath, 'r');
         $headers = fgetcsv($handle);
 
         ini_set('auto_detect_line_endings',FALSE);
@@ -603,13 +602,13 @@ class CSVimportService
     public function amendFieldToMap($importRules, $formRules)
     {
         foreach ($importRules as $key => $ruleSets) {
-            
+
             if ( str_contains($ruleSets, 'hide:true') )
             {
                 unset($formRules[$key]);
-                
+
             }
-            elseif ( str_contains($ruleSets, 'matchWith:') ) 
+            elseif ( str_contains($ruleSets, 'matchWith:') )
             {
                 $formRules[$key] = $this->rule_matchWith($ruleSets);
             }
@@ -620,14 +619,14 @@ class CSVimportService
     }
 
 
-    
+
 
 
     public function uploadContent(Request $request)
     {
         $file = $request->file('uploaded_file');
         if ($file) {
-            
+
             $filename = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension(); //Get extension of uploaded file
             $tempPath = $file->getRealPath();
@@ -635,19 +634,19 @@ class CSVimportService
 
             //Check for file extension and size
             $this->checkUploadedFileProperties($extension, $fileSize);
-            //Where uploaded file will be stored on the server 
+            //Where uploaded file will be stored on the server
             $location = 'uploads'; //Created an "uploads" folder for that
             // Upload file
             $file->move($location, $filename);
-            // In case the uploaded file path is to be stored in the database 
+            // In case the uploaded file path is to be stored in the database
             $filepath = public_path($location . "/" . $filename);
             // Reading file
             $file = fopen($filepath, "r");
             $importData_arr = array(); // Read through the file and store the contents as an array
             $i = 0;
 
-            //Read the contents of the uploaded file 
-            while (($filedata = fgetcsv($file, 1000, ",")) !== FALSE) 
+            //Read the contents of the uploaded file
+            while (($filedata = fgetcsv($file, 1000, ",")) !== FALSE)
             {
                 $num = count($filedata);
                 // Skip first row (Remove below comment if you want to skip the first row)
@@ -665,16 +664,16 @@ class CSVimportService
             fclose($file); //Close after reading
             $j = 0;
 
-            foreach ($importData_arr as $importData) 
+            foreach ($importData_arr as $importData)
             {
                 $name = $importData[1]; //Get user names
                 $email = $importData[3]; //Get the user emails
                 $j++;
 
-                try 
+                try
                 {
                     DB::beginTransaction();
-                    
+
                     Player::create([
                         'name' => $importData[1],
                         'club' => $importData[2],
@@ -710,14 +709,14 @@ class CSVimportService
         $valid_extension = array("csv", "xlsx"); //Only want csv and excel files
         $maxFileSize = 2097152; // Uploaded file size limit is 2mb
 
-        if (in_array(strtolower($extension), $valid_extension)) 
+        if (in_array(strtolower($extension), $valid_extension))
         {
             if ($fileSize <= $maxFileSize) {
             } else {
                 throw new \Exception('No file was uploaded', Response::HTTP_REQUEST_ENTITY_TOO_LARGE); //413 error
             }
-        } 
-        else 
+        }
+        else
         {
             throw new \Exception('Invalid file extension', Response::HTTP_UNSUPPORTED_MEDIA_TYPE); //415 error
         }
