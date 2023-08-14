@@ -1,27 +1,115 @@
 <?php
-namespace App\Services\Program;
+namespace App\Services\Program\Deposit;
+
+use Illuminate\Support\Facades\DB;
 
 use net\authorize\api\contract\v1 as AnetAPI;
 use net\authorize\api\controller as AnetController;
 
-define('MERCHANT_LOGIN_ID', '5KP3u95bQpv');
-define('MERCHANT_TRANSACTION_KEY', '346HZ32z3fP4hTG2');
+define('MERCHANT_LOGIN_ID', '24esm7EHxz4');
+define('MERCHANT_TRANSACTION_KEY', '635wP9MBj33ZbmWh');
 
 use App\Models\JournalEventType;
 use App\Models\Program;
 use App\Models\Invoice;
 
-class CreditcardDepositService
+class CreditcardDepositService extends DepositServiceAbstract
 {
-    public function process(Program $program, $data) {
-        $invoice = $this->getSetInvoice($program, $data);
-        $aNetReadyInvoice = $this->preparePaymentInvoice($invoice, $data);
-        return $this->getAuthorizeNetToken($aNetReadyInvoice);
+    public function init(Program $program, $data) {
+        // DB::beginTransaction();
+        try{
+            $invoice = $this->depositHelper->getSetInvoice($program, $data);
+            // $aNetReadyInvoice = $this->preparePaymentInvoice($invoice, $data);
+            $resp = $this->getAuthorizeNetToken($invoice, $data);
+            if( !empty($resp['token']) )    {
+                // DB::commit();
+                return $resp;
+            }
+        } catch (\RuntimeException $e)  {
+            // DB::rollBack();
+            return [
+                'status' => 'error',
+                'txt' => $e->getMessage()
+            ];
+        }
     }
 
-    private function getAuthorizeNetToken( $aNetReadyInvoice ) {
+    public function finalize(Program $program, $data) {
+        DB::beginTransaction();
+        try{
+            $invoice = $this->depositHelper->getSetInvoice($program, (array) $data);
+            $payment_amount = $data->amount;
+            if ($invoice->program->is_invoice_for_awards ()) {
+                // points program
+                throw new \RuntimeException ( "Program is set to Invoice for Awards, cannot process creditcard purchase of points.", 500 );
+            }
+            $invoice_data = $this->depositHelper->parseInvoiceForPayment($invoice);
+            $invoice_id = $invoice_data['invoice_id'] = ( int ) $invoice->id;
+            $fees = 0;
+            $total_amount_due = $invoice_data ['total_amount_due'];
+            $notes = sprintf("Payment of invoice %d for program: %s", $invoice->id, $invoice->program->name);
+            switch ($invoice_data ['status']) {
+                case self::PAID :
+                    // already paid
+                    return [
+                        'status' => 'already_paid',
+                        'txt' => "The invoice has been paid already."
+                    ];
+                case self::DECLINED :
+                case self::REFUNDED :
+                    return;
+                // case self::UNPAID:
+                // case self::UNKNOWN:
+            }
+            $programPaymentService = resolve(\App\Services\ProgramPaymentService::class);
+            $user = auth()->user();
+            $program_account_holder_id = $invoice->program->account_holder_id;
+            if ($invoice_data ['convenience_fee_due'] > 0) {
+                $fees += $invoice_data ['convenience_fee_due'];
+                $total_amount_due -= $invoice_data ['convenience_fee_due'];
+                $programPaymentService->program_pays_for_convenience_fee ( $user->account_holder_id, $program_account_holder_id, $invoice_data ['convenience_fee_due'], $notes, $invoice_id );
+            }
+            if ($invoice_data ['deposit_fee_due'] > 0) {
+                $fees += $invoice_data ['deposit_fee_due'];
+                $total_amount_due -= $invoice_data ['deposit_fee_due'];
+                $programPaymentService->program_pays_for_deposit_fee ( $user->account_holder_id, $program_account_holder_id, $invoice_data ['deposit_fee_due'], $notes, $invoice_id );
+            }
+            $payment_amount -= $fees; // calculate remaining $$ that can be applied to the invoice
+            if ($payment_amount > 0) {
+                if ($payment_amount > $invoice_data ['deposit_amount_due']) {
+                    $extra = $payment_amount - $invoice_data ['deposit_amount_due'];
+                    $payment_amount = $invoice_data ['deposit_amount_due'];
+                    // somehow we ended up with extra money,
+                    throw new \RuntimeException ( "Accounting error, payment amount is more than expected. ($extra)", 500 );
+                }
+                // pay for monies pending
+                $programPaymentService->program_pays_for_monies_pending ( $user->account_holder_id, $program_account_holder_id, $payment_amount, $notes, $invoice_id );
+                DB::commit(); //commit changes
+                return [
+                    'status' => 'processed',
+                    'txt' => "The payment has been processed."
+                ];
+            }
+        } catch (\RuntimeException $e)  {
+            DB::rollBack();
+            return [
+                'status' => 'error',
+                'txt' => $e->getMessage()
+            ];
+        }
+    }
 
-        $data = ['result' => null, 'error' => null];
+    private function get_encrypted_hash($aInvoice)   {
+        $toBeEncrypted = extract_fields_from_obj($aInvoice, ['invoice_id', 'invoice_number', 'amount']);
+        $toBeEncrypted->timestamp = now();
+        return \Illuminate\Support\Facades\Crypt::encryptString(json_encode($toBeEncrypted));
+    }
+
+    private function getAuthorizeNetToken( Invoice $invoice, $data ) {
+        $aNetReadyInvoice = $this->preparePaymentInvoice($invoice, $data['amount']);
+        $data = [];
+
+        $hash = $this->get_encrypted_hash($aNetReadyInvoice);
 
         $merchantAuthentication = new AnetAPI\MerchantAuthenticationType();
         $merchantAuthentication->setName(MERCHANT_LOGIN_ID);
@@ -66,6 +154,8 @@ class CreditcardDepositService
             $transactionRequestType->setLineItems( $lineItems );
         }
 
+        $transactionRequestType->setOrder($order);
+
         // Set Hosted Form options
         $setting1 = new AnetAPI\SettingType();
         $setting1->setSettingName("hostedPaymentButtonOptions");
@@ -80,7 +170,13 @@ class CreditcardDepositService
         $setting3 = new AnetAPI\SettingType();
         $setting3->setSettingName("hostedPaymentReturnOptions");
         $setting3->setSettingValue(
-            sprintf("{\"url\": \"%s/manage-account/payment-success\", \"cancelUrl\": \"%s/manage-account/payment-error\", \"showReceipt\": true}", $url, $url)
+            sprintf("{\"url\": \"%s/manager/manage-account?ccdepositStatus=1\", \"cancelUrl\": \"%s/manager/manage-account?ccdepositStatus=5\", \"showReceipt\": true}", $url, $url)
+        );
+
+        $setting4 = new AnetAPI\SettingType();
+        $setting4->setSettingName("hostedPaymentPaymentOptions");
+        $setting4->setSettingValue(
+            "{\"showBankAccount\": false}"
         );
 
         // Build transaction request
@@ -92,6 +188,7 @@ class CreditcardDepositService
         $anetRequest->addToHostedPaymentSettings($setting1);
         $anetRequest->addToHostedPaymentSettings($setting2);
         $anetRequest->addToHostedPaymentSettings($setting3);
+        $anetRequest->addToHostedPaymentSettings($setting4);
 
         //execute request
         $controller = new AnetController\GetHostedPaymentPageController($anetRequest);
@@ -101,35 +198,22 @@ class CreditcardDepositService
             // echo $response->getToken()."\n";
             $data['status'] = "ok";
             $data['token'] = $response->getToken();
+            $data['hash'] = $hash;
         } else {
             $errorMessages = $response->getMessages()->getMessage();
             $errorText = "RESPONSE : " . $errorMessages[0]->getCode() . "  " .$errorMessages[0]->getText() . "\n";
-            $data['error'] = $errorText;
-            $data['status'] = $errorMessages[0]->getCode();
+            $data['txt'] = $errorMessages[0]->getCode();
+            $data['status'] = 'error';
         }
         return $data;
     }
 
-    private function getSetInvoice(Program $program, $data) {
-        if( empty($data['invoice_id'])) {
-            // $invoice = Invoice::find(24);
-            $createInvoiceService = resolve(CreateInvoiceService::class);
-            $invoice = $createInvoiceService->createCreditcardDepositInvoice( $program, $data);
-            if( !$invoice ) {
-                throw new \InvalidArgumentException ( "Invoice was not created.", 400 );
-            }
-        }   else {
-            $invoice = Invoice::find($data['invoice_id']);
-        }
-        $invoice->program = $program;
-        return $invoice;
-    }
+    private function preparePaymentInvoice(Invoice $invoice, $amount) {
+        // $amount = (float) $data['amount'];
 
-    private function preparePaymentInvoice(Invoice $invoice, $data) {
-        $amount = (float) $data['amount'];
-
-        $readCompiledInvoiceService = resolve(ReadCompiledInvoiceService::class);
+        $readCompiledInvoiceService = resolve(\App\Services\Program\ReadCompiledInvoiceService::class);
         $invoice_details = $readCompiledInvoiceService->read_creditcard_deposit_invoice_details($invoice);
+        // pr($invoice_details);exit;
         $debits = $invoice_details->debits;
         $deposit_fee = 0;
         $convenience_fee = 0;

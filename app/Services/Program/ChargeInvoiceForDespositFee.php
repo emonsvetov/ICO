@@ -19,7 +19,7 @@ class ChargeInvoiceForDespositFee
         $monies = MediumType::getIdByName('Monies', true);
         $liability = FinanceType::getIdByName('Liability', true);
         $asset = FinanceType::getIdByName('Asset', true);
-        $journal_event_type_id = JournalEventType::getIdByType( 'Charge program for monies pending', true );
+        $journal_event_type_id = JournalEventType::getIdByType( 'Charge program for deposit fee', true );
         $journal_event_id = JournalEvent::insertGetId([
 			'journal_event_type_id' => $journal_event_type_id,
 			'prime_account_holder_id' => $prime_account_holder_id,
@@ -31,7 +31,7 @@ class ChargeInvoiceForDespositFee
 			$asset,
 			$monies,
 			$program_account_holder_id,
-			'Monies Pending',
+			'Monies Fees',
 			$liability,
 			$monies,
 			$journal_event_id,

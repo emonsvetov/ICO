@@ -127,6 +127,10 @@ class Program extends BaseModel
         return $this->programIsInvoiceForAwards($extraArg);
 	}
 
+    public function is_invoice_for_awards( $extraArg = false): bool {
+        return $this->programIsInvoiceForAwards($extraArg);
+	}
+
     public static function createAccount( $data )    {
 
         if(isset($data['account_holder_id'])){

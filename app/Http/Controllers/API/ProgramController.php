@@ -2,38 +2,32 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\Event;
-use App\Models\EventXmlData;
-use App\Models\Giftcode;
-use App\Models\JournalEvent;
-use App\Models\JournalEventType;
-use App\Models\Leaderboard;
-use App\Models\Posting;
-use App\Models\ProgramBudget;
-use App\Models\SocialWallPost;
-use App\Models\User;
-use App\Models\UserGoal;
-use App\Services\AccountService;
-use App\Services\AwardService;
-use App\Services\reports\ReportHelper;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+
 use App\Http\Requests\ProgramPaymentReverseRequest;
 use App\Http\Requests\ProgramTransferMoniesRequest;
 use App\Http\Requests\ProgramPaymentRequest;
 use App\Http\Requests\ProgramDepositRequest;
 use App\Http\Requests\ProgramMoveRequest;
 use App\Services\ProgramPaymentService;
+use App\Services\reports\ReportHelper;
 use App\Http\Requests\ProgramRequest;
 use App\Http\Controllers\Controller;
 use App\Services\ProgramService;
-use App\Services\InvoiceService;
+use App\Services\AccountService;
+use App\Services\AwardService;
+use App\Models\SocialWallPost;
 use App\Events\ProgramCreated;
+use App\Models\ProgramBudget;
 use App\Models\Organization;
 use Illuminate\Http\Request;
+use App\Models\Leaderboard;
+use App\Models\Giftcode;
 use App\Models\Program;
+use App\Models\Posting;
 use App\Models\Invoice;
+use App\Models\Event;
+use App\Models\User;
 
 class ProgramController extends Controller
 {
@@ -298,11 +292,16 @@ class ProgramController extends Controller
     {
         return response()->stream( ...($programService->getTransferTemplateCSV($program)) );
     }
-    public function creditcardDeposit(Organization $organization, Program $program, ProgramDepositRequest $request, InvoiceService $invoiceService)
+    public function deposit(Organization $organization, Program $program, ProgramDepositRequest $request)
     {
-        $result = ['success'=>true];
-        // return response( $result );
-        $result = $invoiceService->processCreditcardDepositRequest($program, $request->validated());
+        $result = (new \App\Services\Program\Deposit\DepositService)->deposit($program, $request->validated());
         return response( $result );
+    }
+    public function transferMoniesByTemplate(Organization $organization, Program $program)    {
+        $transferMoniesService = app('App\Services\Program\TransferMoniesService');
+        $supplied_constants = collect(
+            ['organization_id' => $organization->id]
+        );
+        return $transferMoniesService->transferMoniesByCSVUpload($program, $supplied_constants);
     }
 }

@@ -28,7 +28,9 @@ class ProgramDepositRequest extends FormRequest
             'notes'=> 'sometimes|string',
             'invoice_id' => 'sometimes|integer',
             'payment_kind'=> 'required|string',
+            'request_type'=> 'required|in:init,settlement',
             'amount'=> ['required', new Decimal82()],
+            'hash'=> 'sometimes|string',
         ];
     }
 }

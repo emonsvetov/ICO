@@ -81,7 +81,7 @@ class CreateInvoiceService
         $invoice = (new ChargeInvoiceForMoniesPending())->process($invoice, auth()->user(), $program, $data['amount'] );
         $deposit_fee = compute_program_fee_by_type ('deposit_fee', $program, $amount );
 		if ($deposit_fee > 0) {
-            $invoice = (new ChargeInvoiceForMoniesPending())->process($invoice, auth()->user(), $program, $data['amount'] );
+            $invoice = (new ChargeInvoiceForDespositFee())->process($invoice, auth()->user(), $program, $deposit_fee );
 			// convenience fee
 			$updated_convenience_fee = $amount + $deposit_fee;
 			$convenience_fee =  compute_program_fee_by_type ('convenience_fee', $program, $updated_convenience_fee );

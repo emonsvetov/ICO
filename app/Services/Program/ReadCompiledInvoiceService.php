@@ -7,6 +7,7 @@ use App\Services\StatementService;
 use App\Services\ProgramService;
 use App\Models\InvoiceType;
 use App\Models\Invoice;
+use App\Models\JournalEventType;
 use DB;
 
 class ReadCompiledInvoiceService
@@ -176,8 +177,8 @@ class ReadCompiledInvoiceService
 
 		$statement_data_credits = account_type_parser ( $statement_data_credits );
 		$reversal_types = array(
-			"'" . JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING . "'",
-			"'" . JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'",
+			"'" . JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING . "'",
+			"'" . JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'",
 		);
 		$reversal_types = implode(',', $reversal_types);
 		$qry_statement = "

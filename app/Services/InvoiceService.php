@@ -5,7 +5,6 @@ use App\Services\Program\ChargeInvoiceForMoniesPending;
 use App\Services\Program\ChargeInvoiceForDespositFee;
 use App\Services\Program\ReadCompiledInvoiceService;
 use App\Services\Program\ReadInvoicePaymentsService;
-use App\Services\Program\CreditcardDepositService;
 use App\Services\Program\CreateInvoiceService;
 use App\Services\InvoicePaymentService;
 use App\Services\reports\ReportFactory;
@@ -325,8 +324,4 @@ class InvoiceService
 		}
 		return $response;
 	}
-
-    public function processCreditcardDepositRequest(Program $program, $data) {
-        return (new CreditcardDepositService())->process( $program, $data );
-    }
 }

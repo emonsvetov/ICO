@@ -125,31 +125,31 @@ trait ProgramPaymentTrait {
 
 
     public function program_pays_for_points($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for points', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
-    }    
-    
+        return $this->program_pays_for('Program pays for points', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
+    }
+
     public function program_pays_for_setup_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for setup fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
-    }    
-    
+        return $this->program_pays_for('Program pays for setup fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
+    }
+
     public function program_pays_for_admin_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for admin fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
+        return $this->program_pays_for('Program pays for admin fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
     }
 
     public function program_pays_for_usage_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for monthly usage fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
-    }    
-    
+        return $this->program_pays_for('Program pays for monthly usage fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
+    }
+
     public function program_pays_for_deposit_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for deposit fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
-    }    
-    
+        return $this->program_pays_for('Program pays for deposit fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
+    }
+
     public function program_pays_for_fixed_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for fixed fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
+        return $this->program_pays_for('Program pays for fixed fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
     }
 
     public function program_pays_for_convenience_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for convenience fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
+        return $this->program_pays_for('Program pays for convenience fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
     }
 
     public function program_pays_for_monies_pending($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
@@ -292,6 +292,6 @@ trait ProgramPaymentTrait {
     }
 
     public function program_pays_for_points_transaction_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id )   {
-        return $this->program_pays_for('Program pays for points transaction fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);    
+        return $this->program_pays_for('Program pays for points transaction fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id);
     }
 }

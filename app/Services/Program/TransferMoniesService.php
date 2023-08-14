@@ -17,6 +17,9 @@ class TransferMoniesService
     // private ProgramService $programService;
     private AccountService $accountService;
 
+    const TRANSFER_CSV_FROM_HEADER = ["Transfer_from_program_id", "Transfer_from_program_external_id", "Transfer_from_program_name"];
+    const TRANSFER_CSV_TO_HEADER = ["Transfer_to_program_id", "Transfer_to_program_external_id", "Transfer_to_program_name", "Amount"];
+
     public function __construct(
         // ProgramService $programService,
         AccountService $accountService,
@@ -101,12 +104,12 @@ class TransferMoniesService
         $csv = array ();
 
         // Add the section for the transfer from
-        $csvTransferFromRow = ["Transfer_from_program_id", "Transfer_from_program_external_id", "Transfer_from_program_name"];
+        $csvTransferFromRow = self::TRANSFER_CSV_FROM_HEADER;
         $csv[] = $csvTransferFromRow; //csv header row
 
         $csv[] = [ $program->id, $program->external_id, $program->name, ""]; //
 
-        $csvTransferToRow = ["Transfer_to_program_id", "Transfer_to_program_external_id", "Transfer_to_program_name", "Amount"];
+        $csvTransferToRow = self::TRANSFER_CSV_TO_HEADER;
         $csv [] = $csvTransferToRow;
 
         if( $transferData->programs->isNotEmpty() ) {
@@ -143,5 +146,101 @@ class TransferMoniesService
             fclose($file);
         };
         return [$callback, 200, $headers];
+    }
+
+    public function transferMoniesByCSVUpload(Program $program, $supplied_constants) {
+        $validated = $this->validate_CSVUpload( $supplied_constants );
+        if( empty($validated['from']) || empty($validated['to']))   {
+            throw new \RuntimeException ( "Invalid monies transfer request. ", 400 );
+        }
+        if( $program->id !== (int) $validated['from']->id)  {
+            throw new \RuntimeException ( "Invalid monies transfer request. Program mismatch", 400 );
+        }
+        $data = [];
+        foreach( $validated['to'] as $toProgram)   {
+            $data['amounts'][$toProgram->id] = $toProgram->Amount;
+        }
+        if( !empty( $data ) && !empty($data['amounts']) )    {
+            return $this->submitTransferMonies($program, $data);
+        }
+    }
+
+    private function validate_CSVUpload( $supplied_constants = [] )  {
+         try {
+            $csvImportRequest = app('App\Http\Requests\TransferMoniesCSVRequest');
+            $validated = $csvImportRequest->validated();
+
+            $file = $validated['upload-file'];
+            $fromFields = self::TRANSFER_CSV_FROM_HEADER;
+            $toFields = self::TRANSFER_CSV_TO_HEADER;
+            if ( $file instanceof \Illuminate\Http\UploadedFile )
+            {
+                $fromProgram = [];
+                $toProgram = [];
+                $filepath = $file->getRealPath();
+                $handle = fopen($filepath, 'r');
+                $headersFrom = [];
+                $headersTo = [];
+                $line = 0;
+                $errors = [];
+                if ($handle)
+                {
+                    while ( ($filedata = fgetcsv($handle)) !== FALSE )
+                    {
+                        if ($line == 0)
+                        {
+                            foreach ($filedata as $key => $value)
+                            {
+                                $headersFrom[trim($value)] = $key;
+                            }
+                            $line++;
+                            continue;
+                        }
+
+                        if ($line == 1)
+                        {
+                            // $fromRules = $csvImportRequest->fromRules(); //TODO, dont remove
+                            foreach( $fromFields as $csvField )    {
+                                $csvFieldValue = isset($headersFrom[$csvField]) ? trim($filedata[$headersFrom[$csvField]]) : NULL;
+                                $fromProgram[str_replace('Transfer_from_program_', '', $csvField)] = $csvFieldValue;
+                            }
+                            $line++;
+                            continue;
+                        }
+
+                        if ($line == 2)
+                        {
+                            foreach ($filedata as $key => $value)
+                            {
+                                $headersTo[trim($value)] = $key;
+                            }
+                            $line++;
+                            continue;
+                        }
+
+                        if ($line > 2)
+                        {
+                            // $toRules = $csvImportRequest->toRules(); //TODO, dont remove
+                            $toProgramRow = [];
+                            foreach( $toFields as $csvField )    {
+                                $csvFieldValue = isset($headersTo[$csvField]) ? trim($filedata[$headersTo[$csvField]]) : NULL;
+                                $toProgramRow[str_replace('Transfer_to_program_', '', $csvField)] = $csvFieldValue;
+                            }
+                            $toProgram[] = (object) $toProgramRow;
+                            $line++;
+                            continue;
+                        }
+                    }
+                }
+                if($fromProgram &&  $toProgram) {
+                    return ['from'=> (object) $fromProgram, 'to'=>$toProgram];
+                }
+            }
+        }
+        catch (\Throwable $e)
+        {
+            $errors = 'TransferMoniesService error: ' . $e->getMessage() . ' in line ' . $e->getLine();
+            return response(['errors'=> 'Error Monies Tranfer via CSV Import' ,'e' => $errors], 422);
+        }
     }
 }

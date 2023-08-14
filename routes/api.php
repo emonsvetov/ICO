@@ -479,7 +479,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Deposit
 
-    Route::post('/v1/organization/{organization}/program/{program}/creditcardDeposit',[App\Http\Controllers\API\ProgramController::class, 'creditcardDeposit'])->middleware('can:updatePayments,App\Program,organization,program');
+    Route::post('/v1/organization/{organization}/program/{program}/creditcardDeposit',[App\Http\Controllers\API\ProgramController::class, 'deposit'])->middleware('can:updatePayments,App\Program,organization,program');
 
     // Statements
 
@@ -492,6 +492,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'submitTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/transferMonies/template',[App\Http\Controllers\API\ProgramController::class, 'downloadMoneyTranferTemplate'])->middleware('can:transferMonies,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/transferMonies/template',[App\Http\Controllers\API\ProgramController::class, 'transferMoniesByTemplate'])->middleware('can:transferMonies,App\Program,organization,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/payment',[App\Http\Controllers\API\ProgramController::class, 'submitTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
 
