@@ -7,6 +7,7 @@ use Illuminate\Queue\InteractsWithQueue;
 
 use App\Events\TangoOrderCreated;
 use App\Notifications\NewTangoOrderNotification;
+use Illuminate\Support\Facades\Notification;
 
 class NewTangoOrderListner
 {
@@ -28,6 +29,6 @@ class NewTangoOrderListner
      */
     public function handle(TangoOrderCreated $event)
     {
-        Notification::send($event->tangoOrder, new NewTangoOrderNotification( $event->tangoOrder ));
+        Notification::send($event->tangoOrder->user, new NewTangoOrderNotification( $event->tangoOrder ));
     }
 }

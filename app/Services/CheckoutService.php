@@ -18,6 +18,7 @@ use App\Models\Giftcode;
 use App\Models\Merchant;
 use App\Models\Country;
 use App\Models\State;
+use Illuminate\Support\Facades\Http;
 
 class CheckoutService
 {
@@ -497,14 +498,14 @@ class CheckoutService
 
                 $gift_code_id = ( int )$code->id;
                 if(!$code->virtual_inventory &&
-                    $code->v2_merchant_id &&
+                    $code->merchant->v2_account_holder_id &&
                     env('V2_GIFTCODE_SYNC_ENABLE')){
 
                     $responseV2 = Http::withHeaders([
                         'X-API-KEY' => env('V2_API_KEY'),
                     ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
                         'code' => $code->code,
-                        'redeemed_merchant_account_holder_id' => $code->v2_merchant_id
+                        'redeemed_merchant_account_holder_id' => $code->merchant->v2_account_holder_id
                     ]);
                     Log::info('V2: ' . $code->code);
                     Log::debug('giftcodes_sync result:' . $responseV2->body());

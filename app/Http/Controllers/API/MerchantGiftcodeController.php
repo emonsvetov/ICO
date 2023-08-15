@@ -114,6 +114,11 @@ class MerchantGiftcodeController extends Controller
     {
         $fileContents = request()->file('file_medium_info')->get();
         $csvData = $this->CsvToArray($fileContents);
+        $file = request()->file('file_medium_info');
+        $fileName = $file ? $file->getClientOriginalName() : '';
+        if (isset($csvData[0]['supplier_code']) && $fileName == 'SyncGifCodesFromV2.csv'){
+            $merchant = Merchant::getByMerchantCode($csvData[0]['supplier_code']);
+        }
         $imported = [];
 
         foreach( $csvData as $row ) {
