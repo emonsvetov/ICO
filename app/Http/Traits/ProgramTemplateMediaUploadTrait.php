@@ -21,11 +21,11 @@ trait ProgramTemplateMediaUploadTrait {
                     }
                 }
             }
-            else 
+            else
             {
                 if( !$updating && isset(ProgramTemplate::DEFAULT_TEMPLATE[$field]) )
                 {
-                    $uploads[$field] = ProgramTemplate::DEFAULT_TEMPLATE[$field];
+                    // $uploads[$field] = ProgramTemplate::DEFAULT_TEMPLATE[$field];
                 }
             }
         }
