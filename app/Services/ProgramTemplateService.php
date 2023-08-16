@@ -121,7 +121,7 @@ class ProgramTemplateService
         $template = $program->getTemplate();
         if( $template )
         {
-            $template = $this->patchImageFieldsWithDefault($template);
+            // $template = $this->patchImageFieldsWithDefault($template);
         }
         return $template;
     }
