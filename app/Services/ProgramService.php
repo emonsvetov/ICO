@@ -2,26 +2,27 @@
 
 namespace App\Services;
 
-use App\Models\EventXmlData;
-use App\Models\Giftcode;
-use App\Models\JournalEvent;
-use App\Models\JournalEventType;
-use App\Models\Posting;
+use DB;
+use Illuminate\Database\Eloquent\Collection;
+
 use App\Services\Program\Traits\ChargeFeeTrait;
 use App\Services\Program\TransferMoniesService;
 use App\Services\ProgramTemplateService;
 use App\Models\Traits\IdExtractor;
+use App\Models\JournalEventType;
 use App\Services\AccountService;
 use App\Services\UserService;
-use App\Models\Status;
-use App\Models\Event;
-use App\Models\Program;
 use App\Models\AccountHolder;
+use App\Models\EventXmlData;
+use App\Models\JournalEvent;
 use App\Models\FinanceType;
 use App\Models\MediumType;
+use App\Models\Giftcode;
 use App\Models\Account;
-use DB;
-use Illuminate\Database\Eloquent\Collection;
+use App\Models\Program;
+use App\Models\Posting;
+use App\Models\Status;
+use App\Models\Event;
 
 class ProgramService
 {
@@ -34,6 +35,7 @@ class ProgramService
 
     private UserService $userService;
     private AccountService $accountService;
+    private InvoiceService $InvoiceService;
     private ProgramTemplateService $programTemplateService;
     private TransferMoniesService $transferMoniesService;
     private ProgramsTransactionFeeService $programsTransactionFeeService;
@@ -578,39 +580,11 @@ class ProgramService
     }
 
     public function getTransferMonies(Program $program)    {
-        $topLevelProgram = $program->rootAncestor()->select(['id', 'name'])->first();
-        if( !$topLevelProgram ) {
-            $topLevelProgram = $program;
-        }
-        $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
-        $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
-        return
-            [
-                'program' => $program,
-                'programs' => $programs,
-                'balance' => $balance,
-            ]
-        ;
+        return $this->transferMoniesService->getTransferMoniesByProgram($program);
     }
 
     public function submitTransferMonies(Program $program, $data)    {
-        if(sizeof($data["amounts"]) > 0)    {
-            $result = [];
-            foreach($data["amounts"] as $programId => $amount)  {
-                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
-                if ($amount > $balance) {
-                    throw new \RuntimeException ( "Account balance has insufficient funds to transfer $" . $amount, 400 );
-                }
-                $user_account_holder_id = auth()->user()->account_holder_id;
-                $program_account_holder_id = $program->account_holder_id;
-                $new_program_account_holder_id = $program->where('id', $programId)->first()->account_holder_id;
-                $result[$programId] = $this->transferMoniesService->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
-            }
-            if( sizeof($data["amounts"]) == sizeof($result))    {
-                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
-                return ['success'=>true, 'transferred' => $result, 'balance' => $balance];
-            }
-        }
+        return $this->transferMoniesService->submitTransferMonies($program, $data);
     }
 
     /**
@@ -750,5 +724,9 @@ class ProgramService
             JournalEvent::where('id', $awardJournalEventId)->delete();
             EventXmlData::where('id', $eventXmlDataId)->delete();
         }
+    }
+
+    public function getTransferTemplateCSV(Program $program)  {
+        return $this->transferMoniesService->getTransferTemplateCSVStream($program);
     }
 }

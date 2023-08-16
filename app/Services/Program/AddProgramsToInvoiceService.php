@@ -5,6 +5,8 @@ use App\Models\CronInvoice;
 
 class AddProgramsToInvoiceService
 {
+    private GetProgramsToInvoiceService $getProgramsToInvoiceService;
+
     public function __construct(
         GetProgramsToInvoiceService $getProgramsToInvoiceService
     ) {
@@ -16,7 +18,7 @@ class AddProgramsToInvoiceService
         $programs = $this->getProgramsToInvoiceService->get();
 
         $programs_to_invoice = [];
-        foreach( $programs as $program )    
+        foreach( $programs as $program )
         {
             $programs_to_invoice[] = [
                 'program_id' => $program->id,

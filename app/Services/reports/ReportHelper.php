@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\JournalEventType;
 use App\Models\User;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,12 @@ class ReportHelper
         $query->whereIn('statuses.status', $userStatuses);
         $query->groupBy('model_has_roles.program_id');
 
-        return $query->get()->pluck('count', 'program_id',)->toArray();
+        try{
+            $result = $query->get();
+            return $result->pluck('count', 'program_id')->toArray();
+        } catch (Exception $e) {
+            throw new Exception( sprintf("Error in countParticipantsByUserStatuses: %s in line %d in file %s", $e->getMessage(), $e->getLine(), $e->getFile() ) )  ;
+        }
     }
 
     /**

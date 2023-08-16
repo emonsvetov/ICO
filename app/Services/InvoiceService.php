@@ -1,41 +1,42 @@
 <?php
 namespace App\Services;
 
+use App\Services\Program\ChargeInvoiceForMoniesPending;
+use App\Services\Program\ChargeInvoiceForDespositFee;
 use App\Services\Program\ReadCompiledInvoiceService;
 use App\Services\Program\ReadInvoicePaymentsService;
 use App\Services\Program\CreateInvoiceService;
 use App\Services\InvoicePaymentService;
+use App\Services\reports\ReportFactory;
 use App\Models\Traits\InvoiceFilters;
 use App\Models\Traits\Filterable;
 use App\Models\JournalEventType;
 use App\Models\PaymentMethod;
-use App\Models\JournalEvent;
-use App\Models\FinanceType;
-use App\Models\InvoiceType;
-use App\Models\MediumType;
-use App\Models\Currency;
 use App\Models\Program;
 use App\Models\Invoice;
-use App\Models\Account;
-use App\Models\Report;
-use App\Models\Owner;
 
-class InvoiceService 
+class InvoiceService
 {
     use Filterable, InvoiceFilters;
+
+    private ProgramService $programService;
+    private CreateInvoiceService $createInvoiceService;
+    private InvoicePaymentService $invoicePaymentService;
+    private ReadInvoicePaymentsService $readInvoicePaymentsService;
+    private ReportFactory $reportFactory;
 
     public function __construct(
         ProgramService $programService,
         CreateInvoiceService $createInvoiceService,
 		InvoicePaymentService $invoicePaymentService,
         ReadInvoicePaymentsService $readInvoicePaymentsService,
-        ReadCompiledInvoiceService $readCompiledInvoiceService,
+        ReportFactory $reportFactory
     ) {
         $this->programService = $programService;
         $this->createInvoiceService = $createInvoiceService;
         $this->invoicePaymentService = $invoicePaymentService;
         $this->readInvoicePaymentsService = $readInvoicePaymentsService;
-        $this->readCompiledInvoiceService = $readCompiledInvoiceService;
+        $this->reportFactory = $reportFactory;
     }
 
     public function index( $program, $paginate = true ) {
@@ -74,100 +75,29 @@ class InvoiceService
 		$user = auth()->user();
 
 		if( $invoice )  {
-            $invoice = $this->chargeForMoniesPending($invoice, $user, $program, $amount );
+            $invoice = (new ChargeInvoiceForMoniesPending())->process($invoice, $user, $program, $amount );
             if ($deposit_fee > 0) {
-            	$invoice = $this->chargeForDepositFee ($invoice, $user, $program, $deposit_fee_amount);
+            	$invoice = (new ChargeInvoiceForDespositFee())->process ($invoice, $user, $program, $deposit_fee_amount);
             }
+            // sleep(2); //To Remove
         }
 	}
-
-    public function chargeForMoniesPending(Invoice $invoice, $user, $program, $amount)    {
-        $owner = Owner::first();
-        $currency_id = Currency::getIdByType(config('global.default_currency'), true);
-        $owner_account_holder_id = ( int ) $owner->account_holder_id;
-        $program_account_holder_id = ( int ) $program->account_holder_id;
-        $prime_account_holder_id = ( int ) $user->account_holder_id;
-        $monies = MediumType::getIdByName('Monies', true);
-        $liability = FinanceType::getIdByName('Liability', true);
-        $asset = FinanceType::getIdByName('Asset', true);
-        $journal_event_type_id = JournalEventType::getIdByType( 'Charge program for monies pending', true );
-        $journal_event_id = JournalEvent::insertGetId([
-			'journal_event_type_id' => $journal_event_type_id,
-			'prime_account_holder_id' => $prime_account_holder_id,
-			'created_at' => now()
-		]);
-        $postings = Account::postings(
-			$program_account_holder_id,
-			'Monies Due to Owner',
-			$asset,
-			$monies,
-			$program_account_holder_id,
-			'Monies Pending',
-			$liability,
-			$monies,
-			$journal_event_id,
-			$amount,
-			1, //qty
-			null, //medium_info
-			null, // medium_info_id
-			$currency_id
-		);
-        if( $postings )   {
-            $invoice->journal_events()->sync( [ $journal_event_id ], false);
-        }
-        return $invoice;
-    }
-
-    public function chargeForDepositFee(Invoice $invoice, $user, $program, $amount)    {
-        $owner = Owner::first();
-        $currency_id = Currency::getIdByType(config('global.default_currency'), true);
-        $owner_account_holder_id = ( int ) $owner->account_holder_id;
-        $program_account_holder_id = ( int ) $program->account_holder_id;
-        $prime_account_holder_id = ( int ) $user->account_holder_id;
-        $monies = MediumType::getIdByName('Monies', true);
-        $liability = FinanceType::getIdByName('Liability', true);
-        $asset = FinanceType::getIdByName('Asset', true);
-        $journal_event_type_id = JournalEventType::getIdByType( 'Charge program for deposit fee', true );
-        $journal_event_id = JournalEvent::insertGetId([
-			'journal_event_type_id' => $journal_event_type_id,
-			'prime_account_holder_id' => $prime_account_holder_id,
-			'created_at' => now()
-		]);
-        $postings = Account::postings(
-			$program_account_holder_id,
-			'Monies Due to Owner',
-			$asset,
-			$monies,
-			$program_account_holder_id,
-			'Monies Fees',
-			$liability,
-			$monies,
-			$journal_event_id,
-			$amount,
-			1, //qty
-			null, //medium_info
-			null, // medium_info_id
-			$currency_id
-		);
-        if( $postings )   {
-            $invoice->journal_events()->sync( [ $journal_event_id ], false);
-        }
-        return $invoice;
-    }
 
     public function getInvoice(Invoice $invoice)   {
         if( !$invoice->exists() ) return null;
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
-        $invoice = $this->readCompiledInvoiceService->get($invoice);
+        $readCompiledInvoiceService = resolve(ReadCompiledInvoiceService::class);
+        $invoice = $readCompiledInvoiceService->get($invoice);
         return $invoice;
     }
 
 	public function getPayableInvoice(Invoice $invoice)   {
 		if( !$invoice->exists() ) return null;
 		$view_params = [];
-		
+
         $invoice->load(['program', 'program.address', 'invoice_type', 'journal_events']);
-        $invoice = $this->readCompiledInvoiceService->get($invoice);
+        $readCompiledInvoiceService = resolve(ReadCompiledInvoiceService::class);
+        $invoice = $readCompiledInvoiceService->get($invoice);
 
 		$payments = $this->readInvoicePaymentsService->get($invoice);
 
@@ -183,7 +113,9 @@ class InvoiceService
 		foreach ( $invoice->invoices as $statement ) {
 			$invoice_program_ids [] = ( int ) $statement ['info']->program_id;
 		}
-		$report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
+		// $report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
+        $report = $this->reportFactory->build("JournalDetailed", ['programs' => $invoice_program_ids, 'from' => $invoice->date_begin, 'to' => $invoice->date_end]);
+        $report_data = $report->getReport();
 
 		foreach ( $invoice->invoices as $statement ) {
 			// Create a line item for the program
@@ -205,13 +137,13 @@ class InvoiceService
 						'admin_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
 						'usage_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
 						'setup_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
-						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
+						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE
 				);
 				// pr($report_items_to_charge);
 				// Mapping of the refund items to pull out of the journal report and the corresponding charge that should be credited for it
 				$report_items_to_refund = array (
 						'reclaims' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
-						'refunded_transaction_fees' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE 
+						'refunded_transaction_fees' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS_TRANSACTION_FEE
 				);
 				// pr($report_items_to_refund);
 				// exit;
@@ -223,7 +155,7 @@ class InvoiceService
 						'admin_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_ADMIN_FEE,
 						'usage_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
 						'setup_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SETUP_FEE,
-						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE 
+						'fixed_fee' => JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_FIXED_FEE
 				);
 				// Mapping of the refund items to pull out of the journal report and the corresponding charge that should be credited for it
 				$report_items_to_refund = array ();

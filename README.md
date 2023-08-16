@@ -96,6 +96,11 @@ Add common file uploads to .gitignore file. For example:
 
 ## Update Log
 
+** Aug 08 2023
+
+Install Authorize.net package
+    `php composer required authorizenet/authorizenet`
+
 ** Feb 07 2023
 
 `php artisan db:seed --class=UpdateProgramTemplatesTable`

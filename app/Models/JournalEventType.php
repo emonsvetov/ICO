@@ -51,6 +51,11 @@ class JournalEventType extends BaseModel
     const JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS = 'Reclaim peer points';
     const JOURNAL_EVENT_TYPES_ALLOCATE_PEER_POINTS_TO_RECIPIENT = 'Allocate peer points to recipient';
     const JOURNAL_EVENT_TYPES_RECLAIM_PEER_MONIES = 'Reclaim peer monies';
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE = 'Reversal program pays for deposit fee';
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_CONVENIENCE_FEE = 'Reversal program pays for convenience fee';
+    const JOURNAL_EVENT_TYPES_VOID_CHARGE_PROGRAM_FOR_CONVENIENCE_FEE = 'VOID Charge program for convenience fee';
+    const JOURNAL_EVENT_TYPES_VOID_CHARGE_PROGRAM_FOR_DEPOSIT_FEE = 'VOID Charge program for deposit fee';
+    const JOURNAL_EVENT_TYPES_VOID_CHARGE_PROGRAM_FOR_MONIES_PENDING = 'VOID Charge program for monies pending';
 
 
     public static function getTypeAllocatePeerPoints(): int

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\GenerateVirtualInventoryJob;
 use App\Jobs\Program\PostMonthlyChargesToInvoiceJob;
 use App\Jobs\Program\AddProgramsToInvoiceJob;
 use App\Jobs\Program\GenerateMonthlyInvoicesJob;
@@ -25,5 +26,8 @@ class CronService
     }
     public function sendActivationReminder() {
         dispatch( new SendActivationReminderJob() );
+    }
+    public function generateVirtualInventoryJob() {
+        dispatch( new GenerateVirtualInventoryJob() );
     }
 }

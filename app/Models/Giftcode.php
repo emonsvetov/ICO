@@ -54,7 +54,7 @@ class Giftcode extends Model
         return $query->get();
     }
 
-    public function read_list_redeemable_denominations_by_merchant($merchant_id = 0, $end_date = '') {
+    public function read_list_redeemable_denominations_by_merchant($merchant_id = 0, $end_date = '', $virtual=false) {
 		// check to see if the merchant gets its gift codes from the its root merchant
 		// if it does, query using the root merchant id instead
 		$merchant = Merchant::where ( 'id', $merchant_id )->first();
@@ -92,6 +92,12 @@ class Giftcode extends Model
 		    $sql .= " AND medium_info_is_test = 1";
         }
 
+		if($virtual){
+		    $sql .= " AND virtual_inventory = 1";
+        }else{
+		    $sql .= " AND virtual_inventory = 0";
+        }
+
 		$sql .= " group by
                         sku_value, redemption_value, merchant_id";
 		// add order by
@@ -114,7 +120,7 @@ class Giftcode extends Model
         $giftcode['sku_value'] = preg_replace("/[^,.0-9]/", '', $giftcode['sku_value']);
         $giftcode['sku_value'] = (int) $giftcode['sku_value'];
 
-		if( !$user || !$merchant || !$giftcode ) return;
+		if(!$merchant || !$giftcode ) return;
 		$response = [];
 
         $currentGiftCode = Giftcode::getByCode($giftcode['code'], false);
@@ -124,7 +130,7 @@ class Giftcode extends Model
             return $response;
         }
 
-		if( !is_object( $user ) && is_numeric( $user ))	{
+		if( $user && !is_object( $user ) && is_numeric( $user ))	{
 			$user = User::find($user);
 		}
 		if( !is_object( $merchant ) && is_numeric( $merchant ))	{
@@ -147,7 +153,7 @@ class Giftcode extends Model
 			$giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
 		);
 		$response['gift_code_id'] = $gift_code_id;
-		$user_account_holder_id = $user->account_holder_id;
+		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id:0;
 		$merchant_account_holder_id = $merchant->account_holder_id;
         $owner_account_holder_id = Owner::find(1)->account_holder_id;
 		$journal_event_type_id = JournalEventType::getIdByType( "Purchase gift codes for monies" );
@@ -184,8 +190,8 @@ class Giftcode extends Model
 		return $response;
 	}
 
-	public static function getRedeemableListByMerchant($merchant, $filters = []) {
-		return self::_read_redeemable_list_by_merchant( $merchant, $filters );
+	public static function getRedeemableListByMerchant($merchant, $filters = [], $orders=[]) {
+		return self::_read_redeemable_list_by_merchant( $merchant, $filters, $orders );
 	}
 
 	public static function getRedeemableListByMerchantAndRedemptionValue($merchant, $redemption_value = 0, $end_date = '', $args = []) { // $end_date = '2022-10-01' - what is that?

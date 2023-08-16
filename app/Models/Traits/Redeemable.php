@@ -13,7 +13,7 @@ use App\Models\Posting;
 
 trait Redeemable
 {
-	private static function _read_redeemable_list_by_merchant( $merchant, $filters = [] )	{
+	private static function _read_redeemable_list_by_merchant( $merchant, $filters = [], $orders=[] )	{
 
 		if( !is_object($merchant) && is_numeric($merchant) )	{
 			$merchant = Merchant::find($merchant);
@@ -25,6 +25,7 @@ trait Redeemable
 			'{$merchant->account_holder_id}' as merchant_account_holder_id,
 			`redemption_value`,
 			`sku_value`,
+			`virtual_inventory`,
 			`redemption_value` - `sku_value` as `redemption_fee`,
 			COUNT(DISTINCT medium_info.`id`) as count"
 		)
@@ -35,8 +36,7 @@ trait Redeemable
 		->orderBy('sku_value')
 		->orderBy('redemption_value')
 		->where('a.account_holder_id', $merchant->account_holder_id)
-		->where('medium_info.hold_until', '<=', now())
-        ;
+		->where('medium_info.hold_until', '<=', now());
 
         if(isset($filters['medium_info_is_test']) )	{
             $query->where('medium_info_is_test', '=', $filters['medium_info_is_test']);
@@ -65,6 +65,10 @@ trait Redeemable
                 ->orWhere('redemption_date', '>', $filters['end_date']);
             });
 		}
+
+		if($orders && $orders['column'] && $orders['direction']){
+            $query->orderBy($orders['column'], $orders['direction']);
+        }
 
 		return $query->get();
 	}

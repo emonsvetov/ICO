@@ -127,6 +127,10 @@ class Program extends BaseModel
         return $this->programIsInvoiceForAwards($extraArg);
 	}
 
+    public function is_invoice_for_awards( $extraArg = false): bool {
+        return $this->programIsInvoiceForAwards($extraArg);
+	}
+
     public static function createAccount( $data )    {
 
         $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);

@@ -32,6 +32,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('cron:send-activation-reminder')->daily();
         // $schedule->command('v2migrate:users --skip-inactive')->daily();
         // $schedule->job(new MigrateUsersJob)->daily();
+        $schedule->command('cron:generate-virtual-inventory')->everyFiveMinutes();
     }
 
     /**

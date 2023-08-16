@@ -31,10 +31,15 @@ class TangoOrder extends Model
         return $this->belongsTo(Program::class);
     }
 
+    public function user()
+    {
+        return $this->hasOne(User::class, 'id', 'user_id');
+    }
+
     public static function read_not_submitted_orders()
     {
         return self::where('status', self::ORDER_STATUS_NEW)
         ->with(['physical_order'])
         ->get();
-    }    
+    }
 }

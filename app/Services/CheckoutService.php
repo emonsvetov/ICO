@@ -5,6 +5,7 @@ use App\Events\MerchantDenominationAlert;
 use App\Events\OrderShippingRequest;
 use App\Events\TangoOrderCreated;
 
+use App\Services\Program\TangoVisaApiService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Models\Traits\IdExtractor;
@@ -17,10 +18,17 @@ use App\Models\Giftcode;
 use App\Models\Merchant;
 use App\Models\Country;
 use App\Models\State;
+use Illuminate\Support\Facades\Http;
 
 class CheckoutService
 {
     use IdExtractor;
+
+    private $tangoVisaApiService;
+
+    public function __construct(TangoVisaApiService $tangoVisaApiService) {
+        $this->tangoVisaApiService = $tangoVisaApiService;
+    }
 
     public function processOrder( $cart, $program )   {
 		// return Merchant::getRoot( 6 );
@@ -133,9 +141,11 @@ class CheckoutService
 
             // pr($redemption_value_total);
 
-            $merchants_info[$merchant->id] = $merchant;
+            $merchants_info[$merchant->account_holder_id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
 				$gift_code->gift_code_provider_account_holder_id = Merchant::get_top_level_merchant ( $gift_code->merchant_id )->account_holder_id ;
+				$topMerchant = Merchant::read( $gift_code->gift_code_provider_account_holder_id );
+			    $merchants_info [$topMerchant->account_holder_id] = $topMerchant;
 			} else {
 				$gift_code->gift_code_provider_account_holder_id = $gift_code->merchant_account_holder_id;
 			}
@@ -324,7 +334,12 @@ class CheckoutService
 				// }
 				$reserved_codes [] = $reserved_code;
 				// return $reserved_code;
-				$merch = $merchants_info [$reserved_code->merchant->id];
+
+				$merch = $merchants_info [$reserved_code->gift_code_provider_account_holder_id];
+				$reserved_code->merchant->toa_id = $merch->toa_id;
+				$reserved_code->merchant->virtual_denominations = $merch->virtual_denominations;
+				$reserved_code->merchant->merchant_code = $merch->merchant_code;
+
 				// pr($merch);
 				// exit;
 				if ($merch->requires_shipping) {
@@ -335,7 +350,7 @@ class CheckoutService
 					}
 					// add the code as a line item to the order
 					PhysicalOrder::add_line_item ( ( int ) $reserved_code->id, $order_id );
-				} elseif ($merch->physical_order) {
+				} elseif ($merch->physical_order ) {
 					$shipToName = $user->first_name . ' ' . $user->last_name . ' ' . '(' . $merch->name . ')';
 					$address = new \stdClass ();
 					$userData = new \stdClass ();
@@ -356,7 +371,7 @@ class CheckoutService
 
 				// TODO ; TangoOrder setup is pending in rebuild
 
-				if($merch->use_tango_api){
+				if($merch->use_tango_api && !$merch->use_virtual_inventory){
 					$tango_order = new \stdClass ();
 					$tango_order->physical_order_id = $order_id;
 					$tango_order->program_id = $program->id;
@@ -472,12 +487,115 @@ class CheckoutService
 			return $response;
 		}
 
-		if ( $commit ) {
-			$response['success'] = true;
-			$response['gift_codes_redeemed_for'] = $gift_codes_redeemed_for;
-			DB::commit();
-			DB::statement("UNLOCK TABLES;");
-		}
+		if ( $commit ){
+            $response['success'] = true;
+            $response['gift_codes_redeemed_for'] = $gift_codes_redeemed_for;
+            DB::commit();
+            DB::statement("UNLOCK TABLES;");
+
+            // purchase codes from Tango since all transactions are final
+            foreach($reserved_codes as $code){
+
+                $gift_code_id = ( int )$code->id;
+                if(!$code->virtual_inventory &&
+                    $code->merchant->v2_account_holder_id &&
+                    env('V2_GIFTCODE_SYNC_ENABLE')){
+
+                    $responseV2 = Http::withHeaders([
+                        'X-API-KEY' => env('V2_API_KEY'),
+                    ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
+                        'code' => $code->code,
+                        'redeemed_merchant_account_holder_id' => $code->merchant->v2_account_holder_id
+                    ]);
+                    Log::info('V2: ' . $code->code);
+                    Log::debug('giftcodes_sync result:' . $responseV2->body());
+                }
+
+                if($code->virtual_inventory){
+                    $data = [
+                        'amount' => $code->sku_value,
+                        'sendEmail' => false,
+                        'message' => 'Congratulations on your Reward!',
+                        'notes' => 'auto generated order',
+                        'externalRefID' => null
+                    ];
+
+                    $toa_utid = null;
+                    $denominations = array_map('trim', explode(',', $code->merchant->virtual_denominations));
+                    foreach($denominations as $denomination){
+                        $pieces = array_map('trim', explode(':', $denomination));
+                        if(count($pieces) == 3){
+                            list($utid, $sku_value, $redemption_value) = $pieces;
+                            if($redemption_value == $data['amount']){
+                                $toa_utid = $utid;
+                                break;
+                            }
+                        }
+                    }
+
+                    Log::info('code: ' . print_r($code, true));
+
+                    $tangoResult = $this->tangoVisaApiService->submit_order($data, $code->merchant->toa_id, $toa_utid);
+
+                    Log::info('gift_code_id: ' . $gift_code_id);
+                    Log::info('merchant code: ' . $code->merchant->merchant_code);
+                    Log::info('Tango logs: ' . print_r($tangoResult, true));
+
+                    $redeem_link = '';
+                    $pin = '';
+
+                    if($code->merchant->merchant_code == 'SLI'){
+                        $redeem_link = $tangoResult['reward']['credentials']['PIN'];
+                    }elseif($code->merchant->merchant_code == 'FLO'){
+                        $redeem_link = $tangoResult['reward']['credentials']['Serial Number'];
+                        $pin = $tangoResult['reward']['credentials']['PIN'];
+                    }else{
+                        if(isset($tangoResult['reward']['credentials']['Redemption Link'])){
+                            $redeem_link = $tangoResult['reward']['credentials']['Redemption Link'];
+                        }elseif(isset($tangoResult['reward']['credentials']['Redemption URL'])){
+                            $redeem_link = $tangoResult['reward']['credentials']['Redemption URL'];
+                        }elseif(isset($tangoResult['reward']['credentials']['Gift Code'])){
+                            $redeem_link = $tangoResult['reward']['credentials']['Gift Code'];
+                        }elseif(isset($tangoResult['reward']['credentials']['E-Gift Card Number'])){
+                            $redeem_link = $tangoResult['reward']['credentials']['E-Gift Card Number'];
+                        }elseif(isset($tangoResult['reward']['credentials']['Card Number'])){
+                            $redeem_link = $tangoResult['reward']['credentials']['Card Number'];
+                        }else{
+                            throw new RuntimeException ('Internal query failed, please contact API administrator', 500);
+                        }
+
+                        if(isset($tangoResult['reward']['credentials']['Security Code'])){
+                            $pin = $tangoResult['reward']['credentials']['Security Code'];
+                        }elseif(isset($tangoResult['reward']['credentials']['PIN']) && $code->merchant->merchant_code != 'SLI'){
+                            $pin = $tangoResult['reward']['credentials']['PIN'];
+                        }
+                    }
+
+                    $tango_request_id = '';
+                    if(isset($tangoResult['requestId'])){
+                        $tango_request_id = $tangoResult['requestId'];
+                    }elseif(isset($tangoResult['referenceOrderID'])){
+                        $tango_request_id = $tangoResult['referenceOrderID'];
+                    }
+
+                    DB::table(MEDIUM_INFO)
+                        ->where('id', $code->id)
+                        ->update([
+                            'code' =>  $redeem_link,
+                            'pin' =>  $pin,
+                            'tango_request_id' => $tango_request_id
+                        ]);
+
+                    foreach($gift_codes_redeemed_for as $index => $gift_codes_redeemed_item){
+                        if($gift_codes_redeemed_item->id == $gift_code_id){
+                            $gift_codes_redeemed_for[$index]->pin = $pin;
+                            $gift_codes_redeemed_for[$index]->code = $redeem_link;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
 		if (isset ( $order_address ) && is_object ( $order_address )) {
 			// $user_info = $user->toArray();
