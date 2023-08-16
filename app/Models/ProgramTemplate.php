@@ -18,6 +18,7 @@ class ProgramTemplate extends BaseModel
         'button_corner' => '4',
         'theme_color' => '#000',
         'welcome_message' => '',
+        'participant_homepage_message'=>'Rewards can be redeemed with leading national retailers offering millions of products and brands. Redeem your rewards when you earn them or save them up for a `rainy day`.',
         'big_logo' => 'theme/default/images/big_logo.png',
         'small_logo' => 'theme/default/images/small_logo.png',
         'hero_banner' => 'theme/default/images/hero_banner.png',
