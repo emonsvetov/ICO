@@ -16,16 +16,6 @@ use App\Models\User;
 
 class AccountService
 {
-
-    private PostingService $postingService;
-
-    public function __construct(
-        PostingService $postingService
-    )
-    {
-        $this->postingService = $postingService;
-    }
-
     /**
      * @param array $data
      * @return array
@@ -68,7 +58,7 @@ class AccountService
             'qty' => 1,
         ];
 
-        return $this->postingService->create($data);
+        return (new PostingService)->create($data);
     }
 
     /**
@@ -602,5 +592,4 @@ class AccountService
 		}
         return self::readSumDebits ( $user->account_holder_id, $account_type, $journal_event_types );
     }
-
 }
