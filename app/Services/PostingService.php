@@ -3,17 +3,19 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 use App\Http\Requests\PostingRequest;
 use App\Models\Account;
+use App\Models\AccountType;
 use App\Models\Giftcode;
 use App\Models\MediumType;
 use App\Models\Posting;
+use App\Models\Program;
 
 class PostingService
 {
-
     /**
      * @param array $data
      * @return array
@@ -75,5 +77,52 @@ class PostingService
             'debit' => $debitPosting,
             'credit' => $creditPosting,
         ];
+    }
+
+	private static function read_list_postings_for_account_between($account_holder_id = 0, $account_type_name = '', $start_date = '', $end_date = '') {
+
+        $limit = request('limit', 15);
+        $direction = request('direction', 'asc');
+
+        $query = DB::table('accounts AS a');
+        $query->addSelect(
+            DB::raw(
+                "posts.*,
+                posts.posting_amount * posts.qty as total_posting_amount,
+                jet.type as journal_event_type,
+                exml.name as event_name"
+            )
+        );
+
+        $query->join('account_types AS at', 'at.id', '=', 'a.account_type_id');
+        $query->join('postings AS posts', 'posts.account_id', '=', 'a.id');
+        $query->join('journal_events AS je', 'je.id', '=', 'posts.journal_event_id');
+        $query->join('journal_event_types AS jet', 'jet.id', '=', 'je.journal_event_type_id');
+        $query->leftJoin('event_xml_data AS exml', 'exml.id', '=', 'je.event_xml_data_id');
+        $query->where('a.account_holder_id', '=', $account_holder_id);
+        $query->where('at.name', '=', $account_type_name);
+        $query->where('posts.created_at', '>=', $start_date);
+        $query->where('posts.created_at', '<=', $end_date);
+        $query->where('posts.posting_amount', '>', 0);
+        $result = $query->orderByRaw("posts.id $direction")->paginate( $limit );
+		return $result;
+	}
+
+    public static function getMoniesAvailablePostings( Program $program  )    {
+        $validator = Validator::make(request()->all(), [
+            'start_date'=> 'nullable|date_format:Y-m-d',
+            'end_date'=> 'nullable|date_format:Y-m-d',
+        ]);
+
+        if ($validator->fails()) {
+            throw new \Exception($validator->errors()->toJson());
+        }
+
+        $validated = (object)$validator->validated();
+
+        $start_date = !empty($validated->start_date) ? $validated->start_date : date ( 'Y-m-01' );
+        $end_date = !empty($validated->end_date) ? $validated->end_date : date ( 'Y-m-t' );
+
+        return self::read_list_postings_for_account_between($program->account_holder_id, AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE, $start_date, $end_date);
     }
 }

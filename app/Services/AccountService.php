@@ -16,16 +16,6 @@ use App\Models\User;
 
 class AccountService
 {
-
-    private PostingService $postingService;
-
-    public function __construct(
-        PostingService $postingService
-    )
-    {
-        $this->postingService = $postingService;
-    }
-
     /**
      * @param array $data
      * @return array
@@ -68,7 +58,7 @@ class AccountService
             'qty' => 1,
         ];
 
-        return $this->postingService->create($data);
+        return (new PostingService)->create($data);
     }
 
     /**
@@ -312,8 +302,8 @@ class AccountService
     /**
      * Alias for "readListParticipantPostingsByAccountAndJournalEvents"
      */
-    public static function read_list_participant_postings_by_account_and_journal_events(){
-        return self::readListParticipantPostingsByAccountAndJournalEvents();
+    public static function read_list_participant_postings_by_account_and_journal_events($account_holder_id, $account_type_name, $journal_event_types, $is_credit = 0){
+        return self::readListParticipantPostingsByAccountAndJournalEvents($account_holder_id, $account_type_name, $journal_event_types, $is_credit);
     }
     /**
      * This method returns count of Journal Events for user, not sure why program is included in the argument; copied from current application
@@ -602,5 +592,4 @@ class AccountService
 		}
         return self::readSumDebits ( $user->account_holder_id, $account_type, $journal_event_types );
     }
-
 }
