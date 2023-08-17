@@ -78,7 +78,7 @@ Add common file uploads to .gitignore file. For example:
 ** Aug 08 2023
 
 Install Authorize.net package
-    `php composer required authorizenet/authorizenet`
+    `php composer require authorizenet/authorizenet`
 
 ** Feb 07 2023
 
