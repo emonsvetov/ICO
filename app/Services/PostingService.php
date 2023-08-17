@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use Exception;
 
 use App\Http\Requests\PostingRequest;
@@ -13,7 +14,6 @@ use App\Models\Posting;
 
 class PostingService
 {
-
     /**
      * @param array $data
      * @return array
@@ -76,4 +76,30 @@ class PostingService
             'credit' => $creditPosting,
         ];
     }
+
+	public function read_list_postings_for_account_between($account_holder_id = 0, $account_type_name = '', $start_date = '', $end_date = '') {
+
+        $query = DB::table('accounts AS a');
+        $query->addSelect(
+            DB::raw(
+                "posts.*
+                posts.posting_amount * posts.qty as total_posting_amount,
+                jet.type as journal_event_type,
+                exml.name as event_name"
+            )
+        );
+
+        $query->join('account_types AS at', 'at.id', '=', 'a.account_type_id');
+        $query->join('postings AS posts', 'posts.account_id', '=', 'a.id');
+        $query->join('journal_events AS je', 'je.id', '=', 'posts.journal_event_id');
+        $query->join('journal_event_types AS jet', 'jet.id', '=', 'je.journal_event_type_id');
+        $query->leftJoin('event_xml_data AS exml', 'exml.id', '=', 'je.event_xml_data_id');
+        $query->where('a.account_holder_id', '=', $account_holder_id);
+        $query->where('at.account_type_name', '=', $account_type_name);
+        $query->where('posts.created_at', '>=', $start_date);
+        $query->where('posts.created_at', '<=', $end_date);
+        $query->where('posts.posting_amount', '>', 0);
+        $result = $query->paginate();
+		return $result;
+	}
 }
