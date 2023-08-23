@@ -54,6 +54,9 @@ class HostService
         $apps = parse_url($appUrl);
         $refs = parse_url($referer);
 
+        pr($apps);
+        pr($refs);
+
         if(empty($refs['host']) || empty($apps['host']))
         {
             return false;
