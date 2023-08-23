@@ -27,7 +27,6 @@ class DomainService
 
     public function setIsValidDomain( $flag )
     {
-        pr($flag);
         $this->isValidDomain = $flag;
     }
 
@@ -39,6 +38,8 @@ class DomainService
     public function initialize()
     {
         $this->setDomainFromRequestKey(); // Try "domainKey" in request
+
+        pr($this->isAdminAppDomain());
 
         if( !$this->isAdminAppDomain() )
         {
@@ -100,10 +101,8 @@ class DomainService
 
     public function setDomainFromRequestKey()
     {
-
         if( request()->get('domainKey') )
         {
-            pr(request()->get('domainKey'));
             $domain = $this->getDomainByKey( request()->get('domainKey') );
             if( $domain && $domain->exists())
             {
