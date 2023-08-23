@@ -126,4 +126,19 @@ class MerchantGiftcodeController extends Controller
         }
         return response( $imported );
     }
+
+    public function storeVirtual( MerchantGiftcodeRequest $request, GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )
+    {
+        $fileContents = request()->file('file_medium_info')->get();
+        $csvData = $this->CsvToArray($fileContents);
+        $file = request()->file('file_medium_info');
+        $imported = [];
+
+        foreach( $csvData as $row ) {
+            $row['virtual_inventory'] = 1;
+            $imported[] = $giftcodeService->createGiftcode($merchant, $row );
+        }
+        return response( $imported );
+    }
+
 }

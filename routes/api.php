@@ -320,6 +320,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'index'])->middleware('can:viewAny,App\MerchantGiftcode,merchant');
 
     Route::post('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'store'])->middleware('can:add,App\MerchantGiftcode,merchant');
+    Route::post('/v1/merchant/{merchant}/giftcode-virtual', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'storeVirtual'])->middleware('can:add,App\MerchantGiftcode,merchant');
 
     // GiftCode
     Route::post('/v1/giftcode/purchase-from-v2', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseFromV2'])->middleware('can:purchaseFromV2,App\Giftcode');
