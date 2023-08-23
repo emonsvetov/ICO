@@ -74,27 +74,28 @@ class SubmitGiftCodesToTangoJob implements ShouldQueue
 
                 $tangoVisaApiService = new TangoVisaApiService();
                 $tangoResult = $tangoVisaApiService->submit_order($data, $code->merchant->toa_id, $toa_utid, $code->merchant->merchant_code);
-                if(isset($tangoResult['requestId']) || $tangoResult['referenceOrderID']){
-                    if(isset($tangoResult['requestId'])){
-                        DB::table(MEDIUM_INFO)
-                            ->where('id', $code->id)
-                            ->update([
-                                'tango_request_id' => $tangoResult['requestId'],
-                            ]);
-                        $errors[] = array(
-                            'code'  => $code,
-                            'tango' => $tangoResult
-                        );
-                    }else{
-                        DB::table(MEDIUM_INFO)
-                            ->where('id', $code->id)
-                            ->update([
-                                'code' =>  $tangoResult['code'],
-                                'pin' =>  $tangoResult['pin'],
-                                'tango_reference_order_id' => $tangoResult['referenceOrderID']
-                            ]);
-                    }
+
+                if(isset($tangoResult['referenceOrderID']) && $tangoResult['referenceOrderID']){
+                    DB::table(MEDIUM_INFO)
+                        ->where('id', $code->id)
+                        ->update([
+                            'code' =>  $tangoResult['code'],
+                            'pin' =>  $tangoResult['pin'],
+                            'tango_reference_order_id' => $tangoResult['referenceOrderID']
+                        ]);
+                }else{
+                    DB::table(MEDIUM_INFO)
+                        ->where('id', $code->id)
+                        ->update([
+                            'tango_request_id' => $tangoResult['requestId'],
+                        ]);
+                    $errors[] = array(
+                        'code'  => $code,
+                        'tango' => $tangoResult
+                    );
                 }
+
+                echo $code->id . PHP_EOL;
             }
 
         } catch (\Exception $e) {
@@ -102,7 +103,7 @@ class SubmitGiftCodesToTangoJob implements ShouldQueue
         }
 
         if($errors){
-            $subject = 'Critical Tango Order Errors';
+            $subject = 'Critical Tango Order Errors V3';
 
             $htmlMessage  = 'Submission Date: ' . date("Y-m-d H:i:s") . '<br/>';
             $htmlMessage .= 'We found critical Tango submission errors: <br/><br/>';
@@ -110,8 +111,8 @@ class SubmitGiftCodesToTangoJob implements ShouldQueue
 
             foreach($errors as $error){
                 $htmlMessage .= '--------------------------' . '<br/>';
-                $htmlMessage .= 'Code info: ' . print_r($error['code'], true) .  '<br/>';
-                $htmlMessage .= 'Tango Error: ' . $error['tango'] .  '<br/>';
+                $htmlMessage .= 'Code info: <pre>' . print_r($error['code'], true) .  '</pre><br/>';
+                $htmlMessage .= 'Tango Error: <pre>' . print_r($error['tango'],true) .  '</pre><br/>';
                 $htmlMessage .= '--------------------------' . '<br/>';
             }
             // emonsvetov@incentco.com

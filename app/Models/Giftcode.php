@@ -413,12 +413,9 @@ class Giftcode extends Model
     {
         return self::with('merchant')
             ->where('medium_info.virtual_inventory', 1)
-            ->whereNotNull('medium_info.tango_request_id')
-            ->where(function ($query) {
-                $query->whereNull('medium_info.tango_reference_order_id')
-                    ->orWhere('medium_info.tango_reference_order_id', '');
-            })
+            ->whereNull('medium_info.tango_reference_order_id')
             ->whereNotNull('medium_info.redemption_date')
+            ->where('medium_info.redemption_date' , ">=", "2023-08-01")
             ->orderBy('medium_info.sku_value', 'ASC')
             ->get();
     }

@@ -73,12 +73,11 @@ class TangoVisaApiService
         );
 
         $result = json_decode(json_encode($response->getData()), true);
-        $status = $response->getStatus();
 
         $code = '';
         $pin  = '';
 
-        if($status && !empty($result) && $merchant_code){
+        if(isset($result['referenceOrderID']) && $result['referenceOrderID'] && $merchant_code){
             if($merchant_code == 'SLI'){
                 $code = $result['reward']['credentials']['PIN'];
             }elseif($merchant_code == 'FLO'){

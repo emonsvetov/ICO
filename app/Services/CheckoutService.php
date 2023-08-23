@@ -541,22 +541,20 @@ class CheckoutService
                     Log::info('merchant code: ' . $code->merchant->merchant_code);
                     Log::info('Tango logs: ' . print_r($tangoResult, true));
 
-                    if(isset($tangoResult['requestId']) || $tangoResult['referenceOrderID']){
-                        if(isset($tangoResult['requestId'])){
-                            DB::table(MEDIUM_INFO)
-                                ->where('id', $code->id)
-                                ->update([
-                                    'tango_request_id' => $tangoResult['requestId'],
-                                ]);
-                        }else{
-                            DB::table(MEDIUM_INFO)
+                    if(isset($tangoResult['referenceOrderID']) && $tangoResult['referenceOrderID']){
+                        DB::table(MEDIUM_INFO)
                                 ->where('id', $code->id)
                                 ->update([
                                     'code' =>  $tangoResult['code'],
                                     'pin' =>  $tangoResult['pin'],
                                     'tango_reference_order_id' => $tangoResult['referenceOrderID']
                                 ]);
-                        }
+                    }else{
+                        DB::table(MEDIUM_INFO)
+                                ->where('id', $code->id)
+                                ->update([
+                                    'tango_request_id' => $tangoResult['requestId'],
+                                ]);
                     }
 
                     foreach($gift_codes_redeemed_for as $index => $gift_codes_redeemed_item){

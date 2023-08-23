@@ -52,9 +52,7 @@ class TangoOrderService
                 try
                 {
                     $to = [
-                        ["email" => "emonsvetov@incentco.com", "name"=>"emonsvetov"],
-                        ["email" => "jhowe@incentco.com", "name"=>"jhowe"],
-                        ["email" => "mbradley@incentco.com", "name"=>"mbradley"],
+                        ["email" => "emonsvetov@incentco.com", "name"=>"emonsvetov"]
                     ];
                     Notification::route('mail', $to)
                     ->notify(new TangoOrderErrorNotification($to, ['errors' => $errors, 'contactProgramHost0' => $tangoOrder->program->getHost()]));
