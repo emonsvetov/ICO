@@ -99,6 +99,7 @@ class DomainService
 
     public function setDomainFromRequestKey()
     {
+        pr(request()->get('domainKey'));
         if( request()->get('domainKey') )
         {
             $domain = $this->getDomainByKey( request()->get('domainKey') );

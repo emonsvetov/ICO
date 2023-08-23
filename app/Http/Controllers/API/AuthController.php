@@ -84,13 +84,12 @@ class AuthController extends Controller
 
             $isValidDomain = $domainService->isValidDomain();
 
+            pr($isValidDomain);
+
             if( $isValidDomain )
             {
                 $domain = $domainService->getDomain();
-                pr($domain);
-
                 $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
-                pr($user->programRoles);
                 if( !$user->programRoles )  {
                     return response(['message' => 'No program roles '], 422);
                 }
