@@ -27,6 +27,7 @@ class DomainService
 
     public function setIsValidDomain( $flag )
     {
+        pr($flag);
         $this->isValidDomain = $flag;
     }
 
