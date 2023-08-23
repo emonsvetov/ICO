@@ -84,8 +84,6 @@ class AuthController extends Controller
 
             $isValidDomain = $domainService->isValidDomain();
 
-            pr($isValidDomain);
-
             if( $isValidDomain )
             {
                 $domain = $domainService->getDomain();

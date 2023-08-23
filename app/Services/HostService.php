@@ -46,9 +46,6 @@ class HostService
         $appUrl = env('APP_URL'); //This should be the url of the AdminFrontEnd
         $referer = $this->getReferer();
 
-        pr($appUrl);
-        pr($referer);
-
         if(empty($referer) || empty($appUrl))
         {
             return false;
@@ -56,9 +53,6 @@ class HostService
 
         $apps = parse_url($appUrl);
         $refs = parse_url($referer);
-
-        pr($apps);
-        pr($refs);
 
         if(empty($refs['host']) || empty($apps['host']))
         {
