@@ -597,5 +597,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/dashboard/award-detail/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'awardDetail'])->middleware('can:viewAny,App\Dashboard,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/dashboard/award-peer-detail/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'awardPeerDetail'])->middleware('can:viewAny,App\Dashboard,organization,program');
 
+    //Manager > Manage Account
+    Route::get('/v1/organization/{organization}/program/{program}/monies-available-postings',[App\Http\Controllers\API\ManagerController::class, 'getMoniesAvailablePostings'])->middleware('can:transferMonies,App\Program,organization,program');
+
 });
 
