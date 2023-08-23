@@ -39,8 +39,6 @@ class DomainService
     {
         $this->setDomainFromRequestKey(); // Try "domainKey" in request
 
-        pr($this->isAdminAppDomain());
-
         if( !$this->isAdminAppDomain() )
         {
             if( !$this->getDomain() )
