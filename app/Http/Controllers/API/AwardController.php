@@ -28,7 +28,6 @@ class AwardController extends Controller
         }
     }
 
-
     public function readListReclaimablePeerPoints(
         Organization $organization,
         Program $program,

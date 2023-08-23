@@ -8,6 +8,7 @@ use App\Jobs\Program\AddProgramsToInvoiceJob;
 use App\Jobs\Program\GenerateMonthlyInvoicesJob;
 use App\Jobs\Program\SubmitTangoOrdersJob;
 use App\Jobs\Program\SendActivationReminderJob;
+use App\Jobs\SendMilestoneAward;
 // use App\Notifications\CronNotification; //Can be used for CronNotifications
 
 class CronService
@@ -29,5 +30,8 @@ class CronService
     }
     public function generateVirtualInventoryJob() {
         dispatch( new GenerateVirtualInventoryJob() );
+    }
+    public function sendMilestoneAward() {
+        dispatch( new SendMilestoneAward() );
     }
 }
