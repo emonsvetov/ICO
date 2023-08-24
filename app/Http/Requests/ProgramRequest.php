@@ -169,7 +169,8 @@ class ProgramRequest extends FormRequest
             'allow_search_peers_not_logged_into'=>'nullable|boolean',
             'allow_view_leaderboards_not_logged_into'=>'nullable|boolean',
             'enable_how_are_you_feeling'=>'nullable|boolean',
-            'enable_referrals'=>'nullable|boolean'
+            'enable_referrals'=>'nullable|boolean',
+            'allow_milestone_award'=>'nullable|boolean',
         ];
     }
 

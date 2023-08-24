@@ -344,7 +344,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //EventType
 
-    Route::get('/v1/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType');
+    Route::get('/v1/organization/{organization}/program/{program}/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/eventtype-milestone-frequency',[App\Http\Controllers\API\EventTypeController::class, 'milestoneFrequency'])->middleware('can:viewAny,App\EventType,organization,program');
 
     //EmailTemplate
 

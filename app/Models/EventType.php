@@ -22,6 +22,13 @@ class EventType extends Model
     const EVENT_TYPE_PEER2PEER_ALLOCATION = 'peer2peer allocation';
     const EVENT_TYPE_PROMOTIONAL_AWARD = 'promotional award';
     const EVENT_TYPE_AUTO_AWARD = 'auto award';
+    const MILESTONE_AWARD = 'milestone award';
+    const MILESTONE_FREQUENCY_OPTIONS = [
+        5 => '5 Years',
+        10 => '10 Years',
+        15 => '15 Years',
+        20 => '20 Years'
+    ];
 
     /**
      * @param string $type
@@ -69,7 +76,7 @@ class EventType extends Model
 
     public static function getIdByTypeStandard( $insert = false)   {
         return self::getIdByType(self::EVENT_TYPE_STANDARD);
-    } 
+    }
     public static function getIdByTypeBadge( $insert = false)   {
         return self::getIdByType(self::EVENT_TYPE_BADGE);
     }
