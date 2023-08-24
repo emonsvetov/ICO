@@ -80,6 +80,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'updated_at',
         'avatar',
         'join_reminder_at',
+        'sso_token',
     ];
 
     /**
