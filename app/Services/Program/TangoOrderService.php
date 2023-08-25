@@ -39,7 +39,7 @@ class TangoOrderService
                         'tango_request_id' => $result['result']['requestId'],
                         'tango_order_log' => $result['result']['debug']
                     );
-                }   
+                }
                 else
                 {
                     $response['success'] = true;
@@ -52,15 +52,13 @@ class TangoOrderService
                 try
                 {
                     $to = [
-                        ["email" => "emonsvetov@incentco.com", "name"=>"emonsvetov"],
-                        ["email" => "jhowe@incentco.com", "name"=>"jhowe"],
-                        ["email" => "mbradley@incentco.com", "name"=>"mbradley"],
+                        ["email" => "emonsvetov@incentco.com", "name"=>"emonsvetov"]
                     ];
                     Notification::route('mail', $to)
                     ->notify(new TangoOrderErrorNotification($to, ['errors' => $errors, 'contactProgramHost0' => $tangoOrder->program->getHost()]));
                     $response['msg'] = "TangoOrderErrorNotification Sent";
-                } 
-                catch (\Exception $e)	
+                }
+                catch (\Exception $e)
                 {
                     $response['msg'] = sprintf("Error sending TangoOrderErrorNotification notification");
                 }
@@ -88,27 +86,27 @@ class TangoOrderService
         {
             $error = 'Merchant is not set to use Tanglo API';
         }
-        else 
+        else
         {
             try
             {
                 $env = config('app.env');
                 // $env = 'production';
                 $toaID = null;
-    
+
                 $testTangoOrdersApi = TangoOrdersApi::tango_orders_api_get_test();
                 if( $env == 'production' )
                 {
                     //if a Physical Order NOT tied to Demo program then we have to use standard Tango Configuration based on Merchants settings.
                     $toaID = $tangoOrder->merchant->toa_id;
-                    if($tangoOrder->physical_order->program->exists() && $tangoOrder->physical_order->program->is_demo) 
+                    if($tangoOrder->physical_order->program->exists() && $tangoOrder->physical_order->program->is_demo)
                     {
                         $toaID = $testTangoOrdersApi->id;
                     }
-                }   
-                else 
+                }
+                else
                 {
-                    if( !$testTangoOrdersApi->exists() )    
+                    if( !$testTangoOrdersApi->exists() )
                     {
                         $error = 'Test Tango Configuration does not exist';
                     }
@@ -121,17 +119,17 @@ class TangoOrderService
                         $tangoOrder->update([
                             'status' => TangoOrder::ORDER_STATUS_PROCESS
                         ]);
-    
+
                         $physical_order = $tangoOrder->physical_order;
                         $orderDetails = $physical_order->read_order_details();
-    
+
                         $notes = (isset($physical_order->notes)) ? json_decode($physical_order->notes, true) : [];
-    
+
                         if( isset($_SERVER['INCENTCO_USER']) && $_SERVER['INCENTCO_USER'] == 'eugene_local' )
                         {
                             $notes['email'] = 'emonsvetov@incentco.com';
-                        } 
-                        elseif( isset($_SERVER ['INCENTCO_ENVIRONMENT']) && $_SERVER ['INCENTCO_ENVIRONMENT'] != 'production' ) 
+                        }
+                        elseif( isset($_SERVER ['INCENTCO_ENVIRONMENT']) && $_SERVER ['INCENTCO_ENVIRONMENT'] != 'production' )
                         {
                                 $notes['email'] = 'mbradley@incentco.com';
                         }
@@ -151,29 +149,29 @@ class TangoOrderService
                             'senderLastName' => null,
                             'externalRefID' => null
                         ];
-    
+
                         $result = $this->tangoVisaApiService->submit_order($data, $toaID);
-    
+
                         $data = [
                             'log'         => json_encode($result),
                             'created_at'  => $result['createdAt']
                         ];
-    
+
                         if($result['referenceOrderID'])
                         {
-                            $data['external_id'] = $result['referenceOrderID'];
+                            $data['reference_order_id'] = $result['referenceOrderID'];
                             $data['request_id'] =  null;
                             $data['status'] = TangoOrder::ORDER_STATUS_SUCCESS;
                         }
                         else
                         {
-                            $data['external_id'] = null;
+                            $data['reference_order_id'] = null;
                             $data['request_id'] = $result['requestId'];
                             $data['status'] = TangoOrder::ORDER_STATUS_ERROR;
                         }
-    
+
                         $tangoOrder->update($data);
-    
+
                         if($data['status'] == TangoOrder::ORDER_STATUS_SUCCESS){
                             $tangoOrder->physical_order->update([
                                 'state_type_id' => Status::get_order_shipped_state()

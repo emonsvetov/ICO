@@ -110,6 +110,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::group(['middleware' => ['json.response']], function () {
 
+    Route::post('/v1/sso-login', [App\Http\Controllers\API\AuthController::class, 'ssoLogin'])->name('api.v1.ssoLogin');
+    Route::post('/v1/sso-add-token', [App\Http\Controllers\API\AuthController::class, 'ssoAddToken'])->name('api.v1.ssoAddToken');
     Route::post('/v1/login', [App\Http\Controllers\API\AuthController::class, 'login'])->name('api.v1.login');
     Route::post('/v1/admin/login', [App\Http\Controllers\API\AuthController::class, 'adminLogin'])->name('api.v1.adminLogin');
     Route::post('/v1/register', [App\Http\Controllers\API\AuthController::class, 'register'])->name('api.v1.register');
@@ -320,6 +322,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'index'])->middleware('can:viewAny,App\MerchantGiftcode,merchant');
 
     Route::post('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'store'])->middleware('can:add,App\MerchantGiftcode,merchant');
+    Route::post('/v1/merchant/{merchant}/giftcode-virtual', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'storeVirtual'])->middleware('can:add,App\MerchantGiftcode,merchant');
 
     // GiftCode
     Route::post('/v1/giftcode/purchase-from-v2', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseFromV2'])->middleware('can:purchaseFromV2,App\Giftcode');

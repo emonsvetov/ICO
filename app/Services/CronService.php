@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\GenerateVirtualInventoryJob;
+use App\Jobs\SubmitGiftCodesToTangoJob;
 use App\Jobs\Program\PostMonthlyChargesToInvoiceJob;
 use App\Jobs\Program\AddProgramsToInvoiceJob;
 use App\Jobs\Program\GenerateMonthlyInvoicesJob;
@@ -33,5 +34,8 @@ class CronService
     }
     public function sendMilestoneAward() {
         dispatch( new SendMilestoneAward() );
+    }
+    public function submitGiftCodesToTangoJob() {
+        dispatch( new SubmitGiftCodesToTangoJob() );
     }
 }
