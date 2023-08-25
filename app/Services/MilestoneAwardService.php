@@ -5,7 +5,6 @@ namespace App\Services;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Models\Program;
 use App\Models\Event;
 use App\Models\User;
@@ -24,12 +23,11 @@ class MilestoneAwardService extends AwardService {
                 if( $participants ) {
                     foreach( $participants as $participant )   {
                         if ( !$programService->canProgramPayForAwards($event->program, $event, [$participant->id], $event->max_awardable_amount) ) {
-                            Log::info ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
+                            cronlog ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
                             continue;
                         }
-                        Log::info (sprintf("going to award %d to UserID:% " . $event->max_awardable_amount, $participant->id));
-
-                        $this->award($event, $participant, $participant);
+                        cronlog (sprintf("going to award %d to UserID:%d",$event->max_awardable_amount, $participant->id));
+                        $this->awardUser($event, $participant, $participant);
                     }
                 }
             }

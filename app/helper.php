@@ -338,3 +338,10 @@ if (! function_exists('camel_case')) {
         return Str::camel($value);
     }
 }
+
+if (! function_exists('cronlog')) {
+    function cronlog( $msg )
+    {
+        return Illuminate\Support\Facades\Log::channel('cron')->info( $msg );
+    }
+}
