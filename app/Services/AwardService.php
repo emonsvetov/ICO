@@ -41,7 +41,7 @@ class AwardService
     protected function isCron() {
         return $this->isCron;
     }
-    public function award(Program $program, Organization $organization, User $awarder, array $data)
+    public function awardMany(Program $program, Organization $organization, User $awarder, array $data)
     {
         // return $programService->readAvailableBalance($program);
 
