@@ -11,22 +11,11 @@ use App\Models\Currency;
 use App\Models\Account;
 use App\Models\Program;
 
-
 class TransferMoniesService
 {
-    // private ProgramService $programService;
-    private AccountService $accountService;
-
     const TRANSFER_CSV_FROM_HEADER = ["Transfer_from_program_id", "Transfer_from_program_external_id", "Transfer_from_program_name"];
     const TRANSFER_CSV_TO_HEADER = ["Transfer_to_program_id", "Transfer_to_program_external_id", "Transfer_to_program_name", "Amount"];
 
-    public function __construct(
-        // ProgramService $programService,
-        AccountService $accountService,
-    ) {
-        // $transferData->programservice = $programService;
-        $this->accountService = $accountService;
-    }
     public function transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount)    {
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
 
@@ -71,7 +60,7 @@ class TransferMoniesService
             $topLevelProgram = $program;
         }
         $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name', 'external_id'])->get();
-        $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
+        $balance = (new \App\Services\AccountService)->readAvailableBalanceForProgram ( $program );
         return
             [
                 'program' => $program,
@@ -84,7 +73,7 @@ class TransferMoniesService
         if(sizeof($data["amounts"]) > 0)    {
             $result = [];
             foreach($data["amounts"] as $programId => $amount)  {
-                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
+                $balance = (new \App\Services\AccountService)->readAvailableBalanceForProgram ( $program );
                 if ($amount > $balance) {
                     throw new \RuntimeException ( "Account balance has insufficient funds to transfer $" . $amount, 400 );
                 }
@@ -94,7 +83,7 @@ class TransferMoniesService
                 $result[$programId] = $this->transferMonies($user_account_holder_id, $program_account_holder_id, $new_program_account_holder_id, $amount);
             }
             if( sizeof($data["amounts"]) == sizeof($result))    {
-                $balance = $this->accountService->readAvailableBalanceForProgram ( $program );
+                $balance = (new \App\Services\AccountService)->readAvailableBalanceForProgram ( $program );
                 return ['success'=>true, 'transferred' => $result, 'balance' => $balance];
             }
         }

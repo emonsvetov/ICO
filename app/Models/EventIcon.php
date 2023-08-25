@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class EventIcon extends Model
 {
-    use HasFactory;
+    protected $table = 'event_icons';
 
     protected $guarded = [];
     protected $hidden = [
