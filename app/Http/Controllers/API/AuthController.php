@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\SsoAddTokenRequest;
 use App\Http\Requests\SsoLoginRequest;
+use App\Services\UserService;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
@@ -68,36 +69,21 @@ class AuthController extends Controller
         }
     }
 
-    public function ssoAddToken(SsoAddTokenRequest $request)
+    public function ssoAddToken(SsoAddTokenRequest $request, UserService $service)
     {
-        $validated = $request->validated();
-        $user = User::leftJoin('program_user', 'users.id', '=', 'program_user.user_id')
-            ->select('users.*')
-            ->where('program_user.program_id', $validated['program_id'])
-            ->where('users.email', $validated['email'])
-            ->first();
-
-        if (is_object($user)) {
-            $user->sso_token = $validated['sso_token'];
-            $res = $user->save();
-            $code = 200;
-        }else{
-            $res = false;
-            $code = 404;
-        }
+        $data = $request->validated();
+        $res = $service->ssoAddToken($data, $request->ip());
         return response([
-            'success' => $res
-        ],$code);
+            'success' => $res['success']
+        ], $res['code']);
     }
 
-    public function ssoLogin(SsoLoginRequest $request, DomainService $domainService)
+    public function ssoLogin(SsoLoginRequest $request, DomainService $domainService, UserService $service)
     {
         $validated = $request->validated();
-        $user = User::where('sso_token', $validated['sso_token'])->first();
+        $user = $service->getSsoUser($validated['sso_token']);
         if ($user) {
             auth()->guard('ssoweb')->login($user);
-            $user->sso_token = null;
-            $user->save();
             $user = auth()->guard('ssoweb')->user();
             $user->load(['organization', 'roles']);
 
