@@ -32,6 +32,8 @@ WARNING WARNING WARNING
 NEED TO CREATE MIDDLEWARE THAT CONFIRMS THE CURRENT USER BELONGS TO THE REQUESTED ORGANIZATION
 */
 
+Route::get('/v1/organization/{organization}/program/{program}/merchant',[App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index'); //Need to load for guest participant/manager on home page.
+
 Route::post('/v1/organization/{organization}/userimportheaders', [App\Http\Controllers\API\UserImportController::class, 'userHeaderIndex']);
 Route::post('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'userFileImport']);
 Route::get('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'index']);
@@ -240,8 +242,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //ProgramMerchant routes
 
-    Route::get('/v1/organization/{organization}/program/{program}/merchant',
-    [App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAny,App\ProgramMerchant,organization,program');
+    // Route::get('/v1/organization/{organization}/program/{program}/merchant',[App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAny,App\ProgramMerchant,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
@@ -347,7 +348,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //EventType
 
-    Route::get('/v1/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType');
+    Route::get('/v1/organization/{organization}/program/{program}/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/eventtype-milestone-frequency',[App\Http\Controllers\API\EventTypeController::class, 'milestoneFrequency'])->middleware('can:viewAny,App\EventType,organization,program');
 
     //EmailTemplate
 

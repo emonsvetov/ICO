@@ -6,7 +6,6 @@ use DB;
 use Illuminate\Database\Eloquent\Collection;
 
 use App\Services\Program\Traits\ChargeFeeTrait;
-use App\Services\Program\TransferMoniesService;
 use App\Services\ProgramTemplateService;
 use App\Models\Traits\IdExtractor;
 use App\Models\JournalEventType;
@@ -37,21 +36,15 @@ class ProgramService
     private AccountService $accountService;
     private InvoiceService $InvoiceService;
     private ProgramTemplateService $programTemplateService;
-    private TransferMoniesService $transferMoniesService;
-    private ProgramsTransactionFeeService $programsTransactionFeeService;
 
     public function __construct(
         UserService $userService,
         AccountService $accountService,
-        TransferMoniesService $transferMoniesService,
         ProgramTemplateService $programTemplateService,
-        ProgramsTransactionFeeService $programsTransactionFeeService
     ) {
         $this->userService = $userService;
         $this->accountService = $accountService;
-        $this->transferMoniesService = $transferMoniesService;
         $this->programTemplateService = $programTemplateService;
-        $this->programsTransactionFeeService = $programsTransactionFeeService;
     }
 
     const DEFAULT_PARAMS = [
@@ -574,7 +567,7 @@ class ProgramService
 				'journal_event_type' => 'Charge setup fee to program',
 				'program_account_holder_id' => $program->account_holder_id
 			));
-		} catch (Exception $e) {
+		} catch (\Exception $e) {
 			throw new \RuntimeException ( 'Could not get fee account information in  ProgramService:isFeeAccountExists. DB query failed.', 500 );
 		}
 
@@ -583,11 +576,11 @@ class ProgramService
     }
 
     public function getTransferMonies(Program $program)    {
-        return $this->transferMoniesService->getTransferMoniesByProgram($program);
+        return (new \App\Services\Program\TransferMoniesService)->getTransferMoniesByProgram($program);
     }
 
     public function submitTransferMonies(Program $program, $data)    {
-        return $this->transferMoniesService->submitTransferMonies($program, $data);
+        return (new \App\Services\Program\TransferMoniesService)->submitTransferMonies($program, $data);
     }
 
     /**
@@ -621,7 +614,7 @@ class ProgramService
                 return true;
             }
 
-            $transaction_fee = $this->programsTransactionFeeService->calculateTransactionFee($program, $amount);
+            $transaction_fee = (new \App\Services\ProgramsTransactionFeeService)->calculateTransactionFee($program, $amount);
             // Get the total of transaction fees and award based on how many people will be awarded
             $total_transaction_fee = $transaction_fee * count($userIds);
 
