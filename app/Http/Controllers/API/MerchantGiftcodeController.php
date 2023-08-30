@@ -13,6 +13,7 @@ use App\Models\Merchant;
 use App\Models\Giftcode;
 use App\Models\Program;
 Use Exception;
+use Illuminate\Support\Facades\DB;
 
 class MerchantGiftcodeController extends Controller
 {
@@ -28,15 +29,13 @@ class MerchantGiftcodeController extends Controller
 
         $fromDate = '';
         if($from){
-            $fromDate = substr($from,4,11);
-            $fromDate = date('Y-m-d', strtotime($fromDate)) . ' 00:00:00';
+            $fromDate = date('Y-m-d', strtotime($from)) . ' 00:00:00';
         }
 
         $to = request()->get('to', null);
         $toDate = '';
         if($to){
-            $toDate = substr($to, 4, 11);
-            $toDate = date('Y-m-d', strtotime($toDate)) . ' 23:59:59';
+            $toDate = date('Y-m-d', strtotime($to)) . ' 23:59:59';
         }
 
         $where = ['merchant_id' => $merchant->id];
@@ -55,10 +54,16 @@ class MerchantGiftcodeController extends Controller
             $orderByRaw = "{$sortby} {$direction}";
         }
 
-        $query = Giftcode::where( $where );
+        $query = Giftcode::select( 'medium_info.*' )->where($where);
 
         $type = request()->get('type', '');
         if($type == 'redeemed'){
+            $query->leftJoin('users', 'users.id', '=', 'medium_info.redeemed_user_id');
+            $query->select(
+                'medium_info.*' ,
+                DB::raw('CONCAT(users.first_name, " ", users.last_name) as redeemed_by')
+            );
+
             $query->where(function ($q) {
                 $q->whereNotNull('redemption_datetime');
                 $q->orWhere('purchased_by_v2', '=' , 1);

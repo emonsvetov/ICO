@@ -17,7 +17,7 @@ class ProgramParticipantGiftCodeController extends Controller
         $limit = request()->get('pageSize', 30);
         $page = request()->get('page', 1);
         $offset = ($page - 1) * $limit;
-        $giftCodes = MediumInfo::getListRedeemedByParticipant($user->id, true, $limit, $offset);
+        $giftCodes = MediumInfo::getListRedeemedByParticipant($user->id, false, $limit, $offset);
 
         if ($giftCodes->isNotEmpty()) {
             return response($giftCodes);
