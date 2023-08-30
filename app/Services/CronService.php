@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\CsvAutoImportJob;
 use App\Jobs\GenerateVirtualInventoryJob;
 use App\Jobs\Program\PostMonthlyChargesToInvoiceJob;
 use App\Jobs\Program\AddProgramsToInvoiceJob;
@@ -29,5 +30,9 @@ class CronService
     }
     public function generateVirtualInventoryJob() {
         dispatch( new GenerateVirtualInventoryJob() );
+    }
+
+    public function csvAutoImportJob() {
+        dispatch( new csvAutoImportJob() );
     }
 }

@@ -34,8 +34,12 @@ NEED TO CREATE MIDDLEWARE THAT CONFIRMS THE CURRENT USER BELONGS TO THE REQUESTE
 
 Route::post('/v1/organization/{organization}/userimportheaders', [App\Http\Controllers\API\UserImportController::class, 'userHeaderIndex']);
 Route::post('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'userFileImport']);
+Route::post('/v1/organization/{organization}/user-auto-import', [App\Http\Controllers\API\UserImportController::class, 'userFileAutoImport']);
 Route::get('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'index']);
 Route::get('/v1/organization/{organization}/userimport/{csvImport}', [App\Http\Controllers\API\UserImportController::class, 'show']);
+
+Route::post('/v1/organization/{organization}/csv-import-setting', [App\Http\Controllers\API\CsvImportSettingController::class, 'store']);
+Route::get('/v1/organization/{organization}/csv-import-setting/{type?}', [App\Http\Controllers\API\CsvImportSettingController::class, 'index']);
 
 Route::post('/v1/organization/{organization}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
 Route::post('/v1/organization/{organization}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
