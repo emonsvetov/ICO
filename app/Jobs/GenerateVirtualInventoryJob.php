@@ -88,22 +88,30 @@ class GenerateVirtualInventoryJob implements ShouldQueue
                     $real_code_exist = 0;
                     foreach($real_codes as $real_code){
                         if($real_code->sku_value == $sku_value){
-                            $real_code_exist ++;
+                            $real_code_exist = $real_code->count;
+                            break;
                         }
                     }
 
-                    if($real_code_exist >= 20){
+                    echo 'real_codes:' . $real_code_exist . PHP_EOL;
+
+                    if($real_code_exist >= 50){
                         continue;
                     }
 
                     $existing_virtual_codes = 0;
                     foreach($virtual_codes as $virtual_code){
                         if($virtual_code->sku_value == $sku_value){
-                            $existing_virtual_codes ++;
+                            $existing_virtual_codes = $virtual_code->count;
+                            break;
                         }
                     }
 
+                    echo 'virtual_codes:' . $existing_virtual_codes . PHP_EOL;
+
                     $amount_codes = $real_code_exist + $existing_virtual_codes;
+
+                     echo 'total_codes:' . $amount_codes . PHP_EOL;
 
                     if($amount_codes < 50){
                         for( $i=$amount_codes; $i<50; $i++ ){
@@ -137,7 +145,7 @@ class GenerateVirtualInventoryJob implements ShouldQueue
                             }
 
                             $gift_code_response = Giftcode::createGiftcode(null, $merchant, $giftcode);
-                            echo "<pre>".print_r($gift_code_response, true)."</pre>";
+                            echo $gift_code_response['gift_code_id'] . PHP_EOL;
                         }
                     }
                 }

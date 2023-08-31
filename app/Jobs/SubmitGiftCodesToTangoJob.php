@@ -54,7 +54,7 @@ class SubmitGiftCodesToTangoJob implements ShouldQueue
                 $data = [
                     'amount' => $code->sku_value,
                     'sendEmail' => false,
-                    'message' => 'C9ongratulations on your Reward!',
+                    'message' => 'Congratulations on your Reward!',
                     'notes' => 'auto generated order',
                     'externalRefID' => null
                 ];
@@ -115,8 +115,8 @@ class SubmitGiftCodesToTangoJob implements ShouldQueue
                 $htmlMessage .= 'Tango Error: <pre>' . print_r($error['tango'],true) .  '</pre><br/>';
                 $htmlMessage .= '--------------------------' . '<br/>';
             }
-            // emonsvetov@incentco.com
-            Mail::to('olegganshonkov@gmail.com')->send(new ErrorEmail($subject, $htmlMessage));
+
+            Mail::to('emonsvetov@incentco.com')->send(new ErrorEmail($subject, $htmlMessage));
         }
 
         echo PHP_EOL . "END on " . date('Y-m-d h:i:s') . PHP_EOL;

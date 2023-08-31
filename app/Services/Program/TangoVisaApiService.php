@@ -44,12 +44,10 @@ class TangoVisaApiService
             $toa_utid = $tangoOrdersApi->udid;
         }
 
-        //Log::info('code: ' . print_r($tangoOrdersApi, true));
-
 
         $data['amount'] = floatval( preg_replace( "/,/", "", $data['amount']));
         $data['amount'] = number_format( $data['amount'], 2, '.', '');
-        // dump($tangoOrdersApi->toArray());
+
         // $customers = $tango->getOrderList();
 
         $response = $tango->placeOrder(
