@@ -125,6 +125,9 @@ class InvoiceService
 			$program_statement->program_name = $statement ['info']->program_name;
 			$program_statement->program_account_holder_id = $statement ['info']->program_account_holder_id;
 			$program_statement->charges = array ();
+
+			//return $report_data;
+
 			$data = $report_data[$statement['info']->program_account_holder_id];
 			// dd($data->invoice_for_awards);
 			// pr($data->toArray());

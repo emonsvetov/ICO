@@ -746,7 +746,7 @@ class AwardService
 
             if( $result->isNotEmpty() )
             {
-                $accountService = resolve(App\Services\AccountService::class);
+                $accountService = resolve(\App\Services\AccountService::class);
                 // Get the points redeemed and expired
                 $points_redeemed = $accountService->readRedeemedTotalForParticipant ( $program, $user );
                 $points_expired = $accountService->readExpiredTotalForParticipant ( $program, $user );
