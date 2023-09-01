@@ -59,6 +59,8 @@ Route::get('/v1/organization/{organization}/programimport/{csvImport}', [App\Htt
 
 
 Route::get('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'index'])->name('api.v1.event_icons.index');
+Route::get('/v1/organization/{organization}/eventicondefault', [App\Http\Controllers\API\EventIconController::class, 'default']);
+
 Route::post('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'store'])->name('api.v1.event_icons.store');
 Route::delete('/v1/organization/{organization}/event_icons/{eventIcon}', [App\Http\Controllers\API\EventIconController::class, 'delete']);
 
