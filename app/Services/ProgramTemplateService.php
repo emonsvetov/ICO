@@ -125,4 +125,20 @@ class ProgramTemplateService
         }
         return $template;
     }
+
+    /**
+     * @param ProgramTemplate $programTemplate
+     * @param string $mediaName;one of the ProgramTemplate::IMAGE_FIELDS
+     * @return bool
+     */
+    public function deleteTemplateMedia(ProgramTemplate $programTemplate, $mediaName)
+    {
+        if (in_array($mediaName, ProgramTemplate::IMAGE_FIELDS)) {
+            $oldFile = $programTemplate[$mediaName];
+            if( $oldFile && strpos('theme/default', $oldFile) === false )  {
+                Storage::delete( $oldFile );
+            }
+            return $programTemplate->update([$mediaName=>null]);
+        }
+    }
 }
