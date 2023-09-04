@@ -136,6 +136,7 @@ class UserImportController extends Controller
 
         try {
             $setups = json_decode($validated['setups'], true);
+            $fieldsToMap = json_decode($validated['fieldsToMap'], true);
             $requestType = $setups['UserRequest']['type'] ?? $setups['UserUpdateRequest']['type'];
             $type = CsvImportType::getIdByName($requestType);
 
@@ -144,9 +145,12 @@ class UserImportController extends Controller
             }
 
             $сsvImport = (new CsvImport)->createCsvAutoImport($fileUpload + [
-                    'organization_id'       => $organization->id,
-                    'csv_import_type_id'    => $type
-                ]);
+                    'organization_id' => $organization->id,
+                    'csv_import_type_id' => $type,
+                    'requestType' => $requestType,
+                    'program_key' => $fieldsToMap['CSVProgramRequest']['program_id']
+                ]
+            );
 
             return response(['csvImport' => $сsvImport]);
         } catch (\Exception $e) {
@@ -240,14 +244,14 @@ class UserImportController extends Controller
         //$file->getRealPath();
     }
 
-    public function userSaveSettings(Request $request, Organization $organization, UserImportService $userImportService)
+    public function userSaveSettings(Request $request, Organization $organization, CSVimportService $csvImportService)
     {
         $validated = $request->validate([
             'fieldsToMap' => 'required|json',
             'setups' => 'required|json'
         ]);
 
-        $csvImportSetting = $userImportService->saveSettings($validated, $organization);
+        $csvImportSetting = $csvImportService->saveSettings($validated, $organization);
         return response(['success' => (bool)$csvImportSetting, 'csvImportSetting' => $csvImportSetting]);
 
     }

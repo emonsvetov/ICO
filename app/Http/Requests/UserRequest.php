@@ -85,7 +85,7 @@ class UserRequest extends FormRequest
             'type' => 'required|integer',
             'roles' => 'required|array', // only 1 role per user in the csv import
             'mail' => 'nullable|boolean',
-            'status' => 'nullable|boolean',
+            'status' => 'nullable|integer',
         ];
     }
 

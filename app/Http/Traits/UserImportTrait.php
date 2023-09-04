@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Traits;
 
+use App\Mail\templates\ProcessCompletionReportEmail;
+use App\Models\Event;
 use App\Models\User;
 use App\Models\Award;
 use App\Models\Program;
@@ -10,11 +12,11 @@ use App\Models\EventXmlData;
 use App\Mail\templates\WelcomeEmail;
 use App\Mail\templates\AwardBadgeEmail;
 use App\Notifications\CSVImportNotification;
+use \Illuminate\Support\Facades\DB;
 
 use App\Services\AwardService;
-use DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
-use Mail;
 use DateTime;
 
 trait UserImportTrait
@@ -246,56 +248,73 @@ trait UserImportTrait
         }
     }
 
-    public function addAndAwardParticipant($csvImport, $data, $suppliedConstants, $awardService)
+    public function addAndAwardParticipant($csvImport, $data, $suppliedConstants, AwardService $awardService)
     {
         try
         {
-            $userIds = DB::transaction(function() use ($data, $suppliedConstants) {
+            DB::beginTransaction();
+            $userIds = [];
 
-                $createdUserIds = [];
-                $user = new User;
+            foreach ($data['UserRequest'] as $key => $userData)
+            {
+                $newUser = (new User)->createAccount($userData + [
+                        'organization_id' => $suppliedConstants['organization_id'],
+                        'password' => $this->createUserPassword(),
+                        'user_status_id' => $data['setups']['UserRequest']['status'] ?? null,
+                    ]);
 
-                foreach ($data['UserRequest'] as $key => $userData)
-                {
-                    $newUser = $user->createAccount($userData + [
-                            'organization_id' => $suppliedConstants['organization_id'],
-                            'password' => $this->createUserPassword()
-                        ]);
+                $program = Program::find($data['CSVProgramRequest'][$key]['program_id']);
+                $program->users()->sync( [ $newUser->id ], false );
+                $organization = Organization::find($suppliedConstants['organization_id']);
 
-                    $program = Program::find($data['CSVProgramRequest'][$key]['program_id']);
-                    $program->users()->sync( [ $newUser->id ], false );
-                    $organization = find($suppliedConstants['organization_id']);
-
-                    $roles = !empty($userData['roles']) ? $userData['roles'] : $data['setups']['UserRequest']['roles'];
-                    if( !empty($roles) ) {
-                        $newUser->syncProgramRoles($program->id, $roles);
-                    }
-
-                    // AWARD NEW USER
-                    $requestClassPath = "App\Http\Requests\\AwardRequest";
-                    $formRequestClass = new $requestClassPath;
-                    $formRequestRules = $formRequestClass->rules();
-                    $validator = Validator::make($userData, $formRequestRules);
-
-                    if ($validator->fails()) {
-                        throw new \Exception($validator->errors()->first());
-                    }
-
-                    $awardService->create($program, $organization, $newUser, $validator->validated());
-
-                    $message = new WelcomeEmail($newUser->first_name, $newUser->email, "");
-                    Mail::to($newUser->email)->send($message);
+                $roles = !empty($userData['roles']) ? $userData['roles'] : $data['setups']['UserRequest']['roles'];
+                if( !empty($roles) ) {
+                    $newUser->syncProgramRoles($program->id, $roles);
                 }
-            });
 
+                // AWARD NEW USER
+                $event = Event::find($data['AwardRequest'][$key]['event_id']);
+                $awardData = $userData + $data['AwardRequest'][$key] + [
+                    'message' => $event->message,
+                    'user_id' => [$newUser->id],
+                    'organization_id' => $organization->id,
+                ];
+                $requestClassPath = "App\Http\Requests\\AwardRequest";
+                $formRequestClass = new $requestClassPath;
+                $formRequestRules = $formRequestClass->rules();
+                $validator = Validator::make($awardData, $formRequestRules);
+
+                if ($validator->fails()) {
+                    throw new \Exception(print_r($data, true) . $validator->errors()->first());
+                }
+                $managers = $program->getManagers();
+                if(!$managers){
+                    throw new \Exception("No managers in program {$program->name}");
+                }
+
+                $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData);
+
+                $message = new WelcomeEmail($newUser->first_name, $newUser->email, $program);
+                Mail::to($newUser->email)->send($message);
+
+                $message = new ProcessCompletionReportEmail($managers[0]->first_name, $csvImport->name, $program);
+                Mail::to($managers[0]->email)->send($message);
+
+                $userIds[] = $newUser->id;
+            }
             $csvImport->update(['is_imported' => 1]);
 
+            DB::commit();
+
             return $userIds;
-        }
-        catch (\Throwable $e)
+        } catch (\Exception $e)
         {
-            return $e->getMessage();
-            $csvImport->notify(new CSVImportNotification(['errors' => $e->getMessage()]));
+            DB::rollBack();
+            print_r($e->getMessage());
+            print_r($e->getTrace());
+            die;
+            $csvImport->update(['is_processed' => 0]);
+//            $csvImport->notify(new CSVImportNotification(['errors' => $e->getMessage()]));
         }
     }
 

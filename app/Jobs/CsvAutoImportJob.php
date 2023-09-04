@@ -21,6 +21,7 @@ use App\Notifications\CSVImportNotification;
 
 use DB;
 use Illuminate\Support\Facades\Validator;
+use function Ramsey\Uuid\v1;
 
 class CsvAutoImportJob implements ShouldQueue
 {
@@ -47,11 +48,29 @@ class CsvAutoImportJob implements ShouldQueue
         echo PHP_EOL . "Csv auto import cron Started on " . date('Y-m-d h:i:s') . PHP_EOL;
 
         $csvImports = CsvImport::getAllIsProcessed();
+        $csvImportService->updateProcessedList($csvImports->pluck('name')->toArray());
+        $csvImports = CsvImport::getAllIsProcessed();
+
+        $successUsers = $errors = [];
 
         echo PHP_EOL . "Number of CSV files: " . count($csvImports) . PHP_EOL;
 
         foreach ($csvImports as $csvImport) {
-            $importData = $csvImportService->autoImportFile($csvImport, $awardService);
+            $result = $csvImportService->autoImportFile($csvImport, $awardService);
+            if (isset($result['success']) && $result['success']) {
+                $successUsers[] = $result;
+            } else {
+                $errors = $result;
+            }
+        }
+
+        if ($successUsers){
+            echo 'Users added successfully: ' . count($successUsers) . PHP_EOL;
+        }
+
+        if ($errors) {
+            echo 'Errors: ' . PHP_EOL;
+            print_r($errors);
         }
 
         echo PHP_EOL . "END on " . date('Y-m-d h:i:s') . PHP_EOL;

@@ -132,8 +132,8 @@ class AwardService
         return $result;
     }
     public function awardUser( $event, $awardee, $awarder, object $data = null) {
-        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
-        DB::statement($statement);
+//        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
+//        DB::statement($statement);
         DB::beginTransaction();
 
         $program = $event->program;
@@ -176,7 +176,7 @@ class AwardService
         if( $isAutoAward || !$isPromotional ) {
             if($awardAmount > 0){
 				$transactionFee = (new \App\Services\ProgramsTransactionFeeService)->calculateTransactionFee ( $program, $awardAmount );
-                $programService = resolve(App\Services\ProgramService::class);
+                $programService = resolve(\App\Services\ProgramService::class);
 				if ($transactionFee > 0 && ! $programService->canProgramPayForAwards ( $program, $event, [$awardee->id], $transactionFee )) {
 					throw new \RuntimeException ( "The program's balance is too low.", 400 );
 				}
@@ -421,7 +421,7 @@ class AwardService
                 'sender_user_account_holder_id' => $awarderAccountHolderId,
                 'receiver_user_account_holder_id' => $userAccountHolderId,
             ];
-            $socialWallPostService = resolve(App\Services\SocialWallPostService::class);
+            $socialWallPostService = resolve(\App\Services\SocialWallPostService::class);
             $socialWallPostService->create($socialWallPostData);
         }
 
@@ -435,7 +435,7 @@ class AwardService
 
         // DB::rollBack();
         DB::commit();
-        DB::statement("UNLOCK TABLES;");
+//        DB::statement("UNLOCK TABLES;");
     }
     public function awardPeer2Peer(array $data, Event $event, Program $program, User $awarder)
     {

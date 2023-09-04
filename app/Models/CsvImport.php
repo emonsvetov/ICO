@@ -53,13 +53,23 @@ class CsvImport extends BaseModel
     {
         $disk = config('app.env') == 'local' && !env('AUTO_IMPORT_AWS_ENABLED') ? 'local' : 's3-auto-import';
         $file = $fileUpload['upload-file'];
+        $contents = file_get_contents($file);
+        $data = explode(PHP_EOL, $contents);
+        $headers = explode(',', $data[0]);
+        $key = array_search('program_key', $headers);
+        $row = explode(',', $data[1]);
+        $programName = $row[$key];
+        $program = Program::where('name', $programName)->first();
+        $organization = Organization::find($fileUpload['organization_id']);
+
         $name = Str::random(40);
         $extension = $file->getClientOriginalExtension();
-        $saveTo = $fileUpload['organization_id'] . '/' . $fileUpload['csv_import_type_id'];
+        $saveTo = $organization->name . '/' . $programName . '/' . $fileUpload['requestType'];
         $path = Storage::disk($disk)->putFileAs($saveTo, $file, $name . '.' . $extension);
 
         $csv = [
             'organization_id' => $fileUpload['organization_id'],
+            'program_id' => $program ? $program->id : null,
             'csv_import_type_id' => $fileUpload['csv_import_type_id'],
             'name' => $fileUpload['upload-file']->getClientOriginalName(),
             'path' => $path,
@@ -74,20 +84,25 @@ class CsvImport extends BaseModel
     public static function getAllIsProcessed(){
         return self::where(['is_processed' => 1])
             ->whereNull('deleted_at')
+            ->where(['is_imported' => 0])
             ->get();
+    }
+
+    public static function getAutoImportS3Client(){
+        return new S3Client([
+            'credentials' => [
+                'key' => env('AUTO_IMPORT_AWS_ACCESS_KEY_ID'),
+                'secret' => env('AUTO_IMPORT_AWS_SECRET_ACCESS_KEY'),
+            ],
+            'region' => env('AWS_REGION'),
+            'version' => 'latest',
+        ]);
     }
 
     public static function getAutoImportS3(CsvImport $csvImport)
     {
         try {
-            $client = new S3Client([
-                'credentials' => [
-                    'key' => env('AUTO_IMPORT_AWS_ACCESS_KEY_ID'),
-                    'secret' => env('AUTO_IMPORT_AWS_SECRET_ACCESS_KEY'),
-                ],
-                'region' => env('AWS_REGION'),
-                'version' => 'latest',
-            ]);
+            $client = self::getAutoImportS3Client();
 
             $client->registerStreamWrapper();
             $bucket = env('AUTO_IMPORT_AWS_BUCKET');

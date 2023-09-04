@@ -7,6 +7,7 @@ use App\Models\CsvImport;
 use App\Models\CsvImportSettings;
 use App\Models\CsvImportType;
 use App\Models\Organization;
+use App\Models\Program;
 use Illuminate\Support\Facades\Validator;
 use DB;
 use DateTime;
@@ -277,7 +278,6 @@ class CSVimportService
     */
     public function rule_mustExistInModel($ruleSets, $csvValue)
     {
-        //'mustExistInModel:Program|matchWith:external_id|use:external_id|filter:organization_id,=,$this->supplied_constants["organization_id"]'
         $rules = explode('|', $ruleSets);
 
         $whereConditions = [];
@@ -664,7 +664,7 @@ class CSVimportService
         $type = $setups['UserRequest']['type'] ?? null;
         $csvImportTypeId = CsvImportType::getIdByName($type);
 
-        $currentCsvImportSetting = CsvImportSettings::getByOrgAndTypeId($organization, $csvImportTypeId);
+        $currentCsvImportSetting = CsvImportSettings::getByOrgIdAndTypeId($organization->id, $csvImportTypeId);
 
         $csvImportSetting = $currentCsvImportSetting ?: new CsvImportSettings;
         $csvImportSetting->organization_id = $organization->id;
@@ -692,19 +692,12 @@ class CSVimportService
 
             $this->field_mapping_parse($csvImport, $csvImportSettings);
             $this->setups_parse($csvImportSettings['setups']);
-
-            $result = $this->process($csvImport, $awardService);
-
+            return $this->process($csvImport, $awardService);
         } catch (\Exception $e) {
             $this->errors[] = 'autoImportFile method failed with error: ' . $e->getMessage() . ' in line ' . $e->getLine();
-
-            $csvImport->update(['is_processed' => 0]);
-
-            echo PHP_EOL;
-            echo "errors: ";
-            echo PHP_EOL;
-            print_r($this->errors);
-            echo PHP_EOL;
+            $this->errors[] = $e->getFile();
+            $this->errors[] = $e->getTrace();
+            return $this->errors;
         }
     }
 
@@ -728,12 +721,14 @@ class CSVimportService
 
                 case 'add_and_award_participants':
                     $result = $this->addAndAwardParticipant($csvImport, $this->saveData, $this->supplied_constants, $awardService);
+
                     break;
 
                 case 'award_users':
                     $result = $this->awardUser($csvImport, $this->saveData, $this->supplied_constants);
                     break;
             }
+            $result['success'] = true;
             return $result;
         }
     }
@@ -779,7 +774,9 @@ class CSVimportService
                 $validator = Validator::make($this->saveData[$formRequest][$this->line], $formRequestRules);
 
                 if ($validator->fails()) {
-                    $this->errors['Line ' . $this->line][][$formRequest] = $validator->errors()->toArray();
+                    if (!in_array($formRequest, ['AwardRequest'])){
+                        $this->errors['Line ' . $this->line][][$formRequest] = $validator->errors()->toArray();
+                    }
                 } else {
                     $this->saveData[$formRequest][$this->line] = $validator->validated();
                 }
@@ -817,6 +814,50 @@ class CSVimportService
                 } else {
                     $this->saveData['setups'][$formRequest] = $validator->validated();
                 }
+            }
+        }
+    }
+
+    public function updateProcessedList($dbList)
+    {
+        $client = CsvImport::getAutoImportS3Client();
+        $bucket = env('AUTO_IMPORT_AWS_BUCKET');
+        $results = $client->getPaginator('ListObjects', [
+            'Bucket' => $bucket
+        ]);
+
+        foreach ($results as $result) {
+            foreach ($result['Contents'] as $object) {
+                if ($object['Size'] <= 0){
+                    continue;
+                }
+
+                $parse = explode('/', $object['Key']);
+                $organization = $parse[0];
+                $program = $parse[1];
+                $type = $parse[2];
+                $name = $parse[3];
+
+                if (array_search($name, $dbList) !== false){
+                    continue;
+                }
+
+                $typeId = CsvImportType::getIdByName($type);
+                $programId = Program::getIdByName($program);
+                $organizationId = Organization::getIdByName($organization);
+
+                $csv = [
+                    'organization_id' => $organizationId,
+                    'program_id' => $programId,
+                    'csv_import_type_id' => $typeId,
+                    'name' => $name,
+                    'path' => $organization . '/' . $program . '/' . $type . '/' . $name,
+                    'size' => $object['Size'],
+                    'rowcount' => 1,
+                    'is_processed' => 1
+                ];
+
+                CsvImport::create($csv);
             }
         }
     }
