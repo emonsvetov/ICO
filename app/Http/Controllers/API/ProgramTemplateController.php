@@ -54,4 +54,9 @@ class ProgramTemplateController extends Controller
     {
         return response($this->programTemplateService->getTemplate($program));
     }
+
+    public function deleteMedia(Organization $organization,  Program $program, ProgramTemplate $programTemplate, $mediaName)
+    {
+        return response($this->programTemplateService->deleteTemplateMedia($programTemplate, $mediaName));
+    }
 }
