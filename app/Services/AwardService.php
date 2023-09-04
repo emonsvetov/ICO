@@ -43,7 +43,6 @@ class AwardService
     }
     public function awardMany(Program $program, Organization $organization, User $awarder, array $data)
     {
-        // return $programService->readAvailableBalance($program);
 
         $userIds = $data['user_id'] ?? [];
 
@@ -100,7 +99,7 @@ class AwardService
             throw new \RuntimeException ( 'Invalid "receiver program", you cannot create an award in a shell program', 400 );
         }
 
-        $programService = resolve(App\Services\ProgramService::class);
+        $programService = resolve(\App\Services\ProgramService::class);
 
         if ( !$programService->canProgramPayForAwards($program, $event, $userIds, $awardAmount)) {
             throw new Exception('Your program\'s account balance is too low to award.');
@@ -176,7 +175,7 @@ class AwardService
         if( $isAutoAward || !$isPromotional ) {
             if($awardAmount > 0){
 				$transactionFee = (new \App\Services\ProgramsTransactionFeeService)->calculateTransactionFee ( $program, $awardAmount );
-                $programService = resolve(App\Services\ProgramService::class);
+                $programService = resolve(\App\Services\ProgramService::class);
 				if ($transactionFee > 0 && ! $programService->canProgramPayForAwards ( $program, $event, [$awardee->id], $transactionFee )) {
 					throw new \RuntimeException ( "The program's balance is too low.", 400 );
 				}
@@ -421,7 +420,7 @@ class AwardService
                 'sender_user_account_holder_id' => $awarderAccountHolderId,
                 'receiver_user_account_holder_id' => $userAccountHolderId,
             ];
-            $socialWallPostService = resolve(App\Services\SocialWallPostService::class);
+            $socialWallPostService = resolve(\App\Services\SocialWallPostService::class);
             $socialWallPostService->create($socialWallPostData);
         }
 
@@ -463,7 +462,7 @@ class AwardService
         $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
         $amount = (float)$amount;
 
-        $programService = resolve(App\Services\ProgramService::class);
+        $programService = resolve(\App\Services\ProgramService::class);
 
         // return $programService->readAvailableBalance($program);
 
@@ -539,7 +538,7 @@ class AwardService
                 'event_template_id' => $event->id,
                 'icon' => $event->event_icon_id,
             ];
-            $eventXmlDataService = resolve(App\Services\EventXmlDataService::class);
+            $eventXmlDataService = resolve(\App\Services\EventXmlDataService::class);
             $eventXmlDataId = $eventXmlDataService->create($data);
 
             $result[$userId]['event_xml_data_id'] = $eventXmlDataId;
@@ -552,7 +551,7 @@ class AwardService
                 'notes' => $data['notes'] ?? '',
                 'prime_account_holder_id' => $awarder->account_holder_id,
             ];
-            $journalEventService = resolve(App\Services\JournalEventService::class);
+            $journalEventService = resolve(\App\Services\JournalEventService::class);
             $journalEventId = $journalEventService->create($data);
 
             $liability = FinanceType::getTypeLiability();
@@ -573,7 +572,7 @@ class AwardService
                 'amount' => $amount,
                 'currency_type_id' => $currencyId,
             ];
-            $accountService = resolve(App\Services\AccountService::class);
+            $accountService = resolve(\App\Services\AccountService::class);
             $result[$userId]['recipient_postings'] = $accountService->posting($data);
 
             $awardee->notify(new AwardNotification((object)[
@@ -599,7 +598,7 @@ class AwardService
      */
     public function canPeerPayForAwards(Program $program, User $user, float $amount, array $users): bool
     {
-        $userService = resolve(App\Services\UserService::class);
+        $userService = resolve(\App\Services\UserService::class);
         $available = $userService->readAvailablePeerBalance($user, $program);
         $awardTotal = count($users) * $amount;
         if ($available < $awardTotal) {
@@ -931,7 +930,7 @@ class AwardService
 
             if( $result->isNotEmpty() )
             {
-                $accountService = resolve(App\Services\AccountService::class);
+                $accountService = resolve(\App\Services\AccountService::class);
                 // Get the points redeemed and expired
                 $points_redeemed = $accountService->readRedeemedTotalPeerPointsForParticipant (  $program, $user  );
                 // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successfulreadReclaimedTotalPeerPointsForParticipant
@@ -1080,7 +1079,7 @@ class AwardService
                 'created_at' => now()
             ];
 
-            $journalEventService = resolve(App\Services\JournalEventService::class);
+            $journalEventService = resolve(\App\Services\JournalEventService::class);
             $journalEventId = $journalEventService->create($journalEventData);
 
             $liability = FinanceType::getIdByTypeLiability();
@@ -1103,7 +1102,7 @@ class AwardService
                 'amount' => $amount,
                 'currency_type_id' => $currencyId,
             ];
-            $accountService = resolve(App\Services\AccountService::class);
+            $accountService = resolve(\App\Services\AccountService::class);
             $result = $accountService->posting($data);
             DB::commit();
             DB::unprepared("UNLOCK TABLES;" );

@@ -17,7 +17,7 @@ class MilestoneAwardService extends AwardService {
         DB::enableQueryLog();
         $events = Event::getActiveMilestoneAwardsWithProgram();
         if( $events->isNotEmpty() )  {
-            $programService = resolve('App\Services\ProgramService');
+            $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
                 $participants = $this->getMilestoneAwardeesByEvent( $event );
                 if( $participants ) {
