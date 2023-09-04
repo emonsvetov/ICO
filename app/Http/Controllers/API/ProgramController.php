@@ -304,4 +304,7 @@ class ProgramController extends Controller
         );
         return $transferMoniesService->transferMoniesByCSVUpload($program, $supplied_constants);
     }
+    public function getLedgerCodes(Organization $organization, Program $program, ProgramService $programService)    {
+        return $programService->getLedgerCodes($program);
+    }
 }
