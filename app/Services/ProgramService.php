@@ -723,6 +723,7 @@ class ProgramService
     }
 
     public function getTransferTemplateCSV(Program $program)  {
-        return $this->transferMoniesService->getTransferTemplateCSVStream($program);
+        $transferMoniesService = app('App\Services\Program\TransferMoniesService');
+        return $transferMoniesService->getTransferTemplateCSVStream($program);
     }
 }

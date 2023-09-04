@@ -490,6 +490,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/invoice/{invoice}/reversepayment',[App\Http\Controllers\API\ProgramController::class, 'reversePayment'])->middleware('can:reversePayments,App\Program,organization,program,invoice');
 
+    Route::get('/v1/organization/{organization}/program/{program}/ledgercode',[App\Http\Controllers\API\EventLedgerCodeController::class, 'index'])->middleware('can:listLedgerCodes,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/ledgercode',[App\Http\Controllers\API\EventLedgerCodeController::class, 'store'])->middleware('can:createLedgerCodes,App\Program,organization,program');
+
+    Route::put('/v1/organization/{organization}/program/{program}/ledgercode/{eventLedgerCode}',[App\Http\Controllers\API\EventLedgerCodeController::class, 'update'])->middleware('can:updateLedgerCodes,App\Program,organization,program');
+
+    Route::delete('/v1/organization/{organization}/program/{program}/ledgercode/{eventLedgerCode}',[App\Http\Controllers\API\EventLedgerCodeController::class, 'delete'])->middleware('can:deleteLedgerCodes,App\Program,organization,program');
     // Deposit
 
     Route::post('/v1/organization/{organization}/program/{program}/creditcardDeposit',[App\Http\Controllers\API\ProgramController::class, 'deposit'])->middleware('can:updatePayments,App\Program,organization,program');

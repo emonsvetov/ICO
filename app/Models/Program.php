@@ -110,6 +110,11 @@ class Program extends BaseModel
         return $this->hasOne(ProgramTemplate::class)->ofMany('is_active', 'max');
     }
 
+    public function ledger_codes()
+    {
+        return $this->hasMany(EventLedgerCode::class);
+    }
+
     public function programIsInvoiceForAwards($extraArg = false): bool
     {
         if ($this->invoice_for_awards || ($extraArg && $this->factor_valuation != 1)) {
