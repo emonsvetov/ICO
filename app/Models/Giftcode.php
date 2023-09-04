@@ -409,4 +409,14 @@ class Giftcode extends Model
         return self::getAllByProgramsQuery($programs)->count();
     }
 
+    public static function readNotSubmittedTangoCodes()
+    {
+        return self::with('merchant')
+            ->where('medium_info.virtual_inventory', 1)
+            ->whereNull('medium_info.tango_reference_order_id')
+            ->whereNotNull('medium_info.redemption_date')
+            ->where('medium_info.redemption_date' , ">=", "2023-08-01")
+            ->orderBy('medium_info.sku_value', 'ASC')
+            ->get();
+    }
 }

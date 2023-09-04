@@ -4,11 +4,13 @@ namespace App\Services;
 
 use App\Jobs\CsvAutoImportJob;
 use App\Jobs\GenerateVirtualInventoryJob;
+use App\Jobs\SubmitGiftCodesToTangoJob;
 use App\Jobs\Program\PostMonthlyChargesToInvoiceJob;
 use App\Jobs\Program\AddProgramsToInvoiceJob;
 use App\Jobs\Program\GenerateMonthlyInvoicesJob;
 use App\Jobs\Program\SubmitTangoOrdersJob;
 use App\Jobs\Program\SendActivationReminderJob;
+use App\Jobs\SendMilestoneAward;
 // use App\Notifications\CronNotification; //Can be used for CronNotifications
 
 class CronService
@@ -31,8 +33,14 @@ class CronService
     public function generateVirtualInventoryJob() {
         dispatch( new GenerateVirtualInventoryJob() );
     }
-
-    public function csvAutoImportJob() {
-        dispatch( new csvAutoImportJob() );
+    public function csvAutoImportJob()
+    {
+        dispatch(new csvAutoImportJob());
+    }
+    public function sendMilestoneAward() {
+        dispatch( new SendMilestoneAward() );
+    }
+    public function submitGiftCodesToTangoJob() {
+        dispatch( new SubmitGiftCodesToTangoJob() );
     }
 }

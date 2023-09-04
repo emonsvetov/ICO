@@ -1,4 +1,5 @@
 <?php
+use Illuminate\Support\Str;
 defined ( 'DEBIT' ) or define ( 'DEBIT', '0' );
 defined ( 'CREDIT' ) or define ( 'CREDIT', '1' );
 
@@ -304,4 +305,43 @@ function childrenizeModel( $model )
     }
 
     return $model;
+}
+
+function compute_program_fee_by_type($key, $program, $amount) {
+    if( !isset($program[$key]) || (float) $program[$key] <= 0 ) return 0;
+    $v_fee = $program[$key] / 100.0;
+    $v_fee_amount = $v_fee * $amount;
+    return $v_fee_amount;
+}
+if(!function_exists('extract_fields_from_obj'))   {
+    function extract_fields_from_obj( mixed $object, array $fields)   {
+        $arr = [];
+        $object = (array) $object;
+        foreach( $fields as $field) {
+            if( isset($object[$field]) )    {
+                $arr[$field] = $object[$field];
+            }
+        }
+        return (object) $arr;
+    }
+}
+if(!function_exists('is_valid_json'))   {
+    function is_valid_json($str) {
+        json_decode($str);
+        return json_last_error() === JSON_ERROR_NONE;
+    }
+}
+
+if (! function_exists('camel_case')) {
+    function camel_case($value)
+    {
+        return Str::camel($value);
+    }
+}
+
+if (! function_exists('cronlog')) {
+    function cronlog( $msg )
+    {
+        return Illuminate\Support\Facades\Log::channel('cron')->info( $msg );
+    }
 }

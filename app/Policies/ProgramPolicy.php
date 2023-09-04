@@ -100,6 +100,7 @@ class ProgramPolicy
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram($program) ) return true;
         return $user->can('program-update-payments');
     }
 
@@ -139,4 +140,30 @@ class ProgramPolicy
         return $user->isManagerToProgram( $program ) || $user->can('program-live-mode');
     }
 
+    public function listLedgerCodes(User $user, Organization $organization)
+    {
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-list-ledgercodes');
+    }
+    public function createLedgerCodes(User $user, Organization $organization)
+    {
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-update-ledgercodes');
+    }
+
+    public function updateLedgerCodes(User $user, Organization $organization)
+    {
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-update-ledgercodes');
+    }
+
+    public function deleteLedgerCodes(User $user, Organization $organization)
+    {
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
+        if( $user->isAdmin() ) return true;
+        return $user->can('program-del-ledgercodes');
+    }
 }

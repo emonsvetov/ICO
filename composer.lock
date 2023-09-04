@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f377da74f2f4ea4e6cec7b8c080676c9",
+    "content-hash": "7d642b464d2f6de33a6dc8aa05731202",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -61,6 +61,49 @@
                 "source": "https://github.com/asm89/stack-cors/tree/v2.1.1"
             },
             "time": "2022-01-18T09:12:03+00:00"
+        },
+        {
+            "name": "authorizenet/authorizenet",
+            "version": "2.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/AuthorizeNet/sdk-php.git",
+                "reference": "a3e76f96f674d16e892f87c58bedb99dada4b067"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/AuthorizeNet/sdk-php/zipball/a3e76f96f674d16e892f87c58bedb99dada4b067",
+                "reference": "a3e76f96f674d16e892f87c58bedb99dada4b067",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=5.6"
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    "lib"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "proprietary"
+            ],
+            "description": "Official PHP SDK for Authorize.Net",
+            "homepage": "http://developer.authorize.net",
+            "keywords": [
+                "authorize.net",
+                "authorizenet",
+                "ecommerce",
+                "payment"
+            ],
+            "support": {
+                "issues": "https://github.com/AuthorizeNet/sdk-php/issues",
+                "source": "https://github.com/AuthorizeNet/sdk-php/tree/2.0.2"
+            },
+            "time": "2021-03-31T18:22:14+00:00"
         },
         {
             "name": "aws/aws-crt-php",
@@ -10449,5 +10492,5 @@
         "php": "^7.4|^8.0"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }

@@ -40,7 +40,7 @@ class EventController extends Controller
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }
 
-        $event->icon;
+        $event->eventIcon;
         $event->eventType;
 
         if ( $event )
@@ -56,7 +56,7 @@ class EventController extends Controller
         $validated = $request->validated();
         try {
             return response(['event' => $programEventService->update($event, $validated + [
-                'organization_id' => $organization->id, 
+                'organization_id' => $organization->id,
                 'program_id' => $program->id
             ])]);
         }

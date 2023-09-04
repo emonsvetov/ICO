@@ -60,6 +60,9 @@ class ReportFactory
             $resultTitle = $resultTitle ?: ucfirst($title);
 
             $className = 'App\Services\reports\Report' . ucfirst($resultTitle).'Service';
+
+            //throw new \RuntimeException('Report not found.');
+
             if (class_exists($className)) {
                 return new $className($params);
             } else {

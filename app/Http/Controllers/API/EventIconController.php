@@ -18,7 +18,23 @@ class EventIconController extends Controller
             return response(['errors' => 'Invalid Organization'], 422);
         }
 
-        $eventIcons = EventIcon::where(["deleted" => 0, "organization_id"=>$organization->id])->get();
+        $include = $request->get('include', 'program');
+
+        $query = EventIcon::query();
+        $query->where("deleted",  0);
+        if( $include == 'both' ) {
+            $query->orWhere(function($query) use($organization) {
+                $query->where('organization_id', 0);
+                $query->where('organization_id', $organization->id);
+            });
+        }   else if( $include == 'global' )   {
+            $query->where('organization_id', 0);
+        }   else if( $include == 'program' )   {
+            $query->where('organization_id', $organization->id);
+        }
+
+        $eventIcons = $query->get();
+
         if ( $eventIcons->isNotEmpty() )
         {
             return response( $eventIcons );
@@ -32,15 +48,21 @@ class EventIconController extends Controller
         {
             return response(['errors' => 'Invalid Organization'], 422);
         }
+
         try {
             $icons = [];
+            if( $request->get('icon_upload_type') && $request->get('icon_upload_type') === 'global') {
+                $organizationId = 0;
+            }   else {
+                $organizationId = $organization->id;
+            }
             if($request->has('image')) {
                 foreach($request->file('image') as $icon) {
                     $path = $icon->store('eventIcons');
                     $icons[] = $created = EventIcon::create([
                         "name" => $icon->getClientOriginalName(),
                         "path" => $path,
-                        "organization_id" => $organization->id
+                        "organization_id" => $organizationId
                     ]);
                 }
             }

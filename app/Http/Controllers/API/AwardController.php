@@ -21,13 +21,12 @@ class AwardController extends Controller
         try {
             /** @var User $awarder */
             $awarder = auth()->user();
-            $newAward = $awardService->create($program, $organization, $awarder, $request->validated());
+            $newAward = $awardService->awardMany($program, $organization, $awarder, $request->validated());
             return response($newAward);
         } catch (\Exception $e) {
             return response(['errors' => 'Award creation failed', 'e' => $e->getMessage()], 422);
         }
     }
-
 
     public function readListReclaimablePeerPoints(
         Organization $organization,

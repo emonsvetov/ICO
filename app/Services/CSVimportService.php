@@ -213,7 +213,6 @@ class CSVimportService
         return $rules;
     }
 
-
     public function getImportRule($formRequest, $importRule, $csvValue, $dbField, $line)
     {
         if (str_contains($importRule, 'hide:true')) {
@@ -229,7 +228,6 @@ class CSVimportService
                 $this->errors['Line ' . $line][][$formRequest][$dbField][] = "'$csvValue' did not match existing fields";
                 return null;
             }
-
         } elseif (str_contains($importRule, 'mustExistInModel:')) {
             $existsInModel = $this->rule_mustExistInModel($importRule, $csvValue);
 
@@ -577,6 +575,7 @@ class CSVimportService
                     for ($c = 0; $c < $num; $c++) {
                         $importData_arr[$i][] = $filedata[$c];
                     }
+
                     $i++;
                 }
 

@@ -25,7 +25,8 @@ class EventIconRequest extends FormRequest
     {
         return [
             'image' => 'required|array|max:5',
-            'image.*' => 'required|image|mimes:jpeg,png,jpg,gif,ico|max:2048'
+            'image.*' => 'required|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
+            'icon_upload_type' => 'sometimes|string|in:global,program'
         ];
     }
 

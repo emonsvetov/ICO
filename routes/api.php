@@ -32,6 +32,8 @@ WARNING WARNING WARNING
 NEED TO CREATE MIDDLEWARE THAT CONFIRMS THE CURRENT USER BELONGS TO THE REQUESTED ORGANIZATION
 */
 
+Route::get('/v1/organization/{organization}/program/{program}/merchant',[App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index'); //Need to load for guest participant/manager on home page.
+
 Route::post('/v1/organization/{organization}/userimportheaders', [App\Http\Controllers\API\UserImportController::class, 'userHeaderIndex']);
 Route::post('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'userFileImport']);
 Route::post('/v1/organization/{organization}/user-auto-import', [App\Http\Controllers\API\UserImportController::class, 'userFileAutoImport']);
@@ -61,6 +63,8 @@ Route::get('/v1/organization/{organization}/programimport/{csvImport}', [App\Htt
 
 
 Route::get('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'index'])->name('api.v1.event_icons.index');
+Route::get('/v1/organization/{organization}/eventicondefault', [App\Http\Controllers\API\EventIconController::class, 'default']);
+
 Route::post('/v1/organization/{organization}/event_icons', [App\Http\Controllers\API\EventIconController::class, 'store'])->name('api.v1.event_icons.store');
 Route::delete('/v1/organization/{organization}/event_icons/{eventIcon}', [App\Http\Controllers\API\EventIconController::class, 'delete']);
 
@@ -114,6 +118,8 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 
 Route::group(['middleware' => ['json.response']], function () {
 
+    Route::post('/v1/sso-login', [App\Http\Controllers\API\AuthController::class, 'ssoLogin'])->name('api.v1.ssoLogin');
+    Route::post('/v1/sso-add-token', [App\Http\Controllers\API\AuthController::class, 'ssoAddToken'])->name('api.v1.ssoAddToken');
     Route::post('/v1/login', [App\Http\Controllers\API\AuthController::class, 'login'])->name('api.v1.login');
     Route::post('/v1/admin/login', [App\Http\Controllers\API\AuthController::class, 'adminLogin'])->name('api.v1.adminLogin');
     Route::post('/v1/register', [App\Http\Controllers\API\AuthController::class, 'register'])->name('api.v1.register');
@@ -242,8 +248,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //ProgramMerchant routes
 
-    Route::get('/v1/organization/{organization}/program/{program}/merchant',
-    [App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAny,App\ProgramMerchant,organization,program');
+    // Route::get('/v1/organization/{organization}/program/{program}/merchant',[App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index')->middleware('can:viewAny,App\ProgramMerchant,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
     [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
@@ -324,6 +329,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'index'])->middleware('can:viewAny,App\MerchantGiftcode,merchant');
 
     Route::post('/v1/merchant/{merchant}/giftcode', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'store'])->middleware('can:add,App\MerchantGiftcode,merchant');
+    Route::post('/v1/merchant/{merchant}/giftcode-virtual', [App\Http\Controllers\API\MerchantGiftcodeController::class, 'storeVirtual'])->middleware('can:add,App\MerchantGiftcode,merchant');
 
     // GiftCode
     Route::post('/v1/giftcode/purchase-from-v2', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseFromV2'])->middleware('can:purchaseFromV2,App\Giftcode');
@@ -348,7 +354,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //EventType
 
-    Route::get('/v1/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType');
+    Route::get('/v1/organization/{organization}/program/{program}/eventtype',[App\Http\Controllers\API\EventTypeController::class, 'index'])->middleware('can:viewAny,App\EventType,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/eventtype-milestone-frequency',[App\Http\Controllers\API\EventTypeController::class, 'milestoneFrequency'])->middleware('can:viewAny,App\EventType,organization,program');
 
     //EmailTemplate
 
@@ -410,6 +418,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'update'])->middleware('can:update,App\ProgramTemplate,organization,program,programTemplate');
 
     Route::delete('/v1/organization/{organization}/program/{program}/template/{programTemplate}',[App\Http\Controllers\API\ProgramTemplateController::class, 'delete'])->middleware('can:delete,App\ProgramTemplate,organization,program,programTemplate');
+
+    Route::delete('/v1/organization/{organization}/program/{program}/template/{programTemplate}/media/{mediaName}',[App\Http\Controllers\API\ProgramTemplateController::class, 'deleteMedia'])->middleware('can:update,App\ProgramTemplate,organization,program,programTemplate');
 
     Route::put('/v1/organization/{organization}/program/{program}/invite', [App\Http\Controllers\API\InvitationController::class, 'invite'])->middleware('can:invite,App\Invitation,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/inviteResend', [App\Http\Controllers\API\InvitationController::class, 'resend'])->middleware('can:resend,App\Invitation,organization,program');
@@ -484,6 +494,17 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/invoice/{invoice}/reversepayment',[App\Http\Controllers\API\ProgramController::class, 'reversePayment'])->middleware('can:reversePayments,App\Program,organization,program,invoice');
 
+    Route::get('/v1/organization/{organization}/program/{program}/ledgercode',[App\Http\Controllers\API\EventLedgerCodeController::class, 'index'])->middleware('can:listLedgerCodes,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/ledgercode',[App\Http\Controllers\API\EventLedgerCodeController::class, 'store'])->middleware('can:createLedgerCodes,App\Program,organization,program');
+
+    Route::put('/v1/organization/{organization}/program/{program}/ledgercode/{eventLedgerCode}',[App\Http\Controllers\API\EventLedgerCodeController::class, 'update'])->middleware('can:updateLedgerCodes,App\Program,organization,program');
+
+    Route::delete('/v1/organization/{organization}/program/{program}/ledgercode/{eventLedgerCode}',[App\Http\Controllers\API\EventLedgerCodeController::class, 'delete'])->middleware('can:deleteLedgerCodes,App\Program,organization,program');
+    // Deposit
+
+    Route::post('/v1/organization/{organization}/program/{program}/creditcardDeposit',[App\Http\Controllers\API\ProgramController::class, 'deposit'])->middleware('can:updatePayments,App\Program,organization,program');
+
     // Statements
 
     Route::get('/v1/organization/{organization}/program/{program}/statement',[App\Http\Controllers\API\StatementController::class, 'show'])->middleware('can:view,App\Statement,organization,program');
@@ -493,6 +514,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'getTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
 
     Route::post('/v1/organization/{organization}/program/{program}/transferMonies',[App\Http\Controllers\API\ProgramController::class, 'submitTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
+
+    Route::get('/v1/organization/{organization}/program/{program}/transferMonies/template',[App\Http\Controllers\API\ProgramController::class, 'downloadMoneyTranferTemplate'])->middleware('can:transferMonies,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/transferMonies/template',[App\Http\Controllers\API\ProgramController::class, 'transferMoniesByTemplate'])->middleware('can:transferMonies,App\Program,organization,program');
+
+    Route::post('/v1/organization/{organization}/program/{program}/payment',[App\Http\Controllers\API\ProgramController::class, 'submitTransferMonies'])->middleware('can:transferMonies,App\Program,organization,program');
 
     // Country
     Route::get('/v1/country/{country}/state',[App\Http\Controllers\API\CountryController::class, 'listStates']);
@@ -590,6 +617,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/dashboard/top-awards/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'topAwards'])->middleware('can:viewAny,App\Dashboard,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/dashboard/award-detail/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'awardDetail'])->middleware('can:viewAny,App\Dashboard,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/dashboard/award-peer-detail/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'awardPeerDetail'])->middleware('can:viewAny,App\Dashboard,organization,program');
+
+    //Manager > Manage Account
+    Route::get('/v1/organization/{organization}/program/{program}/monies-available-postings',[App\Http\Controllers\API\ManagerController::class, 'getMoniesAvailablePostings'])->middleware('can:transferMonies,App\Program,organization,program');
 
 });
 
