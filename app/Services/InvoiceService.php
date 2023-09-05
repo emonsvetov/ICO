@@ -111,7 +111,8 @@ class InvoiceService
 		$invoice_program_ids = array ();
 
 		foreach ( $invoice->invoices as $statement ) {
-			$invoice_program_ids [] = ( int ) $statement ['info']->program_id;
+		    //$invoice_program_ids [] = ( int ) $statement ['info']->program_id; - current code
+			$invoice_program_ids [] = ( int ) $statement ['info']->program_account_holder_id;
 		}
 		// $report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
         $report = $this->reportFactory->build("JournalDetailed", ['programs' => $invoice_program_ids, 'from' => $invoice->date_begin, 'to' => $invoice->date_end]);
