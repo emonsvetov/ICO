@@ -116,4 +116,17 @@ class CsvImport extends BaseModel
             return $exception->getMessage();
         }
     }
+
+    public static function deleteFileAutoImportS3(CsvImport $csvImport)
+    {
+        $client = self::getAutoImportS3Client();
+        $bucket = env('AUTO_IMPORT_AWS_BUCKET');
+        $key = $csvImport->path;
+
+        $client->deleteObject([
+            'Bucket' => $bucket,
+            'Key' => $key
+        ]);
+    }
+
 }

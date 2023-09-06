@@ -303,6 +303,7 @@ trait UserImportTrait
                 $userIds[] = $newUser->id;
             }
             $csvImport->update(['is_imported' => 1]);
+            CsvImport::deleteFileAutoImportS3($csvImport);
 
             DB::commit();
 
