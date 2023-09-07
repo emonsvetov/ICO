@@ -81,6 +81,8 @@ class InvoiceService
             }
             // sleep(2); //To Remove
         }
+
+		return $invoice;
 	}
 
     public function getInvoice(Invoice $invoice)   {
