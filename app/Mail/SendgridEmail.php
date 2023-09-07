@@ -117,6 +117,6 @@ class SendgridEmail extends Mailable
         if($onlyFirst){
             $result = array_shift($result);
         }
-        return $result;
+        return $result ?? [];
     }
 }
