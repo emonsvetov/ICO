@@ -36,4 +36,9 @@ class SocialWallPostType extends BaseModel
         return self::where('type', self::TYPE_COMMENT)->first();
     }
 
+    public static function isTypeEvent( $type )
+    {
+        return $type === self::TYPE_EVENT;
+    }
+
 }
