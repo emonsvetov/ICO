@@ -18,12 +18,14 @@ class SocialWallPostResource extends JsonResource
         /** @var $this SocialWallPost */
         return [
             'id' => $this->id,
+            'social_wall_post_type_id' => $this->social_wall_post_type_id,
             'title' => $this->getFullTitle(),
             'from' => $this->getFullSender(),
-            'content' => $this->eventXmlData->notification_body ?? null,
+            'content' => $this->getContent(),
             'icon' => $this->getIconImage(),
             'receiver_user_account_holder_id' => $this->receiver_user_account_holder_id,
             'comments' => $this->comments(),
+            // 'children' => $this->children,
             'created_at' => $this->created_at->format('m/d/Y H:i:s'),
             'updated_at' => $this->created_at->format('m/d/Y'),
             'avatar' => $this->sender->avatar ?: $this->avatar,
