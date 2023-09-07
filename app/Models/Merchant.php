@@ -56,6 +56,11 @@ class Merchant extends Model
         return $this->belongsToMany(Program::class, 'program_merchant');
     }
 
+    public function tangoOrdersApi()
+    {
+        return $this->belongsTo(TangoOrdersApi::class, 'toa_id');
+    }
+
     public function getGiftcodes( $merchant ) {
         if( is_int($merchant) ) {
             $merchant = self::find($merchant);
