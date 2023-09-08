@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Http\Traits\MerchantMediaUploadTrait;
 use App\Http\Requests\MerchantStatusRequest;
 use App\Http\Requests\MerchantRequest;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ToaRequest;
+use App\Models\TangoOrdersApi;
 use Illuminate\Http\Request;
 use App\Models\Organization;
 use App\Models\Merchant;
-use App\Models\MerchantNode;
-use App\Models\Node;
 
 class MerchantController extends Controller
 {
@@ -123,7 +125,12 @@ class MerchantController extends Controller
         {
             return response(['errors' => 'Merchant Not Found'], 404);
         }
+        // DB::enableQueryLog();
+        $merchant->inventoryCount();
+        $merchant->redeemedCount();
         $merchant->children;
+        $merchant->tangoOrdersApi;
+
         return response( $merchant );
     }
 
@@ -176,5 +183,11 @@ class MerchantController extends Controller
         $merchant->update( $request->validated() );
 
         return response( ['updated' => true] );
+    }
+
+    public function updateToa(ToaRequest $request, Merchant $merchant, TangoOrdersApi $toa)
+    {
+
+        return response( $toa->update($request->validated()) );
     }
 }

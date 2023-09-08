@@ -124,6 +124,9 @@ class CheckoutService
 				foreach ( $gift_code_values_response as $giftCode ) {
 					$skuValue = ( int ) $giftCode->sku_value;
 					$cartSkuValue = ( int ) $gift_code->sku_value;
+                    // $Logger->info("\$cartSkuValue:$cartSkuValue");
+                    // $Logger->info("\$skuValue:$skuValue");
+                    // $Logger->info(json_encode($giftCode->toArray()));
 					if ($skuValue == $cartSkuValue) {
 						// Set the redemption value back to what it is supposed to be
 						$gift_code->redemption_value = $giftCode->redemption_value;
@@ -139,12 +142,16 @@ class CheckoutService
 				//pr($redemption_value_total);
 			}
 
+            // $Logger->info("\$redemption_value_total:$redemption_value_total");
+
             // pr($redemption_value_total);
 
             $merchants_info[$merchant->account_holder_id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
-				$gift_code->gift_code_provider_account_holder_id = Merchant::get_top_level_merchant ( $gift_code->merchant_id )->account_holder_id ;
-				$topMerchant = Merchant::read( $gift_code->gift_code_provider_account_holder_id );
+                $topMerchant = Merchant::get_top_level_merchant ( $gift_code->merchant_id ) ;
+
+				$gift_code->gift_code_provider_account_holder_id = $topMerchant->account_holder_id ;
+				// $topMerchant = Merchant::read( $gift_code->gift_code_provider_account_holder_id );
 			    $merchants_info [$topMerchant->account_holder_id] = $topMerchant;
 			} else {
 				$gift_code->gift_code_provider_account_holder_id = $gift_code->merchant_account_holder_id;
@@ -240,6 +247,9 @@ class CheckoutService
         }
 
 		$current_balance = $user->readAvailableBalance( $program, $user);
+
+        // $Logger->info("\$current_balance:$current_balance");
+        // $Logger->info("\$redemption_value_total:$redemption_value_total");
 
 		if ($current_balance < $redemption_value_total) {
 			$response['errors'][] = 'Current ending balance of the user is insufficient to redeem for the gift code';
@@ -393,7 +403,7 @@ class CheckoutService
 						// check and save how many codes is before redeem and store in table:
 						$code_count_before = 0;
 						// send alert if low inventory - save count before, use it later for check
-						$redeemable_denominations = Giftcode::getRedeemableListByMerchantAndSkuValue ( ( int ) $merchant_id, ( float ) $code_value );
+						$redeemable_denominations = ( new \App\Services\GiftcodeService )->getRedeemableListByMerchantAndSkuValue ( ( int ) $merchant_id, ( float ) $code_value );
 						if (is_array ( $redeemable_denominations ) && count ( $redeemable_denominations ) > 0) {
 							foreach ( $redeemable_denominations as $redeemable_denomination ) {
 								$code_count_before += $redeemable_denomination->count;
