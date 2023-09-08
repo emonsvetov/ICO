@@ -44,4 +44,5 @@ class GiftcodeController extends Controller
 
         return response( $giftcodes );
     }
+
 }
