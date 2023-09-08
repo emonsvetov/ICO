@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Http\Traits\MerchantMediaUploadTrait;
 use App\Http\Requests\MerchantStatusRequest;
 use App\Http\Requests\MerchantRequest;
@@ -123,8 +125,12 @@ class MerchantController extends Controller
         {
             return response(['errors' => 'Merchant Not Found'], 404);
         }
+        // DB::enableQueryLog();
+        $merchant->inventoryCount();
+        $merchant->redeemedCount();
         $merchant->children;
         $merchant->tangoOrdersApi;
+
         return response( $merchant );
     }
 

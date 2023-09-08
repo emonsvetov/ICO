@@ -13,66 +13,6 @@ use App\Models\Posting;
 
 trait Redeemable
 {
-	private static function _read_redeemable_list_by_merchant( $merchant, $filters = [], $orders=[] )	{
-
-		if( !is_object($merchant) && is_numeric($merchant) )	{
-			$merchant = Merchant::find($merchant);
-		}
-
-		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
-		$query = self::selectRaw(
-			"'{$merchant->id}' as merchant_id,
-			'{$merchant->account_holder_id}' as merchant_account_holder_id,
-			`redemption_value`,
-			`sku_value`,
-			`virtual_inventory`,
-			`redemption_value` - `sku_value` as `redemption_fee`,
-			COUNT(DISTINCT medium_info.`id`) as count"
-		)
-		->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
-		->join('accounts AS a', 'postings.account_id', '=', 'a.id')
-		->groupBy('sku_value')
-		->groupBy('redemption_value')
-		->orderBy('sku_value')
-		->orderBy('redemption_value')
-		->where('a.account_holder_id', $merchant->account_holder_id)
-		->where('medium_info.hold_until', '<=', now());
-
-        if(isset($filters['medium_info_is_test']) )	{
-            $query->where('medium_info_is_test', '=', $filters['medium_info_is_test']);
-        }
-
-		if( !empty($filters['redemption_value']) )	{
-			$query = $query->where('redemption_value', '=', $filters['redemption_value']);
-		}
-
-		if( !empty($filters['sku_value']) )	{
-			$query = $query->where('sku_value', '=', $filters['sku_value']);
-		}
-
-		if( isset($filters['redemption_date']) && $filters['redemption_date'] == 'null' )	{
-			$query = $query->whereNull('redemption_date');
-		}
-
-		if( isset($filters['purchased_by_v2']))	{
-			$query = $query->where('purchased_by_v2', '=', $filters['purchased_by_v2']);
-		}
-
-		if( !empty($filters['end_date']) && isValidDate($filters['end_date']) )	{
-			$query = $query->where('purchase_date', '<=', $filters['end_date']);
-			$query = $query->where(function($query1) use($filters) {
-                $query1->orWhere('redemption_date', null)
-                ->orWhere('redemption_date', '>', $filters['end_date']);
-            });
-		}
-
-		if($orders && $orders['column'] && $orders['direction']){
-            $query->orderBy($orders['column'], $orders['direction']);
-        }
-
-		return $query->get();
-	}
-
     private static function _redeem_points_for_giftcodes_no_transaction( $params )    {
 
 		extract($params);

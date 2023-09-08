@@ -125,11 +125,21 @@ class MerchantGiftcodeController extends Controller
             $merchant = Merchant::getByMerchantCode($csvData[0]['supplier_code']);
         }
         $imported = [];
-
+        $errorrs = [];
+        DB::beginTransaction();
         foreach( $csvData as $row ) {
-            $imported[] = $giftcodeService->createGiftcode($merchant, $row );
+            try{
+                $imported[] = $giftcodeService->createGiftcode($merchant, $row );
+            }   catch (\Exception $e)    {
+                $errorrs[] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
+            }
         }
-        return response( $imported );
+        if( $errorrs )  {
+            DB::rollback();
+            return response( ['errors' => $errorrs], 422 );
+        }
+        DB::commit();
+        return response( ['count' => $imported] );
     }
 
     public function storeVirtual( MerchantGiftcodeRequest $request, GiftcodeService $giftcodeService, Organization $organization, Program $program, Merchant $merchant )

@@ -134,4 +134,14 @@ class Merchant extends Model
         return self::where('merchant_code', $code)->first();
     }
 
+    public function inventoryCount($propertyName = 'available_giftcode_count', array $args = [])
+    {
+        $this->{$propertyName} = (new \App\Services\GiftcodeService)->getInventoryCountByMerchant($this, $args);
+    }
+
+    public function redeemedCount($propertyName = 'redeemed_giftcode_count', array $args = [])
+    {
+        $this->{$propertyName} = (new \App\Services\GiftcodeService)->getRedeemedCountByMerchant($this, $args);
+    }
+
 }
