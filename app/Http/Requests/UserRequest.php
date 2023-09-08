@@ -85,15 +85,17 @@ class UserRequest extends FormRequest
             'type' => 'required|integer',
             'roles' => 'required|array', // only 1 role per user in the csv import
             'mail' => 'nullable|boolean',
+            'status' => 'nullable|integer',
         ];
     }
 
     public function importSetups()
     {
         return [
-            'type' => 'mustComeFromModel:CsvImportType|matchWith:type|use:id|filter:context,=,Users',
+            'type' => 'mustComeFromModel:CsvImportType|matchWith:name|use:id|filter:context,=,Users',
             'roles' => 'mustComeFromModel:Role|matchWith:name|use:id|filterConstant:organization_id,=,organization_id|filterOrNull:organization_id|dataType:array',
             'mail' => 'nullable|boolean',
+            'status' => 'nullable|mustComeFromModel:Status|matchWith:status|use:id|filter:context,=,Users',
         ];
     }
 
