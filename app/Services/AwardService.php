@@ -131,8 +131,8 @@ class AwardService
         return $result;
     }
     public function awardUser( $event, $awardee, $awarder, object $data = null) {
-        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
-        DB::statement($statement);
+//        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
+//        DB::statement($statement);
         DB::beginTransaction();
 
         $program = $event->program;
@@ -434,7 +434,7 @@ class AwardService
 
         // DB::rollBack();
         DB::commit();
-        DB::statement("UNLOCK TABLES;");
+//        DB::statement("UNLOCK TABLES;");
     }
     public function awardPeer2Peer(array $data, Event $event, Program $program, User $awarder)
     {
