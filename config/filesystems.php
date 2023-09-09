@@ -52,6 +52,16 @@ return [
             'endpoint' => env('AWS_ENDPOINT'),
         ],
 
+        's3-auto-import' => [
+            'driver' => 's3',
+            'key' => env('AUTO_IMPORT_AWS_ACCESS_KEY_ID'),
+            'secret' => env('AUTO_IMPORT_AWS_SECRET_ACCESS_KEY'),
+            'region' => env('AWS_DEFAULT_REGION'),
+            'bucket' => env('AUTO_IMPORT_AWS_BUCKET'),
+            'url' => env('AWS_URL'),
+            'endpoint' => env('AWS_ENDPOINT'),
+        ],
+
     ],
 
     /*
