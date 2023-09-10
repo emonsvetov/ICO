@@ -143,8 +143,6 @@ class Giftcode extends Model
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
 		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
 
-		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
-
 		if(env('APP_ENV') != 'production'){
 		    $giftcode['medium_info_is_test'] = 1;
         }
@@ -196,7 +194,7 @@ class Giftcode extends Model
 	}
 
 	public static function getRedeemableListByMerchant($merchant, $filters = [], $orders=[]) {
-		return ( new \App\Services\GiftcodeService )->getRedeemableListByMerchant( $merchant, $filters, $orders );
+		return self::_read_redeemable_list_by_merchant( $merchant, $filters, $orders );
 	}
 
 	public static function getRedeemableListByMerchantAndRedemptionValue($merchant, $redemption_value = 0, $end_date = '', $args = []) { // $end_date = '2022-10-01' - what is that?
@@ -215,7 +213,21 @@ class Giftcode extends Model
             $filters['purchased_by_v2'] = $args['purchased_by_v2'];
         }
 
-		return ( new \App\Services\GiftcodeService )->getRedeemableListByMerchant ( $merchant, $filters );
+		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
+	}
+
+	public static function getRedeemableListByMerchantAndSkuValue($merchant = 0, $sku_value = 0, $end_date = '') { // $end_date = '2022-10-01' - what is that?
+
+		$filters = [];
+		if( (float) $sku_value > 0 )	{
+			$filters['sku_value'] = (float) $sku_value;
+		}
+		if( isValidDate($end_date) )	{
+			$filters['end_date'] = $end_date;
+		}
+
+		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
+
 	}
 
 	public static function holdGiftcode( $params = [] ) {

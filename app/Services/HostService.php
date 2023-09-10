@@ -43,7 +43,7 @@ class HostService
 
     public function isAdminApp()
     {
-        $appUrl = env('APP_URL'); //This should be the url of the AdminFrontEnd
+        $appUrl = env('APP_URL', 'https://login.incentco.com'); //This should be the url of the AdminFrontEnd
         $referer = $this->getReferer();
 
         if(empty($referer) || empty($appUrl))
