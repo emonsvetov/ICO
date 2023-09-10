@@ -91,6 +91,6 @@ class ProgramMerchantController extends Controller
         // DB::enableQueryLog();
         $redeemable = $giftcodeService->getRedeemable( $merchant, $program->is_demo );
         // pr(toSql(DB::getQueryLog()));
-        return $redeemable;
+        return response($redeemable);
     }
 }
