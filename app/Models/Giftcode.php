@@ -137,7 +137,7 @@ class Giftcode extends Model
 			$merchant = Merchant::find($merchant);
 		}
 		if( !empty($giftcode['purchase_date']))	{
-			$giftcode['purchase_date'] = \Carbon\Carbon::parse($giftcode['purchase_date'])->format('Y-m-d');
+			$giftcode['purchase_date'] = Carbon::createFromFormat('m/d/Y', $giftcode['purchase_date'])->format('Y-m-d');
 		}
 
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
