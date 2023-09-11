@@ -345,3 +345,12 @@ if (! function_exists('cronlog')) {
         return Illuminate\Support\Facades\Log::channel('cron')->info( $msg );
     }
 }
+if (! function_exists('getMilestoneOptions')) {
+    function getMilestoneOptions()  {
+        $options = [];
+        for( $i=1;$i<=30;$i++ )   {
+            $options[$i] = "$i Year" . ($i > 1 ? 's' : '');
+        }
+        return $options;
+    }
+}
