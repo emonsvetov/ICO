@@ -662,9 +662,7 @@ class AwardService
 
     public function readListExpireFuture(Program $program, User $user)
     {
-		// $rule = $this->expiration_rules_model->read ( $program->account_holder_id, $program->expiration_rule_id );
-		// $end_date_sql = $this->expiration_rules_model->get_embeddable_sql ( $rule, POSTINGS . ".posting_timestamp", null, $program->custom_expire_offset, $program->custom_expire_units, $program->annual_expire_month, $program->annual_expire_day );
-        $end_date_sql = '2023-12-31'; //need to get this date TODO
+        $end_date_sql = $program->getPointsExpirationDateSql();
 
 		// build and run the query and store it into the $query variable for
 		// later use and validation of the $query object
@@ -712,9 +710,9 @@ class AwardService
             DB::raw("
                 CAST(
                     IF (
-                        statuses.status = '" . User::STATUS_PENDING_DEACTIVATION . "' AND users.deactivated < '{$end_date_sql}',
+                        statuses.status = '" . User::STATUS_PENDING_DEACTIVATION . "' AND users.deactivated < {$end_date_sql},
                         users.deactivated,
-                        '{$end_date_sql}'
+                        {$end_date_sql}
                     ) AS DATETIME
                 ) AS expiration
             ")
