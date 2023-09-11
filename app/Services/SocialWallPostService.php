@@ -47,10 +47,11 @@ class SocialWallPostService
         }
         // Removing condition - where('social_wall_post_type_id', SocialWallPostType::getEventTypeId()) - as there is no condition in v2
         $data = SocialWallPost::where('organization_id', $organization->id)
+            ->select('social_wall_posts.*')
             ->whereIn('program_id', $hierarchy)
             ->whereNull('social_wall_post_id')
             ->orderBy('created_at', 'DESC')
-            // ->with('children')
+            // ->with(['eventXmlData.event.eventIcon:id,name']) //can be used but limit the select fields first
             ->get();
 
         return [
