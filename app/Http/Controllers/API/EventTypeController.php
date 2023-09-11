@@ -27,6 +27,6 @@ class EventTypeController extends Controller
         if( !$program->allow_milestone_award )   {
             return([]);
         }
-        return response( EventType::MILESTONE_FREQUENCY_OPTIONS );
+        return response( getMilestoneOptions() );
     }
 }

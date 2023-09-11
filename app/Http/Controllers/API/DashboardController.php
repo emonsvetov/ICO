@@ -84,6 +84,7 @@ class DashboardController extends Controller
             'dateTo' => $dateTo,
             'limit' => null,
             'offset' => null,
+            'paginate'=>false
         ];
         $report = new ReportSumProgramsSupplierRedemptionService($params);
         $report = $report->getTable();
@@ -179,10 +180,11 @@ class DashboardController extends Controller
             'limit' => 6,
             'offset' => 0,
             'order' => $unit === 0 ? 'total_dollar_value_redeemed' : 'count',
+            'paginate'=>false
         ];
         $report = new ReportSumProgramsSupplierRedemptionService($params);
         $report = $report->getTable();
-        $data = $report['data'] ?? [];
+        $data = $report ?? [];
         foreach ($data as $key => $item) {
             $item->total_dollar_value_redeemed = (float)$item->total_dollar_value_redeemed;
             $item->total_dollar_value_rebated = (float)$item->total_dollar_value_rebated;
@@ -202,7 +204,8 @@ class DashboardController extends Controller
         $dateTo = date("Y-m-d");
         switch ($duration):
             case 'day':
-                $dateFrom = date("Y-m-d");
+                $dateFrom = date("Y-m-d 00:00:01");
+                $dateTo = date("Y-m-d 23:59:59");
                 break;
             case 'month':
                 $month = date('m', strtotime($dateTo));
