@@ -421,4 +421,20 @@ class Program extends BaseModel
     {
         return $this->getTemplate();
     }
+
+    public function getPointsExpirationDateSql()
+    {
+        $end_date_sql = '';
+        // use the end date of the active goal plan and the expiration rule to set the end date for the future goal goal
+		if ($this->expiration_rule_id == 1){
+            // use the annual month and day parameters
+            $end_date_sql = "date_format(date_add(postings.created_at, interval 1 year), '%Y-12-31')";
+        }elseif($this->expiration_rule_id == 2){
+		    $end_date_sql = "date_format(date_add(postings.created_at, interval 2 year), '%Y-12-31')";
+        }else{ // custom
+
+        }
+
+		return $end_date_sql;
+    }
 }
