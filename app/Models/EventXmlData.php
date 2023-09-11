@@ -11,4 +11,9 @@ class EventXmlData extends Model
 
     protected $guarded = [];
     public $timestamps = true;
+
+    public function event()
+    {
+        return $this->belongsTo(Event::class, 'event_template_id');
+    }
 }

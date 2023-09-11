@@ -80,18 +80,10 @@ class SocialWallPost extends BaseModel
 
     public function getIconImage()
     {
-        $iconImage = '';
-        if ($this->eventXmlData) {
-            switch ($this->eventXmlData->icon) {
-                case 'Award':
-                    $iconImage = 'StarIcon';
-                    break;
-                default:
-                    $iconImage = 'StarThreePoints';
-                    break;
-            }
+        if( $this->eventXmlData && $this->eventXmlData->event->exists() )    {
+            $eventIcon = $this->eventXmlData->event->eventIcon->path;
+            return $eventIcon;
         }
-        return $iconImage;
     }
 
     public function children()
