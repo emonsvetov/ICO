@@ -23,7 +23,7 @@ class Event extends Model
         return $this->belongsTo(Program::class);
     }
 
-    public function icon()
+    public function eventIcon()
     {
         return $this->belongsTo(EventIcon::class, 'event_icon_id');
     }
@@ -36,6 +36,21 @@ class Event extends Model
     public function participant_groups()
     {
         return $this->belongsToMany(ParticipantGroup::class);
+    }
+
+    public static function getActiveMilestoneAwardsWithProgram()    {
+        return self::select(
+            //'id', 'name', 'max_awardable_amount', 'event_icon_id', 'post_to_social_wall', 'message', 'amount_override', 'program_id', 'enable'
+        )
+        ->whereHas('eventType', function ($query) {
+            $query->where('type', EventType::MILESTONE_AWARD);
+        })
+        ->where('enable', true)
+        ->with(['program' => function($query) {
+            // $query->select('id', 'name', 'organization_id');
+            $query->where('allow_milestone_award', true);
+        }, 'eventIcon'])
+        ->get();
     }
 
     /**
@@ -74,7 +89,7 @@ class Event extends Model
         }
 
         return $query->orderBy('name')
-            ->with(['icon', 'eventType'])
+            ->with(['eventIcon', 'eventType'])
             ->get();
     }
 
@@ -100,7 +115,7 @@ class Event extends Model
     public static function read($program_id, $id)
     {
         $goalPlan = Event::where(['program_id'=> $program_id, 'id'=>$id])->first();
-        return $goalPlan; 
+        return $goalPlan;
     }
 
 }

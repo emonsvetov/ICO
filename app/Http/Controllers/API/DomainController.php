@@ -131,7 +131,7 @@ class DomainController extends Controller
             return response(['errors' => 'Domain not found'], 422);
         }
 
-        $program = $domain->programs()->select(['programs.id', 'programs.name'])->first();
+        $program = $domain->programs()->select(['programs.id', 'programs.name', 'programs.organization_id'])->first();
 
         if( !$program ) {
             return response(['errors' => 'No program found for the domain'], 422);

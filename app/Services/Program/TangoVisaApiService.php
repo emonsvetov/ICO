@@ -31,7 +31,7 @@ class TangoVisaApiService
         return $this->_tangos[$tangoOrdersApi->id];
     }
 
-    public function submit_order($data, $toaID, $toa_utid=null)
+    public function submit_order($data, $toaID, $toa_utid=null, $merchant_code = null)
     {
         $tangoOrdersApi = TangoOrdersApi::find($toaID);
         if( !$tangoOrdersApi->exists() ) {
@@ -44,12 +44,10 @@ class TangoVisaApiService
             $toa_utid = $tangoOrdersApi->udid;
         }
 
-        //Log::info('code: ' . print_r($tangoOrdersApi, true));
-
 
         $data['amount'] = floatval( preg_replace( "/,/", "", $data['amount']));
         $data['amount'] = number_format( $data['amount'], 2, '.', '');
-        // dump($tangoOrdersApi->toArray());
+
         // $customers = $tango->getOrderList();
 
         $response = $tango->placeOrder(
@@ -72,7 +70,42 @@ class TangoVisaApiService
             $data['externalRefID']
         );
 
-        $result = $response->getData();
-        return json_decode(json_encode($result), true);
+        $result = json_decode(json_encode($response->getData()), true);
+
+        $code = '';
+        $pin  = '';
+
+        if(isset($result['referenceOrderID']) && $result['referenceOrderID'] && $merchant_code){
+            if($merchant_code == 'SLI'){
+                $code = $result['reward']['credentials']['PIN'];
+            }elseif($merchant_code == 'FLO'){
+                $code = $result['reward']['credentials']['Serial Number'];
+                $pin = $result['reward']['credentials']['PIN'];
+            }else{
+                if(isset($result['reward']['credentials']['Redemption Link'])){
+                    $code = $result['reward']['credentials']['Redemption Link'];
+                }elseif(isset($result['reward']['credentials']['Redemption URL'])){
+                    $code = $result['reward']['credentials']['Redemption URL'];
+                }elseif(isset($result['reward']['credentials']['Gift Code'])){
+                    $code = $result['reward']['credentials']['Gift Code'];
+                }elseif(isset($result['reward']['credentials']['E-Gift Card Number'])){
+                    $code = $result['reward']['credentials']['E-Gift Card Number'];
+                }elseif(isset($result['reward']['credentials']['Card Number'])){
+                    $code = $result['reward']['credentials']['Card Number'];
+                }else{
+                    throw new RuntimeException ('Internal query failed, please contact API administrator', 500 );
+                }
+
+                if(isset($result['reward']['credentials']['Security Code'])){
+                    $pin = $result['reward']['credentials']['Security Code'];
+                }elseif(isset($result['reward']['credentials']['PIN']) && $merchant_code != 'SLI' ){
+                    $pin = $result['reward']['credentials']['PIN'];
+                }
+            }
+        }
+        $result['code'] = $code;
+        $result['pin']  = $pin;
+
+        return $result;
     }
 }

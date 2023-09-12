@@ -137,21 +137,24 @@ class Giftcode extends Model
 			$merchant = Merchant::find($merchant);
 		}
 		if( !empty($giftcode['purchase_date']))	{
-			$giftcode['purchase_date'] = $giftcode['purchase_date']; //Carbon::createFromFormat('d/m/Y', $giftcode['purchase_date'])->format('Y-m-d');
+			$giftcode['purchase_date'] = Carbon::createFromFormat('m/d/Y', $giftcode['purchase_date'])->format('Y-m-d');
 		}
 
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
-		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
-
 		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
 
 		if(env('APP_ENV') != 'production'){
 		    $giftcode['medium_info_is_test'] = 1;
         }
 
-		$gift_code_id = self::insertGetId(
-			$giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
-		);
+		try{
+		    $gift_code_id = self::insertGetId(
+                $giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
+            );
+        }catch(\Exception $e){
+		    throw new \Exception ( 'Could not create codes. DB query failed with error:' . $e->getMessage(), 400 );
+        }
+
 		$response['gift_code_id'] = $gift_code_id;
 		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id:0;
 		$merchant_account_holder_id = $merchant->account_holder_id;
@@ -191,7 +194,7 @@ class Giftcode extends Model
 	}
 
 	public static function getRedeemableListByMerchant($merchant, $filters = [], $orders=[]) {
-		return self::_read_redeemable_list_by_merchant( $merchant, $filters, $orders );
+		return ( new \App\Services\GiftcodeService )->getRedeemableListByMerchant( $merchant, $filters, $orders );
 	}
 
 	public static function getRedeemableListByMerchantAndRedemptionValue($merchant, $redemption_value = 0, $end_date = '', $args = []) { // $end_date = '2022-10-01' - what is that?
@@ -210,21 +213,7 @@ class Giftcode extends Model
             $filters['purchased_by_v2'] = $args['purchased_by_v2'];
         }
 
-		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
-	}
-
-	public static function getRedeemableListByMerchantAndSkuValue($merchant = 0, $sku_value = 0, $end_date = '') { // $end_date = '2022-10-01' - what is that?
-
-		$filters = [];
-		if( (float) $sku_value > 0 )	{
-			$filters['sku_value'] = (float) $sku_value;
-		}
-		if( isValidDate($end_date) )	{
-			$filters['end_date'] = $end_date;
-		}
-
-		return self::_read_redeemable_list_by_merchant ( $merchant, $filters );
-
+		return ( new \App\Services\GiftcodeService )->getRedeemableListByMerchant ( $merchant, $filters );
 	}
 
 	public static function holdGiftcode( $params = [] ) {
@@ -409,4 +398,14 @@ class Giftcode extends Model
         return self::getAllByProgramsQuery($programs)->count();
     }
 
+    public static function readNotSubmittedTangoCodes()
+    {
+        return self::with('merchant')
+            ->where('medium_info.virtual_inventory', 1)
+            ->whereNull('medium_info.tango_reference_order_id')
+            ->whereNotNull('medium_info.redemption_date')
+            ->where('medium_info.redemption_date' , ">=", "2023-08-01")
+            ->orderBy('medium_info.sku_value', 'ASC')
+            ->get();
+    }
 }

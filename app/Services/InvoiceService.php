@@ -81,6 +81,8 @@ class InvoiceService
             }
             // sleep(2); //To Remove
         }
+
+		return $invoice;
 	}
 
     public function getInvoice(Invoice $invoice)   {
@@ -111,7 +113,8 @@ class InvoiceService
 		$invoice_program_ids = array ();
 
 		foreach ( $invoice->invoices as $statement ) {
-			$invoice_program_ids [] = ( int ) $statement ['info']->program_id;
+		    //$invoice_program_ids [] = ( int ) $statement ['info']->program_id; - current code
+			$invoice_program_ids [] = ( int ) $statement ['info']->program_account_holder_id;
 		}
 		// $report_data = Report::read_journal_entry_detail ( $invoice_program_ids, $invoice->date_begin, $invoice->date_end, 0, 99999 );
         $report = $this->reportFactory->build("JournalDetailed", ['programs' => $invoice_program_ids, 'from' => $invoice->date_begin, 'to' => $invoice->date_end]);
@@ -125,6 +128,9 @@ class InvoiceService
 			$program_statement->program_name = $statement ['info']->program_name;
 			$program_statement->program_account_holder_id = $statement ['info']->program_account_holder_id;
 			$program_statement->charges = array ();
+
+			//return $report_data;
+
 			$data = $report_data[$statement['info']->program_account_holder_id];
 			// dd($data->invoice_for_awards);
 			// pr($data->toArray());

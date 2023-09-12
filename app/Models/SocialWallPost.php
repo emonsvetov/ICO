@@ -36,6 +36,11 @@ class SocialWallPost extends BaseModel
         return $this->hasOne(EventXmlData::class, 'id', 'event_xml_data_id');
     }
 
+    public function socialWallPostType()
+    {
+        return $this->belongsTo(SocialWallPostType::class);
+    }
+
     public function receiver()
     {
         return $this->hasOne(User::class, 'account_holder_id', 'receiver_user_account_holder_id');
@@ -62,34 +67,49 @@ class SocialWallPost extends BaseModel
         return $this->sender->first_name . ' ' . $this->sender->last_name;
     }
 
-    public function getIconImage()
+    public function getContent()
     {
-        $iconImage = '';
-        if ($this->eventXmlData) {
-            switch ($this->eventXmlData->icon) {
-                case 'Award':
-                    $iconImage = 'StarIcon';
-                    break;
-                default:
-                    $iconImage = 'StarThreePoints';
-                    break;
-            }
+        $content = '';
+        if( SocialWallPostType::isTypeEvent( $this->socialWallPostType->type ) )  {
+            $content = $this->eventXmlData->notification_body;
+        } else {
+            $content = $this->comment;
         }
-        return $iconImage;
+        return $content;
     }
 
-    public function comments()
+    public function getIconImage()
     {
+        if( $this->eventXmlData && $this->eventXmlData->event->exists() )    {
+            $eventIcon = $this->eventXmlData->event->eventIcon->path;
+            return $eventIcon;
+        }
+    }
+
+    public function children()
+    {
+        return $this->hasMany(SocialWallPost::class, 'social_wall_post_id')->with(['children']);
+    }
+
+    public function comments( $parent_id = null)
+    {
+        $parent_id = $parent_id??$this->id;
         $comments = SocialWallPost::selectRaw(
             'social_wall_posts.*,
             concat(u.first_name, " ", u.last_name) as fromUser,
             DATE_FORMAT(social_wall_posts.created_at,"%m/%d/%Y %H:%i:%s") AS created_at_formated,
             u.avatar',
             )
-            ->where('social_wall_post_id', $this->id)
+            ->where('social_wall_post_id', $parent_id)
             ->join('users AS u', 'u.account_holder_id', '=', 'social_wall_posts.sender_user_account_holder_id')
             ->orderBy('social_wall_posts.created_at', 'DESC')
             ->get();
+
+        if( $comments ) {
+            foreach( $comments as &$comment )    {
+                $comment->comments = $this->comments( $comment->id );
+            }
+        }
         return $comments;
     }
 

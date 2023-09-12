@@ -13,6 +13,7 @@ class MonthlyInvoicing extends Command
      * @var string
      */
     protected $signature = 'cron:monthly-invoicing';
+    protected CronService $cronService;
 
     /**
      * The console command description.

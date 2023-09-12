@@ -253,4 +253,45 @@ class UserService
             }
         }
     }
+
+    public function ssoAddToken($data, $ip): array
+    {
+        $ssoAllowedIps = json_decode(config('sso.sso_allowed_ips'), true);
+        if (in_array($ip, $ssoAllowedIps)) {
+            $user = User::leftJoin('program_user', 'users.id', '=', 'program_user.user_id')
+                ->select('users.*')
+                ->where('program_user.program_id', $data['program_id'])
+                ->where('users.email', $data['email'])
+                ->first();
+
+            if (is_object($user)) {
+                $user->sso_token = $data['sso_token'];
+                $success = $user->save();
+                $code = 200;
+            } else {
+                $success = false;
+                $code = 404;
+            }
+        } else {
+            $success = false;
+            $code = 403;
+        }
+        return [
+            'success' => $success,
+            'code' => $code,
+        ];
+    }
+
+    public function getSsoUser($ssoToken): ?User
+    {
+        $user = null;
+        if (!empty($ssoToken)) {
+            $user = User::where('sso_token', $ssoToken)->first();
+            if ($user) {
+                $user->sso_token = null;
+                $user->save();
+            }
+        }
+        return $user;
+    }
 }

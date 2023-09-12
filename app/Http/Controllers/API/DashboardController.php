@@ -13,7 +13,7 @@ use App\Services\reports\ReportParticipantLoginService;
 use App\Services\reports\ReportProgramStatusService;
 use App\Services\reports\ReportSumProgramsSupplierRedemptionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Domain;
 use Exception;
@@ -52,10 +52,15 @@ class DashboardController extends Controller
         $tmp['ytd']['amount'] = (float)$awardsToday->ytd_awards_value;
         $data['awardsToday'] = (object)$tmp;
 
+        // DB::enableQueryLog();
+
 
         $report = new ReportSumProgramsSupplierRedemptionService($params);
         $report = $report->getTable();
-        $redemptionToday = $report['data'][0] ?? [];
+        // pr(toSql(DB::getQueryLog()));
+        // pr($report);
+        // exit;
+        $redemptionToday = $report[0] ?? [];
         $redemptionToday = $redemptionToday ? (float)$redemptionToday->total_dollar_value_redeemed : 0;
 
         $month = date('m', strtotime($dateTo));
@@ -69,7 +74,7 @@ class DashboardController extends Controller
         ];
         $report = new ReportSumProgramsSupplierRedemptionService($params);
         $report = $report->getTable();
-        $redemptionMTD = $report['data'][0] ?? [];
+        $redemptionMTD = $report[0] ?? [];
         $mtd = $redemptionMTD ? (float)$redemptionMTD->total_dollar_value_redeemed : 0;
 
         $dateBeginYear = date('Y', strtotime($dateTo)) . '-01-01 00:00:00';
@@ -79,10 +84,11 @@ class DashboardController extends Controller
             'dateTo' => $dateTo,
             'limit' => null,
             'offset' => null,
+            'paginate'=>false
         ];
         $report = new ReportSumProgramsSupplierRedemptionService($params);
         $report = $report->getTable();
-        $redemptionYTD = $report['data'][0] ?? [];
+        $redemptionYTD = $report[0] ?? [];
         $ytd = $redemptionYTD ? (float)$redemptionYTD->total_dollar_value_redeemed : 0;
 
         $tmp = [];
@@ -174,10 +180,11 @@ class DashboardController extends Controller
             'limit' => 6,
             'offset' => 0,
             'order' => $unit === 0 ? 'total_dollar_value_redeemed' : 'count',
+            'paginate'=>false
         ];
         $report = new ReportSumProgramsSupplierRedemptionService($params);
         $report = $report->getTable();
-        $data = $report['data'] ?? [];
+        $data = $report ?? [];
         foreach ($data as $key => $item) {
             $item->total_dollar_value_redeemed = (float)$item->total_dollar_value_redeemed;
             $item->total_dollar_value_rebated = (float)$item->total_dollar_value_rebated;
@@ -197,7 +204,8 @@ class DashboardController extends Controller
         $dateTo = date("Y-m-d");
         switch ($duration):
             case 'day':
-                $dateFrom = date("Y-m-d");
+                $dateFrom = date("Y-m-d 00:00:01");
+                $dateTo = date("Y-m-d 23:59:59");
                 break;
             case 'month':
                 $month = date('m', strtotime($dateTo));

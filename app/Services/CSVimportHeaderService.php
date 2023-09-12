@@ -3,18 +3,18 @@ namespace App\Services;
 
 use DB;
 
-class CSVimportHeaderService 
+class CSVimportHeaderService
 {
     public $supplied_constants;
     /**
-     * 
+     *
      * getFieldsToMap() is used to get the headers of a CSV file along with the fields to which those headers should match with
-     * 
+     *
      * @param file The uploaded file from the request
      * @param class The form request class used to validate the data e.g. new \App\Http\Requests\UserRequest
      * @param class Addiotnal form request class. Add as many as you want e.g. new \App\Http\Requests\OrganizationRequest
      * @param class Addiotnal form request class. Add as many as you want e.g. new \App\Http\Requests\ProgramRequest
-     * 
+     *
      * @return array [CSVheaders] contains all the headers of the first line of the CSV file. [fieldsToMap] contains all fields that can be mapped
      */
 
@@ -23,7 +23,7 @@ class CSVimportHeaderService
         $parameters = func_get_args();
 
 
-        foreach ($parameters as $key => $parameter) 
+        foreach ($parameters as $key => $parameter)
         {
             if ( $key === 0 )
             {
@@ -32,7 +32,7 @@ class CSVimportHeaderService
             elseif ($parameter instanceof \Illuminate\Support\Collection) {
                 $this->supplied_constants = $parameter;
             }
-            else 
+            else
             {
                 if ( method_exists($parameter, 'importRules') )
                 {
@@ -44,22 +44,23 @@ class CSVimportHeaderService
                 if ( method_exists($parameter, 'importSetups') )
                 {
                     $result['setups'][class_basename($parameter)] = $this->getImportSetup( $parameter->importSetups() );
+                    $result['setupsFull'][class_basename($parameter)] = $parameter->importSetups();
                 }
             }
         }
 
         return $result;
     }
-    
-    public function getHeaders( $requestFile ) 
+
+    public function getHeaders( $requestFile )
     {
-        
+
         //To detect Mac line endings
         ini_set('auto_detect_line_endings',TRUE);
 
         $filepath = $requestFile->getRealPath();
 
-        $handle = fopen($filepath, 'r');        
+        $handle = fopen($filepath, 'r');
         $headers = fgetcsv($handle);
         fclose($handle);
 
@@ -71,19 +72,19 @@ class CSVimportHeaderService
 
     public function amendFieldToMap($importRules, $formRules)
     {
-        foreach ($importRules as $key => $ruleSets) 
+        foreach ($importRules as $key => $ruleSets)
         {
-            
+
             if ( str_contains($ruleSets, 'hide:true') )
             {
                 unset($formRules[$key]);
-                
+
             }
-            elseif ( str_contains($ruleSets, 'mustComeFromModel:') ) 
+            elseif ( str_contains($ruleSets, 'mustComeFromModel:') )
             {
                 $formRules[$key] = $this->rule_mustComeFromModel($ruleSets);
             }
-            elseif ( str_contains($ruleSets, 'mustExistInModel:')) 
+            elseif ( str_contains($ruleSets, 'mustExistInModel:'))
             {
                 $formRules[$key] = 'mustExist';
             }
@@ -107,7 +108,7 @@ class CSVimportHeaderService
         $matchlist = [];
         $orWhereNullConditions = [];
 
-        foreach ( $rules as $ruleSet) 
+        foreach ( $rules as $ruleSet)
         {
             $rule = explode(':', $ruleSet);
 
@@ -115,7 +116,7 @@ class CSVimportHeaderService
             {
                 $modelName = $rule[1];
             }
-            elseif ( $rule[0] == 'matchWith' ) 
+            elseif ( $rule[0] == 'matchWith' )
             {
                 $select = $rule[1];
             }
@@ -133,7 +134,7 @@ class CSVimportHeaderService
             {
                 $orWhereNullConditions[] = $rule[1];
             }
-            
+
         }
 
         $modelPath = "App\Models\\" . $modelName;
@@ -142,8 +143,8 @@ class CSVimportHeaderService
 
         $query = $model::select($select);
 
-        foreach ($whereConditions as $where) 
-        {            
+        foreach ($whereConditions as $where)
+        {
             $query = $query->where($where[0],$where[1],$where[2]);
         }
 
@@ -151,16 +152,16 @@ class CSVimportHeaderService
         {
             $query = $query->orWhereNull($orWhereNull);
         }
-        
+
         // exit;
         $allMatchWith = $query->get();
 
-        foreach ($allMatchWith as $value) 
+        foreach ($allMatchWith as $value)
         {
-            $matchlist[] = $value[$select]; 
+            $matchlist[] = $value[$select];
         }
-                
-        return "mustMatchWith[" . implode("|", $matchlist) . "]";        
+
+        return "mustMatchWith[" . implode("|", $matchlist) . "]";
     }
 
 
@@ -168,11 +169,11 @@ class CSVimportHeaderService
     {
         foreach ($setupRules as $key => $ruleSets)
         {
-            if ( str_contains($ruleSets, 'mustComeFromList:')) 
+            if ( str_contains($ruleSets, 'mustComeFromList:'))
             {
                 $setupRules[$key] = $this->rule_mustComeFromList($ruleSets);
             }
-            elseif ( str_contains($ruleSets, 'mustComeFromModel:') ) 
+            elseif ( str_contains($ruleSets, 'mustComeFromModel:') )
             {
                 $setupRules[$key] = $this->rule_mustComeFromModel($ruleSets);
             }
@@ -185,7 +186,7 @@ class CSVimportHeaderService
     {
         $rules = explode('|', $ruleSets);
 
-        foreach ( $rules as $ruleSet) 
+        foreach ( $rules as $ruleSet)
         {
             $rule = explode(':', $ruleSet);
 
@@ -194,7 +195,7 @@ class CSVimportHeaderService
                 $items = explode(',', $rule[1]);
             }
         }
-        return "mustMatchWith[" . implode("|", $items) . "]";     
+        return "mustMatchWith[" . implode("|", $items) . "]";
     }
 
 
@@ -202,7 +203,7 @@ class CSVimportHeaderService
     {
         $file = $request->file('uploaded_file');
         if ($file) {
-            
+
             $filename = $file->getClientOriginalName();
             $extension = $file->getClientOriginalExtension(); //Get extension of uploaded file
             $tempPath = $file->getRealPath();
@@ -210,19 +211,19 @@ class CSVimportHeaderService
 
             //Check for file extension and size
             $this->checkUploadedFileProperties($extension, $fileSize);
-            //Where uploaded file will be stored on the server 
+            //Where uploaded file will be stored on the server
             $location = 'uploads'; //Created an "uploads" folder for that
             // Upload file
             $file->move($location, $filename);
-            // In case the uploaded file path is to be stored in the database 
+            // In case the uploaded file path is to be stored in the database
             $filepath = public_path($location . "/" . $filename);
             // Reading file
             $file = fopen($filepath, "r");
             $importData_arr = array(); // Read through the file and store the contents as an array
             $i = 0;
 
-            //Read the contents of the uploaded file 
-            while (($filedata = fgetcsv($file, 1000, ",")) !== FALSE) 
+            //Read the contents of the uploaded file
+            while (($filedata = fgetcsv($file, 1000, ",")) !== FALSE)
             {
                 $num = count($filedata);
                 // Skip first row (Remove below comment if you want to skip the first row)
@@ -240,16 +241,16 @@ class CSVimportHeaderService
             fclose($file); //Close after reading
             $j = 0;
 
-            foreach ($importData_arr as $importData) 
+            foreach ($importData_arr as $importData)
             {
                 $name = $importData[1]; //Get user names
                 $email = $importData[3]; //Get the user emails
                 $j++;
 
-                try 
+                try
                 {
                     DB::beginTransaction();
-                    
+
                     Player::create([
                         'name' => $importData[1],
                         'club' => $importData[2],
@@ -285,14 +286,14 @@ class CSVimportHeaderService
         $valid_extension = array("csv", "xlsx"); //Only want csv and excel files
         $maxFileSize = 2097152; // Uploaded file size limit is 2mb
 
-        if (in_array(strtolower($extension), $valid_extension)) 
+        if (in_array(strtolower($extension), $valid_extension))
         {
             if ($fileSize <= $maxFileSize) {
             } else {
                 throw new \Exception('No file was uploaded', Response::HTTP_REQUEST_ENTITY_TOO_LARGE); //413 error
             }
-        } 
-        else 
+        }
+        else
         {
             throw new \Exception('Invalid file extension', Response::HTTP_UNSUPPORTED_MEDIA_TYPE); //415 error
         }
@@ -313,5 +314,5 @@ class CSVimportHeaderService
         });
     }
 
-    
+
 }

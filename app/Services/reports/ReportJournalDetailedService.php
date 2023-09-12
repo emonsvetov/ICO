@@ -427,13 +427,13 @@ class ReportJournalDetailedService extends ReportServiceAbstract
             foreach($defaultValues as $key => $value) {
                 $rowTotal += $program->{$key};
             }
-            if( $rowTotal <= 0) {
+            if( $rowTotal < 0) {
                 unset($this->table[$program_account_holder_id]);
             }
         }
 
         //Calculate and add "net_points_purchased"
-        $this->table = array_values($this->table);
+        //$this->table = array_values($this->table);
         foreach( $this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
         }

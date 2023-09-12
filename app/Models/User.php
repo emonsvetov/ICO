@@ -83,6 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'v2_parent_program_id',
         'v2_account_holder_id',
         'hire_date',
+        'sso_token',
     ];
 
     /**

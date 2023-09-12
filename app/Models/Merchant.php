@@ -59,6 +59,11 @@ class Merchant extends Model
         return $this->belongsToMany(Program::class, 'program_merchant');
     }
 
+    public function tangoOrdersApi()
+    {
+        return $this->belongsTo(TangoOrdersApi::class, 'toa_id');
+    }
+
     public function getGiftcodes( $merchant ) {
         if( is_int($merchant) ) {
             $merchant = self::find($merchant);
@@ -130,6 +135,16 @@ class Merchant extends Model
     public static function getByMerchantCode($code)
     {
         return self::where('merchant_code', $code)->first();
+    }
+
+    public function inventoryCount($propertyName = 'available_giftcode_count', array $args = [])
+    {
+        $this->{$propertyName} = (new \App\Services\GiftcodeService)->getInventoryCountByMerchant($this, $args);
+    }
+
+    public function redeemedCount($propertyName = 'redeemed_giftcode_count', array $args = [])
+    {
+        $this->{$propertyName} = (new \App\Services\GiftcodeService)->getRedeemedCountByMerchant($this, $args);
     }
 
 }

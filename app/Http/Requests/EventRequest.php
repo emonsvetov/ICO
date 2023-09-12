@@ -36,8 +36,9 @@ class EventRequest extends FormRequest
             'is_birthday_award'=> 'boolean|nullable',
             'is_anniversary_award'=> 'boolean|nullable',
             'award_message_editable'=> 'boolean|nullable',
-            'ledger_code'=> 'numeric|nullable',
-            'email_template_type_id'=> 'sometimes|integer'
+            'email_template_type_id'=> 'sometimes|integer',
+            'milestone_award_frequency'=> 'integer|nullable',
+            'ledger_code'=> 'exists:event_ledger_codes,id'
         ];
     }
 

@@ -110,6 +110,11 @@ return [
             'path' => storage_path('logs/invoicing.log'),
             'level' => 'info',
         ],
+        'cron' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/cron.log'),
+            'level' => 'info',
+        ],
     ],
 
 ];

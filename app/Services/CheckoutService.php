@@ -124,6 +124,9 @@ class CheckoutService
 				foreach ( $gift_code_values_response as $giftCode ) {
 					$skuValue = ( int ) $giftCode->sku_value;
 					$cartSkuValue = ( int ) $gift_code->sku_value;
+                    // $Logger->info("\$cartSkuValue:$cartSkuValue");
+                    // $Logger->info("\$skuValue:$skuValue");
+                    // $Logger->info(json_encode($giftCode->toArray()));
 					if ($skuValue == $cartSkuValue) {
 						// Set the redemption value back to what it is supposed to be
 						$gift_code->redemption_value = $giftCode->redemption_value;
@@ -139,12 +142,16 @@ class CheckoutService
 				//pr($redemption_value_total);
 			}
 
+            // $Logger->info("\$redemption_value_total:$redemption_value_total");
+
             // pr($redemption_value_total);
 
             $merchants_info[$merchant->account_holder_id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
-				$gift_code->gift_code_provider_account_holder_id = Merchant::get_top_level_merchant ( $gift_code->merchant_id )->account_holder_id ;
-				$topMerchant = Merchant::read( $gift_code->gift_code_provider_account_holder_id );
+                $topMerchant = Merchant::get_top_level_merchant ( $gift_code->merchant_id ) ;
+
+				$gift_code->gift_code_provider_account_holder_id = $topMerchant->account_holder_id ;
+				// $topMerchant = Merchant::read( $gift_code->gift_code_provider_account_holder_id );
 			    $merchants_info [$topMerchant->account_holder_id] = $topMerchant;
 			} else {
 				$gift_code->gift_code_provider_account_holder_id = $gift_code->merchant_account_holder_id;
@@ -240,6 +247,9 @@ class CheckoutService
         }
 
 		$current_balance = $user->readAvailableBalance( $program, $user);
+
+        // $Logger->info("\$current_balance:$current_balance");
+        // $Logger->info("\$redemption_value_total:$redemption_value_total");
 
 		if ($current_balance < $redemption_value_total) {
 			$response['errors'][] = 'Current ending balance of the user is insufficient to redeem for the gift code';
@@ -376,8 +386,8 @@ class CheckoutService
 					$tango_order->physical_order_id = $order_id;
 					$tango_order->program_id = $program->id;
 					$tango_order->user_id = $user->id;
-					$tango_order->merchant_id = 9;
-					$tango_order->external_id = null;
+					$tango_order->merchant_id = (int)$merch->id;
+					$tango_order->reference_order_id = null;
 					$tangoOrderId = TangoOrder::create ((array)$tango_order);
 					event( new TangoOrderCreated( $tangoOrderId ) );
                 }
@@ -393,7 +403,7 @@ class CheckoutService
 						// check and save how many codes is before redeem and store in table:
 						$code_count_before = 0;
 						// send alert if low inventory - save count before, use it later for check
-						$redeemable_denominations = Giftcode::getRedeemableListByMerchantAndSkuValue ( ( int ) $merchant_id, ( float ) $code_value );
+						$redeemable_denominations = ( new \App\Services\GiftcodeService )->getRedeemableListByMerchantAndSkuValue ( ( int ) $merchant_id, ( float ) $code_value );
 						if (is_array ( $redeemable_denominations ) && count ( $redeemable_denominations ) > 0) {
 							foreach ( $redeemable_denominations as $redeemable_denomination ) {
 								$code_count_before += $redeemable_denomination->count;
@@ -535,61 +545,32 @@ class CheckoutService
 
                     Log::info('code: ' . print_r($code, true));
 
-                    $tangoResult = $this->tangoVisaApiService->submit_order($data, $code->merchant->toa_id, $toa_utid);
+                    $tangoResult = $this->tangoVisaApiService->submit_order($data, $code->merchant->toa_id, $toa_utid, $code->merchant->merchant_code);
 
                     Log::info('gift_code_id: ' . $gift_code_id);
                     Log::info('merchant code: ' . $code->merchant->merchant_code);
                     Log::info('Tango logs: ' . print_r($tangoResult, true));
 
-                    $redeem_link = '';
-                    $pin = '';
-
-                    if($code->merchant->merchant_code == 'SLI'){
-                        $redeem_link = $tangoResult['reward']['credentials']['PIN'];
-                    }elseif($code->merchant->merchant_code == 'FLO'){
-                        $redeem_link = $tangoResult['reward']['credentials']['Serial Number'];
-                        $pin = $tangoResult['reward']['credentials']['PIN'];
+                    if(isset($tangoResult['referenceOrderID']) && $tangoResult['referenceOrderID']){
+                        DB::table(MEDIUM_INFO)
+                                ->where('id', $code->id)
+                                ->update([
+                                    'code' =>  $tangoResult['code'],
+                                    'pin' =>  $tangoResult['pin'],
+                                    'tango_reference_order_id' => $tangoResult['referenceOrderID']
+                                ]);
                     }else{
-                        if(isset($tangoResult['reward']['credentials']['Redemption Link'])){
-                            $redeem_link = $tangoResult['reward']['credentials']['Redemption Link'];
-                        }elseif(isset($tangoResult['reward']['credentials']['Redemption URL'])){
-                            $redeem_link = $tangoResult['reward']['credentials']['Redemption URL'];
-                        }elseif(isset($tangoResult['reward']['credentials']['Gift Code'])){
-                            $redeem_link = $tangoResult['reward']['credentials']['Gift Code'];
-                        }elseif(isset($tangoResult['reward']['credentials']['E-Gift Card Number'])){
-                            $redeem_link = $tangoResult['reward']['credentials']['E-Gift Card Number'];
-                        }elseif(isset($tangoResult['reward']['credentials']['Card Number'])){
-                            $redeem_link = $tangoResult['reward']['credentials']['Card Number'];
-                        }else{
-                            throw new RuntimeException ('Internal query failed, please contact API administrator', 500);
-                        }
-
-                        if(isset($tangoResult['reward']['credentials']['Security Code'])){
-                            $pin = $tangoResult['reward']['credentials']['Security Code'];
-                        }elseif(isset($tangoResult['reward']['credentials']['PIN']) && $code->merchant->merchant_code != 'SLI'){
-                            $pin = $tangoResult['reward']['credentials']['PIN'];
-                        }
+                        DB::table(MEDIUM_INFO)
+                                ->where('id', $code->id)
+                                ->update([
+                                    'tango_request_id' => $tangoResult['requestId'],
+                                ]);
                     }
-
-                    $tango_request_id = '';
-                    if(isset($tangoResult['requestId'])){
-                        $tango_request_id = $tangoResult['requestId'];
-                    }elseif(isset($tangoResult['referenceOrderID'])){
-                        $tango_request_id = $tangoResult['referenceOrderID'];
-                    }
-
-                    DB::table(MEDIUM_INFO)
-                        ->where('id', $code->id)
-                        ->update([
-                            'code' =>  $redeem_link,
-                            'pin' =>  $pin,
-                            'tango_request_id' => $tango_request_id
-                        ]);
 
                     foreach($gift_codes_redeemed_for as $index => $gift_codes_redeemed_item){
                         if($gift_codes_redeemed_item->id == $gift_code_id){
-                            $gift_codes_redeemed_for[$index]->pin = $pin;
-                            $gift_codes_redeemed_for[$index]->code = $redeem_link;
+                            $gift_codes_redeemed_for[$index]->pin = $tangoResult['pin'];
+                            $gift_codes_redeemed_for[$index]->code = $tangoResult['code'];
                             break;
                         }
                     }

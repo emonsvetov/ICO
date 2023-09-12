@@ -1,4 +1,5 @@
 <?php
+use Illuminate\Support\Str;
 defined ( 'DEBIT' ) or define ( 'DEBIT', '0' );
 defined ( 'CREDIT' ) or define ( 'CREDIT', '1' );
 
@@ -422,5 +423,28 @@ if(!function_exists('is_valid_json'))   {
     function is_valid_json($str) {
         json_decode($str);
         return json_last_error() === JSON_ERROR_NONE;
+    }
+}
+
+if (! function_exists('camel_case')) {
+    function camel_case($value)
+    {
+        return Str::camel($value);
+    }
+}
+
+if (! function_exists('cronlog')) {
+    function cronlog( $msg )
+    {
+        return Illuminate\Support\Facades\Log::channel('cron')->info( $msg );
+    }
+}
+if (! function_exists('getMilestoneOptions')) {
+    function getMilestoneOptions()  {
+        $options = [];
+        for( $i=1;$i<=30;$i++ )   {
+            $options[$i] = "$i Year" . ($i > 1 ? 's' : '');
+        }
+        return $options;
     }
 }

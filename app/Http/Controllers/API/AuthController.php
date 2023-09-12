@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\SsoAddTokenRequest;
+use App\Http\Requests\SsoLoginRequest;
+use App\Services\UserService;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
@@ -21,7 +24,7 @@ use App\Models\Role;
 
 class AuthController extends Controller
 {
-    
+
     public function register(UserRegisterRequest $request)
     {
         DB::beginTransaction();
@@ -35,23 +38,23 @@ class AuthController extends Controller
                 $registerFields['organization_id'] = $organization->id;
                 unset($registerFields['organization_name']);
             }
-            
+
             $user = User::createAccount( $registerFields );
-    
+
             if ( !$user )
             {
                 return response(['errors' => 'User registration failed'], 422);
             }
-    
+
             $adminRole = Role::where('name', config('roles.admin'))->pluck('id');
             $user->syncRoles( $adminRole );
-    
+
             $accessToken = $user->createToken('authToken')->accessToken;
-    
+
             event(new Registered($user));
 
             DB::commit();
-            
+
             return response([ 'user' => $user, 'access_token' => $accessToken]);
         }
         catch(\Exception $e)
@@ -66,6 +69,52 @@ class AuthController extends Controller
         }
     }
 
+    public function ssoAddToken(SsoAddTokenRequest $request, UserService $service)
+    {
+        $data = $request->validated();
+        $res = $service->ssoAddToken($data, $request->ip());
+        return response([
+            'success' => $res['success']
+        ], $res['code']);
+    }
+
+    public function ssoLogin(SsoLoginRequest $request, DomainService $domainService, UserService $service)
+    {
+        $validated = $request->validated();
+        $user = $service->getSsoUser($validated['sso_token']);
+        if ($user) {
+            auth()->guard('ssoweb')->login($user);
+            $user = auth()->guard('ssoweb')->user();
+            $user->load(['organization', 'roles']);
+
+            $accessToken = auth()->guard('ssoweb')->user()->createToken('authToken')->accessToken;
+
+            $response = ['user' => $user, 'access_token' => $accessToken];
+
+            $isValidDomain = $domainService->isValidDomain();
+        } else {
+            $isValidDomain = false;
+        }
+        if( $isValidDomain )
+        {
+            $domain = $domainService->getDomain();
+            $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
+            if( !$user->programRoles )  {
+                return response(['message' => 'No program roles '], 422);
+            }
+            $response['domain'] = $domain;
+            return response( $response );
+        }
+        else if( is_null($isValidDomain) )
+        {
+            if( ($user->isSuperAdmin() || $user->isAdmin()) )
+            {
+                $response['programCount'] = $user->organization->programs()->count();
+                return response($response);
+            }
+        }
+    }
+
     public function login(UserLoginRequest $request, DomainService $domainService)
     {
         try {
@@ -74,12 +123,12 @@ class AuthController extends Controller
             if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                 return response(['message' => 'Invalid Credentials'], 422);
             }
-    
+
             $user = auth()->guard('web')->user();
             $user->load(['organization', 'roles']);
-    
+
             $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
-    
+
             $response = ['user' => $user, 'access_token' => $accessToken];
 
             $isValidDomain = $domainService->isValidDomain();
@@ -119,7 +168,7 @@ class AuthController extends Controller
     }
 
     public function logout (Request $request) {
-       
+
         $token = $request->user()->token();
         $token->revoke();
         $response = ['message' => 'You have been successfully logged out!'];

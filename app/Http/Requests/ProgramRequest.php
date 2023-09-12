@@ -96,13 +96,13 @@ class ProgramRequest extends FormRequest
             'expiration_rebate_percentage'=>'nullable|integer',
             'percent_total_spend_rebate'=>'nullable|integer',
             'bill_parent_program'=>'nullable|boolean',
-            'administrative_fee'=>'nullable|integer',
-            'administrative_fee_factor'=>'nullable|integer',
+            'administrative_fee'=>'nullable|numeric',
+            'administrative_fee_factor'=>'nullable|numeric',
 			//	Calculation: dropdown Pending
-            'deposit_fee'=>'nullable|integer',
-            'fixed_fee'=>'nullable|integer',
-            'convenience_fee'=>'nullable|integer',
-            'monthly_usage_fee'=>'nullable|integer',
+            'deposit_fee'=>'nullable|numeric',
+            'fixed_fee'=>'nullable|numeric',
+            'convenience_fee'=>'nullable|numeric',
+            'monthly_usage_fee'=>'nullable|numeric',
             'accounts_receivable_email'=>'nullable|string|email',
             'bcc_email_list'=>'nullable|string',
             'cc_email_list'=>'nullable|string',
@@ -169,7 +169,8 @@ class ProgramRequest extends FormRequest
             'allow_search_peers_not_logged_into'=>'nullable|boolean',
             'allow_view_leaderboards_not_logged_into'=>'nullable|boolean',
             'enable_how_are_you_feeling'=>'nullable|boolean',
-            'enable_referrals'=>'nullable|boolean'
+            'enable_referrals'=>'nullable|boolean',
+            'allow_milestone_award'=>'nullable|boolean',
         ];
     }
 

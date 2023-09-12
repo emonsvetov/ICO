@@ -1,6 +1,8 @@
 <?php
 namespace App\Http\Traits;
 
+use App\Mail\templates\ProcessCompletionReportEmail;
+use App\Models\Event;
 use App\Models\User;
 use App\Models\Award;
 use App\Models\Program;
@@ -10,12 +12,14 @@ use App\Models\EventXmlData;
 use App\Mail\templates\WelcomeEmail;
 use App\Mail\templates\AwardBadgeEmail;
 use App\Notifications\CSVImportNotification;
+use \Illuminate\Support\Facades\DB;
 
-use DB;
-use Mail;
+use App\Services\AwardService;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use DateTime;
 
-trait UserImportTrait 
+trait UserImportTrait
 {
 
     public function createUserPassword()
@@ -28,14 +32,14 @@ trait UserImportTrait
         try
         {
             $userIds = DB::transaction(function() use ($data, $suppliedConstants) {
-                
+
                 $createdUserIds = [];
                 $user = new User;
 
                 $mail = $data['setups']['UserRequest']['mail'] ?? 0;
 
-                foreach ($data['UserRequest'] as $key => $userData) 
-                {    
+                foreach ($data['UserRequest'] as $key => $userData)
+                {
                     $employeeNumber = $userData['employee_number'] ?? null;
                     $updated = 0;
 
@@ -57,7 +61,7 @@ trait UserImportTrait
                             ->update($userData);
                         // do we need to update user roles?
                     }
-                    
+
                     if (!$updated)
                     {
                         $newUser = $user->createAccount($userData + [
@@ -76,7 +80,7 @@ trait UserImportTrait
                         {
                             $newUser->syncProgramRoles($program->id, $roles);
                         }
-                        
+
                         if ($mail)
                         {
                             // What is contact program host?
@@ -113,27 +117,27 @@ trait UserImportTrait
         try
         {
             $eventXmlDataIds = DB::transaction(function() use ($data, $suppliedConstants) {
-                
+
                 // AWARD USER
                 $createEventXmlDataIds = [];
                 $eventXmlData = new EventXmlData;
 
                 $mail = $data['setups']['UserUpdateRequest']['mail'] ?? 0;
 
-                foreach ($data['EventXmlDataRequest'] as $key => $eventXml) 
+                foreach ($data['EventXmlDataRequest'] as $key => $eventXml)
                 {
 
                     $user = User::where('email', $data['UserUpdateRequest'][$key]['email'])->first();
 
                     //$eventXml = $data['EventXmlDataRequest'][$key];
 
-                    $newEventXmlData = $eventXmlData->create($eventXml + 
+                    $newEventXmlData = $eventXmlData->create($eventXml +
                         [
                             'awarder_account_holder_id' => $user->account_holder_id
                         ]);
 
                     $createEventXmlDataIds[] = $newEventXmlData->id;
-                    
+
                     if ($mail)
                     {
                         // What is contact program host?
@@ -165,14 +169,14 @@ trait UserImportTrait
         try
         {
             $userIds = DB::transaction(function() use ($data, $suppliedConstants) {
-                
+
                 $createdUserIds = [];
                 $user = new User;
 
                 $mail = $data['setups']['UserRequest']['mail'] ?? 0;
 
-                foreach ($data['UserRequest'] as $key => $userData) 
-                {    
+                foreach ($data['UserRequest'] as $key => $userData)
+                {
                     // CREATE A NEW USER
                     $dob = $userData['dob'] ?? null;
                     if ($dob)
@@ -206,20 +210,20 @@ trait UserImportTrait
 
                     $eventXml = $data['EventXmlDataRequest'][$key];
 
-                    $newEventXmlData = $eventXmlData->create($eventXml + 
+                    $newEventXmlData = $eventXmlData->create($eventXml +
                         [
                             'awarder_account_holder_id' => $newUser->account_holder_id
                         ]);
 
                     $createEventXmlDataIds[] = $newEventXmlData->id;
-                    
+
                     if ($mail)
                     {
                         // What is contact program host?
                         $message = new WelcomeEmail($newUser->first_name, $newUser->email, "");
                         Mail::to($newUser->email)->send($message);
                     }
-                    
+
                 }
             });
 
@@ -232,7 +236,7 @@ trait UserImportTrait
             return $e->getMessage();
             $csvImport->notify(new CSVImportNotification(['errors' => $e->getMessage()]));
         }
-        
+
 
         // TO DO: Send import report to user
         $mailImportStatus = $mail = $data['setups']['CSVProgramRequest']['mail'] ?? 0;
@@ -244,6 +248,76 @@ trait UserImportTrait
         }
     }
 
+    public function addAndAwardParticipant($csvImport, $data, $suppliedConstants, AwardService $awardService)
+    {
+        try
+        {
+            DB::beginTransaction();
+            $userIds = [];
+
+            foreach ($data['UserRequest'] as $key => $userData)
+            {
+                $newUser = (new User)->createAccount($userData + [
+                        'organization_id' => $suppliedConstants['organization_id'],
+                        'password' => $this->createUserPassword(),
+                        'user_status_id' => $data['setups']['UserRequest']['status'] ?? null,
+                    ]);
+
+                $program = Program::find($data['CSVProgramRequest'][$key]['program_id']);
+                $program->users()->sync( [ $newUser->id ], false );
+                $organization = Organization::find($suppliedConstants['organization_id']);
+
+                $roles = !empty($userData['roles']) ? $userData['roles'] : $data['setups']['UserRequest']['roles'];
+                if( !empty($roles) ) {
+                    $newUser->syncProgramRoles($program->id, $roles);
+                }
+
+                // AWARD NEW USER
+                $event = Event::find($data['AwardRequest'][$key]['event_id']);
+                $awardData = $userData + $data['AwardRequest'][$key] + [
+                    'message' => $event->message,
+                    'user_id' => [$newUser->id],
+                    'organization_id' => $organization->id,
+                ];
+                $requestClassPath = "App\Http\Requests\\AwardRequest";
+                $formRequestClass = new $requestClassPath;
+                $formRequestRules = $formRequestClass->rules();
+                $validator = Validator::make($awardData, $formRequestRules);
+
+                if ($validator->fails()) {
+                    throw new \Exception(print_r($data, true) . $validator->errors()->first());
+                }
+                $managers = $program->getManagers();
+                if(!$managers){
+                    throw new \Exception("No managers in program {$program->name}");
+                }
+
+                $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData);
+
+                $message = new WelcomeEmail($newUser->first_name, $newUser->email, $program);
+                Mail::to($newUser->email)->send($message);
+
+                $message = new ProcessCompletionReportEmail($managers[0]->first_name, $csvImport->name, $program);
+                Mail::to($managers[0]->email)->send($message);
+
+                $userIds[] = $newUser->id;
+            }
+            $csvImport->update(['is_imported' => 1]);
+            CsvImport::deleteFileAutoImportS3($csvImport);
+
+            DB::commit();
+
+            return $userIds;
+        } catch (\Exception $e)
+        {
+            DB::rollBack();
+            print_r($e->getMessage());
+            print_r($e->getTrace());
+            die;
+            $csvImport->update(['is_processed' => 0]);
+//            $csvImport->notify(new CSVImportNotification(['errors' => $e->getMessage()]));
+        }
+    }
 
     public function emailImportReport($csvImportId)
     {
