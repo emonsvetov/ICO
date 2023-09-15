@@ -14,6 +14,8 @@ class EventType extends Model
         'deleted',
     ];
 
+    const ET_BADGE = 5;
+
     const EVENT_TYPE_BADGE = 'badge';
     const EVENT_TYPE_PEER2PEER_BADGE = 'peer2peer badge';
     const EVENT_TYPE_STANDARD = 'standard';
