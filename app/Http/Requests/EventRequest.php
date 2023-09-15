@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Rules\Decimal82;
+use Illuminate\Support\Facades\Log;
 
 class EventRequest extends FormRequest
 {
@@ -28,7 +29,7 @@ class EventRequest extends FormRequest
             'enable'=> 'sometimes|boolean|nullable',
             'event_type_id'=> 'required|numeric',
             'event_icon_id'=> 'sometimes|integer',
-            'max_awardable_amount'=> ['required', new Decimal82()],
+            'max_awardable_amount' => 'sometimes|integer',
             'post_to_social_wall'=> 'nullable|boolean',
             'message'=> 'required|string',
             'include_in_budget'=> 'boolean|nullable',
@@ -38,7 +39,7 @@ class EventRequest extends FormRequest
             'award_message_editable'=> 'boolean|nullable',
             'email_template_type_id'=> 'sometimes|integer',
             'milestone_award_frequency'=> 'integer|nullable',
-            'ledger_code'=> 'exists:event_ledger_codes,id'
+            'ledger_code'=> 'exists:event_ledger_codes,id|nullable'
         ];
     }
 
