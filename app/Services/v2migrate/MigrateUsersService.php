@@ -86,7 +86,8 @@ class MigrateUsersService extends MigrationService
         }
     }
 
-    public function migrateSingleUser( $v2User) {
+    public function migrateSingleUser( $v2User ) {
+
         if( !$v2User || !$v2User->email ) return;
 
         $this->setDebug(true);
@@ -94,18 +95,31 @@ class MigrateUsersService extends MigrationService
         $this->printf("* Starting migration of user:%d with email:%s\n", $v2User->account_holder_id,$v2User->email);
 
         $isNewUser = false;
+        $createUser = true;
         if( $v2User->v3_user_id ) {
-            $this->printf(" - User with email %s exist in v3.\n",  $v2User->email);
-            //TODO - Check for the update??
+            $this->printf(" - The \"v3_user_id\" exists for user %s exists.\n",  $v2User->email);
+            $this->printf(" -- Now making sure that user {%s} exists in v3.\n",  $v2User->email);
             $v3User = User::find( $v2User->v3_user_id );
+            if( $v3User ) {
+                //TODO - Check for the update??
+                $this->printf(" -- User {%s} EXISTS! exists in v3. Skipping..\n",  $v2User->email);
+                $createUser = false; //if need to go further use this
+                return;
+            }   else {
+                $createUser = true;
+            }
             // return;
-        }   else {
+        }
+        if( $createUser ) {
             $v3User = User::where( 'v2_account_holder_id', $v2User->account_holder_id )->orWhere('email', $v2User->email)->first();
             if( !$v3User ) {
                 $this->printf("Ready to create new user with email:%s\n", $v2User->email);
                 $v3User = $this->createUser($v2User);
                 $this->printf(" - New User with email:%s created in v3.\n",  $v2User->email);
                 $isNewUser = true;
+
+
+
             }   else {
                 $this->printf(" - User exists in v3 by \"email:%s\" or \"v2_account_holder_id:%d\".\n",  $v3User->email, $v3User->v2_account_holder_id);
             }
@@ -121,9 +135,12 @@ class MigrateUsersService extends MigrationService
         // Migrate roles if applies
         if( $v3User ) {
             if( $isNewUser || $this->resycnRoles ) {
+                $this->printf(" - Attempting to import user roles\n");
+                $this->migrateUserRoleService->setv2pid( $this->v2pid() );
                 $this->migrateUserRoleService->migrate($v2User, $v3User);
             }
         }
+        return $isNewUser;
     }
 
     public function migrateSingleDuplicateUser( $v2DuplicateUser )    {
@@ -276,7 +293,137 @@ class MigrateUsersService extends MigrationService
             $this->printf("SQL:%s\n", $sql);
         }
         return $results;//204298,244119
-
-
     }
+
+    public function v2_read_list_by_program($v2_program_account_holder_id = 0, $role_types = [], $args=[]) {
+		return $this->_get_users_with_roles ( $v2_program_account_holder_id, $role_types, $args);
+	}
+	/** _get_users_in_roles()
+	 *
+	 * Get a list of users within a program, given a list of roles
+	 *
+	 *
+	 * @param int $program_account_holder_id
+	 * @param string[] $role_types
+	 * @return collection
+     * */
+
+	private function _get_users_with_roles($program_account_holder_id = 0, $role_types = array(), $args=[]) {
+        $hierarchy = false;
+		$role_type_count = count ( $role_types );
+		$role_types_string = '';
+		if (( int ) $role_type_count > 0 ) {
+			for($x = 0; $x < $role_type_count; $x ++) {
+				$role_types [$x] = "'" . $role_types [$x] . "'";
+			}
+			$role_types_string = implode ( ', ', $role_types );
+		}
+
+        $this->v2db->statement("SET SQL_MODE=''");
+
+		$sql = "
+			SELECT
+                roles.owner_id program_id,
+				users.*,
+				CASE
+				    WHEN `users`.phone THEN
+				        CONCAT(ccc.code, `users`.phone)
+                    ELSE ''
+                END as phone,
+				users.phone_confirmed,
+				users.mfa_auth,
+				p.title AS position,
+				state_types.state AS user_state_name,
+                (
+                        SELECT award_level.name
+                        FROM award_level
+                        INNER JOIN award_levels_has_users ON award_levels_has_users.award_levels_id = award_level.id
+                        WHERE
+                            award_levels_has_users.users_id = users.account_holder_id
+                        AND
+                            award_level.program_account_holder_id = program_id
+                ) as award_level,
+				ue.employee_number,
+				ue.location_id,
+				ue.user_level
+			FROM
+				users
+            LEFT JOIN
+                `country_calling_codes` ccc on ccc.id = `users`.country_calling_code_id
+			LEFT JOIN
+				roles_has_users ON roles_has_users.users_id = users.account_holder_id
+			LEFT JOIN
+				roles ON roles.id = roles_has_users.roles_id
+			LEFT JOIN
+				role_types ON role_types.id = roles.role_type_id
+			LEFT JOIN
+				state_types ON state_types.id = users.user_state_id
+		    LEFT JOIN award_levels_has_users ON award_levels_has_users.users_id = users.account_holder_id
+			LEFT JOIN award_level ON award_level.id = award_levels_has_users.award_levels_id AND award_level.program_account_holder_id = {$program_account_holder_id}
+			LEFT JOIN users_extended_info AS ue ON ue.user_id = users.account_holder_id
+			LEFT JOIN (
+				SELECT pl.title, pa.user_id FROM position_levels AS pl
+				INNER JOIN position_assignment AS pa ON pa.position_level_id = pl.id AND pa.program_id = {$program_account_holder_id} AND pl.status = 1
+			) p ON p.user_id = users.account_holder_id
+			WHERE
+		";
+
+        $sql = $sql . " " . $this->_where_in_program ( $hierarchy, $program_account_holder_id );
+
+
+		if(isset($args['user_state_id']) && !empty($args['user_state_id'])){
+			$user_state_ids = is_array($args['user_state_id']) ? implode(',',$args['user_state_id']) : $args['user_state_id'];
+			$sql = $sql . " AND users.user_state_id IN ({$user_state_ids}) ";
+		}
+
+		if(isset($args['active']) && $args['active'] == true){
+			$sql = $sql . " AND users.user_state_id = 2 ";
+		}
+
+        if( $role_types_string != "" )   {
+            $sql .= " AND role_types.type IN ({$role_types_string})";
+        }
+
+		$sql = $sql . "
+			GROUP BY
+				users.account_holder_id
+		;";
+
+		return $this->v2db->select( $sql );
+	}
+
+    private function _where_in_program($hierarchy = false, $program_id = 0, $all = false) {
+		$sql = "";
+		if ($hierarchy) {
+			if (! $all) {
+				$sql = $sql . "
+				roles.owner_id in (
+					select descendant as program_id
+				from program_paths
+				where
+                program_paths.ancestor = (
+						select ancestor
+						from program_paths parent
+						where
+							parent.descendant = {$program_id}
+							and path_length = 1
+					)
+					and path_length > 0)
+				";
+			}
+		} else {
+			$sql = $sql . "
+				roles.owner_id = {$program_id}
+			";
+		}
+		if ($all) {
+			// throw new RuntimeException("BCM HERE 5 - NOT HERE");
+			$root_program_id = resolve(\App\Services\v2migrate\MigrateProgramsService::class)->get_top_level_program_id ( $program_id );
+			$sql = "
+				program_paths.ancestor in (select descendant from program_paths where ancestor = {$root_program_id})
+			";
+		}
+		return $sql;
+
+	}
 }

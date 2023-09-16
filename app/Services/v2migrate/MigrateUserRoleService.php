@@ -41,7 +41,11 @@ class MigrateUserRoleService extends MigrationService
     }
 
     public function getV2UserRoles( $v2_user_account_holder_id )    {
+
         $sql = sprintf("SELECT `r`.*, `r`.`owner_id` AS `program_account_holder_id`, `rhu`.`users_id`, `rt`.`type` AS role_name, `p`.`name` AS `program_name`, `p`.`v3_program_id` FROM `roles_has_users` `rhu` LEFT JOIN `roles` `r` ON `rhu`.`roles_id`=`r`.`id` LEFT JOIN `role_types` `rt` ON `r`.`role_type_id`=`rt`.`id` LEFT JOIN `programs` `p` ON `p`.`account_holder_id`=`r`.`owner_id` WHERE `rhu`.`users_id`=%d", $v2_user_account_holder_id); //AND rt.type NOT LIKE 'Participant' AND rt.type NOT LIKE 'Program Manager'
+        if( (int)$this->v2pid() > 0 )  {
+            $sql .= sprintf(' AND p.account_holder_id=%d', (int)$this->v2pid());
+        }
         $v2UserRoles = $this->v2db->select($sql);
         if( $this->isPrintSql() ) {
             $this->printf("SQL:%s\n", $sql);
@@ -52,17 +56,22 @@ class MigrateUserRoleService extends MigrationService
     // public function migrate() {
         // $v2UserRoles = $this->getV2UserRoles(203610);
         // $v2User = new stdClass;
-
         $v2UserRoles = $this->getV2UserRoles($v2User->account_holder_id);
+        pr($v2UserRoles);
         // $v2UserRoles = $this->getV2UserRoles(204298);
         if( sizeof($v2UserRoles) > 0) {
             $this->printf(" - %d roles found for user %s. Preparing to import roles.\n",  sizeof($v2UserRoles), $v2User->email);
             $newProgramRoles = [];
             foreach( $v2UserRoles as $v2UserRole ) {
+                pr($v2UserRole);
                 if( !$v2UserRole->v3_program_id )   {
                     $this->printf(" - Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Skipping.\n",  $v2User->email);
                     // throw new Exception("Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Aborting user migration process.\n");
                     continue; //TO BE REMOVED? since we do not want to go with incomplete user roles?
+                }
+                if( $this->v2pid() && $this->v2pid() !== $v2UserRole->program_account_holder_id) {
+                    //We are running by program, and the user role does not belong to this program
+                    continue;
                 }
                 $this->printf(" - Looking for role \"%s\" in v3.\n",  $v2UserRole->role_name);
                 $v2RoleName = $this->_getRoleNameFromV2RoleName( $v2UserRole->role_name );

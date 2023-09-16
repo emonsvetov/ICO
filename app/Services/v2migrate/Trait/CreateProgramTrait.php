@@ -15,6 +15,9 @@ use stdClass;
 trait CreateProgramTrait
 {
     public $newPrograms = [];
+    public function addToImportMap( $account_holder_id, $key, mix $value)    {
+        $this->importMap['program'][$account_holder_id][$key] = $value;
+    }
     public function createProgram($v3_organization_id, $v2Program, $parent_id = null)
     {
         if( empty($v3_organization_id) || empty($v2Program->account_holder_id) ) {
@@ -379,6 +382,8 @@ trait CreateProgramTrait
                 }
             }
 
+
+
             // Pull addresses
 
             {
@@ -535,8 +540,8 @@ trait CreateProgramTrait
 
             if( !property_exists($v2Program, 'sub_programs') ) { //if root program
                 $children_heirarchy_list = $this->read_list_children_heirarchy(( int )$v2Program->account_holder_id);
-                // pr("children_heirarchy_list count:");
-                // pr(count($children_heirarchy_list));
+                pr("children_heirarchy_list count:");
+                pr(count($children_heirarchy_list));
                 $programs_tree = array ();
                 if ( $children_heirarchy_list ) {
                     $programs_tree = sort_programs_by_rank_for_view($programs_tree, $children_heirarchy_list);

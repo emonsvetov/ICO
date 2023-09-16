@@ -4,6 +4,8 @@ namespace App\Services\v2migrate;
 
 use Illuminate\Support\Facades\DB;
 
+use App\Models\Program;
+
 class MigrationService
 {
     public $v2db; //Database connection
@@ -15,6 +17,29 @@ class MigrationService
     public string $v2Sql = '';
     public string $v3Sql = '';
     public bool $debug = true;
+    public $v2pid = null;
+    public $v3pid = null;
+    public Program $v3Program;
+
+    public function setv2pid( $v2pid ) {
+        $this->v2pid = $v2pid;
+    }
+
+    public function v2pid() {
+        return $this->v2pid;
+    }
+
+    public function setv3pid( $v3pid ) {
+        $this->v3pid = $v3pid;
+    }
+
+    public function setv3Program( $v3Program ) {
+        $this->v3Program = $v3Program;
+    }
+
+    public function v3Program() {
+        return $this->v3Program;
+    }
 
     protected function __construct()
     {

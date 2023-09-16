@@ -13,7 +13,7 @@ class MigratePrograms extends Command
      *
      * @var string
      */
-    protected $signature = 'v2migrate:programs';
+    protected $signature = 'v2migrate:programs {id}';
 
     /**
      * The console command description.
@@ -35,7 +35,8 @@ class MigratePrograms extends Command
      */
     public function handle()
     {
-        dispatch(new MigrateProgramsJob());
+        $program = array_filter(explode(',', $this->argument('id')), function($p) { return ( is_numeric($p) && (int) $p > 0 ); });
+        dispatch(new MigrateProgramsJob(['program' => $program]));
         return 0;
     }
 }

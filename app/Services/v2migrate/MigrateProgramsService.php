@@ -18,6 +18,7 @@ class MigrateProgramsService extends MigrationService
 {
     private ProgramService $programService;
     private MigrateProgramAccountsService $migrateProgramAccountsService;
+    private $migrateUserService;
 
     use CreateProgramTrait;
 
@@ -37,13 +38,15 @@ class MigrateProgramsService extends MigrationService
         parent::__construct();
         $this->programService = $programService;
         $this->migrateProgramAccountsService = $migrateProgramAccountsService;
+        $this->migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
     }
 
-    public function migrate() {
+    public function migrate( $args = [] ) {
 
         printf("Starting program migration iteration: %d\n", $this->iteration++);
 
-        $v2RootPrograms = $this->read_list_all_root_program_ids();
+        $v2RootPrograms = $this->read_list_all_root_program_ids( $args );
+
         if( !$v2RootPrograms ) {
             printf("No user found in iteration %d\n", $this->iteration);
         }
@@ -55,7 +58,7 @@ class MigrateProgramsService extends MigrationService
         $this->offset = $this->offset + $this->limit;
         // if( $this->count >= 20 ) exit;
         if( count($v2RootPrograms) >= $this->limit) {
-            $this->migrate();
+            $this->migrate( $args );
         }
 
         // DB::rollback();
@@ -66,37 +69,74 @@ class MigrateProgramsService extends MigrationService
     }
 
     public function migratePrograms($v2RootPrograms) {
-
         // DB::beginTransaction();
         // $this->v2db->beginTransaction();
-
+        $importedUsers = [];
         try {
             foreach ($v2RootPrograms as $v2RootProgram) {
                 try{
                     $rootProgram = $this->get_program_info ( $v2RootProgram->account_holder_id );
+                    $this->setv2pid($v2RootProgram->account_holder_id);
+                    // pr($rootProgram);
+                    $v2users = $this->migrateUserService->v2_read_list_by_program($v2RootProgram->account_holder_id);
+                    $this->migrateUserService->setv2pid($v2RootProgram->account_holder_id);
+                    foreach( $v2users as $v2user)   {
+                        $importedUsers[] = $this->migrateUserService->migrateSingleUser($v2user);
+                    }
+                    pr($importedUsers);
+                    exit;
                     if( $rootProgram ) {
                         printf("Starting migrations for root program \"%s\"\n", $rootProgram->name);
                         if( !property_exists($rootProgram, "v3_program_id") || !property_exists($rootProgram, "v3_organization_id" ) ) {
                             throw new Exception( "v2Fields \"v3_account_holder_id\" and \"v3_organization_id\" are required in v2 table to sync properly. Termininating!");
                             exit;
                         }
+                        $createOrganization = false;
+
                         if( empty($rootProgram->v3_organization_id) ) {
+                            $createOrganization = true;
+                        }   else {
+                            $exists = Organization::find( $rootProgram->v3_organization_id );
+                            if( !$exists ) {
+                                $createOrganization = true;
+                            }
+                        }
+
+                        if( $createOrganization ) {
                             //Create organization
                             try {
                                 $organization = Organization::create([
                                     'name' => $rootProgram->name
                                 ]);
+                                OrganizationCreated::dispatch($organization);
                             } catch (Exception $e) {
                                 if( strpos($e->getMessage(), 'Duplicate entry') > 0 && strpos($e->getMessage(), 'organizations_name_unique') > 0) {
-                                    $organization = Organization::create([
-                                        'name' => $rootProgram->name . '__' . rand()
-                                    ]);
+                                    $organization = Organization::where([
+                                        'name' => $rootProgram->name
+                                    ])->first();
                                 }
                             }
                             $rootProgram->v3_organization_id = $organization->id;
-                            OrganizationCreated::dispatch($organization);
                         }
+
+                        $skipMigration = false;
+                        // pr($organization->toArray());
                         if( empty($rootProgram->v3_program_id) ) {
+                            //Let's try to find it in v2
+                            $exists = Program::where('v2_account_holder_id', $rootProgram->account_holder_id)
+                            ->orWhere('name', 'LIKE', $rootProgram->name)->first();
+                            if( $exists )  {
+                                $skipMigration = true;
+                                printf("\"v3_program_id\" exists for root program \"%s\". Skipping..\n", $rootProgram->name);
+                                //Update "v3_program_id" in v2?? Put code here
+                            }
+                        }   else {
+                            if(Program::find($rootProgram->v3_program_id))  {
+                                $skipMigration = true;
+                            }
+                        }
+
+                        if( !$skipMigration ) {
                             try{
                                 $newProgram = $this->createProgram($rootProgram->v3_organization_id, $rootProgram);
                                 if( $newProgram ) {
@@ -109,8 +149,6 @@ class MigrateProgramsService extends MigrationService
                             } catch(Exception $e)    {
                                 throw new Exception( sprintf("Error creating new program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
                             }
-                        }   else {
-                            printf("\"v3_program_id\" exists for root program \"%s\". Skipping..\n", $rootProgram->name);
                         }
                     }
                 } catch(Exception $e)    {
@@ -143,6 +181,17 @@ class MigrateProgramsService extends MigrationService
             ) = 0";
         if(isset($arguments['label']) && $arguments['label'] != '') {
             $query .= " AND ". PROGRAMS .".label = '" . $arguments['label'] . "'";
+        }
+        if(isset($arguments['program']) && !empty($arguments['program']) ) {
+            $program_account_holder_ids = [];
+            if( !is_array($arguments['program']) && ((int) $arguments['program']) > 0 ) {
+                $program_account_holder_ids[] = (int) $arguments['program'];
+            }   else {
+                $program_account_holder_ids = array_filter($arguments['program'], function($p) { return ( (int) $p > 0 ); });
+            }
+            if( $program_account_holder_ids ) {
+                $query .= " AND ". PROGRAMS .".account_holder_id IN (" . implode(',', $program_account_holder_ids) . ")";
+            }
         }
         $query .= " LIMIT {$this->offset}, {$this->limit}";
 

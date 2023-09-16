@@ -69,8 +69,6 @@ class AddMissingFieldsV2V31 extends Migration
         });
         Schema::connection('v2')->table('merchants', function($table) {
             $table->integer('v3_merchant_id')->nullable();
-            $table->string('logo')->nullable()->default(null)->change();
-            $table->string('icon')->nullable()->default(null)->change();
         });
     }
 

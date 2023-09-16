@@ -15,14 +15,16 @@ class MigrateProgramsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    protected array $arguments;
+
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct()
+    public function __construct( $arguments = [])
     {
-
+        $this->arguments = $arguments;
     }
 
     /**
@@ -33,6 +35,6 @@ class MigrateProgramsJob implements ShouldQueue
     public function handle( MigrateProgramsService $migrateProgramsService )
     {
         \Log::info("Migrate Programs Job starts!");
-        $migrateProgramsService->migrate();
+        $migrateProgramsService->migrate( $this->arguments );
     }
 }
