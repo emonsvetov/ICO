@@ -112,7 +112,7 @@ class AwardService
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach( $users as $user)    {
-                $this->awardUser($event, $user, $user, $award);
+                $result[$user->id] = $this->awardUser($event, $user, $user, $award);
             }
 
             // print_r( $journalEventType );
@@ -142,32 +142,49 @@ class AwardService
         $isPeer2peer = $eventType->isEventTypePeer2Peer();
         $isAutoAward = $eventType->isEventTypeAutoAward();
         $isMilestoneAward = $eventType->isEventTypeMilestoneAward();
+        $isMilestoneBadge = $eventType->isEventTypeMilestoneBadge();
         $isPeer2peerBadge = $eventType->isEventTypePeer2PeerBadge();
         $isPromotional = $event->is_promotional;
         $overrideCashValue = $data->override_cash_value ?? 0;
         $eventAmountOverride = $overrideCashValue > 0;
         $awardAmount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
 
+        // check for peer2peer and badge type
+        if ( $isPeer2peerBadge ) {
+            $isPeer2peer = true;
+		}
+        if( $isPeer2peerBadge || $isMilestoneBadge )
+        {
+            $isBadge = true;
+        }
+
+        //Set notification type
+        $notificationType = 'Award';
+
+        if( $isBadge )
+        {
+            $notificationType = 'BadgeAward';
+        }
         if ( $isMilestoneAward ) {
             $notificationType = 'MilestoneAward';
         }
-        if ( $isPeer2peerBadge ) {
-            $isBadge = true;
-            $isPeer2peer = true;
-            $awardAmount = 0;
+        if ( $isMilestoneBadge ) {
+            $notificationType = 'MilestoneBadge';
+        }
+        if ( $isPeer2peer ){
             $notificationType = 'PeerAward';
-		}
+        }
+
+        // Set amount 0 for badge awards
         if( $isBadge )
         {
             $awardAmount = 0;
-            $notificationType = 'BadgeAward';
         }
         if ( $isPeer2peer ){
             if (!$this->canPeerPayForAwards($program, $awarder, $awardAmount, [$awardee->id])){
                 throw new Exception('Your program\'s account balance is too low to award.');
             }
             $escrowAccountTypeName = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
-            $notificationType = 'PeerAward';
         }
 
         $transactionFee = 0;
@@ -193,7 +210,6 @@ class AwardService
         $awarderAccountHolderId = $awarder->account_holder_id;
         $notificationBody = $data->message ?? ''; //TODO
         $notes = $data->notes ?? '';
-        $notificationType = 'Award';
 
         $escrowCreditAccountTypeName = $escrowAccountTypeName = "";
 
@@ -212,7 +228,6 @@ class AwardService
         $awarderAccountHolderId = $awarder->account_holder_id;
         $notificationBody = $data->message; //TODO
         $notes = $data->notes ?? '';
-        $notificationType = 'Award';
 
         $userAccountHolderId = $awardee->account_holder_id;
         // continue;

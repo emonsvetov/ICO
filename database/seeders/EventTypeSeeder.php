@@ -1,7 +1,7 @@
 <?php
-  
+
 namespace Database\Seeders;
-  
+
 use Illuminate\Database\Seeder;
 use App\Models\EventType;
 
@@ -62,6 +62,18 @@ class EventTypeSeeder extends Seeder
                 'name' => 'Auto Award',
                 'type' => 'auto award',
                 'description' => 'Auto Award for Birthday and Anniversary Award',
+            ],
+            [
+                'id' => 9,
+                'name' => 'Milestone Award',
+                'type' => 'milestone award',
+                'description' => 'Milestone Award for Work/Joining Anniversary',
+            ],
+            [
+                'id' => 10,
+                'name' => 'Milestone Badge',
+                'type' => 'milestone badge',
+                'description' => 'Milestone Badge for Work/Joining Anniversary',
             ]
         ]);
     }
