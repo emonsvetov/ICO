@@ -43,7 +43,8 @@ class Event extends Model
             //'id', 'name', 'max_awardable_amount', 'event_icon_id', 'post_to_social_wall', 'message', 'amount_override', 'program_id', 'enable'
         )
         ->whereHas('eventType', function ($query) {
-            $query->where('type', EventType::MILESTONE_AWARD);
+            $query->orWhere('type', EventType::EVENT_TYPE_MILESTONE_AWARD);
+            $query->orWhere('type', EventType::EVENT_TYPE_MILESTONE_BADGE);
         })
         ->where('enable', true)
         ->with(['program' => function($query) {

@@ -13,7 +13,8 @@ class EventTypeController extends Controller
     {
         $query = EventType::query();
         if( !$program->allow_milestone_award )   {
-            $query->where('type', '!=', EventType::MILESTONE_AWARD);
+            $query->where('type', '!=', EventType::EVENT_TYPE_MILESTONE_AWARD);
+            $query->where('type', '!=', EventType::EVENT_TYPE_MILESTONE_BADGE);
         }
         $eventTypes = $query->get();
         if ( $eventTypes->isNotEmpty() )
