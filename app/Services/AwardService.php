@@ -46,7 +46,7 @@ class AwardService
 
         $userIds = $data['user_id'] ?? [];
 
-        if( sizeof($userIds) <=0 )
+        if( sizeof($userIds) <= 0 )
         {
             throw new InvalidArgumentException ( 'Invalid or no "recipients" passed', 400 );
         }
