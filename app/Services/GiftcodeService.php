@@ -110,7 +110,7 @@ class GiftcodeService
 			`sku_value`,
 			`virtual_inventory`,
 			`redemption_value` - `sku_value` as `redemption_fee`,
-			COUNT(DISTINCT medium_info.`id`) as count"
+             COUNT(DISTINCT medium_info.`id`) as count"
 		)
 		->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
 		->join('accounts AS a', 'postings.account_id', '=', 'a.id')
@@ -118,10 +118,9 @@ class GiftcodeService
 		->groupBy('redemption_value')
 		->orderBy('sku_value')
 		->orderBy('redemption_value')
-		->where('a.account_holder_id', $merchant->account_holder_id)
-
+		->where('medium_info.merchant_id', $merchant->id)
 		->where(function($query){
-            $query->orWhere('medium_info.hold_until', '<=', now());
+            $query->orWhere('medium_info.hold_until', '<=', DB::raw('NOW()'));
             $query->orWhereNull('medium_info.hold_until');
         });
 
