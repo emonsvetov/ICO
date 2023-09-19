@@ -29,6 +29,12 @@ class UpdateEventsTable extends Migration
      */
     public function down()
     {
-        //
+        Schema::table('events', function (Blueprint $table) {
+			$table->float('amount');
+			$table->boolean('allow_amount_overriding')->default(0);
+			$table->integer('email_template_id');
+            $table->dropColumn('max_awardable_amount');
+            $table->dropColumn('event_icon_id');
+        });
     }
 }
