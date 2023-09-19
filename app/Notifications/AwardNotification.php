@@ -68,6 +68,7 @@ class AwardNotification extends Notification implements ShouldQueue
                 ))->convertToMailMessage();
             break;
             case 'BadgeAward':
+            case 'MilestoneBadge':
                 return (new AwardBadgeEmail(
                     $this->data->awardee_first_name,
                     $this->data->eventName,
@@ -75,6 +76,7 @@ class AwardNotification extends Notification implements ShouldQueue
                 ))->convertToMailMessage();
             break;
             case 'Award';
+            case 'MilestoneAward':
             default:
                 return (new AwardEmail(
                     $this->data->awardee_first_name,

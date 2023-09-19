@@ -85,6 +85,12 @@ class AuthController extends Controller
         if ($user) {
             auth()->guard('ssoweb')->login($user);
             $user = auth()->guard('ssoweb')->user();
+
+            $status = User::getStatusByName(User::STATUS_ACTIVE );
+            if( !in_array($user->user_status_id, [$status->id])){
+                return response(['message' => 'Invalid Credentials'], 422);
+            }
+
             $user->load(['organization', 'roles']);
 
             $accessToken = auth()->guard('ssoweb')->user()->createToken('authToken')->accessToken;
@@ -125,6 +131,12 @@ class AuthController extends Controller
             }
 
             $user = auth()->guard('web')->user();
+
+            $status = User::getStatusByName(User::STATUS_ACTIVE );
+            if( !in_array($user->user_status_id, [$status->id])){
+                return response(['message' => 'Invalid Credentials'], 422);
+            }
+
             $user->load(['organization', 'roles']);
 
             $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
