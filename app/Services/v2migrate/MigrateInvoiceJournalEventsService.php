@@ -11,7 +11,7 @@ class MigrateInvoiceJournalEventsService extends MigrationService
 {
 
     public $offset = 0;
-    public $limit = 10;
+    public $limit = 1000;
     public $iteration = 0;
     public $count = 0;
     public bool $printSql = true;
@@ -25,6 +25,33 @@ class MigrateInvoiceJournalEventsService extends MigrationService
         $this->v2db->statement("SET SQL_MODE=''");
         $this->migrateInvoiceJournalEvents(); //This will sync only
         printf("%d `invoice_journal_events` relations created in %d iterations\n", $this->count, $this->iteration);
+    }
+
+    public function migrateInvoiceJournalEventsByInvoice( $v2_invoice_id )
+    {
+        $sql = sprintf("SELECT * FROM `invoice_journal_events` ije JOIN journal_events je ON je.id=ije.journal_event_id JOIN invoices inv ON inv.id = ije.invoice_id WHERE inv.id=%d AND je.v3_journal_event_id IS NOT NULL AND inv.v3_invoice_id IS NOT NULL", $v2_invoice_id);
+        $v2InvoiceJournalEvents = $this->v2db->select($sql);
+        if( $countV2InvoiceJournalEvents = sizeof($v2InvoiceJournalEvents) > 0 )   {
+            printf("Found %d InvoiceJournalEvents in iteration:%d\n", $countV2InvoiceJournalEvents, $this->iteration);
+            foreach( $v2InvoiceJournalEvents as $v2InvoiceJournalEvent) {
+                // print_r($v2InvoiceJournalEvent);
+                if( !isset($cacheInvoiceJournalEvents[$v2InvoiceJournalEvent->v3_invoice_id]) ) {
+                    $cacheInvoiceJournalEvents[$v2InvoiceJournalEvent->v3_invoice_id] = [];
+                }
+                $cacheInvoiceJournalEvents[$v2InvoiceJournalEvent->v3_invoice_id][] = $v2InvoiceJournalEvent->v3_journal_event_id;
+            }
+            // pr($cacheInvoiceJournalEvents);
+            $v2InvoiceIds = array_keys($cacheInvoiceJournalEvents);
+            $v3Invoices = Invoice::whereIn('id', $v2InvoiceIds)->get();
+            $this->iteration++;
+            if( $v3Invoices->isNotEmpty() ) {
+                // pr($v3Invoices->toArray());
+                foreach( $v3Invoices as $v3Invoice) {
+                    $v3Invoice->journal_events()->sync($cacheInvoiceJournalEvents[$v3Invoice->id]);
+                    printf("%d journal_events synced to v3invoice:%d in iteration:%d\n", count($cacheInvoiceJournalEvents[$v3Invoice->id]), $v3Invoice->id, $this->iteration);
+                }
+            }
+        }
     }
 
     public function migrateInvoiceJournalEvents()

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 
 use App\Jobs\v2migrate\MigrateProgramsJob;
+// use Illuminate\Support\Facades\Hash;
 
 class MigratePrograms extends Command
 {
@@ -35,6 +36,8 @@ class MigratePrograms extends Command
      */
     public function handle()
     {
+        //288308
+        // print bcrypt('aaa') . '|||';exit;
         $program = array_filter(explode(',', $this->argument('id')), function($p) { return ( is_numeric($p) && (int) $p > 0 ); });
         dispatch(new MigrateProgramsJob(['program' => $program]));
         return 0;

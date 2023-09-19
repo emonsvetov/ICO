@@ -18,7 +18,6 @@ class MigrateProgramsService extends MigrationService
 {
     private ProgramService $programService;
     private MigrateProgramAccountsService $migrateProgramAccountsService;
-    private $migrateUserService;
 
     use CreateProgramTrait;
 
@@ -38,7 +37,6 @@ class MigrateProgramsService extends MigrationService
         parent::__construct();
         $this->programService = $programService;
         $this->migrateProgramAccountsService = $migrateProgramAccountsService;
-        $this->migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
     }
 
     public function migrate( $args = [] ) {
@@ -78,13 +76,7 @@ class MigrateProgramsService extends MigrationService
                     $rootProgram = $this->get_program_info ( $v2RootProgram->account_holder_id );
                     $this->setv2pid($v2RootProgram->account_holder_id);
                     // pr($rootProgram);
-                    $v2users = $this->migrateUserService->v2_read_list_by_program($v2RootProgram->account_holder_id);
-                    $this->migrateUserService->setv2pid($v2RootProgram->account_holder_id);
-                    foreach( $v2users as $v2user)   {
-                        $importedUsers[] = $this->migrateUserService->migrateSingleUser($v2user);
-                    }
-                    pr($importedUsers);
-                    exit;
+
                     if( $rootProgram ) {
                         printf("Starting migrations for root program \"%s\"\n", $rootProgram->name);
                         if( !property_exists($rootProgram, "v3_program_id") || !property_exists($rootProgram, "v3_organization_id" ) ) {
@@ -123,8 +115,12 @@ class MigrateProgramsService extends MigrationService
                         // pr($organization->toArray());
                         if( empty($rootProgram->v3_program_id) ) {
                             //Let's try to find it in v2
-                            $exists = Program::where('v2_account_holder_id', $rootProgram->account_holder_id)
-                            ->orWhere('name', 'LIKE', $rootProgram->name)->first();
+                            // $exists = Program::where('v2_account_holder_id', $rootProgram->account_holder_id)
+                            // ->orWhere('name', 'LIKE', $rootProgram->name)->first();
+                            $exists = Program::where( function ($query) use ($rootProgram) {
+                                $query->orWhere('v2_account_holder_id', $rootProgram->account_holder_id);
+                                $query->orWhere('name', 'LIKE', $rootProgram->name);
+                            } )->first();
                             if( $exists )  {
                                 $skipMigration = true;
                                 printf("\"v3_program_id\" exists for root program \"%s\". Skipping..\n", $rootProgram->name);

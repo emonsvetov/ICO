@@ -111,15 +111,15 @@ class MigrateUsersService extends MigrationService
             // return;
         }
         if( $createUser ) {
-            $v3User = User::where( 'v2_account_holder_id', $v2User->account_holder_id )->orWhere('email', $v2User->email)->first();
+            $v3User = User::where( function ($query) use ($v2User) {
+                $query->orWhere('v2_account_holder_id', $v2User->account_holder_id);
+                $query->orWhere('email', $v2User->email);
+            } )->first();
             if( !$v3User ) {
                 $this->printf("Ready to create new user with email:%s\n", $v2User->email);
                 $v3User = $this->createUser($v2User);
                 $this->printf(" - New User with email:%s created in v3.\n",  $v2User->email);
                 $isNewUser = true;
-
-
-
             }   else {
                 $this->printf(" - User exists in v3 by \"email:%s\" or \"v2_account_holder_id:%d\".\n",  $v3User->email, $v3User->v2_account_holder_id);
             }

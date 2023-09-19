@@ -322,6 +322,15 @@ trait CreateProgramTrait
 
             print(" - V2 Program updated with v3 identifiying fields v3_organization_id, v3_program_id\n");
 
+            //Import users with roles
+
+            $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+            $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+            $migrateUserService->setv2pid($v2Program->account_holder_id);
+            foreach( $v2users as $v2user)   {
+                $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUser($v2user);
+            }
+
             if( !$parent_id ) { //Pull and Assign Domains if it is a root program(?)
                 $domains = $this->v2db->select("SELECT d.* FROM `domains` d JOIN domains_has_programs dhp on dhp.domains_access_key = d.access_key JOIN programs p on p.account_holder_id = dhp.programs_id where p.account_holder_id = {$v2Program->account_holder_id}");
 
@@ -382,10 +391,7 @@ trait CreateProgramTrait
                 }
             }
 
-
-
             // Pull addresses
-
             {
                 $addresses = $this->v2db->select("SELECT * FROM `address` WHERE `account_holder_id` = {$v2Program->account_holder_id}");
                 if( $addresses ) {
@@ -407,9 +413,7 @@ trait CreateProgramTrait
                     }
                 }
             }
-
             // Pull events
-
             $v2Events = $this->v2db->select("SELECT * FROM `event_templates` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
             if( $v2Events ) {
                 foreach( $v2Events as $v2Event ) {
@@ -501,6 +505,10 @@ trait CreateProgramTrait
                 }
             }
 
+            //Migrate available accounts (imports accounts, journal events and postings)
+            $this->migrateProgramAccountsService->useTransactions = false;
+            $this->migrateProgramAccountsService->migrateAccounts( $newProgram);
+
             // Pull Invoices
 
             $v2Invoices = $this->v2db->select("SELECT * FROM `invoices` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
@@ -532,11 +540,13 @@ trait CreateProgramTrait
                     $newInvoice = Invoice::create($invoiceData);
                     $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$newInvoice->id} WHERE `id` = {$v2Invoice->id}");
                     print(" -  - Invoice:{$newInvoice->id} created for v2 invoice: {$v2Invoice->id}\n");
+
+                    $migrateInvoiceJournalEventsService = new \App\Services\v2migrate\MigrateInvoiceJournalEventsService;
+                    $migrateInvoiceJournalEventsService->migrateInvoiceJournalEventsByInvoice($v2Invoice->id, $newInvoice);
+
+                    //Migration InvoiceJournalEvents
                 }
             }
-
-            $this->migrateProgramAccountsService->useTransactions = false;
-            $this->migrateProgramAccountsService->migrateAccounts( $newProgram);
 
             if( !property_exists($v2Program, 'sub_programs') ) { //if root program
                 $children_heirarchy_list = $this->read_list_children_heirarchy(( int )$v2Program->account_holder_id);
