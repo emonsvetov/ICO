@@ -58,6 +58,7 @@ class UserRequest extends FormRequest
             'roles.*' => 'sometimes|required|integer',
             'avatar' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
             'send_invite' => 'sometimes|boolean',
+            'external_id'=> 'nullable|string',
         ];
     }
 
@@ -69,6 +70,7 @@ class UserRequest extends FormRequest
             'update_id'=> 'mustExistInModel:User|use:id|hide:true|provided:true',
             'work_anniversary'=> 'nullable|date_format:Y-m-d',
 			'dob'=> 'nullable|date_format:Y-m-d',
+			'external_id'=> 'nullable|string',
             'division'=> 'hide:true',
             'award_level'=> 'hide:true',
             'organizational_head_employee_number' => 'provided:programatically',
