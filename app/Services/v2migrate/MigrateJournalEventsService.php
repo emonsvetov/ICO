@@ -151,7 +151,6 @@ class MigrateJournalEventsService extends MigrationService
             ];
             $this->migrateSingleJournalEvent((object) $v2JournalEvent);
         }
-        exit;
     }
 
     public function migrateJournalEventsByModelAccounts( Program|User|Merchant $v3Model, $v2Model = null )    {

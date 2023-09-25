@@ -17,13 +17,11 @@ use stdClass;
 class MigrateSingleProgramService extends MigrateProgramsService
 {
     private ProgramService $programService;
-    private MigrateProgramAccountsService $migrateProgramAccountsService;
 
     public function __construct(ProgramService $programService, MigrateProgramAccountsService $migrateProgramAccountsService)
     {
         parent::__construct($programService, $migrateProgramAccountsService);
         $this->programService = $programService;
-        $this->migrateProgramAccountsService = $migrateProgramAccountsService;
     }
     public $newPrograms = [];
     public function addToImportMap( $account_holder_id, $key, mixed $value)    {
@@ -63,8 +61,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 }
             }
 
-            //prepare subprograms
-
             if( !property_exists($v2Program, 'name') || !property_exists($v2Program, 'program_type')) {
                 //We can assume that we need to pull "program_info"
                 //But before that we need to preserve "sub_programs" if we are in recursive loop, since we already have fetched $sub_programs tree;
@@ -79,9 +75,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     $v2Program->sub_programs = $sub_programs;
                 }
             }
-
-            pr($v2Program->sub_programs);
-            exit;
 
             if( $create )   {
                 $v3Program = $this->createV3Program( $v3_organization_id, $v2Program, $v3_parent_id);
@@ -149,30 +142,30 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 }
             }
 
-            //Migration Accounts
-            {
-                (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3Program);
-                $this->executeV2SQL(); //run for any missing run!
-            }
+            // //Migration Accounts
+            // {
+            //     (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3Program);
+            //     $this->executeV2SQL(); //run for any missing run!
+            // }
 
-            //Migration Accounts
-            {
-                //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
-                (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3Program);
-            }
+            // //Migration Accounts
+            // {
+            //     //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
+            //     (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3Program);
+            // }
 
             $this->executeV2SQL(); //run for any missing run!
 
             //Import program users with roles
-            {
-                $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
-                $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
-                $migrateUserService->setv2pid($v2Program->account_holder_id);
-                $migrateUserService->setv3pid($v3Program->id);
-                foreach( $v2users as $v2user)   {
-                    $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByProgram($v2user, $v2Program);
-                }
-            }
+            // {
+            //     $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+            //     $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+            //     $migrateUserService->setv2pid($v2Program->account_holder_id);
+            //     $migrateUserService->setv3pid($v3Program->id);
+            //     foreach( $v2users as $v2user)   {
+            //         $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByProgram($v2user, $v2Program);
+            //     }
+            // }
 
             // Pull Invoices
             {
@@ -214,123 +207,125 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 }
             }
 
-            // Pull addresses
-            {
-                $addresses = $this->v2db->select("SELECT * FROM `address` WHERE `account_holder_id` = {$v2Program->account_holder_id}");
-                if( $addresses ) {
-                    foreach( $addresses as $address ) {
-                        $addressData = [
-                            'account_holder_id' => $v3Program->account_holder_id,
-                            'address' => $address->address,
-                            'address_ext' => $address->address_ext,
-                            'city' => $address->city,
-                            'state_id' => $address->state_id,
-                            'zip' => $address->zip,
-                            'country_id' => $address->country_id,
-                            'created_at' => now()
-                        ];
+            // // Pull addresses
+            // {
+            //     $addresses = $this->v2db->select("SELECT * FROM `address` WHERE `account_holder_id` = {$v2Program->account_holder_id}");
+            //     if( $addresses ) {
+            //         foreach( $addresses as $address ) {
+            //             $addressData = [
+            //                 'account_holder_id' => $v3Program->account_holder_id,
+            //                 'address' => $address->address,
+            //                 'address_ext' => $address->address_ext,
+            //                 'city' => $address->city,
+            //                 'state_id' => $address->state_id,
+            //                 'zip' => $address->zip,
+            //                 'country_id' => $address->country_id,
+            //                 'created_at' => now()
+            //             ];
 
-                        $newAddress = Address::create($addressData);
-                        print(" -  - Address created for new Program: {$v3Program->id}\n");
-                        $this->importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
-                    }
-                }
-            }
-            // Pull events
-            {
-                $v2Events = $this->v2db->select("SELECT * FROM `event_templates` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
-                if( $v2Events ) {
-                    foreach( $v2Events as $v2Event ) {
-                        if( (int) $v2Event->v3_event_id ) {
-                            print(" -  - Event:{$v2Event->id} exists in v3 as: {$v2Event->v3_event_id}. Skipping..\n");
-                            //TODO: update?!
-                            continue;
-                        }
-                        $eventData = [
-                            'organization_id' => (int) $v3Program->organization_id,
-                            'program_id' => (int) $v3Program->id,
-                            'name' => $v2Event->name,
-                            'event_type_id' => (int) $v2Event->event_type_id,
-                            'enable' => ((int)$v2Event->event_state_id) == 13 ? 1 : 0,
-                            'amount_override' => (int) $v2Event->amount_override,
-                            'award_message_editable' => (int) $v2Event->award_message_editable,
-                            'ledger_code' => (int) $v2Event->ledger_code,
-                            'amount_override' => (int) $v2Event->amount_override,
-                            'post_to_social_wall' => (int) $v2Event->post_to_social_wall,
-                            'award_message_editable' => (int) $v2Event->award_message_editable,
-                            'is_promotional' => (int) $v2Event->is_promotional,
-                            'is_birthday_award' => (int) $v2Event->is_birthday_award,
-                            'is_work_anniversary_award' => (int) $v2Event->is_work_anniversary_award,
-                            'include_in_budget' => (int) $v2Event->include_in_budget,
-                            'enable_schedule_award' => (int) $v2Event->enable_schedule_awards,
-                            'message' => $v2Event->notification_body,
-                            'initiate_award_to_award' => (int) $v2Event->initiate_award_to_award,
-                            'only_internal_redeemable' => (int) $v2Event->only_internal_redeemable,
-                            'is_team_award' => (int) $v2Event->is_team_award,
-                            'max_awardable_amount' => 0,
-                            'v2_event_id' => (int) $v2Event->id,
-                        ];
+            //             $newAddress = Address::create($addressData);
+            //             print(" -  - Address created for new Program: {$v3Program->id}\n");
+            //             $this->importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
+            //         }
+            //     }
+            // }
+            // // Pull events
+            // {
+            //     $v2Events = $this->v2db->select("SELECT * FROM `event_templates` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
+            //     if( $v2Events ) {
+            //         foreach( $v2Events as $v2Event ) {
+            //             if( (int) $v2Event->v3_event_id ) {
+            //                 print(" -  - Event:{$v2Event->id} exists in v3 as: {$v2Event->v3_event_id}. Skipping..\n");
+            //                 //TODO: update?!
+            //                 continue;
+            //             }
+            //             $eventData = [
+            //                 'organization_id' => (int) $v3Program->organization_id,
+            //                 'program_id' => (int) $v3Program->id,
+            //                 'name' => $v2Event->name,
+            //                 'event_type_id' => (int) $v2Event->event_type_id,
+            //                 'enable' => ((int)$v2Event->event_state_id) == 13 ? 1 : 0,
+            //                 'amount_override' => (int) $v2Event->amount_override,
+            //                 'award_message_editable' => (int) $v2Event->award_message_editable,
+            //                 'ledger_code' => (int) $v2Event->ledger_code,
+            //                 'amount_override' => (int) $v2Event->amount_override,
+            //                 'post_to_social_wall' => (int) $v2Event->post_to_social_wall,
+            //                 'award_message_editable' => (int) $v2Event->award_message_editable,
+            //                 'is_promotional' => (int) $v2Event->is_promotional,
+            //                 'is_birthday_award' => (int) $v2Event->is_birthday_award,
+            //                 'is_work_anniversary_award' => (int) $v2Event->is_work_anniversary_award,
+            //                 'include_in_budget' => (int) $v2Event->include_in_budget,
+            //                 'enable_schedule_award' => (int) $v2Event->enable_schedule_awards,
+            //                 'message' => $v2Event->notification_body,
+            //                 'initiate_award_to_award' => (int) $v2Event->initiate_award_to_award,
+            //                 'only_internal_redeemable' => (int) $v2Event->only_internal_redeemable,
+            //                 'is_team_award' => (int) $v2Event->is_team_award,
+            //                 'max_awardable_amount' => 0,
+            //                 'v2_event_id' => (int) $v2Event->id,
+            //             ];
 
-                        $newEvent = Event::create($eventData);
+            //             $newEvent = Event::create($eventData);
 
-                        $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
+            //             $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
 
-                        print(" -  - Event:{$newEvent->id} created for new Program: {$v3Program->id}\n");
+            //             print(" -  - Event:{$newEvent->id} created for new Program: {$v3Program->id}\n");
 
-                        $this->importMap['program'][$v2Program->account_holder_id]['event'][$v2Event->id] = $newEvent->id;
-                    }
-                }
-            }
+            //             $this->importMap['program'][$v2Program->account_holder_id]['event'][$v2Event->id] = $newEvent->id;
+            //         }
+            //     }
+            // }
 
-            // Pull Leaderboards
+            // // Pull Leaderboards
 
-            {
-                $v2Leaderboards = $this->v2db->select("SELECT * FROM `leaderboards` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
-                if( $v2Leaderboards ) {
-                    foreach( $v2Leaderboards as $v2Leaderboard ) {
-                        if( (int) $v2Leaderboard->v3_leaderboard_id ) {
-                            print(" -  - Leaderboard:{$v2Leaderboard->id} exists in v3 as: {$v2Leaderboard->v3_leaderboard_id}. Skipping..\n");
-                            //TODO: update?!
-                            continue;
-                        }
-                        //Create leaderboard
-                        $leaderboardData = [
-                            'organization_id' => $v3Program->organization_id,
-                            'leaderboard_type_id' => $v2Leaderboard->leaderboard_type_id,
-                            'program_id' => $v3Program->id,
-                            'name' => $v2Leaderboard->name,
-                            'status_id' => $v2Leaderboard->state_type_id,
-                            'visible' => $v2Leaderboard->visible,
-                            'one_leaderboard' => $v2Leaderboard->one_leaderboard,
-                            'v2_leaderboard_id' => $v2Leaderboard->id,
-                        ];
-                        $newLeaderboard = Leaderboard::create($leaderboardData);
-                        //Update v3 reference field in v2 table
-                        $this->v2db->statement("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
+            // {
+            //     $v2Leaderboards = $this->v2db->select("SELECT * FROM `leaderboards` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
+            //     if( $v2Leaderboards ) {
+            //         foreach( $v2Leaderboards as $v2Leaderboard ) {
+            //             if( (int) $v2Leaderboard->v3_leaderboard_id ) {
+            //                 print(" -  - Leaderboard:{$v2Leaderboard->id} exists in v3 as: {$v2Leaderboard->v3_leaderboard_id}. Skipping..\n");
+            //                 //TODO: update?!
+            //                 continue;
+            //             }
+            //             //Create leaderboard
+            //             $leaderboardData = [
+            //                 'organization_id' => $v3Program->organization_id,
+            //                 'leaderboard_type_id' => $v2Leaderboard->leaderboard_type_id,
+            //                 'program_id' => $v3Program->id,
+            //                 'name' => $v2Leaderboard->name,
+            //                 'status_id' => $v2Leaderboard->state_type_id,
+            //                 'visible' => $v2Leaderboard->visible,
+            //                 'one_leaderboard' => $v2Leaderboard->one_leaderboard,
+            //                 'v2_leaderboard_id' => $v2Leaderboard->id,
+            //             ];
+            //             $newLeaderboard = Leaderboard::create($leaderboardData);
+            //             //Update v3 reference field in v2 table
+            //             $this->v2db->statement("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
 
-                        print(" -  - Leaderboard:{$newLeaderboard->id} created for program: {$v3Program->id}\n");
+            //             print(" -  - Leaderboard:{$newLeaderboard->id} created for program: {$v3Program->id}\n");
 
-                        //Log importing
-                        $this->importMap['program'][$v2Program->account_holder_id]['leaderboard'][$v2Leaderboard->id] = $newLeaderboard->id;
+            //             //Log importing
+            //             $this->importMap['program'][$v2Program->account_holder_id]['leaderboard'][$v2Leaderboard->id] = $newLeaderboard->id;
 
-                        print(" -  - Looking for Leaderboard Events for v2 Leaderboard:{$v2Leaderboard->id}\n");
-                        //Find LeaderboardEvent relations in v2 table
-                        $v2LeaderboardEvents = $this->v2db->select("SELECT e.id, e.v3_event_id FROM `leaderboards_events` le JOIN event_templates e on e.id = le.event_template_id WHERE `leaderboard_id` = {$v2Leaderboard->id}");
-                        if( $v2LeaderboardEvents ) {
-                            $v3EventIdToSync = [];
-                            foreach( $v2LeaderboardEvents as $v2LeaderboardEvent ) {
-                                if( $v2LeaderboardEvent->v3_event_id ) {
-                                    // Note: "v3_event_id" from "event_templates" table. Assuming that program event has already been imported and thus "v3_event_id" field is already updated in v2 "event_templates" table before we run importer for LeaderboardEvents
-                                    array_push($v3EventIdToSync, $v2LeaderboardEvent->v3_event_id);
-                                }
-                            }
-                            if( $v3EventIdToSync ) {
-                                $newLeaderboard->events()->sync($v3EventIdToSync, false);
-                            }
-                        }
-                    }
-                }
-            }
+            //             print(" -  - Looking for Leaderboard Events for v2 Leaderboard:{$v2Leaderboard->id}\n");
+            //             //Find LeaderboardEvent relations in v2 table
+            //             $v2LeaderboardEvents = $this->v2db->select("SELECT e.id, e.v3_event_id FROM `leaderboards_events` le JOIN event_templates e on e.id = le.event_template_id WHERE `leaderboard_id` = {$v2Leaderboard->id}");
+            //             if( $v2LeaderboardEvents ) {
+            //                 $v3EventIdToSync = [];
+            //                 foreach( $v2LeaderboardEvents as $v2LeaderboardEvent ) {
+            //                     if( $v2LeaderboardEvent->v3_event_id ) {
+            //                         // Note: "v3_event_id" from "event_templates" table. Assuming that program event has already been imported and thus "v3_event_id" field is already updated in v2 "event_templates" table before we run importer for LeaderboardEvents
+            //                         array_push($v3EventIdToSync, $v2LeaderboardEvent->v3_event_id);
+            //                     }
+            //                 }
+            //                 if( $v3EventIdToSync ) {
+            //                     $newLeaderboard->events()->sync($v3EventIdToSync, false);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
+
+            die("XxxxxxxxXxxxxxxxXxxxxxxxXxxxxxxxXxxxxxxxXxxxxxxx");
 
             if( !property_exists($v2Program, 'sub_programs') ) { //if root program
                 $children_heirarchy_list = $this->read_list_children_heirarchy(( int )$v2Program->account_holder_id);
@@ -522,9 +517,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
             'allow_search_peers_not_logged_into'             => false,
             'allow_view_leaderboards_not_logged_into'        => false,
         ];
-
-        // pr($data);
-        // exit;
 
         try{
             $newProgram = $this->programService->create(

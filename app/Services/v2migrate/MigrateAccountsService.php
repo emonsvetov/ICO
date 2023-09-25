@@ -104,7 +104,7 @@ class MigrateAccountsService extends MigrationService
                             $createNewAccount = false;
                         }   else {
                             printf("Account v3 account does not exist for model %sID:%d. Creating..\n",$modelName, $model->id);
-                            $v3AccountId = Account::withoutTimestamps()->insertGetId([
+                            $v3AccountId = Account::insertGetId([
                                 'account_holder_id' => $model->account_holder_id,
                                 'account_type_id' => $v2Account->account_type_id,
                                 'finance_type_id' => $v2Account->finance_type_id,
