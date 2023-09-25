@@ -63,9 +63,10 @@ class CsvImport extends BaseModel
         $organization = Organization::find($fileUpload['organization_id']);
 
         $name = Str::random(40);
+        $name = $fileUpload['upload-file']->getClientOriginalName();
         $extension = $file->getClientOriginalExtension();
         $saveTo = $organization->name . '/' . $programName . '/' . $fileUpload['requestType'];
-        $path = Storage::disk($disk)->putFileAs($saveTo, $file, $name . '.' . $extension);
+        $path = Storage::disk($disk)->putFileAs($saveTo, $file, $name);
 
         $csv = [
             'organization_id' => $fileUpload['organization_id'],

@@ -47,10 +47,9 @@ class CsvAutoImportJob implements ShouldQueue
     {
         echo PHP_EOL . "Csv auto import cron Started on " . date('Y-m-d h:i:s') . PHP_EOL;
 
-        $csvImports = CsvImport::all();
+        $csvImports = CsvImport::where(['is_imported' => 0])->get();
         $csvImportService->updateProcessedList($csvImports->pluck('name')->toArray());
         $csvImports = CsvImport::getAllIsProcessed();
-
         $successUsers = $errors = [];
 
         echo PHP_EOL . "Number of CSV files: " . count($csvImports) . PHP_EOL;

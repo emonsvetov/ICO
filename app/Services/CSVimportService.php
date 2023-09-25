@@ -832,32 +832,36 @@ class CSVimportService
                     continue;
                 }
 
-                $parse = explode('/', $object['Key']);
-                $organization = $parse[0];
-                $program = $parse[1];
-                $type = $parse[2];
-                $name = $parse[3];
+                try {
+                    $parse = explode('/', $object['Key']);
+                    $organization = $parse[0];
+                    $program = $parse[1];
+                    $type = $parse[2];
+                    $name = $parse[3];
 
-                if (array_search($name, $dbList) !== false){
+                    if (array_search($name, $dbList) !== false) {
+                        continue;
+                    }
+
+                    $typeId = CsvImportType::getIdByName($type);
+                    $programId = Program::getIdByName($program);
+                    $organizationId = Organization::getIdByName($organization);
+
+                    $csv = [
+                        'organization_id' => $organizationId,
+                        'program_id' => $programId,
+                        'csv_import_type_id' => $typeId,
+                        'name' => $name,
+                        'path' => $organization . '/' . $program . '/' . $type . '/' . $name,
+                        'size' => $object['Size'],
+                        'rowcount' => 1,
+                        'is_processed' => 1
+                    ];
+
+                    CsvImport::create($csv);
+                } catch (\Exception $exception) {
                     continue;
                 }
-
-                $typeId = CsvImportType::getIdByName($type);
-                $programId = Program::getIdByName($program);
-                $organizationId = Organization::getIdByName($organization);
-
-                $csv = [
-                    'organization_id' => $organizationId,
-                    'program_id' => $programId,
-                    'csv_import_type_id' => $typeId,
-                    'name' => $name,
-                    'path' => $organization . '/' . $program . '/' . $type . '/' . $name,
-                    'size' => $object['Size'],
-                    'rowcount' => 1,
-                    'is_processed' => 1
-                ];
-
-                CsvImport::create($csv);
             }
         }
     }
