@@ -98,11 +98,18 @@ class MigrateProgramAccountsService extends MigrationService
                             printf(" - Found %d journal_events+postings for program:\"%s\" & account:\"%s\". Processing...\n",$countJEAndPostings, $program->name, $v2Account->id);
                             foreach( $results as $row) {
                                 if( !$row->v3_journal_event_id &&  !$row->v3_posting_id) {
+                                    $prime_account_holder_id = $row->prime_account_holder_id;
                                     $parent_id = isset($this->cacheJournalEventsMap[$row->parent_journal_event_id]) ? $this->cacheJournalEventsMap[$row->parent_journal_event_id] : null; //If parent is created in the very process
+                                    if( $row->prime_account_holder_id > 0 ) {
+                                        $v3User = \App\Models\User::where('v2_account_holder_id', $row->prime_account_holder_id)->first();
+                                        if( $v3User )   {
+                                            $prime_account_holder_id = $v3User->account_holder_id;
+                                        }
+                                    }
                                     $v3JournalEventId = JournalEvent::insertGetId(
                                         [
                                             'v2_journal_event_id' => $row->journal_event_id,
-                                            'prime_account_holder_id' => 0,
+                                            'prime_account_holder_id' => $prime_account_holder_id,
                                             'v2_prime_account_holder_id' => $row->prime_account_holder_id,
                                             'journal_event_type_id' => $row->journal_event_type_id,
                                             'notes' => $row->notes,

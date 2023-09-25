@@ -43,6 +43,7 @@ class ReadCompiledInvoiceService
 					$start_date = $invoice->date_begin;
 					$end_date = $invoice->date_end;
 					$invoice_statement = $this->statementService->read_statement ( $invoice->program, $start_date, $end_date );
+                    pr($invoice_statement);
 					$invoice_statement->journal_summary = $this->readInvoiceJournalSummaryService->get ( $invoice->program, $start_date, $end_date );
 				} else {
 					$start_date = $invoice->date_begin;

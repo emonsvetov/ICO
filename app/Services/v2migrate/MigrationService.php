@@ -20,6 +20,48 @@ class MigrationService
     public $v2pid = null;
     public $v3pid = null;
     public Program $v3Program;
+    public array $importMap;
+    public $v2RefKey = null; //used for reference key in v3 db tables
+    public $v3RefKey = null; //used for reference key in v2 db tables
+    public $modelName = null; //v3 model name.
+    public $v2Model = null; //The current v2 model being migrated
+    public $v3Model = null; //The current v3 model being migrated
+    public $idPrefix = 999999;
+    public $minusPrefix = '-';
+
+    public function setV2Model( $v2Model ) {
+        $this->v2Model = $v2Model;
+    }
+
+    public function setV3Model( $v3Model ) {
+        $this->v3Model = $v3Model;
+    }
+
+    public function getRefKeyByModel( $version, $modelName, $custom='' )    {
+        if( $custom ) {
+            $field = $custom;
+        }   else {
+            if( $version == 'v2' )  {
+                $field = 'account_holder_id';
+            }   else if ( $version == 'v3' ) {
+                $field = $modelName . '_id';
+            }
+        }
+
+        return sprintf("%s_%s", $version, $field);
+    }
+
+    public function setRefByModel( $v3Model, $v2Model = null ) {
+
+        $this->setV3Model( $v3Model );
+        $this->setV2Model( $v2Model );
+
+        $CLASS = get_class($v3Model);
+        $this->modelName = strtolower(substr($CLASS, strrpos($CLASS, "\\") + 1 ));
+
+        $this->v2RefKey = $this->getRefKeyByModel('v2', $this->modelName); //field name used in v3 table
+        $this->v3RefKey = $this->getRefKeyByModel('v3', $this->modelName); //field name used in v2 table
+    }
 
     public function setv2pid( $v2pid ) {
         $this->v2pid = $v2pid;
@@ -95,4 +137,16 @@ class MigrationService
             $this->v3Sql = '';
         }
     }
+
+    public function getV2UserById( $v2_user_account_holder_id) {
+        $result = $this->v2db->select(sprintf("SELECT * FROM `users` WHERE `account_holder_id`=%d", $v2_user_account_holder_id));
+        if( $result ) return current($result);
+    }
+
+    public function getV2ProgramById( $v2_program_account_holder_id) {
+        $result = $this->v2db->select(sprintf("SELECT * FROM `programs` WHERE `account_holder_id`=%d", $v2_program_account_holder_id));
+        if( $result ) return current($result);
+    }
+
+
 }

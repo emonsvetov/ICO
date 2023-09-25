@@ -12,18 +12,20 @@ use DB;
 
 class ReadInvoiceJournalSummaryService
 {
+    protected $reportFactory;
+
 	public function __construct(
         ProgramService $programService,
         StatementService $statementService,
         ReadInvoicePaymentsService $readInvoicePaymentsService,
     ) {
-        $this->programService = $programService;
         $this->statementService = $statementService;
         $this->readInvoicePaymentsService = $readInvoicePaymentsService;
     }
 
     public function get(Program $program, $start_date, $end_date) {
-		$program_ids = [$program->id]; // push first entry
+
+		$program_account_holder_ids = [$program->account_holder_id]; // push first entry
 		/*
 		 * outline:
 		 *
@@ -31,14 +33,19 @@ class ReadInvoiceJournalSummaryService
 		 * 2) run report query for journal details
 		 */
 
-		$billable_sub_programs = $this->programService->getBillableDescendants ( $program );
+		$billable_sub_programs = resolve(\App\Services\ProgramService::class)->getBillableDescendants ( $program );
 
 		if (is_array ( $billable_sub_programs ) && count ( $billable_sub_programs ) > 0) {
 			foreach ( $billable_sub_programs as $sub_program ) {
-				$program_ids[] = ( int ) $sub_program->id;
+				$program_account_holder_ids[] = ( int ) $sub_program->id;
 			}
 		}
-		$report = Report::read_journal_entry_detail ( $program_ids, $start_date, $end_date );
+
+        $this->reportFactory = new \App\Services\reports\ReportFactory();
+        $report = $this->reportFactory->build("JournalDetailed", ['programs' => $program_account_holder_ids, 'from' => $start_date, 'to' => $end_date]);
+        // $report_data = $report->getReport();
+
+		$report = $report->getReport();
 
 		$summary = $report[$program->account_holder_id];
 
@@ -75,7 +82,7 @@ class ReadInvoiceJournalSummaryService
 		if($program->air_premium_cost_to_program){
 			$result [8] [$TOTAL_PREMIUM] = 0;
 		}
-		
+
 		$i = 0;
 		foreach ( $report as $data ) {
 			if ($data->invoice_for_awards) {
@@ -97,7 +104,7 @@ class ReadInvoiceJournalSummaryService
 			// }
 
 			// dd($result);
-			
+
 			// NOTICE the SUBTRACTION:
 			// $result[1]['total_reclaimed'] -= (float)$data->reclaims;
 		}

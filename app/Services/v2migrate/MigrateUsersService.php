@@ -4,6 +4,8 @@ namespace App\Services\v2migrate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Password;
 use App\Http\Requests\UserRequest;
+use App\Models\EventXmlData;
+use App\Models\JournalEvent;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -86,6 +88,16 @@ class MigrateUsersService extends MigrationService
         }
     }
 
+    public function migrateSingleUserByProgram($v2User, $v2Program)    {
+        if( !$v2User || !$v2User->email || !$v2Program || !$v2Program->v3_program_id) {
+            $this->printf("Required argument missing in MigrateUserService->migrateSingleUserByProgram().\n");
+            return;
+        }
+        $this->setv2pid($v2Program->account_holder_id);
+        $this->setv3pid($v2Program->v3_program_id);
+        $this->migrateSingleUser( $v2User );
+    }
+
     public function migrateSingleUser( $v2User ) {
 
         if( !$v2User || !$v2User->email ) return;
@@ -104,12 +116,13 @@ class MigrateUsersService extends MigrationService
                 //TODO - Check for the update??
                 $this->printf(" -- User {%s} EXISTS! exists in v3. Skipping..\n",  $v2User->email);
                 $createUser = false; //if need to go further use this
-                return;
+                // return;
             }   else {
                 $createUser = true;
             }
             // return;
         }
+        //Create user if applies
         if( $createUser ) {
             $v3User = User::where( function ($query) use ($v2User) {
                 $query->orWhere('v2_account_holder_id', $v2User->account_holder_id);
@@ -118,14 +131,13 @@ class MigrateUsersService extends MigrationService
             if( !$v3User ) {
                 $this->printf("Ready to create new user with email:%s\n", $v2User->email);
                 $v3User = $this->createUser($v2User);
+                $this->importMap['users'][$v3User->id] = $v3User;
                 $this->printf(" - New User with email:%s created in v3.\n",  $v2User->email);
                 $isNewUser = true;
             }   else {
                 $this->printf(" - User exists in v3 by \"email:%s\" or \"v2_account_holder_id:%d\".\n",  $v3User->email, $v3User->v2_account_holder_id);
             }
         }
-
-        $this->setDebug(false);
 
         // Update v2User reference field for v3Id
         if( !$v2User->v3_user_id ) {
@@ -140,8 +152,162 @@ class MigrateUsersService extends MigrationService
                 $this->migrateUserRoleService->migrate($v2User, $v3User);
             }
         }
+        $this->executeV2SQL();
+        // $this->migrateUserJournalEvents($v2User, $v3User);
+        // Migration Accounts Only. We will migration JournalEvents and related data in separate step below
+        (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3User);
+
+        $this->executeV2SQL(); //run for any missing run!
+
+        //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
+        (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3User);
+
+        $this->executeV2SQL(); //run for any missing run!
+
         return $isNewUser;
     }
+
+    // public function migrateUserJournalEvents($v2User, $v3User)  {
+    //     if( !$v2User->v3_user_id || !$v3User->v2_account_holder_id ) {
+    //         $this->printf("Required argument missing in MigrateUserService->migrateUserJournalEvents().\n");
+    //         return;
+    //     }
+
+    //     //Migrate Journal Events for User
+    //     $this->printf("Attempt to import user journal events\n");
+    //     printf(" - Fetching journal_events for user:\"%s\"\n", $v2User->email);
+
+    //     (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateByUser($v2User, $v3User, null);
+    //     // pr($v2User);
+    //     // pr($v3User);
+
+    // }
+
+    // public function recursivelyMigrateUserJournalEvents( $v2User, $v3User, $parent_id = null )  {
+    //     $sql = sprintf("SELECT *, `id` AS `journal_event_id` FROM `journal_events` WHERE `prime_account_holder_id`=%d", $v2User->account_holder_id);
+    //     if( !$parent_id )    {
+    //         $sql .= " AND `parent_journal_event_id` IS NULL";
+    //     }   else {
+    //         $sql .= sprintf(" AND `parent_journal_event_id`=%d", $parent_id);
+    //     }
+    //     $journalEvents = $this->v2db->select($sql);
+    //     // pr($journalEvents[0]);
+    //     // exit;
+    //     if( $journalEvents )    {
+    //         foreach( $journalEvents as $row )  {
+    //             $create = true;
+    //             // pr($row);
+    //             if( $row->v3_journal_event_id )    { //find by v3 id
+    //                 $existing = JournalEvent::find( $row->v3_journal_event_id );
+    //                 // pr($existing->toArray());
+    //                 if( $existing )   {
+    //                     printf(" - Journal Event \"%d\" exists for v2: \"%d\"\n", $existing->id, $row->journal_event_id);
+    //                     $create = false;
+    //                     //Update??
+    //                 }
+    //             }   else {
+    //                 //find by v2 id
+    //                 $existing = JournalEvent::where('v2_journal_event_id', $row->journal_event_id )->first();
+    //                 if( $existing )   {
+    //                     printf(" - Journal Event \"%d\" exists for v2: \"%d\", found via v2_journal_event_id search. Updating null v3_journal_event_id value.\n", $existing->id, $row->v3_journal_event_id, $row->journal_event_id);
+    //                     $this->addV2SQL(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $existing->id, $row->journal_event_id));
+    //                     $create = false;
+    //                     //Update??
+    //                 }
+    //             }
+    //             $newV3JournalEvent = null;
+    //             if( $create )   {
+    //                 $newV3JournalEvent = JournalEvent::create(
+    //                     [
+    //                         'v2_journal_event_id' => $row->journal_event_id,
+    //                         'prime_account_holder_id' => $v2User->account_holder_id,
+    //                         'v2_prime_account_holder_id' => $row->prime_account_holder_id,
+    //                         'journal_event_type_id' => $row->journal_event_type_id,
+    //                         'notes' => $row->notes,
+    //                         'event_xml_data_id' => $row->event_xml_data_id,
+    //                         'invoice_id' => $row->invoice_id,
+    //                         'parent_id' => $parent_id,
+    //                         'v2_parent_journal_event_id' => $row->parent_journal_event_id,
+    //                         'is_read' => $row->is_read,
+    //                         'created_at' => $row->journal_event_timestamp
+    //                     ]
+    //                 );
+
+    //                 //Add to import map
+    //                 $this->importMap['users'][$v3User->id]['journalEvents'][$newV3JournalEvent->id] = $newV3JournalEvent;
+
+    //                 if( $newV3JournalEvent ) {
+    //                     printf(" - New Journal Event \"%d\" created for v2 journal event \"%d\"\n",$newV3JournalEvent->id, $row->journal_event_id);
+    //                     $this->v2db->statement(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $newV3JournalEvent->id, $row->journal_event_id));
+    //                 }
+    //             }
+
+    //             $current = $existing ? $existing : $newV3JournalEvent;
+
+    //             if( (int) $row->event_xml_data_id > 0 )   {
+    //                 $existing = EventXmlData::where('v2_id', $row->event_xml_data_id)->first();
+    //                 if( $existing ) {
+    //                     //exists
+    //                 }   else {
+    //                     $sql = sprintf("SELECT * FROM `event_xml_data` WHERE `id`=%d", $row->event_xml_data_id);
+    //                     $results = $this->v2db->select($sql);
+    //                     if( sizeof($results) > 0 )  {
+    //                         $eventXmlData = current($results); //just one!
+
+    //                         //Get Awarderer
+    //                         if( (int) $eventXmlData->awarder_account_holder_id > 0 )  {
+    //                             if( $eventXmlData->awarder_account_holder_id == $v2User->account_holder_id) {
+    //                                 $awarder_account_holder_id = $v3User->account_holder_id;
+    //                             }   else {
+    //                                 $v3User_tmp = User::where('v2_account_holder_id', $eventXmlData->awarder_account_holder_id)->first();
+    //                                 if( $v3User_tmp )   {
+    //                                     $awarder_account_holder_id = $v3User_tmp->account_holder_id;
+    //                                 }   else {
+    //                                     //User not imported, but we wont import it here otherwise we fall in a recursive loop, rather save user id with prefix of 999999999 so we can later pull it if required.
+    //                                     $awarder_account_holder_id = (int) ("10000000001".$eventXmlData->awarder_account_holder_id);
+    //                                 }
+    //                             }
+    //                         }
+
+    //                         //Get eventID
+    //                         $v3EventId = 0;
+    //                         if( (int) $eventXmlData->event_template_id > 0 )   {
+    //                             $v3Event_tmp = \App\Models\Event::where('v2_event_id', $eventXmlData->event_template_id)->first();
+    //                             if( $v3Event_tmp )  {
+    //                                 $v3EventId = $v3Event_tmp->id;
+    //                             }   else {
+    //                                 $v3EventId = (int) ("33333333333".$eventXmlData->event_template_id); //prefix of 33333333333 so we can later pull it if required.
+    //                             }
+    //                         }
+
+    //                         $v3XEDId = EventXmlData::insertGetId([
+    //                             'v2_id' => $eventXmlData->id,
+    //                             'awarder_account_holder_id' => $awarder_account_holder_id,
+    //                             'name' => $eventXmlData->name,
+    //                             'award_level_name' => $eventXmlData->award_level_name,
+    //                             'amount_override' => $eventXmlData->amount_override,
+    //                             'notification_body' => $eventXmlData->notification_body,
+    //                             'notes' => $eventXmlData->notes,
+    //                             'referrer' => $eventXmlData->referrer,
+    //                             'email_template_id' => "2222222222".$eventXmlData->email_template_id,
+    //                             'event_type_id' => $eventXmlData->event_type_id,
+    //                             'event_template_id' => $v3EventId,
+    //                             'icon' => $eventXmlData->icon,
+    //                             'xml' => $eventXmlData->xml,
+    //                             'award_transaction_id' => $eventXmlData->award_transaction_id,
+    //                             'lease_number' => $eventXmlData->lease_number,
+    //                             'token' => $eventXmlData->token
+    //                         ]);
+    //                     }
+    //                 }
+    //             }
+
+    //             $this->executeV2SQL();
+
+    //             $this->recursivelyMigrateUserJournalEvents( $v2User, $v3User, $row->journal_event_id );
+    //         }
+    //     }
+    // }
 
     public function migrateSingleDuplicateUser( $v2DuplicateUser )    {
         $sql = sprintf("SELECT u.* FROM `users` u WHERE `email`='%s'", $v2DuplicateUser->email);
@@ -170,6 +336,7 @@ class MigrateUsersService extends MigrationService
 
                 // Update v2User reference field for v3Id
                 if( !$v2User->v3_user_id ) {
+                    $this->printf("\$v2User->v3_user_id is null for user:%s. Updating..\n", $v2User->email);
                     $this->addV2SQL(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
                 }
 

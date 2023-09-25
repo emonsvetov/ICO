@@ -12,6 +12,7 @@ use App\Models\User;
 class Account extends BaseModel
 {
     protected $guarded = [];
+    public $timestamps = false;
 
 	private static $account_type_fields = [
         'finance_type',
