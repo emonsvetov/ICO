@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\CsvAutoImportJob;
+use App\Jobs\GenerateTestGiftCodesJob;
 use App\Jobs\GenerateVirtualInventoryJob;
 use App\Jobs\SubmitGiftCodesToTangoJob;
 use App\Jobs\Program\PostMonthlyChargesToInvoiceJob;
@@ -32,6 +33,9 @@ class CronService
     }
     public function generateVirtualInventoryJob() {
         dispatch( new GenerateVirtualInventoryJob() );
+    }
+    public function generateTestGiftCodesJob() {
+        dispatch( new GenerateTestGiftCodesJob() );
     }
     public function csvAutoImportJob()
     {

@@ -111,20 +111,23 @@ class GenerateVirtualInventoryJob implements ShouldQueue
 
                     $amount_codes = $real_code_exist + $existing_virtual_codes;
 
-                     echo 'total_codes:' . $amount_codes . PHP_EOL;
+                    echo 'total_codes:' . $amount_codes . PHP_EOL;
 
                     if($amount_codes < 50){
                         for( $i=$amount_codes; $i<50; $i++ ){
                             $discount = (double)$merchant->virtual_discount;
 
                             $giftcode = [];
-
-                            $giftcode['purchase_date'] = date("Y-m-d");
+                            $giftcode['purchase_date'] = date("m/d/Y");
                             $giftcode['redemption_value'] = $redemption_value;
                             $giftcode['cost_basis'] = $sku_value - ((double)$sku_value /100 * $discount);
                             $giftcode['discount'] = $discount;
                             $giftcode['sku_value'] = $sku_value;
                             $giftcode['virtual_inventory'] = 1;
+
+                            if(env('APP_ENV') != 'production'){
+                                $extra_args['medium_info_is_test'] = true;
+                            }
 
                             $length = 20;
                             if(function_exists('random_bytes')){
