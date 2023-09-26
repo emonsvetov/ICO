@@ -26,6 +26,7 @@ class MerchantGiftcodeController extends Controller
         $direction = request()->get('direction', 'asc');
         $from = request()->get('from', null);
         $virtual = request()->get('virtual', null);
+        $type = request()->get('type', '');
 
         $fromDate = '';
         if($from){
@@ -40,10 +41,6 @@ class MerchantGiftcodeController extends Controller
 
         $where = ['merchant_id' => $merchant->id];
 
-        if(env('APP_ENV') != 'production'){
-		    $where['medium_info_is_test'] = 1;
-        }
-
         if( $sortby == "name" )
         {
             $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
@@ -56,7 +53,6 @@ class MerchantGiftcodeController extends Controller
 
         $query = Giftcode::select( 'medium_info.*' )->where($where);
 
-        $type = request()->get('type', '');
         if($type == 'redeemed'){
             $query->leftJoin('users', 'users.id', '=', 'medium_info.redeemed_user_id');
             $query->select(
@@ -80,12 +76,20 @@ class MerchantGiftcodeController extends Controller
                 $q->whereNull('redemption_datetime');
                 $q->where('purchased_by_v2', '=' , 0);
                 $q->where('virtual_inventory', '=' , 0);
+                $q->where('medium_info_is_test', '=' , 0);
             });
         }elseif($type == 'virtual'){
             $query->where(function ($q) {
                 $q->whereNull('redemption_datetime');
                 $q->where('purchased_by_v2', '=' , 0);
                 $q->where('virtual_inventory', '=' , 1);
+                if(env('APP_ENV') != 'production'){
+                    $q->where('medium_info_is_test', '=' , 1);
+                }
+            });
+        }elseif($type == 'test'){
+            $query->where(function ($q) {
+                $q->where('medium_info_is_test', '=' , 1);
             });
         }
 
