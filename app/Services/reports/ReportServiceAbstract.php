@@ -2,6 +2,7 @@
 
 namespace App\Services\reports;
 
+use App\Models\Program;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,7 @@ abstract class ReportServiceAbstract
     const PROGRAM_ID = 'programId';
     const CREATED_ONLY = 'createdOnly';
     const PROGRAMS = 'program_account_holder_ids';
+    const PROGRAM_IDS = 'program_ids';
     const PROGRAM_ACCOUNT_HOLDER_IDS = 'program_account_holder_ids';
     const AWARD_LEVEL_NAMES = "award_level_names";
     const EXPORT_CSV = 'exportToCsv';
@@ -57,7 +59,6 @@ abstract class ReportServiceAbstract
 
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
-        $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];
         $this->params[self::SQL_LIMIT] = $params[self::SQL_LIMIT] ?? null;
         $this->params[self::SQL_OFFSET] = $params[self::SQL_OFFSET] ?? null;
         $this->params[self::EXPORT_CSV] = $params[self::EXPORT_CSV] ?? null;
@@ -69,6 +70,8 @@ abstract class ReportServiceAbstract
         $this->params[self::SQL_GROUP_BY] = $params[self::SQL_GROUP_BY] ?? null;
         $this->params[self::SQL_ORDER_BY] = $params[self::SQL_ORDER_BY] ?? null;
         $this->params[self::PAGINATE] = $params[self::PAGINATE] ?? null;
+        $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];
+        $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
 
         $this->reportHelper = new ReportHelper() ?? null;
     }

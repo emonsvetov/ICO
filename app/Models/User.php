@@ -81,6 +81,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'avatar',
         'join_reminder_at',
         'sso_token',
+        'external_id',
     ];
 
     /**
@@ -323,5 +324,17 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return $query->get();
     }
 
+    public static function getByExternalId(int $externalId)
+    {
+        return self::where('external_id', $externalId)->first();
+    }
 
+    public static function getByEmail(string $email)
+    {
+        return self::where('email', $email)->first();
+    }
+
+    public function changeStatus($userIds, $userStatusId){
+        return self::whereIn('id', $userIds)->update(['user_status_id' => $userStatusId]);
+    }
 }
