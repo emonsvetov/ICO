@@ -25,9 +25,10 @@ class WelcomeEmail extends SendgridEmail
         parent::__construct();
 
         // Hardcode
-        $livhigh5EmailTemplate = EmailTemplate::where('name', 'livhigh5')->first();
+        $livhigh5EmailTemplate = EmailTemplate::where('name', 'livhigh5')->where('program_id', $program->id)->first();
         if($livhigh5EmailTemplate){
-            $this->type = 'emails.welcome2';
+            $this->type = 'emails.welcomeLiveHigh5';
+            $this->subject = 'Welcome to Live High 5 program!';
         }
 
         $this->init(func_get_args());
