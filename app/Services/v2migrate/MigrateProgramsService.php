@@ -26,6 +26,7 @@ class MigrateProgramsService extends MigrationService
     public array $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
     public array $cacheJournalEventsMap = [];
     public bool $printSql = true;
+    public $countPostings = 0;
 
     public function __construct()
     {
@@ -147,7 +148,6 @@ class MigrateProgramsService extends MigrationService
                                 $migrateSingleProgramService = resolve(\App\Services\v2migrate\MigrateSingleProgramService::class);
                                 $newProgram = $migrateSingleProgramService->migrateSingleProgram($rootProgram->v3_organization_id, $rootProgram);
                                 if( $newProgram ) {
-                                    printf("Created new v2 program for program \"%s\n", $rootProgram->name);
                                     $this->importedPrograms[] = $newProgram;
                                     $this->importedProgramsCount++;
                                 }
@@ -164,6 +164,8 @@ class MigrateProgramsService extends MigrationService
             }
             $this->executeV2SQL();
             $this->executeV3SQL();
+            pr($this->countAccounts);
+            pr($this->countPostings);
             // DB::commit();
             // $this->v2db->commit();
         } catch (Exception $e) {
@@ -609,6 +611,7 @@ class MigrateProgramsService extends MigrationService
             // this will return only the programs that are not deleted
             $programs = $this->read_programs ( $hierarchy_program_account_holder_id, true, 0, 999999999, $args);
             $active_program_account_holder_ids = array ();
+
             $active_programs = array();
             if (count ( $programs ) > 0) {
                 foreach ( $programs as $program ) {
@@ -616,6 +619,7 @@ class MigrateProgramsService extends MigrationService
                     $active_programs[$program->account_holder_id] = $program;
                 }
             }
+
             if (count ( $data ) > 0) {
                 for($i = count ( $data ) - 1; $i >= 0; -- $i) {
                     if (! in_array ( $data [$i]->account_holder_id, $active_program_account_holder_ids )) {
@@ -626,6 +630,8 @@ class MigrateProgramsService extends MigrationService
                         $data[$i]->uses_units = $active_programs[$data [$i]->account_holder_id]->uses_units;
                         $data[$i]->label = $active_programs[$data [$i]->account_holder_id]->label;
                     }
+                    $data[$i]->v3_organization_id = $active_programs[$data [$i]->account_holder_id]->v3_organization_id;
+                    $data[$i]->v3_program_id = $active_programs[$data [$i]->account_holder_id]->v3_program_id;
                     if (isset($args['get_extra_info']) && $args['get_extra_info']) {
                         $data[$i] = $active_programs[$data [$i]->account_holder_id];
                     }

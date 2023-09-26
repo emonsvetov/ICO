@@ -16,7 +16,6 @@ use App\Models\User;
 
 class MigrateJournalEventsService extends MigrationService
 {
-
     public $offset = 0;
     public $limit = 1;
     public $iteration = 0;
@@ -114,6 +113,7 @@ class MigrateJournalEventsService extends MigrationService
 
         if( $results )  {
             // pr(count($results));
+            $this->countPostings += count($results);
             // exit;
             foreach( $results as $row) {
                 $this->migrateSingleJournalEventByPostingData( (object) $row );
@@ -202,7 +202,7 @@ class MigrateJournalEventsService extends MigrationService
         $newV3JournalEvent = null;
         if( $create )   {
             $parent_id = null;
-            $prime_account_holder_id = null;
+            $prime_account_holder_id = 0;
 
             //Get v3 prime_account_holder_id
             if( (int) $v2JournalEvent->prime_account_holder_id > 0 )  {
@@ -244,14 +244,14 @@ class MigrateJournalEventsService extends MigrationService
             if( $newV3JournalEvent ) {
                 printf(" - New Journal Event \"%d\" created for v2 journal event \"%d\"\n",$newV3JournalEvent->id, $v2JournalEvent->id);
                 $this->v2db->statement(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $newV3JournalEvent->id, $v2JournalEvent->id));
-                $this->localImportMap['journalEvents'][$v3JournalEvent->id]['imported'] = 1;
+                $this->localImportMap['journalEvents'][$newV3JournalEvent->id]['imported'] = 1;
             }
         }
 
         $v3JournalEvent = $v3JournalEvent ? $v3JournalEvent : $newV3JournalEvent;
 
         if( (int) $v2JournalEvent->event_xml_data_id > 0 )   {
-            pr($v2JournalEvent->event_xml_data_id);
+            // pr($v2JournalEvent->event_xml_data_id);
             $v3EventXmlData = EventXmlData::where('v2_id', $v2JournalEvent->event_xml_data_id)->first();
             if( $v3EventXmlData ) {
                 $this->localImportMap['journalEvents'][$v3JournalEvent->id]['event_xml_data'][$v3EventXmlData->id]['exists'] = 1;

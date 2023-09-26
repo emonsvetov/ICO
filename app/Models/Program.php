@@ -212,7 +212,7 @@ class Program extends BaseModel
 
     public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false)  {
         if( !$programAccountHolderIds ) return;
-        pr($programAccountHolderIds);
+        // pr($programAccountHolderIds);
         if( $with_rank )    {
             $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
             return $programs;

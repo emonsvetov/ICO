@@ -50,7 +50,9 @@ class MigrateAccountsService extends MigrationService
             // pr($v2_account_holder_id);
             $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $v2_account_holder_id);
             $v2Accounts = $this->v2db->select($sql);
-            if( ($countV2Accounts = sizeof($v2Accounts)) > 0 ) {
+            $countV2Accounts = sizeof($v2Accounts);
+            $this->countAccounts += $countV2Accounts;
+            if( $countV2Accounts > 0 ) {
                 printf("Found %d accounts for %s: \"%s\"\n", $countV2Accounts, $modelName, $model->id);
                 // $v2AccountIds = collect($v2Accounts)->pluck('id');
                 // pr(implode(",", $v2AccountIds->toArray()));

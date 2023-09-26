@@ -28,6 +28,9 @@ class MigrationService
     public $v3Model = null; //The current v3 model being migrated
     public $idPrefix = 999999;
     public $minusPrefix = '-';
+    public $countPostings = 0;
+    public $countAccounts = 0;
+
 
     public function setV2Model( $v2Model ) {
         $this->v2Model = $v2Model;
