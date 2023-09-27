@@ -252,7 +252,7 @@ trait UserImportTrait
         $currentUser = null;
 
         if (isset($userData['external_id'])){
-            $currentUser = User::getByExternalId($userData['external_id']);
+            $currentUser = User::getByExternalId((int)$userData['external_id']);
         }
         if (!$currentUser && isset($userData['email'])){
 

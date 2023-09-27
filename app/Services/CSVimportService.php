@@ -740,7 +740,7 @@ class CSVimportService
             $this->errors[] = $stream;
         }
 
-        while (empty($this->errors) && (($filedata = fgetcsv($stream)) !== false)) {
+        while ((($filedata = fgetcsv($stream)) !== false)) {
             if ($this->line === 0) {
                 foreach ($filedata as $key => $value) {
                     $headers[trim($value)] = $key;
