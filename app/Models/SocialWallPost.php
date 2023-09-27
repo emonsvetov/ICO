@@ -80,7 +80,7 @@ class SocialWallPost extends BaseModel
 
     public function getIconImage()
     {
-        if( $this->eventXmlData && $this->eventXmlData->event->exists() )    {
+        if( $this->eventXmlData && $this->eventXmlData->event && $this->eventXmlData->event->exists() )    {
             $eventIcon = $this->eventXmlData->event->eventIcon->path;
             return $eventIcon;
         }

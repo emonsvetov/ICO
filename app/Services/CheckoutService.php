@@ -186,7 +186,7 @@ class CheckoutService
                     $where = [
                         'purchased_by_v2' => 0
                     ];
-                    if( $program->is_demo || env('APP_ENV') != 'production'){
+                    if( GiftcodeService::isTestMode($program) ){
                         $where = [
                             'medium_info_is_test' => 1
                         ];
@@ -576,6 +576,7 @@ class CheckoutService
                     }
                 }
             }
+            $response['gift_codes_redeemed_for'] = $gift_codes_redeemed_for;
         }
 
 		if (isset ( $order_address ) && is_object ( $order_address )) {
