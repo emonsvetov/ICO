@@ -251,7 +251,7 @@ trait UserImportTrait
     private function getUserByData($userData){
         $currentUser = null;
 
-        if (isset($userData['external_id'])){
+        if (isset($userData['external_id']) && $userData['external_id']){
             $currentUser = User::getByExternalId((int)$userData['external_id']);
         }
         if (!$currentUser && isset($userData['email'])){
