@@ -19,6 +19,7 @@ class MigrationService
     public bool $debug = true;
     public $v2pid = null;
     public $v3pid = null;
+    public $v2Program;
     public Program $v3Program;
     public array $importMap;
     public $v2RefKey = null; //used for reference key in v3 db tables

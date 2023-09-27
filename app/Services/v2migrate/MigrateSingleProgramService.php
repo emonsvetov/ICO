@@ -34,6 +34,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
             exit;
         }
 
+        $this->v2Program = $v2Program;
+
         //Check for existence
 
         try{
@@ -79,6 +81,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
             if( $create )   {
                 $v3Program = $this->createV3Program( $v3_organization_id, $v2Program, $v3_parent_id);
             }
+
+            $this->v3Program = $v3Program;
 
             //If it is a parent program then we will try to pull associated domains
 
@@ -407,35 +411,58 @@ class MigrateSingleProgramService extends MigrateProgramsService
         $v2Invoices = $this->v2db->select("SELECT * FROM `invoices` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
         if( $v2Invoices ) {
             foreach( $v2Invoices as $v2Invoice ) {
+                $createInvoice = true;
                 if( (int) $v2Invoice->v3_invoice_id ) {
-                    print(" -  - Invoice:{$v2Invoice->id} exists in v3 as: {$v2Invoice->v3_invoice_id}. Skipping..\n");
+                    $this->printf(" -  Checking v2invoice:{$v2Invoice->id}..\n");
+                    $this->printf(" -- Invoice:\$v2Invoice->v3_invoice_id IS NOT NULL. Confirming..\n");
+                    $v3Invoice = Invoice::find($v2Invoice->v3_invoice_id);
+                    if( $v3Invoice )    {
+                        $this->printf(" -- Invoice v2:%s exists as v3:%s. Skipping..\n", $v2Invoice->id, $v2Invoice->v3_invoice_id);
+                        if( !$v3Invoice->v2_invoice_id )    {
+                            $v3Invoice->v2_invoice_id = $v2Invoice->id;
+                            $v3Invoice->save();
+                        }
+                        $createInvoice = false;
+                    }
                     //TODO: update?!
                     continue;
+                }   else {
+                    //Try to fine by v2:id
+                    $v3Invoice = Invoice::where('v2_invoice_id', $v2Invoice->id);
+                    if( $v3Invoice ) {
+                       $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$v3Invoice->id} WHERE `id` = {$v2Invoice->id}");
+                       $createInvoice = false;
+                    }
                 }
-                //Create invoice
-                $invoiceData = [
-                    'program_id' => $v3Program->id,
-                    'key' => $v2Invoice->key,
-                    'seq' => $v2Invoice->seq,
-                    'invoice_type_id' => $v2Invoice->invoice_type_id,
-                    'payment_method_id' => $v2Invoice->payment_method_id,
-                    'date_begin' => $v2Invoice->date_begin,
-                    'date_end' => $v2Invoice->date_end,
-                    'date_due' => $v2Invoice->date_due,
-                    'amount' => $v2Invoice->invoice_amount,
-                    'participants' => $v2Invoice->participants,
-                    'new_participants' => $v2Invoice->new_participants,
-                    'managers' => $v2Invoice->managers,
-                    'created_at' => $v2Invoice->created,
-                    'v2_invoice_id' => $v2Invoice->id,
-                ];
+                if( $createInvoice )    {
+                    //Create invoice
+                    $invoiceData = [
+                        'program_id' => $v3Program->id,
+                        'key' => $v2Invoice->key,
+                        'seq' => $v2Invoice->seq,
+                        'invoice_type_id' => $v2Invoice->invoice_type_id,
+                        'payment_method_id' => $v2Invoice->payment_method_id,
+                        'date_begin' => $v2Invoice->date_begin,
+                        'date_end' => $v2Invoice->date_end,
+                        'date_due' => $v2Invoice->date_due,
+                        'amount' => $v2Invoice->invoice_amount,
+                        'participants' => $v2Invoice->participants,
+                        'new_participants' => $v2Invoice->new_participants,
+                        'managers' => $v2Invoice->managers,
+                        'created_at' => $v2Invoice->created,
+                        'v2_invoice_id' => $v2Invoice->id,
+                    ];
 
-                $newInvoice = Invoice::create($invoiceData);
-                $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$newInvoice->id} WHERE `id` = {$v2Invoice->id}");
-                print(" -  - Invoice:{$newInvoice->id} created for v2 invoice: {$v2Invoice->id}\n");
+                    $newInvoice = Invoice::create($invoiceData);
+                    $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$newInvoice->id} WHERE `id` = {$v2Invoice->id}");
+                    $this->printf(" -  - Invoice v3:{$newInvoice->id} created for v2:{$v2Invoice->id}\n");
+                }
+
+                $v3Invoice = $newInvoice ?? $v3Invoice;
+
 
                 $migrateInvoiceJournalEventsService = new \App\Services\v2migrate\MigrateInvoiceJournalEventsService;
-                $migrateInvoiceJournalEventsService->migrateInvoiceJournalEventsByInvoice($v2Invoice->id, $newInvoice);
+                $migrateInvoiceJournalEventsService->migrateInvoiceJournalEventsByInvoice($v2Invoice, $v3Invoice);
 
                 //Migration InvoiceJournalEvents
             }
@@ -446,39 +473,70 @@ class MigrateSingleProgramService extends MigrateProgramsService
         $v2Events = $this->v2db->select("SELECT * FROM `event_templates` WHERE `program_account_holder_id` = {$v2Program->account_holder_id}");
         if( $v2Events ) {
             foreach( $v2Events as $v2Event ) {
+                $createEvent = true;
                 if( (int) $v2Event->v3_event_id ) {
-                    print(" -  - Event:{$v2Event->id} exists in v3 as: {$v2Event->v3_event_id}. Skipping..\n");
+                    print(" -  - V2Event:\$v2Event->v3_event_id NOT NULL. Confirming..\n");
+
+                    $v3Event = Event::find( $v2Event->v3_event_id );
+                    if( $v3Event ) {
+                        print(" -  - Event:{$v2Event->id} exists in v3 as: {$v2Event->v3_event_id}. Skipping..\n");
+                        if( !$v3Event->v2_event_id ) { //patch missing link
+                            $v3Event->v2_event_id = $v2Event->id;
+                            $v3Event->save();
+                        }
+                        $createEvent = false;
+                        $this->importMap['program'][$v2Program->account_holder_id]['event'][$v3Event->id]['exists'] = 1;
+                    }
                     //TODO: update?!
-                    continue;
+                }   else {
+                    //find by v2 id
+                    $v3Event = Event::where('v2_event_id', $v2Event->id )->first();
+                    if( $v3Event )   {
+                        printf(" - Event \"%d\" exists for v2: \"%d\", found via v2_event_id. Updating null v3_event_id value.\n", $v3Event->id, $v3Event->v3_event_id);
+                        //Need to patch
+                        $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$v3Event->id} WHERE `id` = {$v2Event->id}");
+                        $createEvent = false;
+                        $this->importMap['program'][$v2Program->account_holder_id]['event'][$v3Event->id]['exists'] = 1;
+                        //Update??
+                    }
                 }
-                $eventData = [
-                    'organization_id' => (int) $v3Program->organization_id,
-                    'program_id' => (int) $v3Program->id,
-                    'name' => $v2Event->name,
-                    'event_type_id' => (int) $v2Event->event_type_id,
-                    'enable' => ((int)$v2Event->event_state_id) == 13 ? 1 : 0,
-                    'amount_override' => (int) $v2Event->amount_override,
-                    'award_message_editable' => (int) $v2Event->award_message_editable,
-                    'ledger_code' => (int) $v2Event->ledger_code,
-                    'amount_override' => (int) $v2Event->amount_override,
-                    'post_to_social_wall' => (int) $v2Event->post_to_social_wall,
-                    'award_message_editable' => (int) $v2Event->award_message_editable,
-                    'is_promotional' => (int) $v2Event->is_promotional,
-                    'is_birthday_award' => (int) $v2Event->is_birthday_award,
-                    'is_work_anniversary_award' => (int) $v2Event->is_work_anniversary_award,
-                    'include_in_budget' => (int) $v2Event->include_in_budget,
-                    'enable_schedule_award' => (int) $v2Event->enable_schedule_awards,
-                    'message' => $v2Event->notification_body,
-                    'initiate_award_to_award' => (int) $v2Event->initiate_award_to_award,
-                    'only_internal_redeemable' => (int) $v2Event->only_internal_redeemable,
-                    'is_team_award' => (int) $v2Event->is_team_award,
-                    'max_awardable_amount' => 0,
-                    'v2_event_id' => (int) $v2Event->id,
-                ];
 
-                $newEvent = Event::create($eventData);
+                if( $createEvent )  {
+                    $eventData = [
+                        'organization_id' => (int) $v3Program->organization_id,
+                        'program_id' => (int) $v3Program->id,
+                        'name' => $v2Event->name,
+                        'event_type_id' => (int) $v2Event->event_type_id,
+                        'enable' => ((int)$v2Event->event_state_id) == 13 ? 1 : 0,
+                        'amount_override' => (int) $v2Event->amount_override,
+                        'award_message_editable' => (int) $v2Event->award_message_editable,
+                        'ledger_code' => (int) $v2Event->ledger_code,
+                        'amount_override' => (int) $v2Event->amount_override,
+                        'post_to_social_wall' => (int) $v2Event->post_to_social_wall,
+                        'award_message_editable' => (int) $v2Event->award_message_editable,
+                        'is_promotional' => (int) $v2Event->is_promotional,
+                        'is_birthday_award' => (int) $v2Event->is_birthday_award,
+                        'is_work_anniversary_award' => (int) $v2Event->is_work_anniversary_award,
+                        'include_in_budget' => (int) $v2Event->include_in_budget,
+                        'enable_schedule_award' => (int) $v2Event->enable_schedule_awards,
+                        'message' => $v2Event->notification_body,
+                        'initiate_award_to_award' => (int) $v2Event->initiate_award_to_award,
+                        'only_internal_redeemable' => (int) $v2Event->only_internal_redeemable,
+                        'is_team_award' => (int) $v2Event->is_team_award,
+                        'max_awardable_amount' => 0,
+                        'v2_event_id' => (int) $v2Event->id,
+                    ];
 
-                $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
+                    $newEvent = Event::create($eventData);
+
+                    $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
+
+                }
+
+                $v3Event = $newEvent ?? $v3Event;
+
+                $MigrateEventXmlDataService = new \App\Services\v2migrate\MigrateEventXmlDataService;
+                $MigrateEventXmlDataService->migrateEventXmlDataByV2Event($v2Event, $v3Event);
 
                 print(" -  - Event:{$newEvent->id} created for new Program: {$v3Program->id}\n");
 

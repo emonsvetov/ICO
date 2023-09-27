@@ -184,6 +184,10 @@ class MigrateJournalEventsService extends MigrationService
             // pr($existing->toArray());
             if( $v3JournalEvent )   {
                 printf(" - Journal Event \"%d\" exists for v2:%d\n", $v3JournalEvent->id, $v2JournalEvent->id);
+                if( !$v3JournalEvent->v2_journal_event_id ) { //patch missing link
+                    $v3JournalEvent->v2_journal_event_id = $v2JournalEvent->id;
+                    $v3JournalEvent->save();
+                }
                 $create = false;
                 //Update??
                 $this->localImportMap['journalEvents'][$v3JournalEvent->id]['exists'] = 1;
@@ -193,6 +197,7 @@ class MigrateJournalEventsService extends MigrationService
             $v3JournalEvent = JournalEvent::where('v2_journal_event_id', $v2JournalEvent->id )->first();
             if( $v3JournalEvent )   {
                 printf(" - Journal Event \"%d\" exists for v2: \"%d\", found via v2_journal_event_id search. Updating null v3_journal_event_id value.\n", $v3JournalEvent->id, $v2JournalEvent->v3_journal_event_id, $v2JournalEvent->id);
+                //Patch link since missing
                 $this->addV2SQL(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEvent->id, $v2JournalEvent->id));
                 $create = false;
                 $this->localImportMap['journalEvents'][$v3JournalEvent->id]['exists'] = 1;
@@ -306,10 +311,10 @@ class MigrateJournalEventsService extends MigrationService
                         'token' => $eventXmlData->token
                     ]);
 
-                    pr($v3EventXmlDataId);
+                    // pr($v3EventXmlDataId);
 
                     if( $v3EventXmlDataId ) {
-                        $this->addV2SQL(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d", $v3EventXmlDataId, $eventXmlData->id));
+                        $this->v2db->statement(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d", $v3EventXmlDataId, $eventXmlData->id));
                         //Save progress to map
                         $this->localImportMap['journalEvents'][$v3JournalEvent->id]['event_xml_data'][$v3EventXmlDataId]['created'] = 1;
                     }
@@ -399,6 +404,7 @@ class MigrateJournalEventsService extends MigrationService
 
         $this->executeV2SQL();
         $this->recursivelyMigrateByV2ParentJournalEventId($v2JournalEvent->id );
+        return $v3JournalEvent;
     }
 
     // public function migrateByUser($v2User, $v3User)  {
