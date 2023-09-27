@@ -130,7 +130,7 @@ class AwardService
 
         return $result;
     }
-    public function awardUser( $event, $awardee, $awarder, object $data = null) {
+    public function awardUser( $event, $awardee, $awarder, object $data = null, $dontSendEmail = null) {
 //        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
 //        DB::statement($statement);
         DB::beginTransaction();
@@ -445,7 +445,11 @@ class AwardService
             event(new \App\Events\UserInvited($awardee, $program, $token));
         }
 
-        $awardee->notify(new AwardNotification((object)$notification));
+        if(isset($dontSendEmail) && $dontSendEmail){
+            // no notification
+        } else {
+            $awardee->notify(new AwardNotification((object)$notification));
+        }
 
         // DB::rollBack();
         DB::commit();
