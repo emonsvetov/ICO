@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Models\Program;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -26,6 +27,10 @@ class GiftcodeService
         'start_date'=>null,
         'redemption_value'=>null,
     ];
+
+    public static function isTestMode( Program $program ){
+        return ($program->is_demo || env('APP_ENV') != 'production' ) ? 1 : 0;
+    }
 
     public function getRedeemable(Merchant $merchant, $is_demo = true)   {
         $merchant_id = self::extractId($merchant);
