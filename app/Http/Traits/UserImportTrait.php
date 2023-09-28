@@ -251,7 +251,7 @@ trait UserImportTrait
     private function getUserByData($userData){
         $currentUser = null;
 
-        if (isset($userData['external_id'])){
+        if (isset($userData['external_id']) && $userData['external_id']){
             $currentUser = User::getByExternalId((int)$userData['external_id']);
         }
         if (!$currentUser && isset($userData['email'])){
@@ -324,13 +324,13 @@ trait UserImportTrait
                     throw new \Exception("No managers in program {$program->name}");
                 }
 
-                $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData);
+                $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData, true);
 
                 $message = new WelcomeEmail($newUser->first_name, $newUser->email, $program);
                 Mail::to($newUser->email)->send($message);
 
-                $message = new ProcessCompletionReportEmail($managers[0]->first_name, $csvImport->name, $program);
-                Mail::to($managers[0]->email)->send($message);
+//                $message = new ProcessCompletionReportEmail($managers[0]->first_name, $csvImport->name, $program);
+//                Mail::to($managers[0]->email)->send($message);
 
                 $userIds[] = $newUser->id;
             }
