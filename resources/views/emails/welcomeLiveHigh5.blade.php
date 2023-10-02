@@ -23,7 +23,7 @@ border-left:solid 1px;
                     To kick things off, Liv has awarded you $5 of Liv Loot which you can redeem now for a gift card of your choice or save it for later and combine it with other awards.
                 </p>
                 <p style="margin-left:30px; margin-right:30px;">
-                    Visit <a href="https://ipaliving.sharepoint.com/" style="color:#ab0717; font-weight:bold;" target="blank">ipaliving.sharepoint.com/</a> and sign in with your Office 365 log in to access your account.  You can also download the Incentco app for access on your mobile device.
+                    Visit <a href="https://ipaliving.sharepoint.com/" style="color:#ab0717; font-weight:bold;" target="blank">ipaliving.sharepoint.com/</a> and sign in with your Office 365 log in to access your account.
                 </p>
                 <p style="margin-left:30px; margin-right:30px; margin-bottom: 50px;">
                     Questions?
