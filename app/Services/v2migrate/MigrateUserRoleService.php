@@ -2,6 +2,7 @@
 namespace App\Services\v2migrate;
 
 use App\Models\Role;
+use Exception;
 
 class MigrateUserRoleService extends MigrationService
 {
@@ -9,11 +10,11 @@ class MigrateUserRoleService extends MigrationService
     public int $count = 0;
 
     public function _getRoleNameFromV2RoleName( $v2RoleName ) {
-        $newRoleName = 'Manager';
+        $newRoleName = 'Participant';
         if( $v2RoleName == 'Administration')    {
             $newRoleName = 'Super Admin';
         }   elseif( $v2RoleName == 'Administrator' ) {
-            $newRoleName = 'Admin';
+            $newRoleName = $this->v2pid() ? 'Admin' : 'Super Admin';
         }   elseif( $v2RoleName == 'Participant' ) {
             $newRoleName = 'Participant';
         }   elseif( $v2RoleName == 'Limited Program Manager' ) {
@@ -48,7 +49,7 @@ class MigrateUserRoleService extends MigrationService
         }
         $v2UserRoles = $this->v2db->select($sql);
         if( $this->isPrintSql() ) {
-            $this->printf("SQL:%s\n", $sql);
+            $this->printf("SQL: %s\n", $sql);
         }
         return $v2UserRoles;
     }
@@ -57,15 +58,14 @@ class MigrateUserRoleService extends MigrationService
         // $v2UserRoles = $this->getV2UserRoles(203610);
         // $v2User = new stdClass;
         $v2UserRoles = $this->getV2UserRoles($v2User->account_holder_id);
-        pr($v2UserRoles);
+
         // $v2UserRoles = $this->getV2UserRoles(204298);
         if( sizeof($v2UserRoles) > 0) {
             $this->printf(" - %d roles found for user %s. Preparing to import roles.\n",  sizeof($v2UserRoles), $v2User->email);
             $newProgramRoles = [];
             foreach( $v2UserRoles as $v2UserRole ) {
-                pr($v2UserRole);
-                if( !$v2UserRole->v3_program_id )   {
-                    $this->printf(" - Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Skipping.\n",  $v2User->email);
+                if( $this->v2pid() && !$v2UserRole->v3_program_id )   {
+                    throw new Exception(sprintf(" - Error: Program \"%s\" is not synched with V3. Skipping.\n",  $v2UserRole->program_name));
                     // throw new Exception("Error: Program \"{$v2UserRole->program_name}\" is not synched with V3. Aborting user migration process.\n");
                     continue; //TO BE REMOVED? since we do not want to go with incomplete user roles?
                 }
@@ -81,34 +81,41 @@ class MigrateUserRoleService extends MigrationService
                 }   else {
                     $v3RoleId = Role::getIdByName($v2RoleName);
                     if( !$v3RoleId ) {
-                        $this->printf(" - Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email);
+                        throw new Exception(sprintf(" - Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email));
                         continue;
                     }
                     $this->rolesCache[$v2UserRole->id] = $v3RoleId;
                 }
 
                 if( $v3RoleId ) {
-                    if( !isset( $newProgramRoles[$v2UserRole->v3_program_id] )) {
-                        $newProgramRoles[$v2UserRole->v3_program_id] = [];
-                    }
-                    $newProgramRoles[$v2UserRole->v3_program_id][] = $v3RoleId;
-                }
-            }
-
-            if( !$v3User->organization_id ||  $v3User->organization_id == 1000000000) {
-                if( $v2User->parent_program_id ) {
-                    $parentProgram = (new \App\Models\Program)->select(['id', 'organization_id'])->find( $v2User->parent_program_id );
-                    if( $parentProgram ) {
-                        $v3User->organization_id = $parentProgram->organization_id;
-                        $v3User->save();
-                        $this->printf(" - OrganizationID \"%s\" set for v3user:\"%d\" from \"%s\".\n", $v3User->organization_id, $v3User->id, "v2User->parent_program_id");
+                    if( $this->v2pid() ) {
+                        if( !isset( $newProgramRoles[$v2UserRole->v3_program_id] )) {
+                            $newProgramRoles[$v2UserRole->v3_program_id] = [];
+                        }
+                        $newProgramRoles[$v2UserRole->v3_program_id][] = $v3RoleId;
+                    }   else {
+                        $v3User->syncRoles( [$v3RoleId] );
                     }
                 }
             }
 
-            if( $newProgramRoles ) {
-                pr($v3User->id);
-                pr($newProgramRoles);
+            if( (!$v3User->organization_id ||  $v3User->organization_id == 1000000000) ) {
+                if( $this->v2pid() ) {
+                    if( $v2User->parent_program_id ) {
+                        $parentProgram = (new \App\Models\Program)->select(['id', 'organization_id'])->find( $v2User->parent_program_id );
+                        if( $parentProgram ) {
+                            $v3User->organization_id = $parentProgram->organization_id;
+                            $v3User->save();
+                            $this->printf(" - OrganizationID \"%s\" set for v3user:\"%d\" from \"%s\".\n", $v3User->organization_id, $v3User->id, "v2User->parent_program_id");
+                        }
+                    }
+                }   else {
+                    $v3User->organization_id = 1; //Super admin
+                    $v3User->save();
+                }
+            }
+
+            if( $this->v2pid() && $newProgramRoles ) {
                 $v3User->programs()->sync( array_keys($newProgramRoles) );
                 foreach($newProgramRoles as $programId => $programRoles) {
                     $v3User->syncProgramRoles($programId, $programRoles);

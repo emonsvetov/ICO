@@ -21,7 +21,7 @@ class MigratePrograms extends Command
      *
      * @var string
      */
-    protected $description = 'Command to migrate programs';
+    protected $description = 'Command to migrate programs. NOTE: Must run `php artisan v2migrate:merchants` before running this command to  sync program-merchant relationships properly.';
 
     /**
      * Create a new command instance.

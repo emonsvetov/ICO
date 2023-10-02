@@ -27,6 +27,8 @@ class MigrateProgramsService extends MigrationService
     public array $cacheJournalEventsMap = [];
     public bool $printSql = true;
     public $countPostings = 0;
+    public $newPrograms = [];
+    public $newProgramsCount = 0;
 
     public function __construct()
     {
@@ -64,6 +66,7 @@ class MigrateProgramsService extends MigrationService
         printf("%s programs found in iteration %d\n", count($v2RootPrograms), $this->iteration);
         // pr($v2RootPrograms);
         $this->migratePrograms($v2RootPrograms);
+        // resolve(\App\Services\v2migrate\MigrateJournalEventsService::class)->fixPostingsAccoundIds();
 
         $this->offset = $this->offset + $this->limit;
         // if( $this->count >= 20 ) exit;
@@ -83,6 +86,7 @@ class MigrateProgramsService extends MigrationService
         // $this->v2db->beginTransaction();
         try {
             foreach ($v2RootPrograms as $v2RootProgram) {
+                // pr(719006)
                 try{
                     $rootProgram = $this->get_program_info ( $v2RootProgram->account_holder_id );
                     $this->setv2pid($v2RootProgram->account_holder_id);
@@ -122,42 +126,16 @@ class MigrateProgramsService extends MigrationService
                             $rootProgram->v3_organization_id = $organization->id;
                         }
 
-                        // $skipMigration = false;
-                        // // pr($organization->toArray());
-                        // if( empty($rootProgram->v3_program_id) ) {
-                        //     //Let's try to find it in v2
-                        //     // $exists = Program::where('v2_account_holder_id', $rootProgram->account_holder_id)
-                        //     // ->orWhere('name', 'LIKE', $rootProgram->name)->first();
-                        //     $exists = Program::where( function ($query) use ($rootProgram) {
-                        //         $query->orWhere('v2_account_holder_id', $rootProgram->account_holder_id);
-                        //         $query->orWhere('name', 'LIKE', $rootProgram->name);
-                        //     } )->first();
-                        //     if( $exists )  {
-                        //         $skipMigration = true;
-                        //         printf("\"v3_program_id\" exists for root program \"%s\". Skipping..\n", $rootProgram->name);
-                        //         //Update "v3_program_id" in v2?? Put code here
-                        //     }
-                        // }   else {
-                        //     if(Program::find($rootProgram->v3_program_id))  {
-                        //         $skipMigration = true;
-                        //     }
-                        // }
-                        // pr($skipMigration);
-                        // if( !$skipMigration ) {
-                            try{
-                                $migrateSingleProgramService = resolve(\App\Services\v2migrate\MigrateSingleProgramService::class);
-                                $newProgram = $migrateSingleProgramService->migrateSingleProgram($rootProgram->v3_organization_id, $rootProgram);
-                                if( $newProgram ) {
-                                    $this->importedPrograms[] = $newProgram;
-                                    $this->importedProgramsCount++;
-                                }
-                                // pr($this->importedProgramsCount);
-                                // pr($newPrograms);
-                            } catch(Exception $e)    {
-                                throw new Exception( sprintf("Error creating new program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
-                            }
+                        try{
+                            $this->v2Program = $rootProgram;
+                            $migrateSingleProgramService = resolve(\App\Services\v2migrate\MigrateSingleProgramService::class);
+                            $v3Program = $migrateSingleProgramService->migrateSingleProgram($rootProgram->v3_organization_id, $rootProgram);
+                            // pr($this->importedProgramsCount);
+                            // pr($newPrograms);
+                        } catch(Exception $e)    {
+                            throw new Exception( sprintf("Error creating new program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
                         }
-                    // }
+                    }
                 } catch(Exception $e)    {
                     throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
                 }

@@ -17,13 +17,14 @@ use stdClass;
 class MigrateSingleProgramService extends MigrateProgramsService
 {
     private ProgramService $programService;
+    public $programMerchants = [];
 
     public function __construct(ProgramService $programService, MigrateProgramAccountsService $migrateProgramAccountsService)
     {
         parent::__construct($programService, $migrateProgramAccountsService);
         $this->programService = $programService;
     }
-    public $newPrograms = [];
+
     public function addToImportMap( $account_holder_id, $key, mixed $value)    {
         $this->importMap['program'][$account_holder_id][$key] = $value;
     }
@@ -80,6 +81,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             if( $create )   {
                 $v3Program = $this->createV3Program( $v3_organization_id, $v2Program, $v3_parent_id);
+                $this->newPrograms[] = $v3Program;
+                $this->newProgramsCount++;
             }
 
             $this->v3Program = $v3Program;
@@ -87,25 +90,36 @@ class MigrateSingleProgramService extends MigrateProgramsService
             //If it is a parent program then we will try to pull associated domains
 
             if( !$v3_parent_id ) { //Pull and Assign Domains if it is a root program(?)
-                // $this->migrateProgramDomains($v3_organization_id, $v2Program, $v3Program);
+                $this->migrateProgramDomains($v3_organization_id, $v2Program, $v3Program);
             }
 
+            // if( $v2Program->account_holder_id != 719006) return;
+            // pr($v2Program->account_holder_id);
             //Migration Accounts
             $this->migrateProgramAccounts( $v3Program );
-            // Pull Invoices
-            $this->migrateProgramInvoices($v2Program, $v3Program);
-            //Migration Accounts
-            $this->migrateProgramJournalEvents( $v3Program );
 
-            $this->executeV2SQL(); //run for any missing run!
             // Import program users with roles
             $this->migrateProgramUsers($v2Program, $v3Program);
+            //There are users ()
+            $this->migrateProgramUsersOthers($v2Program, $v3Program);
+            // exit;
 
             $this->executeV2SQL(); //run for any missing run!
-            // Pull addresses
-            $this->migrateProgramAddresses($v2Program, $v3Program);
+            // exit;
+
+            // Pull Invoices
+            $this->migrateProgramInvoices($v2Program, $v3Program);
             // // Pull events
             $this->migrateProgramEvents($v2Program, $v3Program);
+
+            $this->syncProgramMerchantRelations($v2Program, $v3Program);
+            // exit;
+            //Migration Accounts
+            // $this->migrateProgramJournalEvents( $v3Program, $v2Program);
+            $this->executeV2SQL(); //run for any missing run!
+
+            // Pull addresses
+            $this->migrateProgramAddresses($v2Program, $v3Program);
             // // Pull Leaderboards
             $this->migrateProgramLeaderboards($v2Program, $v3Program);
 
@@ -393,18 +407,34 @@ class MigrateSingleProgramService extends MigrateProgramsService
     }
 
     public function migrateProgramUsers($v2Program, $v3Program) {
+        // if( $v2Program->account_holder_id !== 719006) return;
+        // pr($v2Program);
+        // exit;
         $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
         $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+        // pr($v2Program->account_holder_id);
+        // pr(collect($v2users)->pluck('account_holder_id'));
+        // exit;
         $migrateUserService->setv2pid($v2Program->account_holder_id);
         $migrateUserService->setv3pid($v3Program->id);
         foreach( $v2users as $v2user)   {
-            $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByProgram($v2user, $v2Program);
+            // if( $v2user->account_holder_id == 719107)   {
+                // pr($v2user->account_holder_id);
+                // exit;
+                $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByProgram($v2user, $v2Program);
+                // exit;
+            // }
         }
     }
 
-    public function migrateProgramJournalEvents($v3Program)   {
+    public function migrateProgramUsersOthers($v2Program, $v3Program) {
+        $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+        $migrateUserService->migrateSuperAdmins( $v2Program, $v3Program );
+    }
+
+    public function migrateProgramJournalEvents($v3Program, $v2Program)   {
         //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
-        (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3Program);
+        (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3Program, $v2Program);
     }
 
     public function  migrateProgramInvoices($v2Program, $v3Program) {
@@ -428,7 +458,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     continue;
                 }   else {
                     //Try to fine by v2:id
-                    $v3Invoice = Invoice::where('v2_invoice_id', $v2Invoice->id);
+                    $this->printf(" -  Checking by v2_invoice_id in v3\n");
+                    $v3Invoice = Invoice::where('v2_invoice_id', $v2Invoice->id)->first();
                     if( $v3Invoice ) {
                        $this->v2db->statement("UPDATE `invoices` SET `v3_invoice_id` = {$v3Invoice->id} WHERE `id` = {$v2Invoice->id}");
                        $createInvoice = false;
@@ -531,16 +562,15 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
                     $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
 
+                    print(" -  - Event:{$newEvent->id} created for new Program: {$v3Program->id}\n");
                 }
 
                 $v3Event = $newEvent ?? $v3Event;
 
                 $MigrateEventXmlDataService = new \App\Services\v2migrate\MigrateEventXmlDataService;
+                $MigrateEventXmlDataService->v2Program = $v2Program;
+                $MigrateEventXmlDataService->v3Program = $v3Program;
                 $MigrateEventXmlDataService->migrateEventXmlDataByV2Event($v2Event, $v3Event);
-
-                print(" -  - Event:{$newEvent->id} created for new Program: {$v3Program->id}\n");
-
-                $this->importMap['program'][$v2Program->account_holder_id]['event'][$v2Event->id] = $newEvent->id;
             }
         }
     }
@@ -619,5 +649,38 @@ class MigrateSingleProgramService extends MigrateProgramsService
     public function migrateProgramAccounts($v3Program) {
         (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3Program);
         $this->executeV2SQL(); //run for any missing run!
+    }
+
+    /***
+     * Syncs program<=>merchant relations.
+     * The merchant must exists in v3
+     * Must have run `php artisan v2migrate:merchants` before running this.
+     */
+    private function syncProgramMerchantRelations( $v2Program, $v3Program ) {
+        if( !$v3Program->v2_account_holder_id ) return;
+        $sql = sprintf("SELECT p.v3_program_id, m.v3_merchant_id, pm.* FROM `programs` p JOIN `program_merchant` pm ON p.account_holder_id = pm.program_id JOIN `merchants` m on m.account_holder_id=pm.merchant_id WHERE p.account_holder_id=%d AND m.v3_merchant_id IS NOT NULL", $v3Program->v2_account_holder_id);
+
+        //$this->v2db->statement("SET SQL_MODE=''");
+        $result = $this->v2db->select($sql);
+        if( $result && sizeof($result) > 0) {
+            $programMerchants = [];
+            foreach( $result as $row) {
+                if( !$row->v3_merchant_id ) {
+                    throw new Exception(sprintf("Null v2merchant:v3_merchant_id found for v2Program:%s. Please run `php artisan v2migrate:merchants` before running program migration for this program.\n\n", $v2Program->account_holder_id));
+                    exit;
+                }
+                if( !$row->v3_program_id ) {
+                    throw new Exception("Null v2program:v3_program_id found. Please run `php artisan v2migrate:programs [ID]` before running this migration.\n\n");
+                    exit;
+                }
+                $programMerchants[$row->v3_merchant_id] = [
+                    'featured' => $row->featured,
+                    'cost_to_program' => $row->cost_to_program
+                ];
+            }
+            if( $programMerchants ) {
+                $v3Program->merchants()->sync($programMerchants, false);
+            }
+        }
     }
 }

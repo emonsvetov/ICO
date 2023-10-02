@@ -17,6 +17,7 @@ class MigrateMerchantsService extends MigrationService
     private MerchantService $merchantService;
     private MigrateGiftcodesService $migrateGiftcodesService;
     public $programMerchants = [];
+    public $createDuplicateName = false;
 
     public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
@@ -33,7 +34,8 @@ class MigrateMerchantsService extends MigrationService
         if( sizeof($v2MerchantHierarchy) > 0) {
             $v2MerchantHierarchy = sort_result_by_rank($merchant_tree, $v2MerchantHierarchy, 'merchant');
         }
-        // pr($v2MerchantHierarchy);
+        // pr(count($v2MerchantHierarchy));
+        // exit;
         if( $v2MerchantHierarchy ) {
             // DB::beginTransaction();
             // $this->v2db->beginTransaction();
@@ -46,15 +48,18 @@ class MigrateMerchantsService extends MigrationService
                     // if( $this->importedCount > 3 ) exit;
                 }
                 // pr($this->programMerchants);
-                if( $this->programMerchants ) {
-                    $proramIds = array_keys($this->programMerchants);
-                    $programs = Program::whereIn('id', $proramIds)->get();
-                    foreach($programs as $program) {
-                        $this->printf("Syncing \"programs_merchants\" for program:{$program->id}");
-                        // pr($this->programMerchants[$program->id]);
-                        $program->merchants()->sync($this->programMerchants[$program->id], false);
-                    }
-                }
+
+                ## COMMENT1: We run them by program ID so program-merchant sync is performed on Program level. Check MigrateSingleProgramService for "syncProgramMerchantRelations" method. The following code is commented out since we are not running GLOBAL migration to migrate ALL programs at once.
+
+                // if( $this->programMerchants ) {
+                //     $proramIds = array_keys($this->programMerchants);
+                //     $programs = Program::whereIn('id', $proramIds)->get();
+                //     foreach($programs as $program) {
+                //         $this->printf("Syncing \"programs_merchants\" for program:{$program->id}");
+                //         // pr($this->programMerchants[$program->id]);
+                //         $program->merchants()->sync($this->programMerchants[$program->id], false);
+                //     }
+                // }
                 // DB::commit();
                 // $this->v2db->commit();
                 $this->executeV2SQL();
@@ -74,25 +79,50 @@ class MigrateMerchantsService extends MigrationService
                 throw new Exception( "The `v3_merchant_id` field is required in v2 `merchants` table to sync properly.\n(Did your run migrations?)\nTermininating!");
                 exit;
             }
-            if( $v2Merchant->v3_merchant_id ) {
-                $this->printf("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Skipping..\n");
-                //TODO: update?!
-                return;
+
+            if( !$this->createDuplicateName )   {
+                $this->printf("Finding Merchant {$v2Merchant->name} in v3\n");
+                $v3Merchant = Merchant::where('name', trim($v2Merchant->name))->first();
+                if( $v3Merchant ) {
+
+                    $this->printf("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Updating..\n");
+                    if( !$v3Merchant->v2_account_holder_id ) {
+                        $v3Merchant->v2_account_holder_id = $v2Merchant->account_holder_id;
+                        $v3Merchant->save();
+                    }
+                    if( !$v2Merchant->v3_merchant_id ) {
+                        // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                        $this->addV2SQL("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                    }
+                    //TODO: more updates?!
+                    return $v3Merchant;
+                }
             }
-            $this->printf("Finding Merchant {$v2Merchant->name} in v3\n");
-            $v3Merchant = Merchant::where('name', trim($v2Merchant->name))->first();
-            if( $v3Merchant ) {
-                $this->printf("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Updating..\n");
-                if( !$v3Merchant->v2_account_holder_id ) {
-                    $v3Merchant->v2_account_holder_id = $v2Merchant->account_holder_id;
-                    $v3Merchant->save();
+
+            $create = true;
+            if( $v2Merchant->v3_merchant_id ) {
+                $this->printf("v2Merchant:v3_merchant_id is NOT NULL. Confirming with v3..\n\n");
+                $v3Merchant = Merchant::find( $v2Merchant->v3_merchant_id );
+                if( $v3Merchant )   {
+                    $this->printf("v3Merchant found by v2Merchant:v3_merchant_id. Skipping..\n\n");
+                    $create = false;
+                    if( !$v3Merchant->v2_account_holder_id ) {
+                        $v3Merchant->v2_account_holder_id = $v2Merchant->account_holder_id;
+                        $v3Merchant->save();
+                    }
                 }
-                if( !$v2Merchant->v3_merchant_id ) {
-                    // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
-                    $this->addV2SQL("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
-                }
-                //TODO: more updates?!
+                //TODO: update?!
             }   else {
+                //Lets find by v2 id
+                $v3Merchant = Merchant::where( 'v2_account_holder_id', $v2Merchant->account_holder_id )->first();
+
+                if( $v3Merchant )   {
+                    $create = false;
+                    $this->addV2SQL( sprintf("UPDATE `merchants` SET `v3_merchant_id`=%d WHERE `account_holder_id`=%d", $v3Merchant->id, $v2Merchant->account_holder_id) );
+                }
+            }
+
+            if( $create ) {
                 $v3MerchantData = [
                     'v2_account_holder_id' => $v2Merchant->account_holder_id,
                     'name' => $v2Merchant->name,
@@ -146,10 +176,26 @@ class MigrateMerchantsService extends MigrationService
                     $this->importedCount++;
                     $this->printf("New merchant for v2Merchant: {$v2Merchant->account_holder_id} created successfully!\n");
 
-                    $this->readProgramMerchantRelations( $v2Merchant->account_holder_id );
+                    // $this->readProgramMerchantRelations( $v2Merchant->account_holder_id );
+                    // Check COMMENT1
                 }
             }
+
+            $v3Merchant = $newMerchant ?? $v3Merchant;
+
+            if( $v3Merchant ) {
+                (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3Merchant);
+                // $this->migrateMerchantJournalEvents($v3Merchant, $v2Merchant);
+                //It will try to migrate ALL journalEvents for the merchant but we do not want them ALL. We want only events related ONLY to already pulled Models (Program/User).
+            }
+
+            return $v3Merchant;
         }
+    }
+
+    public function migrateMerchantJournalEvents($v3Merchant, $v2Merchant)   {
+        //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
+        (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3Merchant, $v2Merchant);
     }
 
     private function readProgramMerchantRelations( $v2_account_holder_id ) {

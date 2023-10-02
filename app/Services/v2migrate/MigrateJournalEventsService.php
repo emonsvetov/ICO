@@ -11,6 +11,7 @@ use App\Models\JournalEvent;
 use App\Models\Merchant;
 use App\Models\Program;
 use App\Models\Account;
+use App\Models\AccountHolder;
 use App\Models\User;
 
 
@@ -102,9 +103,9 @@ class MigrateJournalEventsService extends MigrationService
         if( !$v3Model->v2_account_holder_id || !$v3Account->v2_account_id)    {
             throw new Exception(sprintf("Invalid \"v2_account_holder_id\" in model \"%s\" or account. Are you sure this model and account was imported properly?\"\n\n", $this->modelName));
         }
-        $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.* FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id where accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
+        $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
 
-        printf(" - Fetching journal_events+postings for model %s:\"%s\" & account:\"%s\". Please wait...\n", $this->modelName, $v3Model->id, $v3Account->v2_account_id);
+        $this->printf(" - Fetching journal_events+postings for model %s:\"%s\" & account:\"%s\".\n\n", $this->modelName, $v3Model->id, $v3Account->v2_account_id);
         $results = $this->v2db->select($sql);
 
         if( $this->printSql ) {
@@ -112,10 +113,10 @@ class MigrateJournalEventsService extends MigrationService
         }
 
         if( $results )  {
-            // pr(count($results));
             $this->countPostings += count($results);
             // exit;
             foreach( $results as $row) {
+                // if($row->prime_account_holder_id != 286143) continue;
                 $this->migrateSingleJournalEventByPostingData( (object) $row );
                 // if( !$row->v3_journal_event_id &&  !$row->v3_posting_id) {
                 //     $prime_account_holder_id = $row->prime_account_holder_id;
@@ -134,9 +135,11 @@ class MigrateJournalEventsService extends MigrationService
     }
 
     public function migrateSingleJournalEventByPostingData( $postingData )    {
-        // pr($postingData);
-        // exit;
+        $params = [];
         if( $postingData )  {
+            if( $postingData->v3_user_id ) {
+                $params['v3_prime_account_holder_id'] = $postingData->v3_user_id;
+            }
             $v2JournalEvent = [
                 'id' => $postingData->journal_event_id,
                 'prime_account_holder_id' => $postingData->prime_account_holder_id,
@@ -149,7 +152,7 @@ class MigrateJournalEventsService extends MigrationService
                 'is_read' => $postingData->is_read,
                 'v3_journal_event_id' => $postingData->v3_journal_event_id
             ];
-            $this->migrateSingleJournalEvent((object) $v2JournalEvent);
+            $this->migrateSingleJournalEvent((object) $v2JournalEvent, $params);
         }
     }
 
@@ -172,12 +175,11 @@ class MigrateJournalEventsService extends MigrationService
         }
     }
 
-    public function migrateSingleJournalEvent($v2JournalEvent) {
+    public function migrateSingleJournalEvent($v2JournalEvent, $params = []) {
         $create = true;
         $v2Model = $this->v2Model; //optional
         $v3Model = $this->v3Model; //optional
-        // pr($v3Model);
-        // exit;
+
         // pr($row);
         if( $v2JournalEvent->v3_journal_event_id )    { //find by v3 id
             $v3JournalEvent = JournalEvent::find( $v2JournalEvent->v3_journal_event_id );
@@ -210,15 +212,19 @@ class MigrateJournalEventsService extends MigrationService
             $prime_account_holder_id = 0;
 
             //Get v3 prime_account_holder_id
-            if( (int) $v2JournalEvent->prime_account_holder_id > 0 )  {
-                if( $v2Model && $v3Model && $v2Model->account_holder_id == $v2JournalEvent->prime_account_holder_id) {
-                    $prime_account_holder_id = $v3Model->account_holder_id;
-                }   else {
-                    $modelTmp = $v3Model->where('v2_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
-                    if( $modelTmp )  {
-                        $prime_account_holder_id = $modelTmp->account_holder_id;
+            if( !empty($params['v3_prime_account_holder_id']) )  {
+                $prime_account_holder_id = $params['v3_prime_account_holder_id'];
+            }   else {
+                if( (int) $v2JournalEvent->prime_account_holder_id > 0 )  {
+                    if( $v2Model && $v3Model && $v3Model instanceof \App\Models\User  &&$v2Model->account_holder_id == $v2JournalEvent->prime_account_holder_id) {
+                        $prime_account_holder_id = $v3Model->account_holder_id;
                     }   else {
-                        $prime_account_holder_id = $this->idPrefix . $v2JournalEvent->prime_account_holder_id;
+                        $modelTmp = User::where('v2_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
+                        if( $modelTmp )  {
+                            $prime_account_holder_id = $modelTmp->account_holder_id;
+                        }   else {
+                            $prime_account_holder_id = $this->idPrefix . $v2JournalEvent->prime_account_holder_id;
+                        }
                     }
                 }
             }
@@ -230,6 +236,17 @@ class MigrateJournalEventsService extends MigrationService
                 else   $parent_id = $this->idPrefix . $v2JournalEvent->parent_journal_event_id;
             }
 
+            $v3_event_xml_data_id = null;
+            if( $v2JournalEvent->event_xml_data_id > 0) {
+                $v3EventXmlData =\App\Models\EventXmlData::where('v3_id', $v2JournalEvent->event_xml_data_id)->first();
+                if( $v3EventXmlData )   {
+                    $v3_event_xml_data_id = $v3EventXmlData->id;
+                }   else {
+                    //create placeholder, to be replaced later
+                    $v3_event_xml_data_id = $this->idPrefix . $v2JournalEvent->event_xml_data_id;
+                }
+            }
+
             $newV3JournalEvent = JournalEvent::create(
                 [
                     'v2_journal_event_id' => $v2JournalEvent->id,
@@ -237,7 +254,7 @@ class MigrateJournalEventsService extends MigrationService
                     // 'v2_prime_account_holder_id' => $v2JournalEvent->prime_account_holder_id,
                     'journal_event_type_id' => $v2JournalEvent->journal_event_type_id,
                     'notes' => $v2JournalEvent->notes,
-                    'event_xml_data_id' => $v2JournalEvent->event_xml_data_id,
+                    'event_xml_data_id' => $v3_event_xml_data_id,
                     'invoice_id' => $v2JournalEvent->invoice_id, //it is always null in v2, so I guess it is not in use and was replaced by invoice_journal_events table
                     'parent_id' => $parent_id,
                     // 'v2_parent_journal_event_id' => $v2JournalEvent->parent_journal_event_id,
@@ -255,70 +272,174 @@ class MigrateJournalEventsService extends MigrationService
 
         $v3JournalEvent = $v3JournalEvent ? $v3JournalEvent : $newV3JournalEvent;
 
-        if( (int) $v2JournalEvent->event_xml_data_id > 0 )   {
-            // pr($v2JournalEvent->event_xml_data_id);
-            $v3EventXmlData = EventXmlData::where('v2_id', $v2JournalEvent->event_xml_data_id)->first();
-            if( $v3EventXmlData ) {
-                $this->localImportMap['journalEvents'][$v3JournalEvent->id]['event_xml_data'][$v3EventXmlData->id]['exists'] = 1;
-            }   else {
-                $sql = sprintf("SELECT * FROM `event_xml_data` WHERE `id`=%d", $v2JournalEvent->event_xml_data_id);
-                $results = $this->v2db->select($sql);
-                if( sizeof($results) > 0 )  {
-                    $eventXmlData = current($results); //just one!
+        if( !$create )  {
+            //Patch previously imported journals
+            $saveJournal = false;
+            $saveEventXml = false;
 
-                    //Get Awarderer
-                    if( (int) $eventXmlData->awarder_account_holder_id > 0 )  {
-                        if( $v2Model && $eventXmlData->awarder_account_holder_id == $v2Model->account_holder_id) {
-                            $awarder_account_holder_id = $v3Model->account_holder_id;
-                        }   else {
-                            $v3Model_tmp = $v3Model->where('v2_account_holder_id', $eventXmlData->awarder_account_holder_id)->first();
-                            if( $v3Model_tmp )   {
-                                $awarder_account_holder_id = $v3Model_tmp->account_holder_id;
+            if( (int) $v2JournalEvent->event_xml_data_id > 0 )   {
+                $importXml = false;
+
+                $v2_event_xml_data_id = 0;
+                if( $v2JournalEvent->event_xml_data_id == $v3JournalEvent->event_xml_data_id) {
+                    //The v2 id was imported as it is to v3, need to fix
+                    $importXml = true;
+                }   else if( strpos($v3JournalEvent->event_xml_data_id, $this->idPrefix) == 0 && (strlen($v3JournalEvent->event_xml_data_id) > strlen($this->idPrefix)) ) {
+                    //The id was creaetd using placeholder perfix
+                    $importXml = true;
+                }
+                // pr($v2JournalEvent->event_xml_data_id);
+                //confirm that the row does not exist
+                $v3EventXmlData = EventXmlData::where('v2_id', $v2JournalEvent->event_xml_data_id)->first();
+                if( $v3EventXmlData ) {
+                    $importXml = false;
+                    // //nothing else, but later!
+                }
+                if( $importXml ) { //create
+                    $sql = sprintf("SELECT * FROM `event_xml_data` WHERE `id`=%d", $v2JournalEvent->event_xml_data_id);
+                    $results = $this->v2db->select($sql);
+                    if( sizeof($results) > 0 )  {
+                        $v2EventXmlData = current($results); //just one!
+
+                        //Prepare xmlData
+
+                        //Get Awarderer
+                        if( (int) $v2EventXmlData->awarder_account_holder_id > 0 )  {
+                            if( $v2Model && $v3Model && $v3Model instanceof \App\Models\User && $v2EventXmlData->awarder_account_holder_id == $v2Model->account_holder_id) {
+                                $awarder_account_holder_id = $v3Model->account_holder_id;
                             }   else {
-                                //User not imported, but we wont import it here otherwise we fall in a recursive loop, rather save user id with prefix of 999999999 so we can later pull it if required.
-                                $awarder_account_holder_id = (int) ($this->idPrefix.$eventXmlData->awarder_account_holder_id);
+                                $v3User_tmp = User::where('v2_account_holder_id', $v2EventXmlData->awarder_account_holder_id)->first();
+                                if( $v3User_tmp )   {
+                                    $awarder_account_holder_id = $v3User_tmp->account_holder_id;
+                                }   else {
+                                    //User not imported, but we wont import it here otherwise we fall in a recursive loop, rather save user id with prefix of 999999999 so we can later pull it if required.
+                                    $awarder_account_holder_id = (int) ($this->idPrefix.$v2EventXmlData->awarder_account_holder_id);
+                                }
+                            }
+                        }
+
+                        //Get eventID
+                        $v3EventId = 0;
+                        if( (int) $v2EventXmlData->event_template_id > 0 )   {
+                            $v3Event_tmp = \App\Models\Event::where('v2_event_id', $v2EventXmlData->event_template_id)->first();
+                            if( $v3Event_tmp )  {
+                                $v3EventId = $v3Event_tmp->id;
+                            }   else {
+                                $v3EventId = (int) ($this->minusPrefix . $v2EventXmlData->event_template_id); //prefix of 999999 so we can later pull it if required.
+                            }
+                        }
+
+                        $$v3EventXmlData = EventXmlData::create([
+                            'v2_id' => $v2EventXmlData->id,
+                            'awarder_account_holder_id' => $awarder_account_holder_id,
+                            'name' => $v2EventXmlData->name,
+                            'award_level_name' => $v2EventXmlData->award_level_name,
+                            'amount_override' => $v2EventXmlData->amount_override,
+                            'notification_body' => $v2EventXmlData->notification_body,
+                            'notes' => $v2EventXmlData->notes,
+                            'referrer' => $v2EventXmlData->referrer,
+                            'email_template_id' => $this->minusPrefix . $v2EventXmlData->email_template_id,
+                            'event_type_id' => $v2EventXmlData->event_type_id,
+                            'event_template_id' => $v3EventId,
+                            'icon' => $v2EventXmlData->icon,
+                            'xml' => $v2EventXmlData->xml,
+                            'award_transaction_id' => $v2EventXmlData->award_transaction_id,
+                            'lease_number' => $v2EventXmlData->lease_number,
+                            'token' => $v2EventXmlData->token
+                        ]);
+
+                        // pr($v3EventXmlDataId);
+
+                        if( $v3EventXmlData ) {
+                            $this->v2db->statement(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d", $v3EventXmlData->id, $v2EventXmlData->id));
+                        }
+                    }
+                }
+
+                //Patch
+
+                //Try once more to patch "user_id" for old records
+                if( !empty($v2EventXmlData) && $v3EventXmlData )   {
+                    //If the "awarder_account_holder_id" was "framed" previously
+                    if( strpos($v3EventXmlData->awarder_account_holder_id, $this->idPrefix) == 0 ) {
+                        $v3User_tmp = User::where('v2_account_holder_id', $v2EventXmlData->awarder_account_holder_id)->first();
+                        if( $v3User_tmp )   {
+                            $v3EventXmlData->awarder_account_holder_id = $v3User_tmp->account_holder_id;
+                            $saveEventXml = true;
+                        }
+                    }
+                }
+
+                // new created entries for "event_xml_data_id"
+                if( $v3EventXmlData ) {  //if record exists and it is not new
+
+                    //Patch previously imported, can be buggy though, to be removed
+                    if( $v3JournalEvent->event_xml_data_id == $v2JournalEvent->event_xml_data_id) {
+                        $v3JournalEvent->event_xml_data_id = $v3EventXmlData->id;
+                        $saveJournal = true;
+                    }
+                }
+
+                if( $v3JournalEvent->event_xml_data_id == $v2JournalEvent->event_xml_data_id) {
+                    $v3JournalEvent->event_xml_data_id = $v3EventXmlData->id;
+                    $saveJournal = true;
+                }
+            }
+
+            //for previously imported journals
+
+            //confirm and correct "prime_account_holder_id" if required
+            if( $v2JournalEvent->prime_account_holder_id > 0)
+            {
+                if( $v3JournalEvent->prime_account_holder_id == $v2JournalEvent->prime_account_holder_id)    {
+                    if( !empty($v2JournalEvent->v3_user_id) )
+                    {
+                        $v3JournalEvent->prime_account_holder_id = $v2JournalEvent->v3_user_id;
+                        $this->printf("v3:prime_account_holder_id==v2:prime_account_holder_id.. Updating\n\n");
+                        $saveJournal = true;
+                    }  else {
+                        $v3User_tmp = User::where('v2_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
+                        if( $v3User_tmp )   {
+                            $v3JournalEvent->prime_account_holder_id = $v3User_tmp->account_holder_id;
+                            $saveJournal = true;
+                        }   else {
+                            if( strpos($v3JournalEvent->prime_account_holder_id, $this->idPrefix) == -1 ) {
+                                $v3JournalEvent->prime_account_holder_id = $this->idPrefix . $v2JournalEvent->prime_account_holder_id;
+                                $saveJournal = true;
                             }
                         }
                     }
-
-                    //Get eventID
-                    $v3EventId = 0;
-                    if( (int) $eventXmlData->event_template_id > 0 )   {
-                        $v3Event_tmp = \App\Models\Event::where('v2_event_id', $eventXmlData->event_template_id)->first();
-                        if( $v3Event_tmp )  {
-                            $v3EventId = $v3Event_tmp->id;
-                        }   else {
-                            $v3EventId = (int) ($this->minusPrefix . $eventXmlData->event_template_id); //prefix of 999999 so we can later pull it if required.
+                } else {
+                    //If "prime_account_holder_id" is a placehoder id
+                    if( strpos($v3JournalEvent->prime_account_holder_id, $this->idPrefix) == 0 ) { //it is in the beginning and is larger than the prefix
+                        $this->printf("idPrefix detected in v3:prime_account_holder_id\n");
+                        $v2_prime_account_holder_id = (int) str_replace($this->idPrefix, "", $v3JournalEvent->prime_account_holder_id);
+                        if( $v2_prime_account_holder_id > 0 )   {
+                            if( !empty($this->cachedPrimeAccountHolders[$v2_prime_account_holder_id]) ) {
+                                $v3_prime_account_holder_id = $this->cachedPrimeAccountHolders[$v2_prime_account_holder_id];
+                            }   else {
+                                $tmpUser = User::where('v2_account_holder_id', $v2_prime_account_holder_id)->first();
+                                if( $tmpUser )  {
+                                    $v3_prime_account_holder_id = $tmpUser->account_holder_id;
+                                    $this->cachedPrimeAccountHolders[$v2_prime_account_holder_id] = $v3_prime_account_holder_id;
+                                }
+                            }
+                            if( !empty($v3_prime_account_holder_id) ) {
+                                $v3JournalEvent->prime_account_holder_id = $v3_prime_account_holder_id;
+                                $saveJournal = true;
+                            }
                         }
                     }
-
-                    $v3EventXmlDataId = EventXmlData::insertGetId([
-                        'v2_id' => $eventXmlData->id,
-                        'awarder_account_holder_id' => $awarder_account_holder_id,
-                        'name' => $eventXmlData->name,
-                        'award_level_name' => $eventXmlData->award_level_name,
-                        'amount_override' => $eventXmlData->amount_override,
-                        'notification_body' => $eventXmlData->notification_body,
-                        'notes' => $eventXmlData->notes,
-                        'referrer' => $eventXmlData->referrer,
-                        'email_template_id' => $this->minusPrefix . $eventXmlData->email_template_id,
-                        'event_type_id' => $eventXmlData->event_type_id,
-                        'event_template_id' => $v3EventId,
-                        'icon' => $eventXmlData->icon,
-                        'xml' => $eventXmlData->xml,
-                        'award_transaction_id' => $eventXmlData->award_transaction_id,
-                        'lease_number' => $eventXmlData->lease_number,
-                        'token' => $eventXmlData->token
-                    ]);
-
-                    // pr($v3EventXmlDataId);
-
-                    if( $v3EventXmlDataId ) {
-                        $this->v2db->statement(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d", $v3EventXmlDataId, $eventXmlData->id));
-                        //Save progress to map
-                        $this->localImportMap['journalEvents'][$v3JournalEvent->id]['event_xml_data'][$v3EventXmlDataId]['created'] = 1;
-                    }
                 }
+            }
+
+            if( $saveJournal ) {
+                $this->printf(" -- saving v3JournalEvent\n");
+                $v3JournalEvent->save();
+            }
+            if( $saveEventXml && !empty($v3EventXmlData) ) {
+                $this->printf(" -- saving v3EventXmlData\n");
+                $v3EventXmlData->save();
             }
         }
 
@@ -448,6 +569,69 @@ class MigrateJournalEventsService extends MigrationService
         if( $journalEvents )    {
             foreach( $journalEvents as $row )  {
                 $this->migrateSingleJournalEvent( (object) $row); //Migrate Single Journal
+            }
+        }
+    }
+
+    public function fixPostingsAccoundIds() {
+        // DB::enableQueryLog();
+        $results = \App\Models\Posting::where('account_id', 'LIKE', $this->idPrefix . '%')->get();
+        // pr(sizeof($results));
+        // pr(toSql(DB::getQueryLog()));
+        if( sizeof($results) > 0 )  {
+            foreach( $results as $v3Posting )   {
+                if( !$v3Posting->v2_posting_id) {
+                    continue;
+                }
+                $create = false;
+                $exists = false;
+                $v2_account_id = (int) str_replace($this->idPrefix, '', $v3Posting->account_id);
+                if( $v2_account_id ) {
+                    $sql = sprintf("SELECT * FROM `postings` WHERE `account_id`=%d AND id=%d", $v2_account_id, $v3Posting->v2_posting_id) ;
+                    $v2Posting = current($this->v2db->select($sql));
+                    if( $v2Posting ) {
+                        $v3Account = Account::where('v2_account_id', $v2_account_id)->first();
+                        if( !$v3Account ) {
+                            $sql = sprintf("SELECT * FROM `accounts` WHERE `id`=%d", $v2_account_id) ;
+                            $result = $this->v2db->select($sql);
+                            if( sizeof($result) > 0) {
+                                $v2Account = current($result);
+                                if( $v2Account )    {
+                                    if( $v2Account->v3_account_id ) {
+                                        $v3Account = Account::find($v2Account->v3_account_id);
+                                        if( !$v3Account ) {
+                                            $create = true;
+                                        } else {
+                                            $exists = true;
+                                        }
+                                    }   else {
+                                        $create = true;
+                                    }
+                                }
+                            }
+                        }   else {
+                            $exists = true;
+                        }
+                        if( $create ) {
+                            $v2_account_holder_id = $v2Account->account_holder_id;
+                            pr("create");
+                            // pr($v2_account_holder_id);
+                            $v3Account = Account::create([
+                                'account_holder_id' => $this->idPrefix . $v2_account_holder_id,
+                                'account_type_id' => $v2Account->account_type_id,
+                                'finance_type_id' => $v2Account->finance_type_id,
+                                'medium_type_id' => $v2Account->medium_type_id,
+                                'currency_type_id' => $v2Account->currency_type_id,
+                                'v2_account_id' => $v2Account->id,
+                            ]);
+                        }
+
+                        if($create || $exists ) {
+                            $v3Posting->account_id = $v3Account->id;
+                            $v3Posting->save();
+                        }
+                    }
+                }
             }
         }
     }

@@ -31,6 +31,7 @@ class MigrationService
     public $minusPrefix = '-';
     public $countPostings = 0;
     public $countAccounts = 0;
+    public $cachedPrimeAccountHolders = [];
 
 
     public function setV2Model( $v2Model ) {

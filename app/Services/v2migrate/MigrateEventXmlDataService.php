@@ -27,6 +27,7 @@ class MigrateEventXmlDataService extends MigrationService
     public function migrateEventXmlDataByV2Event($v2Event) {
         $eventXmlData = $this->getV2EventXmlDataByV2Event($v2Event);
         if( $eventXmlData ) {
+            $this->printf(" -- %s eventXmlData rows found for v2Event:%s. Importing..", $v2Event->id, count($eventXmlData));
             foreach( $eventXmlData as $v2EventXmlDataRow)    {
                 $this->migrateEventXmlDataRow($v2EventXmlDataRow);
             }
@@ -70,7 +71,6 @@ class MigrateEventXmlDataService extends MigrationService
                     $v3EventXmlDataRow->save();
                 }
                 $createEventXmlData = false;
-                $this->importMap['program'][$this->v2Program->account_holder_id]['eventXmlData'][$v2EventXmlDataRow->id]['exists'] = 1;
             }
             //TODO: update?!
         }   else {
@@ -80,7 +80,6 @@ class MigrateEventXmlDataService extends MigrationService
                 printf(" - EventXmlDataRow \"%d\" v3:v2_id exists for v2:\"%d\".\n Updating null v2:v3_event_id value.\n", $v3EventXmlDataRow->id, $v2EventXmlDataRow->v3_event_id);
                 $this->v2db->statement("UPDATE `event_xml_data` SET `v3_id` = {$v3EventXmlDataRow->id} WHERE `id` = {$v2EventXmlDataRow->id}");
                 $createEventXmlData = false;
-                $this->importMap['program'][$this->v2Program->account_holder_id]['eventXmlData'][$v2EventXmlDataRow->id]['exists'] = 1;
                 //Update??
             }
         }

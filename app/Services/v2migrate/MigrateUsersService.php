@@ -21,7 +21,7 @@ class MigrateUsersService extends MigrationService
     public $iteration = 0;
     public $count = 0;
     public bool $printSql = false;
-    public bool $resycnRoles = true;
+    public bool $resyncRoles = true;
     public array $v3UserCache = [];
 
     public function __construct(MigrateUserRoleService $migrateUserRoleService)
@@ -95,7 +95,7 @@ class MigrateUsersService extends MigrationService
         }
         $this->setv2pid($v2Program->account_holder_id);
         $this->setv3pid($v2Program->v3_program_id);
-        $this->migrateSingleUser( $v2User );
+        $v3User = $this->migrateSingleUser( $v2User );
     }
 
     public function migrateSingleUser( $v2User ) {
@@ -139,6 +139,8 @@ class MigrateUsersService extends MigrationService
             }
         }
 
+        // return $v3User;
+
         // Update v2User reference field for v3Id
         if( !$v2User->v3_user_id ) {
             $this->addV2SQL(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
@@ -146,25 +148,31 @@ class MigrateUsersService extends MigrationService
 
         // Migrate roles if applies
         if( $v3User ) {
-            if( $isNewUser || $this->resycnRoles ) {
-                $this->printf(" - Attempting to import user roles\n");
+            $this->printf(" - Attempting to import user roles\n");
+            if( $this->v2pid() ) {
                 $this->migrateUserRoleService->setv2pid( $this->v2pid() );
-                $this->migrateUserRoleService->migrate($v2User, $v3User);
             }
+            $this->migrateUserRoleService->migrate($v2User, $v3User);
+
+            $this->executeV2SQL();
+            // $this->migrateUserJournalEvents($v2User, $v3User);
+            // Migration Accounts Only. We will migration JournalEvents and related data in separate step below
+            // (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3User);
+
+            $this->executeV2SQL(); //run for any missing run!
+
+            //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
+            // pr($v3User->id);
+            // exit;
+            // (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3User);
+
+            $this->executeV2SQL(); //run for any missing run!
+
+            // $this->fixUserJournalEvents( $v2User,  $v3User);
+            $this->fixUserXmlEvents( $v2User,  $v3User);
         }
-        $this->executeV2SQL();
-        // $this->migrateUserJournalEvents($v2User, $v3User);
-        // Migration Accounts Only. We will migration JournalEvents and related data in separate step below
-        (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3User);
 
-        $this->executeV2SQL(); //run for any missing run!
-
-        //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
-        (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3User);
-
-        $this->executeV2SQL(); //run for any missing run!
-
-        return $isNewUser;
+        return $v3User;
     }
 
     // public function migrateUserJournalEvents($v2User, $v3User)  {
@@ -342,7 +350,7 @@ class MigrateUsersService extends MigrationService
 
                 // Migrate roles if applies
                 if( $v3User ) {
-                    if( $isNewUser || $this->resycnRoles ) {
+                    if( $isNewUser || $this->resyncRoles ) {
                         $this->migrateUserRoleService->migrate($v2User, $v3User);
                     }
                 }
@@ -593,4 +601,47 @@ class MigrateUsersService extends MigrationService
 		return $sql;
 
 	}
+
+    public function migrateSuperAdmins( $v2Program = null, $v3Program = null )    {
+        //SELECT users.account_holder_id, users.email, users.v3_user_id, roles.*, roles_has_users.* FROM `users` JOIN `roles_has_users` ON users.account_holder_id = `roles_has_users`.users_id JOIN roles on roles.id= roles_has_users.roles_id WHERE roles.owner_id = 1;
+
+        $sql = sprintf("SELECT users.* FROM `users` JOIN `roles_has_users` ON users.account_holder_id = `roles_has_users`.users_id JOIN roles on roles.id= roles_has_users.roles_id WHERE roles.owner_id = 1");
+
+        $users = $this->v2db->select( $sql );
+        if( ($count = sizeof($users)) > 0) {
+            $this->printf("Found %d admins to be migrated\n", $count);
+            foreach ($users as $user) {
+                // if( !$user->account_holder_id != 719107) {
+                //     continue;
+                // }
+                $this->printf("Migrating user with email %s, times\n", $user->email);
+                $this->setv2pid(null);
+                $v3User = $this->migrateSingleUser( $user );
+            }
+            return $users;
+        }
+    }
+
+    public function fixUserJournalEvents($v2User, $v3User)  {
+        if( !$v3User ) return;
+        $journalEvents = \App\Models\JournalEvent::where('prime_account_holder_id', (int) ($this->idPrefix . $v2User->account_holder_id))->get();
+        if( $journalEvents )    {
+            foreach( $journalEvents as $journalEvent)   {
+                $journalEvent->prime_account_holder_id = $v3User->account_holder_id;
+                $journalEvent->save();
+            }
+        }
+    }
+
+    public function fixUserXmlEvents($v2User, $v3User)  {
+        if( !$v3User ) return;
+        $xmlEvents = \App\Models\EventXmlData::where('awarder_account_holder_id', (int) ($this->idPrefix . $v2User->account_holder_id))->get();
+        if( $xmlEvents )    {
+            foreach( $xmlEvents as $xmlEvent)   {
+                $xmlEvent->awarder_account_holder_id = $v3User->account_holder_id;
+                $xmlEvent->save();
+                $this->printf(' -- Fixed xmlEvent:%s for user:%s\n', $xmlEvent->id, $v3User->id);
+            }
+        }
+    }
 }
