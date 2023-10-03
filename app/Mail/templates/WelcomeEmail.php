@@ -28,7 +28,7 @@ class WelcomeEmail extends SendgridEmail
         $livhigh5EmailTemplate = EmailTemplate::where('name', 'livhigh5')->where('program_id', $program->id)->first();
         if($livhigh5EmailTemplate){
             $this->type = 'emails.welcomeLiveHigh5';
-            $this->subject = 'Welcome to Live High 5 program!';
+            $this->subject = 'Welcome to Liv High 5 program!';
         }
 
         $this->init(func_get_args());
