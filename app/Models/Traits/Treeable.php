@@ -6,7 +6,7 @@ use DB;
 trait Treeable
 {
 
-    public function isRoot(): Bool
+    public function isRootModel(): Bool
     {
         return is_null($this->getParentId());
     }
