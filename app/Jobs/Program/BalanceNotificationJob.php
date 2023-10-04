@@ -87,8 +87,6 @@ class BalanceNotificationJob implements ShouldQueue
                     Mail::to($dataBalanceEmail)->send($message);
                 }
             } elseif ( ! empty($managersWithDetails)) {
-                print_r($managersWithDetails);
-                die;
                 foreach ($managersWithDetails as $managerWithDetails) {
                     $programContent = "";
                     foreach ($managerWithDetails['balanceDetails'] as $program_details) {
