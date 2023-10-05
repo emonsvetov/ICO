@@ -29,6 +29,23 @@ class SocialWallPostService
 
     }
 
+    public function like(Organization $organization, Program $program, $user, array $request)
+    {
+        // print_r($request['id']);
+        $post = SocialWallPost::find($request['id']);
+        $like = json_decode($post->like, true);
+        if (in_array($user->id, $like)) {
+            $like = array_diff($like, [$user->id]);
+        }
+        else {
+            $like[] = $user->id;
+        }
+        $post->like = $like;
+        print_r($like);
+        $post->likesCount = count($like);
+        $post->save();
+    }
+
     public function getIndexData(Organization $organization, Program $program, $user, array $request): array
     {
         $uses_social_wall = (bool)$program->uses_social_wall;
