@@ -129,8 +129,10 @@ class GiftcodeService
             $query->orWhereNull('medium_info.hold_until');
         });
 
-        if(isset($filters['medium_info_is_test']) )	{
-            $query->where('medium_info_is_test', '=', $filters['medium_info_is_test']);
+        if(isset($filters['medium_info_is_test']) && $filters['medium_info_is_test'] )	{
+            $query->where('medium_info_is_test', '=', 1);
+        }else{
+            $query->where('medium_info_is_test', '=', 0);
         }
 
 		if( !empty($filters['redemption_value']) )	{
@@ -160,6 +162,8 @@ class GiftcodeService
 		if($orders && $orders['column'] && $orders['direction']){
             $query->orderBy($orders['column'], $orders['direction']);
         }
+
+		//throw new \Exception ($query->toSql());
 
 		return $query->get();
 	}
