@@ -33,7 +33,9 @@ class SocialWallPostService
     {
         // print_r($request['id']);
         $post = SocialWallPost::find($request['id']);
-        $like = json_decode($post->like, true);
+        $like = $post->like;
+        if ($like == null)
+            $like = [];
         if (in_array($user->id, $like)) {
             $like = array_diff($like, [$user->id]);
         }
