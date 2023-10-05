@@ -26,6 +26,14 @@ class SocialWallPost extends BaseModel
         });
     }
 
+    protected $attributes = [
+        'like'=>['[]'],
+    ];
+
+    protected $casts = [
+        'like' => 'json',
+    ];
+
     public function program()
     {
         return $this->hasOne(Program::class, 'program_id', 'account_holder_id');
