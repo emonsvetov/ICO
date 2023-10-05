@@ -14,7 +14,7 @@ class AddLikesToTable extends Migration
     public function up()
     {
         Schema::table('social_wall_posts', function (Blueprint $table) {
-            $table->json('like')->default('[]');
+            $table->text('like')->default('[]');
             $table->integer('likesCount')->default(0);
         });
     }
@@ -26,8 +26,9 @@ class AddLikesToTable extends Migration
      */
     public function down()
     {
-        Schema::table('SocialWallPost', function (Blueprint $table) {
+        Schema::table('social_wall_posts', function (Blueprint $table) {
             $table->dropColumn('like');
+            $table->dropColumn('likesCount');
         });
     }
 }
