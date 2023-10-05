@@ -14,7 +14,7 @@ class AddLikesToTable extends Migration
     public function up()
     {
         Schema::table('social_wall_posts', function (Blueprint $table) {
-            $table->json('like')->default(json_encode([]));
+            $table->json('like')->default('[]');
             $table->integer('likesCount')->default(0);
         });
     }
