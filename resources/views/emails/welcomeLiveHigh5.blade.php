@@ -20,7 +20,7 @@ border-left:solid 1px;
 
                 </p>
                 <p style="margin-left:30px; margin-right:30px;">
-                    To kick things off, Liv has awarded you another $5 of Liv Loot for a total of $10 which you can redeem now for a gift card of your choice or save it for later and combine it with other awards!
+                    To kick things off, Liv has awarded you $10 of Liv Loot which you can redeem now for a gift card of your choice or save it for later and combine it with other awards.
                 </p>
                 <p style="margin-left:30px; margin-right:30px;">
                     Visit <a href="https://ipaliving.sharepoint.com/" style="color:#ab0717; font-weight:bold;" target="blank">ipaliving.sharepoint.com/</a> and sign in with your Office 365 log in to access your account.
