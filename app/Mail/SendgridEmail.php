@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\EmailTemplateSender;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -23,6 +24,8 @@ class SendgridEmail extends Mailable
 
     public string $type = '';
     protected array $data = [];
+    public string $fromEmail = '';
+    public string $fromUsername = '';
 
     /**
      * Create a new message instance.
@@ -50,6 +53,13 @@ class SendgridEmail extends Mailable
                 $argument->loadTemplate();
                 $this->data[$parameter->name] = $argument;
                 $this->data['template'] = $argument->template??\App\Models\ProgramTemplate::DEFAULT_TEMPLATE;
+
+                /** @var EmailTemplateSender $emailTemplateSender */
+                $emailTemplateSender = $argument->getEmailTemplateSender();
+                if ($emailTemplateSender){
+                    $this->fromEmail = $emailTemplateSender->email;
+                    $this->fromUsername = $emailTemplateSender->username;
+                }
             }
         }
     }
@@ -61,8 +71,8 @@ class SendgridEmail extends Mailable
      */
     public function build()
     {
-        $address = env("MAIL_FROM_ADDRESS");
-        $name = env("MAIL_FROM_NAME");
+        $address = $this->fromEmail ?? env("MAIL_FROM_ADDRESS");
+        $name = $this->fromUsername ?? env("MAIL_FROM_NAME");
 
         return $this->view($this->type)
             ->from($address, $name)
