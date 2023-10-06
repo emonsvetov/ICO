@@ -100,8 +100,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             // Import program users with roles
             $this->migrateProgramUsers($v2Program, $v3Program);
-            //There are users ()
-            $this->migrateProgramUsersOthers($v2Program, $v3Program);
+
             // exit;
 
             $this->executeV2SQL(); //run for any missing run!
@@ -116,7 +115,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // exit;
             //Migration Accounts
             // $this->migrateProgramJournalEvents( $v3Program, $v2Program);
-            $this->executeV2SQL(); //run for any missing run!
+            // $this->executeV2SQL(); //run for any missing run!
 
             // Pull addresses
             $this->migrateProgramAddresses($v2Program, $v3Program);
@@ -408,16 +407,29 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
     public function migrateProgramUsers($v2Program, $v3Program) {
         // if( $v2Program->account_holder_id !== 719006) return;
+        global $v2ProgramUsersTotalCount;
+
+        if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
         // pr($v2Program);
         // exit;
         $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
         $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+
+        // pr(count($v2users));
+        // exit;
         // pr($v2Program->account_holder_id);
         // pr(collect($v2users)->pluck('account_holder_id'));
         // exit;
         $migrateUserService->setv2pid($v2Program->account_holder_id);
         $migrateUserService->setv3pid($v3Program->id);
         foreach( $v2users as $v2user)   {
+            array_push($v2ProgramUsersTotalCount, $v2user->account_holder_id);
+            // if( $v2user->account_holder_id != 674321 )
+            // {
+            //     continue;
+            // }
+            // pr($v2user);
+            // continue;
             // if( $v2user->account_holder_id == 719107)   {
                 // pr($v2user->account_holder_id);
                 // exit;
@@ -427,10 +439,10 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
-    public function migrateProgramUsersOthers($v2Program, $v3Program) {
-        $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
-        $migrateUserService->migrateSuperAdmins( $v2Program, $v3Program );
-    }
+    // public function migrateProgramUsersOthers($v2Program, $v3Program) {
+    //     $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+    //     $migrateUserService->migrateSuperAdmins( $v2Program, $v3Program );
+    // }
 
     public function migrateProgramJournalEvents($v3Program, $v2Program)   {
         //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
@@ -492,8 +504,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 $v3Invoice = $newInvoice ?? $v3Invoice;
 
 
-                $migrateInvoiceJournalEventsService = new \App\Services\v2migrate\MigrateInvoiceJournalEventsService;
-                $migrateInvoiceJournalEventsService->migrateInvoiceJournalEventsByInvoice($v2Invoice, $v3Invoice);
+                // $migrateInvoiceJournalEventsService = new \App\Services\v2migrate\MigrateInvoiceJournalEventsService;
+                // $migrateInvoiceJournalEventsService->migrateInvoiceJournalEventsByInvoice($v2Invoice, $v3Invoice);
 
                 //Migration InvoiceJournalEvents
             }

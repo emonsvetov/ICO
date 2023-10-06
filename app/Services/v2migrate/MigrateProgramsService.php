@@ -12,6 +12,8 @@ use App\Services\ProgramService;
 use App\Models\Organization;
 use App\Models\Program;
 
+$v2ProgramUsersTotalCount = [];
+
 class MigrateProgramsService extends MigrationService
 {
     private ProgramService $programService;
@@ -29,13 +31,47 @@ class MigrateProgramsService extends MigrationService
     public $countPostings = 0;
     public $newPrograms = [];
     public $newProgramsCount = 0;
+    public $superAdminsMigrated = false;
 
     public function __construct()
     {
         parent::__construct();
     }
 
+    public function verifyOwner()  {
+        $owner = \App\Models\Owner::join('account_holders', 'account_holders.id', '=', 'owners.account_holder_id')->where(['owners.id' => 1, 'account_holders.context' => 'Owner', 'owners.name' => 'Application Owner'])->first();
+
+        if( !$owner ) {
+            throw new Exception("Owner with id:1 does not exist");
+            exit;
+        }
+
+        if( $owner ) {
+            $accounts = \App\Models\Account::where('account_holder_id', $owner->account_holder_id)->get();
+            if( !$accounts || count($accounts) < 2 )    {
+                throw new Exception("Owner accounts do not exist. Please run `php artisan db:seed --class=OwnerSeeder` and try again.");
+                exit;
+            }
+        }
+    }
+
     public function migrate( $args = [] ) {
+
+        global $v2ProgramUsersTotalCount;
+
+        $this->verifyOwner();
+        (new \App\Services\v2migrate\MigrateAccountsService)->migrateOwnerAccounts();
+
+        (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByV3Accounts('owners');
+        // echo "J";
+        // exit;
+
+        if( !$this->superAdminsMigrated ) {
+            $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+            $this->printf("Migrating super admins, if any\n");
+            $migrateUserService->migrateSuperAdmins();
+            $this->superAdminsMigrated = true;
+        }
 
         printf("Starting program migration iteration: %d\n\n", $this->iteration++);
 
@@ -77,8 +113,11 @@ class MigrateProgramsService extends MigrationService
         // DB::rollback();
         // $this->v2db->rollBack();
         print($this->importedProgramsCount . " programs migrated\n");
+        print(count($v2ProgramUsersTotalCount) . " users found\n");
+        print(implode(',', $v2ProgramUsersTotalCount));
         print("Rendering Import Map..\n");
         print_r($this->importMap);
+
     }
 
     public function migratePrograms($v2RootPrograms) {
@@ -142,8 +181,6 @@ class MigrateProgramsService extends MigrationService
             }
             $this->executeV2SQL();
             $this->executeV3SQL();
-            pr($this->countAccounts);
-            pr($this->countPostings);
             // DB::commit();
             // $this->v2db->commit();
         } catch (Exception $e) {

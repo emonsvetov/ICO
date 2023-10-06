@@ -99,7 +99,7 @@ class MigrateProgramAccountsService extends MigrationService
                             foreach( $results as $row) {
                                 if( !$row->v3_journal_event_id &&  !$row->v3_posting_id) {
                                     $prime_account_holder_id = $row->prime_account_holder_id;
-                                    $parent_id = isset($this->cacheJournalEventsMap[$row->parent_journal_event_id]) ? $this->cacheJournalEventsMap[$row->parent_journal_event_id] : null; //If parent is created in the very process
+                                    $parent_journal_event_id = isset($this->cacheJournalEventsMap[$row->parent_journal_event_id]) ? $this->cacheJournalEventsMap[$row->parent_journal_event_id] : null; //If parent is created in the very process
                                     if( $row->prime_account_holder_id > 0 ) {
                                         $v3User = \App\Models\User::where('v2_account_holder_id', $row->prime_account_holder_id)->first();
                                         if( $v3User )   {
@@ -115,8 +115,8 @@ class MigrateProgramAccountsService extends MigrationService
                                             'notes' => $row->notes,
                                             'event_xml_data_id' => $row->event_xml_data_id,
                                             'invoice_id' => $row->invoice_id,
-                                            'parent_id' => $parent_id,
-                                            'v2_parent_journal_event_id' => !$parent_id ? $row->parent_journal_event_id : null,
+                                            'parent_journal_event_id' => $parent_journal_event_id,
+                                            'v2_parent_journal_event_id' => !$parent_journal_event_id ? $row->parent_journal_event_id : null,
                                             'is_read' => $row->is_read,
                                             'created_at' => $row->journal_event_timestamp,
                                             'journal_event_type_id' => $row->journal_event_type_id,

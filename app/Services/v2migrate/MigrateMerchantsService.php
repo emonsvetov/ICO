@@ -18,6 +18,7 @@ class MigrateMerchantsService extends MigrationService
     private MigrateGiftcodesService $migrateGiftcodesService;
     public $programMerchants = [];
     public $createDuplicateName = false;
+    public $fetchMerchantMedia = false;
 
     public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
@@ -80,25 +81,6 @@ class MigrateMerchantsService extends MigrationService
                 exit;
             }
 
-            if( !$this->createDuplicateName )   {
-                $this->printf("Finding Merchant {$v2Merchant->name} in v3\n");
-                $v3Merchant = Merchant::where('name', trim($v2Merchant->name))->first();
-                if( $v3Merchant ) {
-
-                    $this->printf("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Updating..\n");
-                    if( !$v3Merchant->v2_account_holder_id ) {
-                        $v3Merchant->v2_account_holder_id = $v2Merchant->account_holder_id;
-                        $v3Merchant->save();
-                    }
-                    if( !$v2Merchant->v3_merchant_id ) {
-                        // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
-                        $this->addV2SQL("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
-                    }
-                    //TODO: more updates?!
-                    return $v3Merchant;
-                }
-            }
-
             $create = true;
             if( $v2Merchant->v3_merchant_id ) {
                 $this->printf("v2Merchant:v3_merchant_id is NOT NULL. Confirming with v3..\n\n");
@@ -123,6 +105,27 @@ class MigrateMerchantsService extends MigrationService
             }
 
             if( $create ) {
+                if( !$this->createDuplicateName )   {
+                    $this->printf("Finding Merchant {$v2Merchant->name} in v3\n");
+                    $v3Merchant = Merchant::where('name', trim($v2Merchant->name))->first();
+                    if( $v3Merchant ) {
+                        $this->printf("v2Merchant:{$v2Merchant->account_holder_id} exists in v3 as: {$v2Merchant->v3_merchant_id}. Updating..\n");
+                        if( !$v3Merchant->v2_account_holder_id ) {
+                            $v3Merchant->v2_account_holder_id = $v2Merchant->account_holder_id;
+                            $v3Merchant->save();
+                        }
+                        if( !$v2Merchant->v3_merchant_id ) {
+                            // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                            $this->addV2SQL("UPDATE `merchants` SET `v3_merchant_id` = {$v3Merchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+                        }
+                        //TODO: more updates?!
+                        $create = false;
+                    }
+                }
+            }
+
+            if( $create ) {
+
                 $v3MerchantData = [
                     'v2_account_holder_id' => $v2Merchant->account_holder_id,
                     'name' => $v2Merchant->name,
@@ -150,6 +153,8 @@ class MigrateMerchantsService extends MigrationService
                     'deleted_at' => $v2Merchant->deleted > 0 ? now()->subDays(1) : null,
                 ];
 
+                $this->printf("Creating v3Merchant for v2Merchant:%s.\n\n", $v2Merchant->account_holder_id);
+
                 $newMerchant = (new \App\Models\Merchant)->createAccount( $v3MerchantData );
                 //Update v2 for reference column
                 // $this->v2db->statement("UPDATE `merchants` SET `v3_merchant_id` = {$newMerchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
@@ -159,20 +164,23 @@ class MigrateMerchantsService extends MigrationService
 
                     $icons = [];
 
-                    foreach(Merchant::MEDIA_FIELDS as $mediaField) {
-                        if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
-                            $icons[$mediaField] = $v2Merchant->{$mediaField};
+                    if( $this->fetchMerchantMedia ) {
+                        foreach(Merchant::MEDIA_FIELDS as $mediaField) {
+                            if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
+                                $icons[$mediaField] = $v2Merchant->{$mediaField};
+                            }
+                        }
+
+                        if( $icons ) {
+                            $this->printf("Logo/Icons detected. Uploading, be patient..\n");
+                            $uploads = $this->handleMerchantMediaUpload( null, $newMerchant, false, $icons );
+                            if( $uploads )   {
+                                $this->printf(sprintf("%d Logo/Icons uploaded successfully.\n", count($uploads)));
+                                $newMerchant->update( $uploads );
+                            }
                         }
                     }
 
-                    if( $icons ) {
-                        $this->printf("Logo/Icons detected. Uploading, be patient..\n");
-                        $uploads = $this->handleMerchantMediaUpload( null, $newMerchant, false, $icons );
-                        if( $uploads )   {
-                            $this->printf(sprintf("%d Logo/Icons uploaded successfully.\n", count($uploads)));
-                            $newMerchant->update( $uploads );
-                        }
-                    }
                     $this->importedCount++;
                     $this->printf("New merchant for v2Merchant: {$v2Merchant->account_holder_id} created successfully!\n");
 
@@ -184,6 +192,8 @@ class MigrateMerchantsService extends MigrationService
             $v3Merchant = $newMerchant ?? $v3Merchant;
 
             if( $v3Merchant ) {
+                // pr($v2Merchant );
+                $this->printf("Checking accounts for v2Merchant:%s\n\n", $v2Merchant->account_holder_id);
                 (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3Merchant);
                 // $this->migrateMerchantJournalEvents($v3Merchant, $v2Merchant);
                 //It will try to migrate ALL journalEvents for the merchant but we do not want them ALL. We want only events related ONLY to already pulled Models (Program/User).

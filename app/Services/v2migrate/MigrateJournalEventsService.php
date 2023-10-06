@@ -6,12 +6,13 @@ use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
+use App\Models\AccountHolder;
 use App\Models\EventXmlData;
 use App\Models\JournalEvent;
 use App\Models\Merchant;
 use App\Models\Program;
 use App\Models\Account;
-use App\Models\AccountHolder;
+use App\Models\Owner;
 use App\Models\User;
 
 
@@ -42,50 +43,112 @@ class MigrateJournalEventsService extends MigrationService
         $this->setDebug(true);
     }
 
-    // public function migrateByModel($v3Model, $v2Model = null)  {
-    //     $this->setRefByModel($v3Model, $v2Model);
-    //     if( !$v3Model->{$this->v2RefKey} && !$v2Model ) {
-    //         $this->printf("Required argument missing in MigrateJournalEventsService->migrateByModel(%s).\n", $this->modelName);
-    //         return;
-    //     }
+    /**
+     * This creates $sql query
+     * To migrate journals for a merchant we must need to know bind prime_account_holder_id
+     * @param account_holder_ids (array)
+     * @param - v2_account_holder_id (int)
+     * @param - v2_account_id (int)
+     */
 
-    //     // pr($v2Model);
-    //     // exit;
+    public function buildMerchantQuery($account_holder_ids = [], $v2_account_holder_id, $v2_account_id) {
+        if( !$account_holder_ids || $account_holder_ids || $account_holder_ids) {
+            throw new Exception("One or more invalid arguments passed");
+        }
+        $selectColumns = "postings.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id";
+        return $sql = sprintf("SELECT %s FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id=%d AND accounts.id=%d AND je.prime_account_holder_id IN(%s) ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC;", $selectColumns, $v2_account_holder_id, $v2_account_id,  implode(',', $account_holder_ids));
+    }
 
-    //     // //Migrate Journal Events for Model
-    //     $this->printf("Attempting to import %s journal events\n", $this->modelName);
-    //     // printf(" - Fetching journal_events for user:\"%s\"\n", $v2User->email);
+    public function migrateMerchantsJournalEvents() {
+        $v3MerchantAccounts = Account::join('merchants', 'merchants.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'merchants.id AS merchant_id', 'merchants.v2_account_holder_id AS v2_merchant_account_holder_id'])->get();
+        // pr(count($v3MerchantAccounts));
+        // exit;
+        if(count($v3MerchantAccounts)) {
+            foreach($v3MerchantAccounts as $v3MerchantAccount)  {
+                $v3Merchant = new \App\Models\Merchant([
+                    'id' => $v3MerchantAccount['merchant_id'],
+                    'account_holder_id' => $v3MerchantAccount['account_holder_id'],
+                    'v2_account_holder_id' => $v3MerchantAccount['v2_merchant_account_holder_id'],
+                ]);
+                $this->migrateJournalEventsByModelAndAccount($v3Merchant, $v3MerchantAccount);
+            }
+        }
+    }
 
-    //     $this->recursivelyMigrateByModel($v3Model);
-    //     $this->importMap[$v3Model->id]['journalEvents'] = @$this->localImportMap['journalEvents'];
-    //     // // pr($v2User);
-    //     // // pr($v3User);
-    // }
+    public function migrateProgramsJournalEvents() {
+        $v3ProgramAccounts = Account::join('programs', 'programs.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'programs.id AS program_id', 'programs.v2_account_holder_id AS v2_program_account_holder_id'])->get();
+        pr(count($v3ProgramAccounts));
+        exit;
+        if(count($v3ProgramAccounts)) {
+            foreach($v3ProgramAccounts as $v3ProgramAccount)  {
+                $v3Program = new \App\Models\Program([
+                    'id' => $v3ProgramAccount['program_id'],
+                    'account_holder_id' => $v3ProgramAccount['account_holder_id'],
+                    'v2_account_holder_id' => $v3ProgramAccount['v2_program_account_holder_id'],
+                ]);
+                $this->migrateJournalEventsByModelAndAccount($v3Program, $v3ProgramAccount);
+            }
+        }
+    }
 
-    // public function recursivelyMigrateByModel( $v3Model, $parent_id = null ) {
-    //     if( !$v3Model || !$v2_account_holder_id = $v3Model->{$this->v2RefKey})  { //Notice inline assignment!
-    //         $this->printf("Invalid arugments in \"recursivelyMigrateByModel\" method while importing %s journal events\n", $this->modelName);
-    //         return;
-    //     }
-    //     $sql = sprintf("SELECT * FROM `journal_events` WHERE `prime_account_holder_id`=%d", $v2_account_holder_id);
-    //     if( !$parent_id )    {
-    //         $sql .= " AND `parent_journal_event_id` IS NULL";
-    //     }   else {
-    //         $sql .= sprintf(" AND `parent_journal_event_id`=%d", $parent_id);
-    //     }
+    public function migrateUsersJournalEvents() {
+        $v3UserAccounts = Account::join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'users.id AS user_id', 'users.v2_account_holder_id AS v2_user_account_holder_id'])->get();
+        if(count($v3UserAccounts)) {
+            foreach($v3UserAccounts as $v3UserAccount)  {
+                $v3User = new \App\Models\User([
+                    'id' => $v3UserAccount['user_id'],
+                    'account_holder_id' => $v3UserAccount['account_holder_id'],
+                    'v2_account_holder_id' => $v3UserAccount['v2_user_account_holder_id'],
+                ]);
+                $this->migrateJournalEventsByModelAndAccount($v3User, $v3UserAccount);
+            }
+        }
+    }
 
-    //     $this->printf("\n%s\n", $sql);
+    public function migrateJournalEventsByV3Accounts( $type = null ) {
 
-    //     $journalEvents = $this->v2db->select($sql);
-    //     // pr(count($journalEvents));
-    //     // exit;
-    //     if( $journalEvents )    {
-    //         foreach( $journalEvents as $journalEvent )  {
-    //             $this->migrateSingleJournalEvent($journalEvent); //Migrate Single Journal
-    //             // $this->recursivelyMigrateByModel($v3Model, $journalEvent->id); //Migrate Single Journal
-    //         }
-    //     }
-    // }
+        $type = is_array($type) ? $type : (is_string($type) ? [$type] : null);
+
+        if( !sizeof( $type ) ) {
+            $type = ['all'];
+        }
+
+        if(in_array('merchants', $type))    {
+            $this->migrateMerchantsJournalEvents();
+        }
+
+        if(in_array('programs', $type))    {
+            $this->migrateProgramsJournalEvents();
+        }
+
+        if(in_array('users', $type))    {
+            $this->migrateUsersJournalEvents();
+        }
+
+        if(in_array('owners', $type))    {
+            $this->migrateOwnersJournalEvents();
+        }
+    }
+
+    /***
+     * Imports Owner journal events
+     * This is important to run since merchant's transactions are performed as account_holder_id=1 which is the system Owner
+     * IMPORTANT: Before running this function "migrateOwnerAccounts" should have already been run otherwise it will not yeild anything
+     */
+
+    public function migrateOwnersJournalEvents()    {
+        $v3OwnerAccounts = Account::join('owners', 'owners.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'owners.id AS owner_id'])->get();
+        if(count($v3OwnerAccounts)) {
+            foreach($v3OwnerAccounts as $v3OwnerAccount)  {
+                $v3Owner = new \App\Models\Owner([
+                    'id' => $v3OwnerAccount['owner_id'],
+                    'account_holder_id' => $v3OwnerAccount['account_holder_id'],
+                    'v2_account_holder_id' => 1,
+                ]);
+                $this->migrateJournalEventsByModelAndAccount($v3Owner, $v3OwnerAccount);
+            }
+        }
+    }
 
     /***
      * Imports journal_events, postings, xml data etc via accounts, which seems like
@@ -99,38 +162,69 @@ class MigrateJournalEventsService extends MigrationService
      * @return -
      */
 
-    public function migrateJournalEventsByModelAndAccount(Program|User|Merchant $v3Model, Account $v3Account) {
+    public function migrateJournalEventsByModelAndAccount(Owner|Program|User|Merchant $v3Model, Account $v3Account) {
+        // pr($v3Model->toArray());
+        // pr($v3Model->toArray());
+        // pr($v3Model instanceof Merchant);
+        // exit;
+
         if( !$v3Model->v2_account_holder_id || !$v3Account->v2_account_id)    {
             throw new Exception(sprintf("Invalid \"v2_account_holder_id\" in model \"%s\" or account. Are you sure this model and account was imported properly?\"\n\n", $this->modelName));
         }
-        $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
 
-        $this->printf(" - Fetching journal_events+postings for model %s:\"%s\" & account:\"%s\".\n\n", $this->modelName, $v3Model->id, $v3Account->v2_account_id);
-        $results = $this->v2db->select($sql);
+        if( $v3Model instanceof Merchant)   {
 
-        if( $this->printSql ) {
-            $this->printf($sql . "\n\n");
-        }
+            //For merchants we need to get all postings by Owner (account_holder_id=1)
+            $sql = $this->buildMerchantQuery([1], $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
 
-        if( $results )  {
-            $this->countPostings += count($results);
-            // exit;
-            foreach( $results as $row) {
-                // if($row->prime_account_holder_id != 286143) continue;
-                $this->migrateSingleJournalEventByPostingData( (object) $row );
-                // if( !$row->v3_journal_event_id &&  !$row->v3_posting_id) {
-                //     $prime_account_holder_id = $row->prime_account_holder_id;
-                //     $parent_id = isset($this->cacheJournalEventsMap[$row->parent_journal_event_id]) ? $this->cacheJournalEventsMap[$row->parent_journal_event_id] : null; //If parent is created in the very process
-                //     if( $row->prime_account_holder_id > 0 ) {
-                //         $v3User = \App\Models\User::where('v2_account_holder_id', $row->prime_account_holder_id)->first();
-                //         if( $v3User )   {
-                //             $prime_account_holder_id = $v3User->account_holder_id;
-                //         }
-                //     }
-                // }
+            $results = $this->v2db->select($sql);
+            if( $results )  {
+                $count = 0;
+                $this->countPostings += count($results);
+                foreach( $results as $row) {
+                    $this->migrateSingleJournalEventByPostingData( (object) $row );
+                    $count++;
+                }
+            }
+
+            // $this->printf($this->countPostings . " posts imported\n\n");
+
+            //If migration is to be done for merchants then we need to limit the postings by existing account_holders in v3 so that we do not pull data for non existent users in v3
+            $users = AccountHolder::join('accounts', 'accounts.account_holder_id', '=', 'account_holders.id')->join('users', 'users.account_holder_id', '=', 'account_holders.id')->where('account_holders.context', '=', 'User')->whereNotNull('users.v2_account_holder_id')->select('users.v2_account_holder_id')->get();
+            if( $users ) {
+                // $account_holder_ids = $users->pluck('account_holder_id');
+                $accountHolderIds = $users->pluck('v2_account_holder_id');
+                // pr($accountHolderIds);
+                $sql = $this->buildMerchantQuery($accountHolderIds->toArray(), $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
+                $results = $this->v2db->select($sql);
+                if( $results )  {
+                    $count = 0;
+                    $this->countPostings += count($results);
+                    foreach( $results as $row) {
+                        $this->migrateSingleJournalEventByPostingData( (object) $row );
+                        $count++;
+                    }
+                }
             }
         }   else {
-            $this->printf(" -- No journal_events+postings found.. next..\n\n");
+            $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
+
+            $this->printf(" - Fetching journal_events+postings for model %s:\"%s\" & account:\"%s\".\n\n", $this->modelName, $v3Model->id, $v3Account->v2_account_id);
+            $results = $this->v2db->select($sql);
+
+            if( $this->printSql ) {
+                $this->printf($sql . "\n\n");
+            }
+
+            if( $results )  {
+                $this->countPostings += count($results);
+                foreach( $results as $row) {
+                    // if($row->prime_account_holder_id != 286143) continue;
+                    $this->migrateSingleJournalEventByPostingData( (object) $row );
+                }
+            }   else {
+                $this->printf(" -- No journal_events+postings found.. next..\n\n");
+            }
         }
     }
 
@@ -156,7 +250,7 @@ class MigrateJournalEventsService extends MigrationService
         }
     }
 
-    public function migrateJournalEventsByModelAccounts( Program|User|Merchant $v3Model, $v2Model = null )    {
+    public function migrateJournalEventsByModelAccounts( Owner|Program|User|Merchant $v3Model, $v2Model = null )    {
 
         $this->setRefByModel($v3Model, $v2Model);
 
@@ -208,7 +302,7 @@ class MigrateJournalEventsService extends MigrationService
         }
         $newV3JournalEvent = null;
         if( $create )   {
-            $parent_id = null;
+            $parent_journal_event_id = null;
             $prime_account_holder_id = 0;
 
             //Get v3 prime_account_holder_id
@@ -223,7 +317,8 @@ class MigrateJournalEventsService extends MigrationService
                         if( $modelTmp )  {
                             $prime_account_holder_id = $modelTmp->account_holder_id;
                         }   else {
-                            $prime_account_holder_id = $this->idPrefix . $v2JournalEvent->prime_account_holder_id;
+                            $prime_account_holder_id = ($v2JournalEvent->prime_account_holder_id == 1) ? 1 : ($this->idPrefix . $v2JournalEvent->prime_account_holder_id);
+                            //The Owner's account_holder_id 1 and it should remain same on v2 and v3.
                         }
                     }
                 }
@@ -232,13 +327,13 @@ class MigrateJournalEventsService extends MigrationService
             //Get v3 parent_journal_event_id
             if( (int) $v2JournalEvent->parent_journal_event_id > 0 )  {
                 $v3ParentTmp = JournalEvent::where('v2_journal_event_id', $v2JournalEvent->parent_journal_event_id)->first();
-                if( $v3ParentTmp )  $parent_id = $v3ParentTmp->id;
-                else   $parent_id = $this->idPrefix . $v2JournalEvent->parent_journal_event_id;
+                if( $v3ParentTmp )  $parent_journal_event_id = $v3ParentTmp->id;
+                else   $parent_journal_event_id = $this->idPrefix . $v2JournalEvent->parent_journal_event_id;
             }
 
             $v3_event_xml_data_id = null;
             if( $v2JournalEvent->event_xml_data_id > 0) {
-                $v3EventXmlData =\App\Models\EventXmlData::where('v3_id', $v2JournalEvent->event_xml_data_id)->first();
+                $v3EventXmlData =\App\Models\EventXmlData::where('v2_id', $v2JournalEvent->event_xml_data_id)->first();
                 if( $v3EventXmlData )   {
                     $v3_event_xml_data_id = $v3EventXmlData->id;
                 }   else {
@@ -256,7 +351,7 @@ class MigrateJournalEventsService extends MigrationService
                     'notes' => $v2JournalEvent->notes,
                     'event_xml_data_id' => $v3_event_xml_data_id,
                     'invoice_id' => $v2JournalEvent->invoice_id, //it is always null in v2, so I guess it is not in use and was replaced by invoice_journal_events table
-                    'parent_id' => $parent_id,
+                    'parent_journal_event_id' => $parent_journal_event_id,
                     // 'v2_parent_journal_event_id' => $v2JournalEvent->parent_journal_event_id,
                     'is_read' => $v2JournalEvent->is_read,
                     'created_at' => $v2JournalEvent->journal_event_timestamp
@@ -391,12 +486,14 @@ class MigrateJournalEventsService extends MigrationService
             //confirm and correct "prime_account_holder_id" if required
             if( $v2JournalEvent->prime_account_holder_id > 0)
             {
-                if( $v3JournalEvent->prime_account_holder_id == $v2JournalEvent->prime_account_holder_id)    {
+                if( $v3JournalEvent->prime_account_holder_id == (int)($this->idPrefix . $v2JournalEvent->prime_account_holder_id))    {
                     if( !empty($v2JournalEvent->v3_user_id) )
                     {
-                        $v3JournalEvent->prime_account_holder_id = $v2JournalEvent->v3_user_id;
-                        $this->printf("v3:prime_account_holder_id==v2:prime_account_holder_id.. Updating\n\n");
-                        $saveJournal = true;
+                        $v3User = User::find($v2JournalEvent->v3_user_id);
+                        if( $v3User ) {
+                            $v3JournalEvent->prime_account_holder_id = $v3User->prime_account_holder_id;
+                            $saveJournal = true;
+                        }
                     }  else {
                         $v3User_tmp = User::where('v2_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
                         if( $v3User_tmp )   {
@@ -404,7 +501,7 @@ class MigrateJournalEventsService extends MigrationService
                             $saveJournal = true;
                         }   else {
                             if( strpos($v3JournalEvent->prime_account_holder_id, $this->idPrefix) == -1 ) {
-                                $v3JournalEvent->prime_account_holder_id = $this->idPrefix . $v2JournalEvent->prime_account_holder_id;
+                                $v3JournalEvent->prime_account_holder_id = ($v2JournalEvent->prime_account_holder_id==1) ? 1 : ($this->idPrefix . $v2JournalEvent->prime_account_holder_id);
                                 $saveJournal = true;
                             }
                         }
@@ -473,7 +570,7 @@ class MigrateJournalEventsService extends MigrationService
                 }
 
                 if( $createPosting )    {
-                    $v3AccountId = $this->idPrefix;
+                    $v3AccountId = 0;
                     if( $v2posting->account_id )  {
                         /***
                          * Here we will assume that the accounts are already imported.
@@ -485,11 +582,11 @@ class MigrateJournalEventsService extends MigrationService
                         if( $v3Account )    {
                             $v3AccountId = $v3Account->id;
                         }   else {
-                            $v3AccountId .= $v2posting->account_id;
+                            $v3AccountId = $this->idPrefix . $v2posting->account_id;
                         }
                     }
 
-                    $v3MediumInfoId = $this->idPrefix;
+                    $v3MediumInfoId = 0;
                     if( $v2posting->medium_info_id )  {
                         /***
                          * Here we will assume that the accounts are already imported.
@@ -501,7 +598,7 @@ class MigrateJournalEventsService extends MigrationService
                         if( $v3MediumInfo )    {
                             $v3MediumInfoId = $v3MediumInfo->id;
                         }   else {
-                            $v3MediumInfoId .= $v2posting->medium_info_id;
+                            $v3MediumInfoId = $this->idPrefix . $v2posting->medium_info_id;
                         }
                     }   else {
                         $v3MediumInfoId = $v2posting->medium_info_id;
@@ -518,6 +615,8 @@ class MigrateJournalEventsService extends MigrationService
                         'created_at' => $v2posting->posting_timestamp
                     ]);
 
+                    $this->v2db->statement(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $newV3Posting->id, $v2posting->id));
+
                     $this->localImportMap['journalEvents'][$v3JournalEvent->id]['postings'][$newV3Posting->id]['created'] = 1;
                 }
             }
@@ -527,41 +626,6 @@ class MigrateJournalEventsService extends MigrationService
         $this->recursivelyMigrateByV2ParentJournalEventId($v2JournalEvent->id );
         return $v3JournalEvent;
     }
-
-    // public function migrateByUser($v2User, $v3User)  {
-    //     if( !$v2User->v3_user_id || !$v3User->v2_account_holder_id ) {
-    //         $this->printf("Required argument missing in MigrateUserService->migrateUserJournalEvents().\n");
-    //         return;
-    //     }
-
-    //     //Migrate Journal Events for User
-    //     $this->printf("Attempt to import user journal events\n");
-    //     printf(" - Fetching journal_events for user:\"%s\"\n", $v2User->email);
-
-    //     $this->recursivelyMigrateByUser($v2User, $v3User, null);
-    //     // pr($v2User);
-    //     // pr($v3User);
-    // }
-
-    // public function recursivelyMigrateByUser( $v2User, $v3User, $parent_id = null )  {
-    //     $this->v2User = $v2User;
-    //     $this->v3User = $v3User;
-    //     $sql = sprintf("SELECT *, `id` AS `journal_event_id` FROM `journal_events` WHERE `prime_account_holder_id`=%d", $v2User->account_holder_id);
-    //     if( !$parent_id )    {
-    //         $sql .= " AND `parent_journal_event_id` IS NULL";
-    //     }   else {
-    //         $sql .= sprintf(" AND `parent_journal_event_id`=%d", $parent_id);
-    //     }
-    //     $journalEvents = $this->v2db->select($sql);
-    //     // pr($journalEvents[0]);
-    //     // exit;
-    //     if( $journalEvents )    {
-    //         foreach( $journalEvents as $row )  {
-    //             $this->migrateSingleJournalEvent($row); //Migrate Single Journal
-    //             $this->recursivelyMigrateByUser($v2User, $v3User, $row->id); //Migrate Single Journal
-    //         }
-    //     }
-    // }
 
     public function recursivelyMigrateByV2ParentJournalEventId( $v2_journal_event_id )  {
         $sql = sprintf("SELECT *  FROM `journal_events` WHERE `parent_journal_event_id`=%d", $v2_journal_event_id);

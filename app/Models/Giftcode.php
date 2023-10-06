@@ -137,15 +137,20 @@ class Giftcode extends Model
 			$merchant = Merchant::find($merchant);
 		}
 		if( !empty($giftcode['purchase_date']))	{
-			$giftcode['purchase_date'] = Carbon::createFromFormat('m/d/Y', $giftcode['purchase_date'])->format('Y-m-d');
+            $incomingFormat = 'm/d/Y'; //in csv imports
+
+            if (strpos($giftcode['purchase_date'], '-')) { //from v2
+                $incomingFormat = 'Y-m-d';
+            }
+			$giftcode['purchase_date'] = Carbon::createFromFormat($incomingFormat, $giftcode['purchase_date'])->format('Y-m-d');
 		}
 
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
 		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
 
-		if(env('APP_ENV') != 'production'){
-		    $giftcode['medium_info_is_test'] = 1;
-        }
+		// if(env('APP_ENV') != 'production'){
+		//     $giftcode['medium_info_is_test'] = 1;
+        // }
 
 		try{
 		    $gift_code_id = self::insertGetId(
@@ -156,7 +161,7 @@ class Giftcode extends Model
         }
 
 		$response['gift_code_id'] = $gift_code_id;
-		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id:0;
+		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id : 0;
 		$merchant_account_holder_id = $merchant->account_holder_id;
         $owner_account_holder_id = Owner::find(1)->account_holder_id;
 		$journal_event_type_id = JournalEventType::getIdByType( "Purchase gift codes for monies" );
