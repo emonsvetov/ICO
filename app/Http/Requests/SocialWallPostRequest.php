@@ -30,6 +30,8 @@ class SocialWallPostRequest extends FormRequest
             'event_xml_data_id' => $this->social_wall_post_type_id === SocialWallPostType::TYPE_EVENT ? 'required|integer' : 'nullable|integer',
             'program_id' => 'required|integer',
             'organization_id' => 'required|integer',
+            'like' => 'nullable|string',
+            'likesCount' => 'nullable|integer',
             'awarder_program_id' => 'nullable|integer',
             'sender_user_account_holder_id' => 'required|integer',
             'receiver_user_account_holder_id' => 'required|integer',
