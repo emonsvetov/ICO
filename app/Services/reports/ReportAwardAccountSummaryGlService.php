@@ -124,7 +124,7 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
 //            }
             $totalAwards += $awards->dollar_value;
             $finalData[$awards->program_name]['Property'] = $awards->program_name;
-            $eventColumn = $awards->ledger_code ? $awards->event_name . '<br>' . $awards->ledger_code : $awards->event_name .'<br>!!!asd';
+            $eventColumn = $awards->ledger_code ? $awards->event_name . "<br>" . $awards->ledger_code : $awards->event_name;
             $finalData[$awards->program_name][$eventColumn] =
                 isset($finalData[$awards->program_name][$eventColumn]) ?
                     $this->amountFormat($finalData[$awards->program_name][$eventColumn] + $awards->dollar_value) : $awards->dollar_value;
@@ -215,7 +215,8 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
                 $tmp = [];
                 $i = 1;
                 foreach ($item as $subKey => $subItem){
-                    $tmp['0'.$i] = $subKey;
+                    $tmpKey = preg_replace("/<br>/", " ", $subKey);
+                    $tmp['0'.$i] = strip_tags($tmpKey);
                     $i++;
                 }
                 $finalData[] = $tmp;
