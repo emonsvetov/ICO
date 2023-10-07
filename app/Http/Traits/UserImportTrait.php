@@ -248,6 +248,19 @@ trait UserImportTrait
         }
     }
 
+    private function getUserByData($userData){
+        $currentUser = null;
+
+        if (isset($userData['external_id']) && $userData['external_id']){
+            $currentUser = User::getByExternalId((int)$userData['external_id']);
+        }
+        if (!$currentUser && isset($userData['email'])){
+
+            $currentUser = User::getByEmail($userData['email']);
+        }
+        return $currentUser;
+    }
+
     public function addAndAwardParticipant($csvImport, $data, $suppliedConstants, AwardService $awardService)
     {
         try
@@ -257,11 +270,25 @@ trait UserImportTrait
 
             foreach ($data['UserRequest'] as $key => $userData)
             {
-                $newUser = (new User)->createAccount($userData + [
-                        'organization_id' => $suppliedConstants['organization_id'],
-                        'password' => $this->createUserPassword(),
-                        'user_status_id' => $data['setups']['UserRequest']['status'] ?? null,
-                    ]);
+                $currentUser = $this->getUserByData($userData);
+
+                if(!$currentUser){
+                    $newUser = (new User)->createAccount($userData + [
+                            'organization_id' => $suppliedConstants['organization_id'],
+                            'password' => $this->createUserPassword(),
+                            'user_status_id' => $data['setups']['UserRequest']['status'] ?? null,
+                        ]);
+                } else {
+                    $userStatusId = $userData['UserRequest']['user_status_id'] ?? $data['setups']['UserRequest']['status'] ??
+                            User::getIdStatusNew();
+                    $currentUser->changeStatus([$currentUser->id], $userStatusId);
+
+                    if (isset($userData['external_id'])){
+                        $currentUser->update(['external_id' => $userData['external_id']]);
+                    }
+
+                    $newUser = $currentUser;
+                }
 
                 $program = Program::find($data['CSVProgramRequest'][$key]['program_id']);
                 $program->users()->sync( [ $newUser->id ], false );
@@ -273,7 +300,12 @@ trait UserImportTrait
                 }
 
                 // AWARD NEW USER
+                $event = null;
+                if(!isset($data['AwardRequest'][$key]['event_id'])){
+                    $data['AwardRequest'][$key]['event_id'] = $data['setups']['AwardRequest']['event'];
+                }
                 $event = Event::find($data['AwardRequest'][$key]['event_id']);
+
                 $awardData = $userData + $data['AwardRequest'][$key] + [
                     'message' => $event->message,
                     'user_id' => [$newUser->id],
@@ -292,13 +324,13 @@ trait UserImportTrait
                     throw new \Exception("No managers in program {$program->name}");
                 }
 
-                $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData);
+                $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData, true);
 
                 $message = new WelcomeEmail($newUser->first_name, $newUser->email, $program);
                 Mail::to($newUser->email)->send($message);
 
-                $message = new ProcessCompletionReportEmail($managers[0]->first_name, $csvImport->name, $program);
-                Mail::to($managers[0]->email)->send($message);
+//                $message = new ProcessCompletionReportEmail($managers[0]->first_name, $csvImport->name, $program);
+//                Mail::to($managers[0]->email)->send($message);
 
                 $userIds[] = $newUser->id;
             }

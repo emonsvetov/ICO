@@ -435,4 +435,10 @@ class Program extends BaseModel
 
 		return $end_date_sql;
     }
+
+    public function getEmailTemplateSender()
+    {
+        $root = $this->getRoot();
+        return $root     ? EmailTemplateSender::where('program_id', $root->id)->first() : null;
+    }
 }

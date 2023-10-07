@@ -54,11 +54,12 @@ class Giftcode extends Model
         return $query->get();
     }
 
-    public function read_list_redeemable_denominations_by_merchant($merchant_id = 0, $end_date = '', $virtual=false) {
+    public function read_list_redeemable_denominations_by_merchant($merchant_id = 0, $end_date = '', $virtual=false, $test=false) {
 		// check to see if the merchant gets its gift codes from the its root merchant
 		// if it does, query using the root merchant id instead
 		$merchant = Merchant::where ( 'id', $merchant_id )->first();
 		if ($merchant->get_gift_codes_from_root) {
+		    echo 'merchant_id: ' . $merchant_id;
 			$merchant_id = $this->merchant->get_top_level_merchant_id ( $merchant_id );
 		}
         $params = [
@@ -88,8 +89,10 @@ class Giftcode extends Model
 		$sql .= " AND
                         `purchased_by_v2` = 0";
 
-		if(env('APP_ENV') != 'production'){
+		if(env('APP_ENV') != 'production' || $test){
 		    $sql .= " AND medium_info_is_test = 1";
+        }else{
+		    $sql .= " AND medium_info_is_test = 0";
         }
 
 		if($virtual){

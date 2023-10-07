@@ -50,4 +50,19 @@ class AwardRequest extends FormRequest
             // 'user_id'           => 'required|array',
         ];
     }
+
+    public function setups()
+    {
+        return [
+            'event' => 'nullable|integer',
+        ];
+    }
+
+    public function importSetups()
+    {
+        return [
+            'event' => 'nullable|mustComeFromModel:Event|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
+        ];
+    }
+
 }

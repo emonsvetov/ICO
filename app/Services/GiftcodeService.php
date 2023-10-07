@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Models\Program;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -25,6 +26,10 @@ class GiftcodeService
         'start_date'=>null,
         'redemption_value'=>null,
     ];
+
+    public static function isTestMode( Program $program ){
+        return ($program->is_demo || env('APP_ENV') != 'production' ) ? 1 : 0;
+    }
 
     public function getRedeemable(Merchant $merchant, $is_demo = true)   {
         $merchant_id = self::extractId($merchant);
@@ -123,8 +128,10 @@ class GiftcodeService
             $query->orWhereNull('medium_info.hold_until');
         });
 
-        if(isset($filters['medium_info_is_test']) )	{
-            $query->where('medium_info_is_test', '=', $filters['medium_info_is_test']);
+        if(isset($filters['medium_info_is_test']) && $filters['medium_info_is_test'] )	{
+            $query->where('medium_info_is_test', '=', 1);
+        }else{
+            $query->where('medium_info_is_test', '=', 0);
         }
 
 		if( !empty($filters['redemption_value']) )	{
@@ -154,6 +161,8 @@ class GiftcodeService
 		if($orders && $orders['column'] && $orders['direction']){
             $query->orderBy($orders['column'], $orders['direction']);
         }
+
+		//throw new \Exception ($query->toSql());
 
 		return $query->get();
 	}

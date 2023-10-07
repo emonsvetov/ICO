@@ -21,10 +21,10 @@ class BaseModel extends Model
         }
         return $id;
     }
-    public static function getIdByName( $value, $insert = false ) : int {
+    public static function getIdByName( $value, $insert = false ) : ?int {
         return self::getIdByField('name', $value, $insert);
     }
-    public static function getIdByType( $value, $insert = false) : int {
+    public static function getIdByType( $value, $insert = false) : ?int {
         return self::getIdByField('type', $value, $insert);
     }
     // Depricated; use "getStatusByNameAndContext" instead

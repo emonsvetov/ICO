@@ -738,52 +738,52 @@ class CSVimportService
         $stream = CsvImport::getAutoImportS3($csvImport);
         if (is_string($stream)) {
             $this->errors[] = $stream;
-        }
+        } else {
 
-        while (empty($this->errors) && (($filedata = fgetcsv($stream)) !== false)) {
-            if ($this->line === 0) {
-                foreach ($filedata as $key => $value) {
-                    $headers[trim($value)] = $key;
+            while ((($filedata = fgetcsv($stream)) !== false)) {
+                if ($this->line === 0) {
+                    foreach ($filedata as $key => $value) {
+                        $headers[trim($value)] = $key;
+                    }
+                    $this->line++;
+                    continue;
+                }
+
+                foreach ($csvImportSettings['field_mapping'] as $formRequest => $fieldsToMapItem) {
+                    $requestClassPath = "App\Http\Requests\\" . $formRequest;
+                    $formRequestClass = new $requestClassPath;
+                    $formRequestRules = $formRequestClass->rules();
+
+                    $fieldsWithImportRules = method_exists($formRequestClass, 'importRules') ?
+                        $formRequestClass->importRules() : [];
+                    $this->saveData[$formRequest][$this->line] = $this->saveData[$formRequest][$this->line] ?? [];
+
+                    foreach ($fieldsToMapItem as $dbField => $csvField) {
+                        $csvFieldValue = isset($headers[$csvField]) ? trim($filedata[$headers[$csvField]]) : null;
+
+                        if ($fieldsWithImportRules && ! empty($fieldsWithImportRules[$dbField])) {
+                            $this->saveData[$formRequest][$this->line][$dbField] = $this->getImportRule($formRequest,
+                                $fieldsWithImportRules[$dbField], $csvFieldValue, $dbField, $this->line);
+                        } else {
+                            $this->saveData[$formRequest][$this->line][$dbField] = ($csvFieldValue !== '') ? $csvFieldValue : null;
+                        }
+                        $this->currentRowData[$dbField] = $this->saveData[$formRequest][$this->line][$dbField];
+                    }
+
+                    $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
+                    $validator = Validator::make($this->saveData[$formRequest][$this->line], $formRequestRules);
+
+                    if ($validator->fails()) {
+                        if ( ! in_array($formRequest, ['AwardRequest'])) {
+                            $this->errors['Line ' . $this->line][][$formRequest] = $validator->errors()->toArray();
+                        }
+                    } else {
+                        $this->saveData[$formRequest][$this->line] = $validator->validated();
+                    }
                 }
                 $this->line++;
-                continue;
             }
 
-            foreach ($csvImportSettings['field_mapping'] as $formRequest => $fieldsToMapItem) {
-                $requestClassPath = "App\Http\Requests\\" . $formRequest;
-                $formRequestClass = new $requestClassPath;
-                $formRequestRules = $formRequestClass->rules();
-
-                $fieldsWithImportRules = method_exists($formRequestClass, 'importRules') ?
-                    $formRequestClass->importRules() : [];
-                $this->saveData[$formRequest][$this->line] = $this->saveData[$formRequest][$this->line] ?? [];
-
-                foreach ($fieldsToMapItem as $dbField => $csvField) {
-                    $csvFieldValue = isset($headers[$csvField]) ? trim($filedata[$headers[$csvField]]) : null;
-
-                    if ($fieldsWithImportRules && ! empty($fieldsWithImportRules[$dbField])) {
-                        $this->saveData[$formRequest][$this->line][$dbField] = $this->getImportRule($formRequest,
-                            $fieldsWithImportRules[$dbField], $csvFieldValue, $dbField, $this->line);
-                    } else {
-                        $this->saveData[$formRequest][$this->line][$dbField] = ($csvFieldValue !== '') ? $csvFieldValue : null;
-                    }
-                    $this->currentRowData[$dbField] = $this->saveData[$formRequest][$this->line][$dbField];
-                }
-
-                $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
-                $validator = Validator::make($this->saveData[$formRequest][$this->line], $formRequestRules);
-
-                if ($validator->fails()) {
-                    if (!in_array($formRequest, ['AwardRequest'])){
-                        $this->errors['Line ' . $this->line][][$formRequest] = $validator->errors()->toArray();
-                    }
-                } else {
-                    $this->saveData[$formRequest][$this->line] = $validator->validated();
-                }
-            }
-            $this->line++;
-        }
-        if ( ! is_string($stream)) {
             fclose($stream);
         }
     }
@@ -832,32 +832,36 @@ class CSVimportService
                     continue;
                 }
 
-                $parse = explode('/', $object['Key']);
-                $organization = $parse[0];
-                $program = $parse[1];
-                $type = $parse[2];
-                $name = $parse[3];
+                try {
+                    $parse = explode('/', $object['Key']);
+                    $organization = $parse[0];
+                    $program = $parse[1];
+                    $type = $parse[2];
+                    $name = $parse[3];
 
-                if (array_search($name, $dbList) !== false){
+                    if (array_search($name, $dbList) !== false) {
+                        continue;
+                    }
+
+                    $typeId = CsvImportType::getIdByName($type);
+                    $programId = Program::getIdByName($program);
+                    $organizationId = Organization::getIdByName($organization);
+
+                    $csv = [
+                        'organization_id' => $organizationId,
+                        'program_id' => $programId,
+                        'csv_import_type_id' => $typeId,
+                        'name' => $name,
+                        'path' => $organization . '/' . $program . '/' . $type . '/' . $name,
+                        'size' => $object['Size'],
+                        'rowcount' => 1,
+                        'is_processed' => 1
+                    ];
+
+                    CsvImport::create($csv);
+                } catch (\Exception $exception) {
                     continue;
                 }
-
-                $typeId = CsvImportType::getIdByName($type);
-                $programId = Program::getIdByName($program);
-                $organizationId = Organization::getIdByName($organization);
-
-                $csv = [
-                    'organization_id' => $organizationId,
-                    'program_id' => $programId,
-                    'csv_import_type_id' => $typeId,
-                    'name' => $name,
-                    'path' => $organization . '/' . $program . '/' . $type . '/' . $name,
-                    'size' => $object['Size'],
-                    'rowcount' => 1,
-                    'is_processed' => 1
-                ];
-
-                CsvImport::create($csv);
             }
         }
     }
