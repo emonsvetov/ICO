@@ -13,6 +13,8 @@ use DB;
 class ReadInvoiceJournalSummaryService
 {
     protected $reportFactory;
+    protected StatementService $statementService;
+    protected ReadInvoicePaymentsService $readInvoicePaymentsService;
 
 	public function __construct(
         ProgramService $programService,

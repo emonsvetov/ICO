@@ -77,8 +77,9 @@ class MigrateJournalEventsService extends MigrationService
 
     public function migrateProgramsJournalEvents() {
         $v3ProgramAccounts = Account::join('programs', 'programs.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'programs.id AS program_id', 'programs.v2_account_holder_id AS v2_program_account_holder_id'])->get();
-        pr(count($v3ProgramAccounts));
-        exit;
+        // pr(count($v3ProgramAccounts));
+        // pr($v3ProgramAccounts->toArray());
+        // exit;
         if(count($v3ProgramAccounts)) {
             foreach($v3ProgramAccounts as $v3ProgramAccount)  {
                 $v3Program = new \App\Models\Program([
