@@ -136,6 +136,8 @@ class AwardService
         DB::beginTransaction();
 
         $program = $event->program;
+
+        $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
 
         $isBadge = $eventType->isEventTypeBadge();
@@ -208,6 +210,7 @@ class AwardService
         $eventTypeId = $event->event_type_id;
         $eventName = $event->name;
         $awarderAccountHolderId = $awarder->account_holder_id;
+
         $notificationBody = $data->message ?? ''; //TODO
         $notes = $data->notes ?? '';
 
@@ -220,14 +223,7 @@ class AwardService
         $eventAmountOverride = $overrideCashValue > 0;
         $awardAmount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
 
-        $awardUniqId = generate_unique_id();
-        $token = uniqid();
-        $event_id = $event->id;
-        $eventTypeId = $event->event_type_id;
-        $eventName = $event->name;
-        $awarderAccountHolderId = $awarder->account_holder_id;
-        $notificationBody = $data->message; //TODO
-        $notes = $data->notes ?? '';
+        // $notificationBody = $data->message; //TODO
 
         $userAccountHolderId = $awardee->account_holder_id;
         // continue;
@@ -431,7 +427,7 @@ class AwardService
                 'social_wall_post_id' => null,
                 'event_xml_data_id' => $eventXmlDataID,
                 'program_id' => $program->id,
-                'organization_id' => $data->organization_id,
+                'organization_id' => $organization_id,
                 'sender_user_account_holder_id' => $awarderAccountHolderId,
                 'receiver_user_account_holder_id' => $userAccountHolderId,
             ];
