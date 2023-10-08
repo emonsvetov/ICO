@@ -16,6 +16,10 @@ class MilestoneAwardService extends AwardService {
     public function sendMilestoneAward() {
         DB::enableQueryLog();
         $events = Event::getActiveMilestoneAwardsWithProgram();
+        // pr($events->toArray());
+        // pr(toSql(DB::getQueryLog()));
+        // exit;
+        // pr($events->toArray());
         if( $events->isNotEmpty() )  {
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
@@ -50,21 +54,26 @@ class MilestoneAwardService extends AwardService {
             $query->orWhereNotNull('hire_date');
         });
         $participants = $query->get();
-        $eligibleParticipants = [];
+        $eligibleParticipants = collect([]);
         if( $participants->isNotEmpty() )  {
             foreach($participants as $participant)   {
+                // pr($participant->id);
                 $userMilestoneDate = $this->getAnniversaryDateForUser( $participant );
                 if( $userMilestoneDate )    {
                     // pr($milestoneYears);
                     // pr($userMilestoneDate);
                     $dateObject = \Carbon\Carbon::parse($userMilestoneDate);
                     $dateObject->addYears($milestoneYears);
+                    // pr($dateObject->format('Y-m-d'));
+                    // pr($dateObject->isToday());
+                    // pr(\Carbon\Carbon::now()->format('Y-m-d'));
                     if($dateObject->isToday())  {
                         if ( ! $participant->canBeAwarded($event->program) ) {
                             // Log::info ("User cannot be rewarded. User Id: {$participant->id} at"  . date('Y-m-d h:i:s')  );
                             continue;
                         }
-                        array_push($eligibleParticipants, $participant);
+                        $eligibleParticipants->add($participant);
+                        // array_push($eligibleParticipants, $participant);
                     }
                 }
             }
