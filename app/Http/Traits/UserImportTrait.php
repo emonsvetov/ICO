@@ -15,6 +15,7 @@ use App\Notifications\CSVImportNotification;
 use \Illuminate\Support\Facades\DB;
 
 use App\Services\AwardService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use DateTime;
@@ -279,14 +280,13 @@ trait UserImportTrait
                             'user_status_id' => $data['setups']['UserRequest']['status'] ?? null,
                         ]);
                 } else {
-                    $userStatusId = $userData['UserRequest']['user_status_id'] ?? $data['setups']['UserRequest']['status'] ??
-                            User::getIdStatusNew();
+                    $currentUser->update($userData);
+                    $userStatusId = isset($userData['UserRequest']['user_status_id']) ? (int)$userData['UserRequest']['user_status_id'] : 0;
+                    $userStatusId = !$userStatusId && isset($data['setups']['UserRequest']['status']) ? (int)$data['setups']['UserRequest']['status'] : $userStatusId;
+                    $userStatusId = !$userStatusId ? User::getIdStatusNew() : $userStatusId;
+
                     $currentUser->changeStatus([$currentUser->id], $userStatusId);
-
-                    if (isset($userData['external_id'])){
-                        $currentUser->update(['external_id' => $userData['external_id']]);
-                    }
-
+                    $currentUser = User::find($currentUser->id);
                     $newUser = $currentUser;
                 }
 
@@ -320,7 +320,7 @@ trait UserImportTrait
                     throw new \Exception(print_r($data, true) . $validator->errors()->first());
                 }
                 $managers = $program->getManagers();
-                if(!$managers){
+                if(empty($managers)){
                     throw new \Exception("No managers in program {$program->name}");
                 }
 
@@ -343,10 +343,13 @@ trait UserImportTrait
         } catch (\Exception $e)
         {
             DB::rollBack();
-            print_r($e->getMessage());
-            print_r($e->getTrace());
-            die;
+            Log::debug($e->getMessage());
+            Log::debug($e->getTraceAsString());
+//            print_r($e->getMessage());
+//            print_r($e->getTrace());
+//            die;
             $csvImport->update(['is_processed' => 0]);
+            return 0;
 //            $csvImport->notify(new CSVImportNotification(['errors' => $e->getMessage()]));
         }
     }

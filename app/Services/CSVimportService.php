@@ -705,6 +705,7 @@ class CSVimportService
     {
         if (empty($this->saveData['errors'])) {
             $type = CsvImportType::find($csvImport->csv_import_type_id)->type;
+            $result = false;
 
             switch ($type) {
                 case 'add_participants':
@@ -728,7 +729,7 @@ class CSVimportService
                     $result = $this->awardUser($csvImport, $this->saveData, $this->supplied_constants);
                     break;
             }
-            $result['success'] = true;
+            $result['success'] = $result ? true : false;
             return $result;
         }
     }
