@@ -25,6 +25,8 @@ class SocialWallPostResource extends JsonResource
             'icon' => $this->getIconImage(),
             'receiver_user_account_holder_id' => $this->receiver_user_account_holder_id,
             'comments' => $this->comments(),
+            'like' => $this->like,
+            'like_count' => $this->likesCount,
             // 'children' => $this->children,
             'created_at' => $this->created_at->format('m/d/Y H:i:s'),
             'updated_at' => $this->created_at->format('m/d/Y'),

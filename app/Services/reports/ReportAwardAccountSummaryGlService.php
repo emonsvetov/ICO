@@ -108,6 +108,9 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
         return $query;
     }
 
+    private function amountFormat($value){
+        return number_format((float)$value, 2, '.', '');
+    }
     public function getTable(): array
     {
         parent::getTable();
@@ -115,25 +118,26 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
         $totalAwards = 0;
         $finalData = [];
         foreach ($this->table as $key => $awards) {
+            $this->table[$key]->dollar_value = $this->amountFormat($this->table[$key]->dollar_value);
 //            if ($key == 3) {
 //                $awards->event_name = 'asd asd';
 //            }
             $totalAwards += $awards->dollar_value;
             $finalData[$awards->program_name]['Property'] = $awards->program_name;
-            $eventColumn = $awards->ledger_code ? $awards->event_name . '<br>' . $awards->ledger_code : $awards->event_name;
+            $eventColumn = $awards->ledger_code ? $awards->event_name . "<br>" . $awards->ledger_code : $awards->event_name;
             $finalData[$awards->program_name][$eventColumn] =
                 isset($finalData[$awards->program_name][$eventColumn]) ?
-                    $finalData[$awards->program_name][$eventColumn] + $awards->dollar_value : $awards->dollar_value;
+                    $this->amountFormat($finalData[$awards->program_name][$eventColumn] + $awards->dollar_value) : $awards->dollar_value;
         }
 
         foreach ($finalData as $finalDataKey => $programName) {
             $total = 0;
             foreach ($programName as $key => $value) {
                 if ( ! in_array($key, ['Property', 'Total'])) {
-                    $total = $total + $value;
+                    $total = $this->amountFormat($total) + $this->amountFormat($value);
                 }
             }
-            $finalData[$finalDataKey]['Total'] = $total;
+            $finalData[$finalDataKey]['Total'] = $this->amountFormat($total);
         }
 
         sort($finalData);
@@ -209,19 +213,11 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
 
             foreach ($data['data'] as $key => $item) {
                 $tmp = [];
-                $i = 0;
+                $i = 1;
                 foreach ($item as $subKey => $subItem){
-                    if($subKey == 'Property'){
-                        $tmp['01'] = 'Property';
-                    } elseif ($i === 0){
-                        $tmp['02'] = $subKey;
-                        $i++;
-                    } elseif ($i > 0 && $subKey == 'Total'){
-                        $tmp['a'.$i] = $subKey;
-                        $i++;
-                    } else {
-                        $tmp['a'.$i] = 'Total';
-                    }
+                    $tmpKey = preg_replace("/<br>/", " ", $subKey);
+                    $tmp['0'.$i] = strip_tags($tmpKey);
+                    $i++;
                 }
                 $finalData[] = $tmp;
                 break;
@@ -229,19 +225,10 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
 
             foreach ($data['data'] as $key => $item) {
                 $tmp = [];
-                $i = 0;
+                $i = 1;
                 foreach ($item as $subKey => $subItem){
-                    if($subKey == 'Property'){
-                        $tmp['01'] = $subItem;
-                    } elseif ($i === 0){
-                        $tmp['02'] = $subItem;
-                        $i++;
-                    } elseif ($i > 0 && $subKey == 'Total'){
-                        $tmp['a'.$i] = $subItem;
-                        $i++;
-                    } else {
-                        $tmp['a'.$i] = $subItem;
-                    }
+                    $tmp['0'.$i] = $subItem;
+                    $i++;
                 }
                 $finalData[] = $tmp;
             }
@@ -265,8 +252,8 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
                 'key' => '02'
             ],
         ];
-        for ($i = 0; $i < $this->headersCount; $i++){
-            $headers[] = ['label' => '', 'key' => 'a'.$i];
+        for ($i = 3; $i < ($this->headersCount + 3); $i++){
+            $headers[] = ['label' => '', 'key' => '0'.$i];
         }
         return $headers;
     }

@@ -454,4 +454,11 @@ class Program extends BaseModel
         return $count ? $query->count() : $query->get();
     }
 
+
+    public function getEmailTemplateSender()
+    {
+        $root = $this->getRoot();
+        return $root     ? EmailTemplateSender::where('program_id', $root->id)->first() : null;
+    }
+
 }

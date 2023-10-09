@@ -15,6 +15,7 @@ use App\Notifications\CSVImportNotification;
 use \Illuminate\Support\Facades\DB;
 
 use App\Services\AwardService;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use DateTime;
@@ -270,67 +271,66 @@ trait UserImportTrait
 
             foreach ($data['UserRequest'] as $key => $userData)
             {
+                $program = Program::find($data['CSVProgramRequest'][$key]['program_id']);
+                $organization = Organization::find($suppliedConstants['organization_id']);
                 $currentUser = $this->getUserByData($userData);
 
-                if(!$currentUser){
+                if($currentUser){
+                    $currentUser->update($userData);
+                    $userStatusId = isset($userData['UserRequest']['user_status_id']) ? (int)$userData['UserRequest']['user_status_id'] : 0;
+                    $userStatusId = !$userStatusId && isset($data['setups']['UserRequest']['status']) ? (int)$data['setups']['UserRequest']['status'] : $userStatusId;
+                    $userStatusId = !$userStatusId ? User::getIdStatusNew() : $userStatusId;
+
+                    $currentUser->changeStatus([$currentUser->id], $userStatusId);
+                    $currentUser = User::find($currentUser->id);
+                    $newUser = $currentUser;
+                } else {
                     $newUser = (new User)->createAccount($userData + [
                             'organization_id' => $suppliedConstants['organization_id'],
                             'password' => $this->createUserPassword(),
                             'user_status_id' => $data['setups']['UserRequest']['status'] ?? null,
                         ]);
-                } else {
-                    $userStatusId = $userData['UserRequest']['user_status_id'] ?? $data['setups']['UserRequest']['status'] ??
-                            User::getIdStatusNew();
-                    $currentUser->changeStatus([$currentUser->id], $userStatusId);
-
-                    if (isset($userData['external_id'])){
-                        $currentUser->update(['external_id' => $userData['external_id']]);
-                    }
-
-                    $newUser = $currentUser;
                 }
 
-                $program = Program::find($data['CSVProgramRequest'][$key]['program_id']);
-                $program->users()->sync( [ $newUser->id ], false );
-                $organization = Organization::find($suppliedConstants['organization_id']);
+                $needAward = ! User::getByIdAndProgram((int)$newUser->id, (int)$program->id);
 
+                $program->users()->sync( [ $newUser->id ], false );
                 $roles = !empty($userData['roles']) ? $userData['roles'] : $data['setups']['UserRequest']['roles'];
                 if( !empty($roles) ) {
                     $newUser->syncProgramRoles($program->id, $roles);
                 }
 
                 // AWARD NEW USER
-                $event = null;
-                if(!isset($data['AwardRequest'][$key]['event_id'])){
-                    $data['AwardRequest'][$key]['event_id'] = $data['setups']['AwardRequest']['event'];
+                if ($needAward) {
+                    $event = null;
+                    if ( ! isset($data['AwardRequest'][$key]['event_id'])) {
+                        $data['AwardRequest'][$key]['event_id'] = $data['setups']['AwardRequest']['event'];
+                    }
+                    $event = Event::find($data['AwardRequest'][$key]['event_id']);
+
+                    $awardData = $userData + $data['AwardRequest'][$key] + [
+                            'message' => $event->message,
+                            'user_id' => [$newUser->id],
+                            'organization_id' => $organization->id,
+                        ];
+                    $requestClassPath = "App\Http\Requests\\AwardRequest";
+                    $formRequestClass = new $requestClassPath;
+                    $formRequestRules = $formRequestClass->rules();
+                    $validator = Validator::make($awardData, $formRequestRules);
+
+                    if ($validator->fails()) {
+                        throw new \Exception(print_r($data, true) . $validator->errors()->first());
+                    }
+                    $managers = $program->getManagers();
+                    if (empty($managers)) {
+                        throw new \Exception("No managers in program {$program->name}");
+                    }
+
+                    $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData, true);
+
+                    $message = new WelcomeEmail($newUser->first_name, $newUser->email, $program);
+                    Mail::to($newUser->email)->send($message);
                 }
-                $event = Event::find($data['AwardRequest'][$key]['event_id']);
-
-                $awardData = $userData + $data['AwardRequest'][$key] + [
-                    'message' => $event->message,
-                    'user_id' => [$newUser->id],
-                    'organization_id' => $organization->id,
-                ];
-                $requestClassPath = "App\Http\Requests\\AwardRequest";
-                $formRequestClass = new $requestClassPath;
-                $formRequestRules = $formRequestClass->rules();
-                $validator = Validator::make($awardData, $formRequestRules);
-
-                if ($validator->fails()) {
-                    throw new \Exception(print_r($data, true) . $validator->errors()->first());
-                }
-                $managers = $program->getManagers();
-                if(!$managers){
-                    throw new \Exception("No managers in program {$program->name}");
-                }
-
-                $awardService->awardUser($event, $newUser, $managers[0], (object)$awardData, true);
-
-                $message = new WelcomeEmail($newUser->first_name, $newUser->email, $program);
-                Mail::to($newUser->email)->send($message);
-
-//                $message = new ProcessCompletionReportEmail($managers[0]->first_name, $csvImport->name, $program);
-//                Mail::to($managers[0]->email)->send($message);
 
                 $userIds[] = $newUser->id;
             }
@@ -343,10 +343,13 @@ trait UserImportTrait
         } catch (\Exception $e)
         {
             DB::rollBack();
-            print_r($e->getMessage());
-            print_r($e->getTrace());
-            die;
+            Log::debug($e->getMessage());
+            Log::debug($e->getTraceAsString());
+//            print_r($e->getMessage());
+//            print_r($e->getTrace());
+//            die;
             $csvImport->update(['is_processed' => 0]);
+            return 0;
 //            $csvImport->notify(new CSVImportNotification(['errors' => $e->getMessage()]));
         }
     }
