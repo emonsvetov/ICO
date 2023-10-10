@@ -33,6 +33,7 @@ class Kernel extends ConsoleKernel
         // $schedule->command('v2migrate:users --skip-inactive')->daily();
         // $schedule->job(new MigrateUsersJob)->daily();
         $schedule->command('cron:generate-virtual-inventory')->everyFiveMinutes();
+        $schedule->command('cron:send-milestone-award')->daily();
     }
 
     /**
