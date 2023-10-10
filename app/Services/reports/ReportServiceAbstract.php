@@ -38,6 +38,7 @@ abstract class ReportServiceAbstract
     const FIELD_ACCOUNT_TYPE = "account_type_name";
     const ACCOUNT_HOLDER_IDS = "account_holder_ids";
     const ACCOUNT_TYPES = "account_types";
+    const SERVER = "server";
 
     const SQL_WHERE = 'where';
     const SQL_ORDER_BY_DIR = 'dir';
@@ -72,6 +73,7 @@ abstract class ReportServiceAbstract
         $this->params[self::PAGINATE] = $params[self::PAGINATE] ?? null;
         $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];
         $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
+        $this->params[self::SERVER] = $params[self::SERVER] ?? null;
 
         $this->reportHelper = new ReportHelper() ?? null;
     }
