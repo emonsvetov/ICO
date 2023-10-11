@@ -170,6 +170,7 @@ class ProgramRequest extends FormRequest
             'allow_view_leaderboards_not_logged_into'=>'nullable|boolean',
             'enable_how_are_you_feeling'=>'nullable|boolean',
             'enable_referrals'=>'nullable|boolean',
+            'allow_milestone_award'=>'nullable|boolean',
             'send_balance_threshold_notification'=>'nullable|boolean',
             'balance_threshold'=>'nullable|integer|gt:-1',
             'low_balance_email'=>'nullable|email',
