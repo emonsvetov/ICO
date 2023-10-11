@@ -5,21 +5,21 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\CronService;
 
-class CsvAutoImport extends Command
+class BalanceNotification extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'csv-auto-import';
+    protected $signature = 'balance-notification';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Import csv files that have been uploaded to AWS';
+    protected $description = 'Balance Notification';
 
     /**
      * Create a new command instance.
@@ -39,10 +39,9 @@ class CsvAutoImport extends Command
      */
     public function handle()
     {
-        \Log::info("...... cron:csv-auto-import command running ......");
-        $this->cronService->csvAutoImportJob();
-        \Log::info("------ csv-auto-import done ------");
-        // pr($programs);
+        \Log::info("...... cron:balance-notification command running ......");
+        $this->cronService->balanceNotificationJob();
+        \Log::info("------ balance-notification done ------");
         return 0;
     }
 }

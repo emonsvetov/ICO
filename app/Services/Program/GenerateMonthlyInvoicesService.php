@@ -31,7 +31,7 @@ class GenerateMonthlyInvoicesService
         $cronInvoices = CronInvoice::getProgramsToInvoice();
         // dd($cronInvoices->toArray());
         $last_month = strtotime(date('Y-m')  . " -1 month" );
-        $date_start = date('Y-m-01', $last_month); 
+        $date_start = date('Y-m-01', $last_month);
         $date_end = date('Y-m-t', $last_month);
         foreach ($cronInvoices as $cronInvoice) {
             $response = ['cronInvoice' => $cronInvoice];
@@ -43,20 +43,20 @@ class GenerateMonthlyInvoicesService
                 continue;
             }
 
-            $is_root = $program->isRoot();
+            $is_root = $program->isRootModel();
 
-            if (!$program->bill_parent_program || $is_root) 
+            if (!$program->bill_parent_program || $is_root)
             {
                 $exists = Invoice::getProgramMonthlyInvoice4Date($program, $date_start);
                 // dump($mios->toArray());
-                \Log::info( "checking invoice for ProgramID: " . $program->id ); 
-                if (false && $exists) 
+                \Log::info( "checking invoice for ProgramID: " . $program->id );
+                if (false && $exists)
                 {
-                    \Log::info( "skipping " . $program->id . " already invoiced" ); 
-                } 
-                else 
-                { 
-                    \Log::info( "need to generate invoice for " . $program->id ); 
+                    \Log::info( "skipping " . $program->id . " already invoiced" );
+                }
+                else
+                {
+                    \Log::info( "need to generate invoice for " . $program->id );
 
                     $days_to_pay = 15; // default to 15 days after end_date
                     $invoice_type = 'Monthly'; // default to monthly invoicing
@@ -69,9 +69,9 @@ class GenerateMonthlyInvoicesService
 
                     $response['msg'] = $sendResult['msg'];
 
-                    if( isset($sendResult['success']) )    
+                    if( isset($sendResult['success']) )
                     {
-                        \Log::info( "Monthly invoice sent for program: " . $program->id ); 
+                        \Log::info( "Monthly invoice sent for program: " . $program->id );
                         $updatable['invoice_id'] = $invoice->id;
                         $updatable['msg'] = 'Sent monthly invoice for program: '. $program->id;
 
@@ -82,29 +82,29 @@ class GenerateMonthlyInvoicesService
                         $response['error'] = true;
                     }
                 }
-            } 
+            }
             else
             {
-                \Log::info( "Not an invoicable program: " . $program->id ); 
-                $updatable['msg'] = "Not an invoicable program: " . $program->id; 
-                $updatable['invoice_id'] = 0; 
+                \Log::info( "Not an invoicable program: " . $program->id );
+                $updatable['msg'] = "Not an invoicable program: " . $program->id;
+                $updatable['invoice_id'] = 0;
             }
 
-            if( isset($updatable) ) 
+            if( isset($updatable) )
             {
                 $cronInvoice->update([
                     'response' => $updatable['msg'],
                     'invoice_id' => $updatable['invoice_id'],
                     'invoice_date' => now(),
                 ]);
-                // Ref. $this->crons_model->add_invoice_cron_info($program, $response); 
-            }   
-            else 
+                // Ref. $this->crons_model->add_invoice_cron_info($program, $response);
+            }
+            else
             {
                 $cronInvoice->update([
                     'invoice_date' => now()
                 ]);
-                // Ref. $this->crons_model->mark_program_processed($program, 'invoice_date'); 
+                // Ref. $this->crons_model->mark_program_processed($program, 'invoice_date');
             }
             $allResponses[$cronInvoice->id] = $response;
         }

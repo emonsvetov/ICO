@@ -11,6 +11,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Traits\HasProgramRoles;
 use App\Models\Traits\GetModelByMixed;
@@ -339,5 +340,15 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 
     public function changeStatus($userIds, $userStatusId){
         return self::whereIn('id', $userIds)->update(['user_status_id' => $userStatusId]);
+    }
+
+    public static function getByIdAndProgram(int $userId, int $programId)
+    {
+        $userClassForSql = str_replace('\\', '\\\\\\\\', get_class(new User));
+        return self::whereHas('roles', function (Builder $query) use ($userClassForSql, $userId, $programId) {
+            $query->where('model_has_roles.model_type', 'like',  DB::raw("'" . $userClassForSql . "'"));
+            $query->where('model_has_roles.model_id', '=', $userId);
+            $query->where('model_has_roles.program_id', '=', $programId);
+        })->first();
     }
 }

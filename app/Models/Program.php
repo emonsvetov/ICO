@@ -436,9 +436,27 @@ class Program extends BaseModel
 		return $end_date_sql;
     }
 
+    public static function getAllRootEmployeeType(){
+        return self::IsRoot()->whereIn('type', ['employee'])->get();
+    }
+
+    public function getActiveManagers( $count = false )
+    {
+        $query = User::whereHas('roles', function ($query) {
+            $query->where('roles.name', 'LIKE', config('roles.manager'))
+                ->where('model_has_roles.program_id', $this->id);
+        })
+            ->join('statuses', 'statuses.id', '=', 'users.user_status_id')
+            ->where('statuses.context', '=',  'Users')
+            ->where('statuses.status', '=',  User::STATUS_ACTIVE);
+        return $count ? $query->count() : $query->get();
+    }
+
+
     public function getEmailTemplateSender()
     {
         $root = $this->getRoot();
         return $root     ? EmailTemplateSender::where('program_id', $root->id)->first() : null;
     }
+
 }

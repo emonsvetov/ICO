@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\Program\BalanceNotificationJob;
 use App\Jobs\CsvAutoImportJob;
 use App\Jobs\GenerateTestGiftCodesJob;
 use App\Jobs\GenerateVirtualInventoryJob;
@@ -46,5 +47,9 @@ class CronService
     }
     public function submitGiftCodesToTangoJob() {
         dispatch( new SubmitGiftCodesToTangoJob() );
+    }
+    public function balanceNotificationJob()
+    {
+        dispatch(new BalanceNotificationJob());
     }
 }
