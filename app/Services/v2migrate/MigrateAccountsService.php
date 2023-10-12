@@ -37,16 +37,25 @@ class MigrateAccountsService extends MigrationService
         }
 
         if( $owner ) {
+            $this->printf("Owner account:%d found\n", $owner->id);
+            $this->printf("Finding accounts for Owner:%d in v3\n", $owner->id);
             $accounts = \App\Models\Account::where('account_holder_id', $owner->account_holder_id)->get();
             if( !$accounts || count($accounts) < 2 )    {
                 throw new Exception("Owner accounts do not exist. Please check and try again.");
                 exit;
             }
+            $this->printf("v3- %d accounts found for Owner:%d\n", count($accounts), $owner->id);
+            $pullOwnerAccounts = false;
             foreach( $accounts as $account )    {
                 if( !$account->v2_account_id )  {
                     //Need to migrate v2 owner accounts
-                    $this->migrateV2OwnerAccounts( $owner );
+                    $pullOwnerAccounts = true;
+                    break;
                 }
+            }
+            if( $pullOwnerAccounts ) {
+                $this->printf("Need to pull owner accounts for:%d\n", $owner->id);
+                $this->migrateV2OwnerAccounts( $owner );
             }
         }
     }
@@ -56,7 +65,9 @@ class MigrateAccountsService extends MigrationService
         $results = $this->v2db->select($sql);
 
         if( $results ) {
+            $this->printf("Found %d owner accounts.\n", count($results));
             foreach( $results as $v2Account ) {
+                $this->printf("Migrating single account v2account:%d.\n", $v2Account->id);
                 $this->migrateSingleAccount($v2Account, $owner->account_holder_id);
             }
         }
@@ -81,12 +92,12 @@ class MigrateAccountsService extends MigrationService
         // }
 
         try {
-            pr($v2_account_holder_id);
+            // pr($v2_account_holder_id);
 
             $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $v2_account_holder_id);
             $v2Accounts = $this->v2db->select($sql);
             $countV2Accounts = sizeof($v2Accounts);
-            pr($countV2Accounts);
+            // pr($countV2Accounts);
             $this->countAccounts += $countV2Accounts;
             if( $countV2Accounts > 0 ) {
                 printf("Found %d accounts for %s: \"%s\"\n", $countV2Accounts, $modelName, $model->id);
@@ -118,10 +129,10 @@ class MigrateAccountsService extends MigrationService
         $createNewAccount = true;
         $newAccountCreated = true;
         if( $v2Account->v3_account_id ) {
-            printf("\$v2Account->v3_account_id is non zero (%s) for v3:%d. Confirming v3 record..\n", $v2Account->v3_account_id, $v2Account->id);
+            $this->printf("\$v2Account->v3_account_id is non zero (%s) for v3:%d. Confirming v3 record..\n", $v2Account->v3_account_id, $v2Account->id);
             $v3Account = Account::find($v2Account->v3_account_id);
             if( $v3Account )    {
-                printf("Account entry found for v2:%d by '\$v2Account->v3_account_id'. Skipping creation.\n", $v2Account->id);
+                $this->printf("Account entry found for v2:%d by '\$v2Account->v3_account_id'. Skipping creation.\n", $v2Account->id);
                 if( !$v3Account->v2_account_id )    { //if v2 ref is null
                     $v3Account->v2_account_id = $v2Account->id;
                     $v3Account->save();
@@ -131,7 +142,7 @@ class MigrateAccountsService extends MigrationService
                 //check with v2->id
                 $v3Account = Account::where('v2_account_id', $v2Account->id )->first();
                 if( $v3Account )    {
-                    printf("Account entry found for v2:%d by '\$v3Account->v2_account_id'.\n", $v2Account->id);
+                    $this->printf("Account entry found for v2:%d by '\$v3Account->v2_account_id'.\n", $v2Account->id);
                     //found, need to update v2 record
                     $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
                     $createNewAccount = false;
@@ -154,7 +165,7 @@ class MigrateAccountsService extends MigrationService
                 'currency_type_id' => $v2Account->currency_type_id,
             ])->first();
             if( $v3Account ) { //it exists anyhow!!! (impossible after above checks!!)
-                printf("Accounts combination %d-%d-%d-%d exists for v3:ach:%d. Skipping..\n",$v2Account->account_type_id, $v2Account->finance_type_id, $v2Account->medium_type_id, $v2Account->currency_type_id, $v3_account_holder_id);
+                $this->printf("Accounts combination %d-%d-%d-%d exists for v3:ach:%d. Skipping..\n",$v2Account->account_type_id, $v2Account->finance_type_id, $v2Account->medium_type_id, $v2Account->currency_type_id, $v3_account_holder_id);
 
                 // Sync anyway!!
                 if( !$v3Account->v2_account_id ) {

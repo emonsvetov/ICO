@@ -8,7 +8,7 @@ class ReportFactory
 {
     public function build(string $title = '', array $params = [])
     {
-        pr($title);
+        // pr($title);
         // pr($params);
         $program_account_holder_ids = [];
         if(!empty($params['programs']))  {
@@ -25,8 +25,8 @@ class ReportFactory
         }
         $merchants = isset($params['merchants']) ? $params['merchants'] : null;
         $merchants = $merchants ? explode(',', $merchants) : [];
-        $dateFrom = isset($params['from']) ? date('Y-m-d 00:00:00', strtotime($params['from'])) : '';
-        $dateTo = isset($params['to']) ? date('Y-m-d 23:59:59', strtotime($params['to'])) : '';
+        $dateFrom = isset($params[CONSTANT::DATE_FROM]) ? date('Y-m-d 00:00:00', strtotime($params[CONSTANT::DATE_FROM])) : '';
+        $dateTo = isset($params[CONSTANT::DATE_TO]) ? date('Y-m-d 23:59:59', strtotime($params[CONSTANT::DATE_TO])) : '';
         $paramPage = isset($params['page']) ? (int)$params['page'] : null;
         $paramLimit = isset($params['limit']) ? (int)$params['limit'] : null;
         $exportToCsv = $params['exportToCsv'] ?? 0;
@@ -47,8 +47,8 @@ class ReportFactory
         $finalParams = [
             'merchants' => $merchants,
             'program_account_holder_ids' => $program_account_holder_ids,
-            'dateFrom' => $dateFrom,
-            'dateTo' => $dateTo,
+            CONSTANT::DATE_FROM => $dateFrom,
+            CONSTANT::DATE_TO => $dateTo,
             'limit' => $limit ?? null,
             'offset' => $offset ?? null,
             'exportToCsv' => $exportToCsv,
@@ -60,6 +60,8 @@ class ReportFactory
             'order' => $order,
             'paginate' => $paginate,
         ];
+
+        // pr($finalParams);
 
         if( !empty( $params[CONSTANT::ACCOUNT_TYPES] )) {
             $finalParams[CONSTANT::ACCOUNT_TYPES] = $params[CONSTANT::ACCOUNT_TYPES];

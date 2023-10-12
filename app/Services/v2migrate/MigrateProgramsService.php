@@ -38,60 +38,14 @@ class MigrateProgramsService extends MigrationService
         parent::__construct();
     }
 
-    public function verifyOwner()  {
-        $owner = \App\Models\Owner::join('account_holders', 'account_holders.id', '=', 'owners.account_holder_id')->where(['owners.id' => 1, 'account_holders.context' => 'Owner', 'owners.name' => 'Application Owner'])->first();
-
-        if( !$owner ) {
-            throw new Exception("Owner with id:1 does not exist");
-            exit;
-        }
-
-        if( $owner ) {
-            $accounts = \App\Models\Account::where('account_holder_id', $owner->account_holder_id)->get();
-            if( !$accounts || count($accounts) < 2 )    {
-                throw new Exception("Owner accounts do not exist. Please run `php artisan db:seed --class=OwnerSeeder` and try again.");
-                exit;
-            }
-        }
-    }
-
     public function migrate( $args = [] ) {
 
         global $v2ProgramUsersTotalCount;
+        $v2ProgramUsersTotalCount = [];
 
-        $this->verifyOwner();
-        (new \App\Services\v2migrate\MigrateAccountsService)->migrateOwnerAccounts();
-
-        (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByV3Accounts('owners');
-        // echo "J";
-        // exit;
-
-        if( !$this->superAdminsMigrated ) {
-            $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
-            $this->printf("Migrating super admins, if any\n");
-            $migrateUserService->migrateSuperAdmins();
-            $this->superAdminsMigrated = true;
-        }
+        (new \App\Services\v2migrate\MigrateOwnersService)->verifyOwner();
 
         printf("Starting program migration iteration: %d\n\n", $this->iteration++);
-
-        // $migrateUsersService = app('App\Services\v2migrate\MigrateUsersService');
-        // $migrateAccountsService = app('App\Services\v2migrate\MigrateAccountsService');
-        // $migrateJournalEventsService = app('App\Services\v2migrate\MigrateJournalEventsService');
-        // $v3Model = \App\Models\User::find( 211 );
-        // $v3Model = \App\Models\Program::find( 1 );
-        // $migrateAccountsService->migrateByModel($v3Model);
-        // $v2Model = $migrateUsersService->getV2UserById( 288496 );
-        // $v2Model = $this->getV2ProgramById( 288308 );
-        // $migrateJournalEventsService->migrateJournalEventsByModelAccounts($v3Model, $v2Model);
-        // pr($this->importMap);
-
-        // $v2User = $migrateUsersService->getV2UserById( 288496 );
-        // $newUser = $migrateUsersService->migrateSingleUser( $v2User );
-        // pr($v2User);
-        // exit;
-        // $migrateUsersService->migrateUserJournalEvents($v2User, $v3User);
-        // exit;
 
         $v2RootPrograms = $this->read_list_all_root_program_ids( $args );
 
@@ -101,6 +55,7 @@ class MigrateProgramsService extends MigrationService
 
         printf("%s programs found in iteration %d\n", count($v2RootPrograms), $this->iteration);
         // pr($v2RootPrograms);
+        // exit;
         $this->migratePrograms($v2RootPrograms);
         // resolve(\App\Services\v2migrate\MigrateJournalEventsService::class)->fixPostingsAccoundIds();
 

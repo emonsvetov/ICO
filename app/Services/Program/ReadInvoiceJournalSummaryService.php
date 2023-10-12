@@ -44,7 +44,7 @@ class ReadInvoiceJournalSummaryService
 		}
 
         $this->reportFactory = new \App\Services\reports\ReportFactory();
-        $report = $this->reportFactory->build("JournalDetailed", ['programs' => $program_account_holder_ids, 'from' => $start_date, 'to' => $end_date]);
+        $report = $this->reportFactory->build("JournalDetailed", ['programs' => $program_account_holder_ids, 'dateFrom' => $start_date, 'dateTo' => $end_date]);
         // $report_data = $report->getReport();
 
 		$report = $report->getReport();

@@ -1,11 +1,6 @@
 <?php
 namespace App\Services\reports;
 
-use App\Services\Report\ReportServiceSumPostsByAccountAndJournalEventAndCredit;
-use App\Services\Report\ReportServiceSumProgramCostOfGiftCodesRedeemedFee;
-use App\Services\Report\ReportServiceSumProgramCostOfGiftCodesRedeemed;
-use App\Services\Report\ReportServiceSumProgramAwardsPoints;
-use App\Services\Report\ReportServiceSumProgramAwardsMonies;
 use App\Models\JournalEventType;
 use App\Models\AccountType;
 use App\Models\Program;
@@ -97,15 +92,9 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				];
                 // pr($subreport_params);
                 // exit;
-				// $credits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
                 $this->reportFactory = new \App\Services\reports\ReportFactory();
-                $report = $this->reportFactory->build("SumPostsByAccountAndJournalEventAndCredit", $subreport_params);
-
-                $credits_report_table = $report->getReport();
-                pr($credits_report_table);
-                exit;
-
-				// $credits_report_table = $credits_report->getTable ();
+                $credit_report = $this->reportFactory->build("SumPostsByAccountAndJournalEventAndCredit", $subreport_params);
+                $credits_report_table = $credit_report->getReport();
 
 				if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
 					foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
@@ -248,10 +237,9 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING
 				);
                 // dd("HERE");
-				$debits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
-                // dd($debits_report);
-
-				$debits_report_table = $debits_report->getTable ();
+				// $debits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
+                $debits_report = $this->reportFactory->build("SumPostsByAccountAndJournalEventAndCredit", $subreport_params);
+				$debits_report_table = $debits_report->getReport ();
                 // dd($debits_report_table);
 
 				// Sort the second set of fees
@@ -313,8 +301,11 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING,
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES
 				);
-				$cost_of_redeemed_report = new ReportServiceSumProgramCostOfGiftCodesRedeemed ( $subreport_params );
-				$cost_of_redeemed_report_table = $cost_of_redeemed_report->getTable ();
+				// $cost_of_redeemed_report = new ReportServiceSumProgramCostOfGiftCodesRedeemed ( $subreport_params );
+				// $cost_of_redeemed_report_table = $cost_of_redeemed_report->getTable ();
+                $cost_of_redeemed_report = $this->reportFactory->build("SumProgramCostOfGiftCodesRedeemed", $subreport_params);
+				$cost_of_redeemed_report_table = $cost_of_redeemed_report->getReport ();
+
 				if (is_array ( $cost_of_redeemed_report_table ) && count ( $cost_of_redeemed_report_table ) > 0) {
 					foreach ( $cost_of_redeemed_report_table as $program_account_holder_id => $programs_cost_of_redeemed_report_table ) {
 						// Get an easier reference to the program
@@ -327,7 +318,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 											foreach ( $sum_row as $sum_type => $amount ) {
                                                 $amount = number_format((float)$amount, 2, '.', '');
 												switch ($sum_type) {
-													case ReportServiceSumProgramCostOfGiftCodesRedeemed::FIELD_COST_BASIS :
+													case ReportSumProgramCostOfGiftCodesRedeemedService::FIELD_COST_BASIS :
 														switch ($account_type_name) {
 															case AccountType::ACCOUNT_TYPE_POINTS_REDEEMED :
 															case AccountType::ACCOUNT_TYPE_MONIES_REDEEMED :
@@ -347,7 +338,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 																break;
 														}
 														break;
-													case ReportServiceSumProgramCostOfGiftCodesRedeemed::FIELD_PREMIUM :
+													case ReportSumProgramCostOfGiftCodesRedeemedService::FIELD_PREMIUM :
 														switch ($account_type_name) {
 															case AccountType::ACCOUNT_TYPE_POINTS_REDEEMED :
 															case AccountType::ACCOUNT_TYPE_MONIES_REDEEMED :
@@ -380,9 +371,11 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				$subreport_params [self::ACCOUNT_TYPES] = [];
 				$subreport_params [self::JOURNAL_EVENT_TYPES] = [];
 
-				$points_report = new ReportServiceSumProgramAwardsMonies ( $subreport_params );
+				// $points_report = new ReportServiceSumProgramAwardsMonies ( $subreport_params );
+				// $points_report_table = $points_report->getTable ();
 
-				$points_report_table = $points_report->getTable ();
+                $points_report = $this->reportFactory->build("SumProgramAwardsMonies", $subreport_params);
+				$points_report_table = $points_report->getReport ();
 
 				// Sort the points awards
 				if (is_array ( $points_report_table ) && count ( $points_report_table ) > 0) {
@@ -397,8 +390,10 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				// Get the points awards
 				$subreport_params[self::ACCOUNT_TYPES] = [];
 				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
-				$points_report = new ReportServiceSumProgramAwardsPoints ( $subreport_params );
-				$points_report_table = $points_report->getTable ();
+				// $points_report = new ReportServiceSumProgramAwardsPoints ( $subreport_params );
+				// $points_report_table = $points_report->getTable ();
+                $points_report = $this->reportFactory->build("SumProgramAwardsPoints", $subreport_params);
+				$points_report_table = $points_report->getReport ();
                 // dd($points_report_table);
 				// Sort the points awards
 				if (is_array ( $points_report_table ) && count ( $points_report_table ) > 0) {
@@ -414,8 +409,11 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				// Get the points awards
 				$subreport_params[self::ACCOUNT_TYPES] = [];
 				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
-				$premium_fee = new ReportServiceSumProgramCostOfGiftCodesRedeemedFee ( $subreport_params );
-				$premium_fee_report_table = $premium_fee->getTable ();
+				// $premium_fee = new ReportServiceSumProgramCostOfGiftCodesRedeemedFee ( $subreport_params );
+				// $premium_fee_report_table = $premium_fee->getTable ();
+                $premium_fee = $this->reportFactory->build("SumProgramCostOfGiftCodesRedeemedFee", $subreport_params);
+				$premium_fee_report_table = $premium_fee->getReport ();
+
 				// pr($premium_fee_report_table);
 				//$this->_ci->read_db->query ('INSERT INTO debug SET note = '. json_encode(json_encode($premium_fee_report_table)));
 				if (is_array ( $premium_fee_report_table ) && count ( $premium_fee_report_table ) > 0) {

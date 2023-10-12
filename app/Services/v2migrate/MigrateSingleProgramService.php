@@ -30,6 +30,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
     }
     public function migrateSingleProgram($v3_organization_id, $v2Program, $v3_parent_id = null)
     {
+        // pr($v2Program);
         if( empty($v3_organization_id) || empty($v2Program->account_holder_id) ) {
             throw new Exception( " - Required fields in v2 table to sync properly are missing. Termininating!\n");
             exit;
@@ -114,7 +115,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->syncProgramMerchantRelations($v2Program, $v3Program);
             // exit;
             //Migration Accounts
-            // $this->migrateProgramJournalEvents( $v3Program, $v2Program);
+            // ## $this->migrateProgramJournalEvents( $v3Program, $v2Program); //Deprecated!
             // $this->executeV2SQL(); //run for any missing run!
 
             // Pull addresses
@@ -123,20 +124,22 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->migrateProgramLeaderboards($v2Program, $v3Program);
 
             if( !property_exists($v2Program, 'sub_programs') ) { //if root program
+                $this->printf("'sub_programs' property does not exists for v2:%d. Fetching..\n", $v2Program->account_holder_id);
                 $children_heirarchy_list = $this->read_list_children_heirarchy(( int )$v2Program->account_holder_id);
-                // pr("children_heirarchy_list count:");
-                // pr(count($children_heirarchy_list));
-                // exit;
+                $this->printf("'children_heirarchy_list' count:%d for v2:%d.\n", count($children_heirarchy_list), $v2Program->account_holder_id);
                 $programs_tree = array ();
                 if ( $children_heirarchy_list ) {
                     // pr($children_heirarchy_list);
+                    $this->printf("Arranging childen tree for v2:%d..\n", $v2Program->account_holder_id);
                     $programs_tree = sort_programs_by_rank_for_view($programs_tree, $children_heirarchy_list);
-                    // pr($programs_tree);exit;
                     if( $programs_tree && sizeof($programs_tree) > 0 ) {
                         foreach( $programs_tree as $subprograms) {
+                            $this->printf("Checking whether sub-programs exist for v2:%d..\n", $v2Program->account_holder_id);
                             if( isset( $subprograms['sub_programs']) && sizeof($subprograms['sub_programs']) > 0) {
+                                $this->printf(" - sub-programs exist for v2:%d, count:%d..\n", $v2Program->account_holder_id, sizeof($subprograms['sub_programs']));
                                 foreach( $subprograms['sub_programs'] as $subprogram) {
                                     // pr($subprogram);
+                                    $this->printf(" -- preparing to migrate v2sub:%s(%d) for v2prog:%d\n", $subprogram['program']->name, $subprogram['program']->account_holder_id, $v2Program->account_holder_id);
                                     $nextProgram = new stdClass;
                                     $nextProgram->account_holder_id = $subprogram['program']->account_holder_id;
                                     $nextProgram->v3_program_id = $subprogram['program']->v3_program_id;
@@ -150,14 +153,17 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     }
                 }
             }   else if( $v2Program->sub_programs ) {
+                // pr($v2Program->sub_programs);
+                $this->printf(" - 'sub_programs' property exists for v2:%d. Fetching..\n", $v2Program->account_holder_id);
                 foreach( $v2Program->sub_programs as $subprogram) {
+                    // pr($subprogram);
                     $nextProgram = new stdClass;
                     $nextProgram->account_holder_id = $subprogram['program']->account_holder_id;
                     $nextProgram->v3_program_id = $subprogram['program']->v3_program_id;
                     $nextProgram->sub_programs = isset($subprogram['sub_programs']) ?  (object) $subprogram['sub_programs'] : null;
                     // pr("nextProgram of SubProgram");
                     // pr($nextProgram->account_holder_id);
-                    return $this->migrateSingleProgram($v3_organization_id, $nextProgram, $v3Program->id);
+                    $this->migrateSingleProgram($v3_organization_id, $nextProgram, $v3Program->id);
                 }
             }
             $this->executeV2SQL();
@@ -518,11 +524,11 @@ class MigrateSingleProgramService extends MigrateProgramsService
             foreach( $v2Events as $v2Event ) {
                 $createEvent = true;
                 if( (int) $v2Event->v3_event_id ) {
-                    print(" -  - V2Event:\$v2Event->v3_event_id NOT NULL. Confirming..\n");
+                    $this->printf(" -- v2Event:%d NOT NULL. Confirming..\n", $v2Event->v3_event_id);
 
                     $v3Event = Event::find( $v2Event->v3_event_id );
                     if( $v3Event ) {
-                        print(" -  - Event:{$v2Event->id} exists in v3 as: {$v2Event->v3_event_id}. Skipping..\n");
+                        $this->printf(" -  - Event:%d exists in v3 as: %d. Skipping..\n", $v2Event->id, $v2Event->v3_event_id);
                         if( !$v3Event->v2_event_id ) { //patch missing link
                             $v3Event->v2_event_id = $v2Event->id;
                             $v3Event->save();
@@ -535,7 +541,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     //find by v2 id
                     $v3Event = Event::where('v2_event_id', $v2Event->id )->first();
                     if( $v3Event )   {
-                        printf(" - Event \"%d\" exists for v2: \"%d\", found via v2_event_id. Updating null v3_event_id value.\n", $v3Event->id, $v3Event->v3_event_id);
+                        $this->printf(" - Event \"%d\" exists for v2: \"%d\", found via v2_event_id. Updating null v3_event_id value.\n", $v3Event->id, $v3Event->v3_event_id);
                         //Need to patch
                         $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$v3Event->id} WHERE `id` = {$v2Event->id}");
                         $createEvent = false;

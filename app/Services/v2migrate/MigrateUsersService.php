@@ -175,9 +175,9 @@ class MigrateUsersService extends MigrationService
             //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
             // pr($v3User->id);
             // exit;
-            // (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3User);
+            //## (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3User); //NOT PULLING HERE. Rather pull using separate command.
 
-            $this->executeV2SQL(); //run for any missing run!
+            // $this->executeV2SQL(); //run for any missing run!
 
             // $this->fixUserJournalEvents( $v2User,  $v3User);
             // $this->fixUserXmlEvents( $v2User,  $v3User);

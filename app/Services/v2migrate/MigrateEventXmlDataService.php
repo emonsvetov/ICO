@@ -31,6 +31,8 @@ class MigrateEventXmlDataService extends MigrationService
             foreach( $eventXmlData as $v2EventXmlDataRow)    {
                 $this->migrateEventXmlDataRow($v2EventXmlDataRow);
             }
+        }   else {
+            $this->printf(" -- No eventXmlData rows found for v2Event:%s.", $v2Event->id);
         }
     }
 

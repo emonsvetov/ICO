@@ -140,12 +140,14 @@ class MigrateJournalEventsService extends MigrationService
     public function migrateOwnersJournalEvents()    {
         $v3OwnerAccounts = Account::join('owners', 'owners.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'owners.id AS owner_id'])->get();
         if(count($v3OwnerAccounts)) {
+            $this->printf("%d owner accounts found. Migrating JournalEvents..\n", count($v3OwnerAccounts));
             foreach($v3OwnerAccounts as $v3OwnerAccount)  {
                 $v3Owner = new \App\Models\Owner([
                     'id' => $v3OwnerAccount['owner_id'],
                     'account_holder_id' => $v3OwnerAccount['account_holder_id'],
                     'v2_account_holder_id' => 1,
                 ]);
+                $this->printf("Migrating JournalEvents for v2Owner:%d....\n", $v3Owner->id);
                 $this->migrateJournalEventsByModelAndAccount($v3Owner, $v3OwnerAccount);
             }
         }
@@ -208,19 +210,22 @@ class MigrateJournalEventsService extends MigrationService
                 }
             }
         }   else {
-            $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
+            // $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
+
+            //Get a few fields only. Keeping above for debugging.
+            $sql = sprintf("SELECT postings.id AS posting_id, postings.journal_event_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
 
             $this->printf(" - Fetching journal_events+postings for model %s:\"%s\" & account:\"%s\".\n\n", $this->modelName, $v3Model->id, $v3Account->v2_account_id);
             $results = $this->v2db->select($sql);
 
-            if( $this->printSql ) {
-                $this->printf($sql . "\n\n");
-            }
+            // $this->printf($sql . "\n\n");
 
             if( $results )  {
+                $this->printf("%d journal_events+postings found.\n", count($results));
                 $this->countPostings += count($results);
                 foreach( $results as $row) {
                     // if($row->prime_account_holder_id != 286143) continue;
+                    $this->printf(" - Migrating posting_id:%d\n", $row->posting_id);
                     $this->migrateSingleJournalEventByPostingData( (object) $row );
                 }
             }   else {
@@ -247,6 +252,7 @@ class MigrateJournalEventsService extends MigrationService
                 'is_read' => $postingData->is_read,
                 'v3_journal_event_id' => $postingData->v3_journal_event_id
             ];
+
             $this->migrateSingleJournalEvent((object) $v2JournalEvent, $params);
         }
     }
@@ -280,7 +286,7 @@ class MigrateJournalEventsService extends MigrationService
             $v3JournalEvent = JournalEvent::find( $v2JournalEvent->v3_journal_event_id );
             // pr($existing->toArray());
             if( $v3JournalEvent )   {
-                printf(" - Journal Event \"%d\" exists for v2:%d\n", $v3JournalEvent->id, $v2JournalEvent->id);
+                $this->printf(" - Journal Event \"%d\" exists for v2:%d\n", $v3JournalEvent->id, $v2JournalEvent->id);
                 if( !$v3JournalEvent->v2_journal_event_id ) { //patch missing link
                     $v3JournalEvent->v2_journal_event_id = $v2JournalEvent->id;
                     $v3JournalEvent->save();
@@ -293,7 +299,7 @@ class MigrateJournalEventsService extends MigrationService
             //find by v2 id
             $v3JournalEvent = JournalEvent::where('v2_journal_event_id', $v2JournalEvent->id )->first();
             if( $v3JournalEvent )   {
-                printf(" - Journal Event \"%d\" exists for v2: \"%d\", found via v2_journal_event_id search. Updating null v3_journal_event_id value.\n", $v3JournalEvent->id, $v2JournalEvent->v3_journal_event_id, $v2JournalEvent->id);
+                $this->printf(" - Journal Event \"%d\" exists for v2: \"%d\", found via v2_journal_event_id search. Updating null v3_journal_event_id value.\n", $v3JournalEvent->id, $v2JournalEvent->v3_journal_event_id, $v2JournalEvent->id);
                 //Patch link since missing
                 $this->addV2SQL(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEvent->id, $v2JournalEvent->id));
                 $create = false;
