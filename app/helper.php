@@ -448,3 +448,10 @@ if (! function_exists('getMilestoneOptions')) {
         return $options;
     }
 }
+function inilog( $content ) {
+    die("HE");
+    $fp = fopen(storage_path() . "/logs/inimist.log", "a+");
+    $write = !is_string($content) ? json_encode($content) : $content;
+    fwrite($fp, $write . "\n\n");
+    fclose($fp);
+}

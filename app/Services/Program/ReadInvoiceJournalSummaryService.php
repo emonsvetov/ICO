@@ -39,7 +39,7 @@ class ReadInvoiceJournalSummaryService
 
 		if (is_array ( $billable_sub_programs ) && count ( $billable_sub_programs ) > 0) {
 			foreach ( $billable_sub_programs as $sub_program ) {
-				$program_account_holder_ids[] = ( int ) $sub_program->id;
+				$program_account_holder_ids[] = ( int ) $sub_program->account_holder_id;
 			}
 		}
 

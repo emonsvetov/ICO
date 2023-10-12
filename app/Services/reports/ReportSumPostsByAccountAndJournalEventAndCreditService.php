@@ -1,12 +1,8 @@
 <?php
-namespace App\Services\Report;
+namespace App\Services\reports;
 
-use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
-
-class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServiceAbstractBase
+class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServiceAbstract
 {
-
-	const IS_CREDIT = "is_credit";
 
 	protected $is_credit = 1;
 
@@ -19,7 +15,7 @@ class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServi
 
 	/** setup default parameters */
 	protected function setDefaultParams() {
-		$this->params [self::IS_CREDIT] = isset ( $is_credit ) && isset ( $this->$is_credit ) ? $this->$is_credit : '1';
+		$this->params [self::IS_CREDIT] = $this->is_credit;
 		if (! isset ( $this->params [self::SQL_GROUP_BY] ) || ! is_array ( $this->params [self::SQL_GROUP_BY] ) || count ( $this->params [self::SQL_GROUP_BY] ) < 1) {
 			$this->params [self::SQL_GROUP_BY] = array (
 					'a.account_holder_id',

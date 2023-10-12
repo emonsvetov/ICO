@@ -2,10 +2,23 @@
 
 namespace App\Services\reports;
 
+class CONSTANT extends ReportServiceAbstract {}
+
 class ReportFactory
 {
     public function build(string $title = '', array $params = [])
     {
+        pr($title);
+        // pr($params);
+        $program_account_holder_ids = [];
+        if(!empty($params['programs']))  {
+            $program_account_holder_ids = $params['programs'];
+        }   else if( !empty($params['program_account_holder_ids']) )  {
+            $program_account_holder_ids = $params['program_account_holder_ids'];
+        }   else if( !empty($params['account_holder_ids']) )  {
+            $program_account_holder_ids = $params['account_holder_ids'];
+        }
+
         $programs = isset($params['programs']) ? $params['programs'] : null;
         if( is_string( $programs ) && $programs )    {
             $programs = $programs ? explode(',', $programs) : [];
@@ -31,9 +44,9 @@ class ReportFactory
             $limit = $paramLimit;
         }
 
-        $params = [
+        $finalParams = [
             'merchants' => $merchants,
-            'program_account_holder_ids' => $programs,
+            'program_account_holder_ids' => $program_account_holder_ids,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'limit' => $limit ?? null,
@@ -47,6 +60,14 @@ class ReportFactory
             'order' => $order,
             'paginate' => $paginate,
         ];
+
+        if( !empty( $params[CONSTANT::ACCOUNT_TYPES] )) {
+            $finalParams[CONSTANT::ACCOUNT_TYPES] = $params[CONSTANT::ACCOUNT_TYPES];
+        }
+
+        if( !empty( $params[CONSTANT::JOURNAL_EVENT_TYPES] )) {
+            $finalParams[CONSTANT::JOURNAL_EVENT_TYPES] = $params[CONSTANT::JOURNAL_EVENT_TYPES];
+        }
 
         if (empty($title)) {
             throw new \InvalidArgumentException('Invalid Report Title.');
@@ -62,7 +83,7 @@ class ReportFactory
             $className = 'App\Services\reports\Report' . ucfirst($resultTitle).'Service';
 
             if (class_exists($className)) {
-                return new $className($params);
+                return new $className($finalParams);
             } else {
                 throw new \RuntimeException('Report not found.');
             }

@@ -12,6 +12,8 @@ use App\Models\Program;
 
 class ReportJournalDetailedService extends ReportServiceAbstract
 {
+    protected $reportFactory;
+
 	protected function calcByDateRange( $params = [] )
     {
 		// Setup the default params for the sub reports
@@ -57,7 +59,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
 				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
 				$subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
-				$subreport_params [ReportServiceSumPostsByAccountAndJournalEventAndCredit::IS_CREDIT] = 1;
+				$subreport_params [self::IS_CREDIT] = 1;
 				$subreport_params [self::ACCOUNT_TYPES] = array (
 					AccountType::ACCOUNT_TYPE_MONIES_FEES,
 					AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
@@ -93,9 +95,17 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE,
 					JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD
 				];
-				$credits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
+                // pr($subreport_params);
+                // exit;
+				// $credits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
+                $this->reportFactory = new \App\Services\reports\ReportFactory();
+                $report = $this->reportFactory->build("SumPostsByAccountAndJournalEventAndCredit", $subreport_params);
 
-				$credits_report_table = $credits_report->getTable ();
+                $credits_report_table = $report->getReport();
+                pr($credits_report_table);
+                exit;
+
+				// $credits_report_table = $credits_report->getTable ();
 
 				if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
 					foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
@@ -223,7 +233,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				}
 				// TODO: Include deposit reversals and subtract from the deposits row
 				// Get all types of fees, etc where we are interested in them being debits
-				$subreport_params[ReportServiceSumPostsByAccountAndJournalEventAndCredit::IS_CREDIT] = 0;
+				$subreport_params[self::IS_CREDIT] = 0;
 				$subreport_params[self::ACCOUNT_TYPES] = array (
 					AccountType::ACCOUNT_TYPE_POINTS_REDEEMED,
 					AccountType::ACCOUNT_TYPE_MONIES_REDEEMED,
