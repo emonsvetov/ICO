@@ -51,7 +51,7 @@ class BalanceNotificationJob implements ShouldQueue
     {
         echo PHP_EOL . "Balance Notification cron Started on " . date('Y-m-d h:i:s') . PHP_EOL;
 
-        $rootPrograms = Program::getAllRootEmployeeType();
+        $rootPrograms = Program::getAllRoot();
         $accountService = new AccountService;
 
         foreach ($rootPrograms as $rootProgram) {
