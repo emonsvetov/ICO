@@ -36,7 +36,7 @@ class MigrateUsersService extends MigrationService
         // $this->migrateNonDuplicateUsers();
         $this->offset = $this->iteration = 0;
         $this->setDebug(true);
-        $this->migrateDuplicateUsers();
+        // $this->migrateDuplicateUsers();
     }
 
     // private function getDuplicateUsersIdentifiedByEmail() {

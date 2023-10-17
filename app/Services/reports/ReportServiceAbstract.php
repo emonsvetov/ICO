@@ -174,6 +174,7 @@ abstract class ReportServiceAbstract
     /** Calculate data by date range (timestampFrom|To) */
     protected function getDataDateRange() {
         $data = $this->calcByDateRange ( $this->getParams() );
+        // pr($data);
         if (count ( $data ) > 0) {
 			foreach ( $data as $row ) {
 				foreach ( $row as $key => $val ) {
@@ -196,7 +197,7 @@ abstract class ReportServiceAbstract
             $query = $this->setWhereFilters($query);
             $query = $this->setGroupBy($query);
             try {
-                pr($query->count());
+                // pr($query->count());
                 $query = $this->setOrderBy($query);
                 $query = $this->setLimit($query);
                 $this->table = $query->get()->toArray();
@@ -209,6 +210,7 @@ abstract class ReportServiceAbstract
         {
             // $this->table['total'] = count($query);
             // $this->table['data'] = $query;
+            // pr($query);
             $this->table = $query;
         }
         // pr(get_class($this));
@@ -294,7 +296,7 @@ abstract class ReportServiceAbstract
         if( $sql != "")
         {
             $sql = $this->addSqlFilters($sql);
-            // pr($sql);
+            pr($sql);
             return DB::select( DB::raw($sql), []);
         }
 

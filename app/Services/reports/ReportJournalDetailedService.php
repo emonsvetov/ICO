@@ -234,13 +234,22 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING,
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES,
 					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS,
-					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING
+					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING,
+					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_SETUP_FEE,
+					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_FIXED_FEE,
+					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE,
+					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE,
+					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_CONVENIENCE_FEE,
 				);
                 // dd("HERE");
 				// $debits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
+
+                // pr($subreport_params);
                 $debits_report = $this->reportFactory->build("SumPostsByAccountAndJournalEventAndCredit", $subreport_params);
+                // pr($debits_report);
 				$debits_report_table = $debits_report->getReport ();
-                // dd($debits_report_table);
+                // pr($debits_report_table);
+                // exit;
 
 				// Sort the second set of fees
 				if (is_array ( $debits_report_table ) && count ( $debits_report_table ) > 0) {
@@ -285,6 +294,24 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 															// Not sure if we need this as we aren't including payments that were made..
 															// $this->table[(int)$program->account_holder_id]->points_purchased -= $amount;
 														}
+													break;
+                                                    case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_SETUP_FEE:
+                                                        $this->table[(int)$program->account_holder_id]->program_setup_fee -= $amount;
+                                                        break;
+                                                    case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_FIXED_FEE:
+                                                        $this->table[(int)$program->account_holder_id]->program_fixed_fee -= $amount;
+//                                                        $this->table[(int)$program->account_holder_id]->fixed_fee_reversal = $amount;
+                                                        break;
+                                                    case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE:
+                                                        $this->table[(int)$program->account_holder_id]->usage_fee -= $amount;
+                                                        break;
+                                                    case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE:
+                                                        $this->table[(int)$program->account_holder_id]->deposit_fee -= $amount;
+//                                                        $this->table[(int)$program->account_holder_id]->deposit_fee_reversal = $amount;
+														break;
+                                                    case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_CONVENIENCE_FEE:
+                                                        $this->table[(int)$program->account_holder_id]->convenience_fees -= $amount;
+//                                                        $this->table[(int)$program->account_holder_id]->convenience_fee_reversal = $amount;
 													break;
 												}
 											break;

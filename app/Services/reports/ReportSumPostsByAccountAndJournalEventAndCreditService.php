@@ -18,12 +18,9 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 		$this->params [self::IS_CREDIT] = $this->is_credit;
 		if (! isset ( $this->params [self::SQL_GROUP_BY] ) || ! is_array ( $this->params [self::SQL_GROUP_BY] ) || count ( $this->params [self::SQL_GROUP_BY] ) < 1) {
 			$this->params [self::SQL_GROUP_BY] = array (
-					'a.account_holder_id',
-					'atypes.id',
-					'jet.id',
-                    'jet.type',
-                    'atypes.name',
-                    'posts.created_at',
+                'a.account_holder_id',
+                'atypes.id',
+                'jet.id'
 			);
 		}
 	}
@@ -31,17 +28,18 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 	/** Calculate data by date range (timestampFrom|To) */
 	protected function getDataDateRange() {
 		$data = $this->calcByDateRange ( $this->getParams () );
+
         $this->table = [];
 		if (in_array ( self::FIELD_MONTH, $this->params [self::SQL_GROUP_BY] )) {
 			foreach ( $data as $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [$row->{self::FIELD_MONTH}] = $row->{self::FIELD_VALUE};
 			}
 		} else {
-            // die("D");
 			// Organize the data table so it is easier to look stuff up later
 			foreach ( $data as $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
 			}
+            pr($this->table);
 		}
         return $this->table;
 	}

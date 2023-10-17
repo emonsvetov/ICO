@@ -121,12 +121,12 @@ class Giftcode extends Model
 
         // sku_value could be "$10", let's fix that
         $giftcode['sku_value'] = preg_replace("/[^,.0-9]/", '', $giftcode['sku_value']);
-        $giftcode['sku_value'] = (int) $giftcode['sku_value'];
+        $giftcode['sku_value'] = (float) $giftcode['sku_value'];
 
 		if(!$merchant || !$giftcode ) return;
 		$response = [];
 
-        $currentGiftCode = Giftcode::getByCode($giftcode['code'], false);
+        $currentGiftCode = Giftcode::getByCodeAndSkuValue($giftcode['code'], $giftcode['sku_value'], false);//Adding sku value in condition. Some codes have same code value with different sku value.
         if ($currentGiftCode){
             $response['success'] = true;
             $response['gift_code_id'] = $currentGiftCode->id;
@@ -159,6 +159,7 @@ class Giftcode extends Model
 		    $gift_code_id = self::insertGetId(
                 $giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
             );
+            $response['inserted'] = true;
         }catch(\Exception $e){
 		    throw new \Exception ( 'Could not create codes. DB query failed with error:' . $e->getMessage(), 400 );
         }
@@ -390,6 +391,15 @@ class Giftcode extends Model
         return $code;
     }
 
+    public static function getByCodeAndSkuValue(string $code, float $skuValue, bool $exception = true)
+    {
+        self::$all = true;
+        $code = self::where('code', $code)->where('sku_value', $skuValue)->first();
+        if (!$code && $exception){
+            throw new \Exception('Gift Code not found.');
+        }
+        return $code;
+    }
 
     public static function getAllByProgramsQuery(array $programs)
     {

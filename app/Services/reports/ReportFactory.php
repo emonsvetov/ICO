@@ -8,8 +8,6 @@ class ReportFactory
 {
     public function build(string $title = '', array $params = [])
     {
-        // pr($title);
-        // pr($params);
         $program_account_holder_ids = [];
         if(!empty($params['programs']))  {
             $program_account_holder_ids = $params['programs'];
@@ -58,7 +56,7 @@ class ReportFactory
             'createdOnly' => $createdOnly,
             'group' => $group,
             'order' => $order,
-            'paginate' => $paginate,
+            'paginate' => $paginate
         ];
 
         // pr($finalParams);
@@ -69,6 +67,10 @@ class ReportFactory
 
         if( !empty( $params[CONSTANT::JOURNAL_EVENT_TYPES] )) {
             $finalParams[CONSTANT::JOURNAL_EVENT_TYPES] = $params[CONSTANT::JOURNAL_EVENT_TYPES];
+        }
+
+        if( isset( $params[CONSTANT::IS_CREDIT] )) {
+            $finalParams[CONSTANT::IS_CREDIT] = $params[CONSTANT::IS_CREDIT];
         }
 
         if (empty($title)) {

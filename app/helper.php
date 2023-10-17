@@ -448,10 +448,18 @@ if (! function_exists('getMilestoneOptions')) {
         return $options;
     }
 }
-function inilog( $content ) {
-    die("HE");
+function inilog( $content, $mail = false ) {
+	$appPath = app_path();
+    $bt = debug_backtrace();
+    $caller = array_shift($bt);
+    $relativePath = str_replace( $appPath, '', $caller['file']);
+    $file_line = $relativePath . "(line " . $caller['line'] . ")\n";
+	$write = !is_string($content) ? json_encode($content) : $content;
+	if( $mail ) {
+		mail("arvind@inimisttech.com","Debugging on Incentco QA", $file_line . $write);
+		return;
+	}
     $fp = fopen(storage_path() . "/logs/inimist.log", "a+");
-    $write = !is_string($content) ? json_encode($content) : $content;
-    fwrite($fp, $write . "\n\n");
+    fwrite($fp, $file_line . $write . "\n\n");
     fclose($fp);
 }

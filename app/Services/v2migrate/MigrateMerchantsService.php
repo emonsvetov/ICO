@@ -36,6 +36,7 @@ class MigrateMerchantsService extends MigrationService
             $v2MerchantHierarchy = sort_result_by_rank($merchant_tree, $v2MerchantHierarchy, 'merchant');
         }
         // pr(count($v2MerchantHierarchy));
+        // inilog($v2MerchantHierarchy);
         // exit;
         if( $v2MerchantHierarchy ) {
             // DB::beginTransaction();
@@ -197,9 +198,12 @@ class MigrateMerchantsService extends MigrationService
                 (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3Merchant);
                 // $this->migrateMerchantJournalEvents($v3Merchant, $v2Merchant);
                 //It will try to migrate ALL journalEvents for the merchant but we do not want them ALL. We want only events related ONLY to already pulled Models (Program/User).
+                if( isset($v2MerchantNode['sub_merchant']) && sizeof($v2MerchantNode['sub_merchant']) > 0 ) {
+                    foreach( $v2MerchantNode['sub_merchant'] as $v2submerchant ) {
+                        $this->migrateMerchant($v2submerchant, $v3Merchant->id);
+                    }
+                }
             }
-
-            return $v3Merchant;
         }
     }
 
@@ -260,6 +264,9 @@ class MigrateMerchantsService extends MigrationService
 			LIMIT
 				{$offset}, {$limit};
 			";
+
+        pr($statement);
+
         try{
             $this->v2db->statement("SET SQL_MODE=''");
             $result = $this->v2db->select($statement);
