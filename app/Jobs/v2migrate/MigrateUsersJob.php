@@ -16,15 +16,15 @@ class MigrateUsersJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public $migrationService;
-    public $arguments = null;
+    public $options = null;
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct( $arguments = null)
+    public function __construct( $options = null)
     {
-        $this->arguments = $arguments;
+        $this->options = $options;
     }
 
     /**
@@ -35,6 +35,6 @@ class MigrateUsersJob implements ShouldQueue
     public function handle( MigrateUsersService $migrateUsersService )
     {
         print("Migrate Users Job starts!\n");
-        $migrateUsersService->migrate();
+        $migrateUsersService->migrate( $this->options );
     }
 }

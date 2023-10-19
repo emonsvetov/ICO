@@ -4,12 +4,13 @@ namespace App\Services\v2migrate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Password;
 use App\Http\Requests\UserRequest;
-use App\Models\EventXmlData;
+use App\Models\Program;
 use App\Models\JournalEvent;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
 use App\Models\User;
+use App\Models\UserV2User;
 use App\Models\Role;
 
 class MigrateUsersService extends MigrationService
@@ -30,13 +31,38 @@ class MigrateUsersService extends MigrationService
         $this->migrateUserRoleService = $migrateUserRoleService;
     }
 
-    public function migrate()  {
+    public function migrate( $options = [] )  {
+        if( !empty( $options['program'] )) {
+            $v2programs = array_filter($options['program'], function($p) { return ( is_numeric($p) && (int) $p > 0 ); });
+            // pr($programs);
+            if( !$v2programs ) {
+                throw new Exception("Invalid program argument.");
+            }
+            $v3Programs = Program::whereIn('v2_account_holder_id', $v2programs)->get();
+            pr(count($v3Programs));
+            foreach( $v3Programs as $v3Program) {
+                $v2users = $this->v2_read_list_by_program($v3Program->v2_account_holder_id);
+                $this->setv2pid($v3Program->v2_account_holder_id);
+                $this->setv3pid($v3Program->id);
+                foreach( $v2users as $v2user)   {
+                    $this->migrateSingleUserByV2V3ProgramIds($v2user, $v3Program->v2_account_holder_id, $v3Program->id);
+                }
+            }
+            // pr($programs);
+        }
+        exit;
         $this->v2db->statement("SET SQL_MODE=''");
         // $this->migrateUserRoleService->migrate();
         // $this->migrateNonDuplicateUsers();
         $this->offset = $this->iteration = 0;
         $this->setDebug(true);
         // $this->migrateDuplicateUsers();
+    }
+
+    public function migrateUsersByProgram($v2Program, Program $v3Program) {
+        if( !$v2Program || !$v3Program) throw new Exception("Invalid arguments");
+        $v2users = $this->v2_read_list_by_program($v2Program->account_holder_id);
+        $this->migrateProgramUsers($v2Program, $v3Program);
     }
 
     // private function getDuplicateUsersIdentifiedByEmail() {
@@ -98,56 +124,88 @@ class MigrateUsersService extends MigrationService
         $v3User = $this->migrateSingleUser( $v2User );
     }
 
+    public function migrateSingleUserByV2V3ProgramIds($v2User, $v2_program_holder_id, $v3_program_id)    {
+        if( !$v2User || !$v2User->email || !$v2_program_holder_id || !$v3_program_id) {
+            $this->printf("Required argument missing in MigrateUserService->migrateSingleUserByProgram().\n");
+            return;
+        }
+        $this->setv2pid($v2_program_holder_id);
+        $this->setv3pid($v3_program_id);
+        $v3User = $this->migrateSingleUser( $v2User );
+    }
+
+    public function migrateSingleUserByV2Program($v2User, $v2Program)    {
+        if( !$v2User || !$v2User->email || !$v2Program || !$v2Program->v3_program_id) {
+            $this->printf("Required argument missing in MigrateUserService->migrateSingleUserByProgram().\n");
+            return;
+        }
+        $this->setv2pid($v2Program->account_holder_id);
+        $this->setv3pid($v2Program->v3_program_id);
+        $v3User = $this->migrateSingleUser( $v2User );
+    }
+
+    public function syncUserAssoc($v2User, $v3User) {
+        $userV2user = $v3User->v2_users()->where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
+        // pr($userV2user);
+        if( $userV2user ) {
+            // pr($userV2user->toArray());
+            $this->printf(" -- userV2User assoc found for user v2:%d and v3:%s\n", $v2User->account_holder_id, $v3User->id);
+        }   else {
+            $newAssoc = new UserV2User(['v2_user_account_holder_id' => $v2User->account_holder_id]);
+            $v3User->v2_users()->save($newAssoc);
+            $this->printf(" -- New userV2User assoc added for user v2:%d and v3:%s\n", $v2User->account_holder_id, $v3User->id);
+        }
+    }
+
     public function migrateSingleUser( $v2User ) {
 
         if( !$v2User || !$v2User->email ) return;
 
         $this->setDebug(true);
 
-        $this->printf("* Starting migration of user:%d with email:%s\n", $v2User->account_holder_id,$v2User->email);
+        $this->printf("* Starting migration of v2user:%d with email:%s\n", $v2User->account_holder_id, $v2User->email);
 
         // pr($v2User);
+        // exit;
+        // pr($v2User->account_holder_id);
         // exit;
 
         $isNewUser = false;
         $createUser = true;
         if( $v2User->v3_user_id ) {
-            $this->printf(" - The \"v3_user_id\" exists for user %s exists. \n -- Confirming\n",  $v2User->email);
+            $this->printf(" - The \"v3_user_id\" exists for user %s exists. \n -- Confirming.\n",  $v2User->email);
             $v3User = User::find( $v2User->v3_user_id );
+
             if( $v3User ) {
-                //TODO - Check for the update??
-                $this->printf(" -- User {%s} EXISTS! exists in v3. Skipping..\n",  $v2User->email);
-                $createUser = false; //if need to go further use this
-                if( !$v3User->v2_account_holder_id ) {
-                    $v3User->v2_account_holder_id = $v2User->v2_account_holder_id;
-                    $v3User->save();
+                $this->printf(" -- Confirmed - yes. Checking userV2user assoc now..\n");
+                $this->syncUserAssoc($v2User, $v3User);
+                $createUser = false;
+            }   else {
+                $this->printf("User not found with false positive v2User:v3_user_id. We'll need to create one later..\n");
+            }
+        }   else {
+            //We will try to find by 1. email 2. v2User:account_holder_id in user_v2_users table
+            $v3User = User::where('email', $v2User->email)->first();
+            if( $v3User ) {
+                $this->syncUserAssoc($v2User, $v3User);
+                $createUser = false;
+            }   else {
+                $userV2user = UserV2User::where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
+                if( $userV2user ) {
+                    $v3User = $userV2user->user();
+                    $createUser = false;
                 }
             }
         }
         // pr($v3User->toArray());
-
         // exit;
-
         //Create user if applies
         if( $createUser ) {
-            $v3User = User::where( function ($query) use ($v2User) {
-                $query->orWhere('v2_account_holder_id', $v2User->account_holder_id);
-                $query->orWhere('email', $v2User->email);
-            } )->first();
-            if( !$v3User ) {
-                $this->printf("Going to create new user with email:%s\n", $v2User->email);
-                $v3User = $this->createUser($v2User);
-                $this->v2db->statement(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
-                $this->importMap['users'][$v3User->id] = $v3User;
-                $this->printf(" - New User with email:%s created in v3.\n",  $v2User->email);
-                $isNewUser = true;
-            }   else {
-                $this->printf(" - User exists in v3 by \"email:%s\" or \"v2_account_holder_id:%d\".\n",  $v3User->email, $v3User->v2_account_holder_id);
-                if( !$v3User->v2_account_holder_id) {
-                    $v3User->v2_account_holder_id = $v2User->v2_account_holder_id;
-                    $v3User->save();
-                }
-            }
+            $this->printf("Going to create new user with email:%s\n", $v2User->email);
+            $v3User = $this->createUser($v2User);
+            $this->syncUserAssoc($v2User, $v3User);
+            $this->v2db->statement(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
+            $this->printf(" - New User with email:%s created in v3.\n",  $v2User->email);
         }
 
         // return $v3User;

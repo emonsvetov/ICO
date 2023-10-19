@@ -13,7 +13,7 @@ class MigrateUsers extends Command
      *
      * @var string
      */
-    protected $signature = 'v2migrate:users {--id=*}';
+    protected $signature = 'v2migrate:users {--id=*} {--p|program=*}';
 
     /**
      * The console command description.

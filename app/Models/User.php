@@ -351,4 +351,9 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
             $query->where('model_has_roles.program_id', '=', $programId);
         })->first();
     }
+
+    public function v2_users()
+    {
+        return $this->hasMany(UserV2User::class);
+    }
 }

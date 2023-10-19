@@ -217,7 +217,7 @@ Visit https://spatie.be/docs/laravel-permission/v5/introduction for more info ab
 
 ## v2 to v3 Migrations
 
-IMPORTANT - Please follow migration steps in order.
+*** IMPORTANT - Following the following ORDER of migration is IMPORTANT.
 
 ** Migrate Owners
 
@@ -233,7 +233,7 @@ NOTE: Merchant migration should be done before migrating programs
 
 ** Migrating by program(s)
 
-This is the only option right now.
+*** This is the only option right now.
 
 `php artisan v2migrate:program [v2 account_holder_id of root program]`
 
@@ -246,4 +246,5 @@ Running this program will fetch the nested tree of the given program. The import
  - ProgramAccounts
  - ProgramAccounts
 
+`php artisan v2migrate:giftcodes`
 `php artisan v2migrate:journalevents`

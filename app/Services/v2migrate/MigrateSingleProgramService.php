@@ -439,7 +439,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // if( $v2user->account_holder_id == 719107)   {
                 // pr($v2user->account_holder_id);
                 // exit;
-                $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByProgram($v2user, $v2Program);
+                $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
                 // exit;
             // }
         }

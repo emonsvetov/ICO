@@ -17,7 +17,7 @@ class MigrateGiftcodesService extends MigrationService
 {
     public $count = 0;
     public $offset = 0;
-    public $limit = 100;
+    public $limit = 1000;
     public $iteration = 0;
     public $cachedv3Merchants = [];
     public $cachedv3Programs = [];
@@ -55,8 +55,8 @@ class MigrateGiftcodesService extends MigrationService
             exit;
         }
         $this->v2db->statement("SET SQL_MODE=''");
-        $this->minimalSync(); //This will sync only
-        printf("%d codes synched in %d iterations\n", $this->count, $this->iteration);
+        $this->minimalSync();
+        $this->printf("%d codes synched in %d iterations\n", $this->count, $this->iteration);
     }
 
     /**
@@ -77,7 +77,7 @@ class MigrateGiftcodesService extends MigrationService
     public function minimalSync() {
         $this->iteration++;
         $v3ProgramIds = \App\Models\Program::whereNotNull('v2_account_holder_id')->get()->pluck('id');
-        $baseSql = "SELECT gc.id, gc.purchase_date, gc.redemption_date, gc.redemption_value,  gc.cost_basis, gc.discount, gc.sku_value, gc.code, gc.pin, gc.redemption_url, gc.v3_medium_info_id, m.v3_merchant_id, p.v3_program_id AS v3_redeemed_program_id, mr.v3_merchant_id AS v3_redeemed_merchant_id, u.v3_user_id FROM `medium_info` gc JOIN `merchants` m ON gc.merchant_account_holder_id=m.account_holder_id LEFT JOIN programs p on p.account_holder_id=gc.redeemed_program_account_holder_id LEFT JOIN users u on u.account_holder_id=gc.redeemed_account_holder_id LEFT JOIN merchants mr ON mr.account_holder_id=gc.redeemed_merchant_account_holder_id WHERE m.v3_merchant_id != 0 AND m.v3_merchant_id IS NOT NULL";
+        $baseSql = "SELECT gc.id, gc.purchase_date, gc.redemption_date, gc.redemption_datetime, gc.redemption_value,  gc.cost_basis, gc.discount, gc.sku_value, gc.code, gc.pin, gc.redemption_url, gc.v3_medium_info_id, gc.redeemed_program_account_holder_id, gc.redeemed_merchant_account_holder_id, gc.redeemed_account_holder_id AS redeemed_user_account_holder_id, m.v3_merchant_id, p.v3_program_id AS v3_redeemed_program_id, mr.v3_merchant_id AS v3_redeemed_merchant_id, u.v3_user_id AS v3_redeemed_user_id FROM `medium_info` gc JOIN `merchants` m ON gc.merchant_account_holder_id=m.account_holder_id LEFT JOIN programs p on p.account_holder_id=gc.redeemed_program_account_holder_id LEFT JOIN users u on u.account_holder_id=gc.redeemed_account_holder_id LEFT JOIN merchants mr ON mr.account_holder_id=gc.redeemed_merchant_account_holder_id WHERE m.v3_merchant_id != 0 AND m.v3_merchant_id IS NOT NULL";
         // pr($v3ProgramIds);
         if( !$v3ProgramIds )    {
             //No v2 programs found. We only migrate unused codes.
@@ -88,8 +88,8 @@ class MigrateGiftcodesService extends MigrationService
         }
         $baseSql .= " LIMIT {$this->offset}, {$this->limit}";
 
-        pr($baseSql);
-        exit;
+        // pr($baseSql);
+        // exit;
 
         $this->printf("Synce iteration %d started for %d codes\n", $this->iteration, $this->limit);
         $results = $this->v2db->select($baseSql);
@@ -139,6 +139,7 @@ class MigrateGiftcodesService extends MigrationService
                         'purchase_date' => $row->purchase_date,
                         'redemption_date' => $row->redemption_date,
                         'redemption_value' => (float) $row->redemption_value,
+                        'redemption_datetime' => $row->redemption_datetime,
                         'cost_basis' => (float) $row->cost_basis,
                         'discount' => (float) $row->discount,
                         'sku_value' => (float) $row->sku_value,
@@ -167,8 +168,6 @@ class MigrateGiftcodesService extends MigrationService
 
                             print("Code imported, v2:{$row->id}=>v3:{$giftcodeId}. \n");
 
-                            $this->count++;
-
                             $v2Updates['v3_medium_info_id'] = $giftcodeId;
                         }
 
@@ -189,6 +188,13 @@ class MigrateGiftcodesService extends MigrationService
                         if( !$v3Giftcode->redemption_date ) {
                             //The code used in v2 but not updated in v3
                             $v3Updates['redemption_date'] = $row->redemption_date;
+                            $v3Updates['purchased_by_v2'] = 1;
+                        }
+                        //check redemption_datetime
+                        if( !$v3Giftcode->redemption_datetime ) {
+                            //The code used in v2 but not updated in v3
+                            $v3Updates['redemption_datetime'] = $row->redemption_datetime;
+                            $v3Updates['purchased_by_v2'] = 1;
                         }
                         // check redeemed_program_id
                         if( !$v3Giftcode->redeemed_program_id ) {
@@ -212,6 +218,13 @@ class MigrateGiftcodesService extends MigrationService
                         if( !$row->redemption_date ) {
                             //The code used in v3 but not updated in v2
                             $v2Updates['redemption_date'] = $v3Giftcode->redemption_date;
+                            $v2Updates['purchased_by_v3'] = 1;
+                        }
+                        //check redemption_date
+                        if( !$row->redemption_datetime ) {
+                            //The code used in v3 but not updated in v2
+                            $v2Updates['redemption_datetime'] = $v3Giftcode->redemption_datetime;
+                            $v2Updates['purchased_by_v3'] = 1;
                         }
                         // check redeemed_program_id
                         if( !$row->redeemed_program_account_holder_id ) {
@@ -244,6 +257,8 @@ class MigrateGiftcodesService extends MigrationService
                         }
                         $this->addV2SQL("UPDATE `medium_info` SET " . implode(',', $v2UpdatePieces) . " WHERE `id` = {$row->id}");
                     }
+
+                    $this->count++;
                 }
             }
             // DB::commit();
