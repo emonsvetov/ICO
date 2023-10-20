@@ -82,9 +82,9 @@ class ReportAwardSummaryService extends ReportServiceAbstract
             }
         }
 
-        foreach ($table as $key => $item){
+        foreach ($table as $key => $item) {
             $table[$key]->program_name = $item->name;
-            foreach($item->awards as $awardKey => $awardItem){
+            foreach ($item->awards as $awardKey => $awardItem) {
                 $table[$key]->subRows[] = $awardItem;
             }
         }
@@ -92,6 +92,93 @@ class ReportAwardSummaryService extends ReportServiceAbstract
         $this->table['total'] = $participantsReport['total'];
 
         return $this->table;
+    }
+
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $table = $this->getTable();
+        $data = [];
+        if (isset($table['data'])) {
+            foreach ($table['data'] as $key => $item) {
+                foreach ($item->awards as $awardKey => $awardItem) {
+                    $awardItem->program_name = $item->name;
+                    $data[] = $awardItem;
+                }
+            }
+        }
+        $data['data'] = $data;
+        $data['total'] = count($data);
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
+    }
+
+    public function getCsvHeaders(): array
+    {
+        return [
+            [
+                'label' => 'Program Name',
+                'key' => 'program_name'
+            ],
+            [
+                'label' => 'Last Name',
+                'key' => 'recipientLastName'
+            ],
+            [
+                'label' => 'First Name',
+                'key' => 'recipientFirstName'
+            ],
+            [
+                'label' => 'Jan',
+                'key' => 'month1_value'
+            ],
+            [
+                'label' => 'Feb',
+                'key' => 'month2_value'
+            ],
+            [
+                'label' => 'Mar',
+                'key' => 'month3_value'
+            ],
+            [
+                'label' => 'Apr',
+                'key' => 'month4_value'
+            ],
+            [
+                'label' => 'May',
+                'key' => 'month5_value'
+            ],
+            [
+                'label' => 'Jun',
+                'key' => 'month6_value'
+            ],
+            [
+                'label' => 'Jul',
+                'key' => 'month7_value'
+            ],
+            [
+                'label' => 'Aug',
+                'key' => 'month8_value'
+            ],
+            [
+                'label' => 'Sep',
+                'key' => 'month9_value'
+            ],
+            [
+                'label' => 'Oct',
+                'key' => 'month10_value'
+            ],
+            [
+                'label' => 'Nov',
+                'key' => 'month11_value'
+            ],
+            [
+                'label' => 'Dec',
+                'key' => 'month12_value'
+            ],
+        ];
     }
 
 }
