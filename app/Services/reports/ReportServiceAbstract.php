@@ -10,6 +10,7 @@ abstract class ReportServiceAbstract
 {
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
+    const YEAR = 'year';
     const DATE_BEGIN = self::DATE_FROM;
     const DATE_END = self::DATE_TO;
 
@@ -75,6 +76,7 @@ abstract class ReportServiceAbstract
         $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];
         $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
         $this->params[self::SERVER] = $params[self::SERVER] ?? null;
+        $this->params[self::YEAR] = $params[self::YEAR] ?? null;
 
         $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
             is_array ( $params[self::ACCOUNT_TYPES] ) ? $params[self::ACCOUNT_TYPES] : array (
