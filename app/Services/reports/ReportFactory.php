@@ -35,6 +35,7 @@ class ReportFactory
         $group = $params['group'] ?? null;
         $order = $params['order'] ?? null;
         $paginate = false;
+        $server = $params['server'] ?? null;
 
         if ($paramPage && $paramLimit) {
             $paginate = true;
@@ -56,7 +57,8 @@ class ReportFactory
             'createdOnly' => $createdOnly,
             'group' => $group,
             'order' => $order,
-            'paginate' => $paginate
+            'paginate' => $paginate,
+            'server' => $server,
         ];
 
         // pr($finalParams);

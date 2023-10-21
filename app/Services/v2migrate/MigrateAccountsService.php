@@ -4,12 +4,11 @@ namespace App\Services\v2migrate;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
-use App\Models\JournalEvent;
 use App\Models\Merchant;
 use App\Models\Program;
 use App\Models\Account;
-use App\Models\Posting;
 use App\Models\User;
+use App\Models\AccountV2Account;
 
 class MigrateAccountsService extends MigrationService
 {
@@ -22,6 +21,8 @@ class MigrateAccountsService extends MigrationService
     public array $cacheJournalEventsMap = [];
     public bool $printSql = true;
     public bool $useTransactions = true;
+    public $modelName = null;
+
 
     public function __construct()
     {
@@ -73,11 +74,12 @@ class MigrateAccountsService extends MigrationService
         }
     }
 
-    public function migrateByModel( Program|User|Merchant $model ) {
+    public function migrateByModel( Program|User|Merchant $model, int $v2_account_holder_id = null ) {
         $CLASS = get_class($model);
         $modelName = strtolower(substr($CLASS, strrpos($CLASS, "\\") + 1 ));
+        $this->modelName = $modelName;
         $v2PK = "v2_account_holder_id";
-        $v2_account_holder_id = $model->{$v2PK};
+        $v2_account_holder_id = $v2_account_holder_id ?: $model->{$v2PK};
 
         if( !$model ) {
             throw new Exception("Invalid model passed to \"MigrateAccountsService->migrate()\" \n");
@@ -126,34 +128,70 @@ class MigrateAccountsService extends MigrationService
     }
 
     public function migrateSingleAccount( $v2Account, $v3_account_holder_id ) {
+        // pr($this->modelName);
+        // exit;
         $createNewAccount = true;
         $newAccountCreated = true;
         if( $v2Account->v3_account_id ) {
             $this->printf("\$v2Account->v3_account_id is non zero (%s) for v3:%d. Confirming v3 record..\n", $v2Account->v3_account_id, $v2Account->id);
             $v3Account = Account::find($v2Account->v3_account_id);
             if( $v3Account )    {
-                $this->printf("Account entry found for v2:%d by '\$v2Account->v3_account_id'. Skipping creation.\n", $v2Account->id);
-                if( !$v3Account->v2_account_id )    { //if v2 ref is null
-                    $v3Account->v2_account_id = $v2Account->id;
+                $this->printf("v2Account:v3_account_id IS NOT NULL.\n", $v2Account->id);
+                if( $this->modelName == 'user' )    {
+                    /**
+                     * Here we need to save v3Account <=> V2Account into "account_v2_accounts" table.
+                     * There are multiple user accounts for one user in v2 so we need to migrate their accounts into one single account in v3.
+                     * */
+                    $this->syncAccountAssoc( $v2Account, $v3Account );
+                    $v3Account->v2_account_id = null; //We save them in assocication table
                     $v3Account->save();
+                }   else {
+                    if( !$v3Account->v2_account_id )    { //if v2 ref is null
+                        $v3Account->v2_account_id = $v2Account->id;
+                        $v3Account->save();
+                    }
                 }
                 $createNewAccount = false;
             }   else {
-                //check with v2->id
+                if( $this->modelName == 'user' )    {
+                    /**
+                     * Check via account_v2_accounts table
+                     * Remove v2 column from accounts table
+                     */
+                    $accountV2account = AccountV2account::where('v2_account_id', $v2Account->id)->first();
+                    if( $accountV2account ) {
+                        $v3Account = $accountV2account->user();
+                        $createNewAccount = false;
+                        $this->printf("Account found by '\$AccountV2account->v2_account_id'.\n");
+                        if( !$v2Account->v3_account_id ) {
+                            $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
+                        }
+                    }
+                }   else {
+                    //check with v2->id
+                    $v3Account = Account::where('v2_account_id', $v2Account->id )->first();
+                    if( $v3Account )    {
+                        $this->printf("Account entry found for v2:%d by '\$v3Account->v2_account_id'.\n", $v2Account->id);
+                        //found, need to update v2 record
+                        $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
+                        $createNewAccount = false;
+                    }
+                }
+            }
+        }   else {
+            if( $this->modelName == 'user' )    {
+                $accountV2account = AccountV2account::where('v2_account_id', $v2Account->id)->first();
+                if( $accountV2account ) {
+                    $v3Account = $accountV2account->account();
+                    $createNewAccount = false;
+                }
+            }   else {
                 $v3Account = Account::where('v2_account_id', $v2Account->id )->first();
                 if( $v3Account )    {
-                    $this->printf("Account entry found for v2:%d by '\$v3Account->v2_account_id'.\n", $v2Account->id);
                     //found, need to update v2 record
                     $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
                     $createNewAccount = false;
                 }
-            }
-        }   else {
-            $v3Account = Account::where('v2_account_id', $v2Account->id )->first();
-            if( $v3Account )    {
-                //found, need to update v2 record
-                $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
-                $createNewAccount = false;
             }
         }
         if( $createNewAccount ) {
@@ -168,23 +206,33 @@ class MigrateAccountsService extends MigrationService
                 $this->printf("Accounts combination %d-%d-%d-%d exists for v3:ach:%d. Skipping..\n",$v2Account->account_type_id, $v2Account->finance_type_id, $v2Account->medium_type_id, $v2Account->currency_type_id, $v3_account_holder_id);
 
                 // Sync anyway!!
-                if( !$v3Account->v2_account_id ) {
-                    $v3Account->v2_account_id = $v2Account->id;
-                    $v3Account->save();
+                if( $this->modelName == 'user' )    {
+                    $this->syncAccountAssoc($v2Account, $v3Account);
+                }   else {
+                    if( !$v3Account->v2_account_id ) {
+                        $v3Account->v2_account_id = $v2Account->id;
+                        $v3Account->save();
+                    }
                 }
 
-                $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
-
+                if( !$v2Account->v3_account_id )    {
+                    $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
+                }
                 $createNewAccount = false;
-            }   else {
+            }
+            if( $createNewAccount ) {
                 $v3Account = Account::create([
                     'account_holder_id' => $v3_account_holder_id,
                     'account_type_id' => $v2Account->account_type_id,
                     'finance_type_id' => $v2Account->finance_type_id,
                     'medium_type_id' => $v2Account->medium_type_id,
                     'currency_type_id' => $v2Account->currency_type_id,
-                    'v2_account_id' => $v2Account->id,
+                    'v2_account_id' => $this->modelName == 'user' ? null : $v2Account->id,
                 ]);
+
+                if( $this->modelName == 'user' )    {
+                    $this->syncAccountAssoc($v2Account, $v3Account);
+                }
 
                 $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3Account->id, $v2Account->id));
                 $newAccountCreated = true;
@@ -210,4 +258,17 @@ class MigrateAccountsService extends MigrationService
     //         $this->migrate();
     //     }
     // }
+
+    public function syncAccountAssoc($v2Account, $v3Account) {
+        $accountV2account = $v3Account->v2_accounts()->where('v2_account_id', $v2Account->id)->first();
+        // pr($accountV2account);
+        if( $accountV2account ) {
+            // pr($accountV2account->toArray());
+            $this->printf(" -- accountV2Account assoc found for account v2:%d and v3:%s\n", $v2Account->id, $v3Account->id);
+        }   else {
+            $newAssoc = new AccountV2Account(['v2_account_id' => $v2Account->id]);
+            $v3Account->v2_accounts()->save($newAssoc);
+            $this->printf(" -- New accountV2Account assoc added for account v2:%d and v3:%s\n", $v2Account->id, $v3Account->id);
+        }
+    }
 }

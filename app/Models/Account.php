@@ -21,6 +21,11 @@ class Account extends BaseModel
         'currency_type'
     ];
 
+    public function v2_accounts()
+    {
+        return $this->hasMany(AccountV2Account::class);
+    }
+
     public static function getIdByColumns( $args = [], $insert = true)    {
         $fields = [];
         $_fields = ['account_holder_id', 'account_type_id', 'finance_type_id', 'medium_type_id', 'currency_type_id'];

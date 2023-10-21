@@ -177,8 +177,7 @@ class MigrateUsersService extends MigrationService
             $v3User = User::find( $v2User->v3_user_id );
 
             if( $v3User ) {
-                $this->printf(" -- Confirmed - yes. Checking userV2user assoc now..\n");
-                $this->syncUserAssoc($v2User, $v3User);
+                $this->printf(" -- Confirmed - yes. Synching userV2user assoc now..\n");
                 $createUser = false;
             }   else {
                 $this->printf("User not found with false positive v2User:v3_user_id. We'll need to create one later..\n");
@@ -187,7 +186,6 @@ class MigrateUsersService extends MigrationService
             //We will try to find by 1. email 2. v2User:account_holder_id in user_v2_users table
             $v3User = User::where('email', $v2User->email)->first();
             if( $v3User ) {
-                $this->syncUserAssoc($v2User, $v3User);
                 $createUser = false;
             }   else {
                 $userV2user = UserV2User::where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
@@ -211,8 +209,13 @@ class MigrateUsersService extends MigrationService
         // return $v3User;
 
         // Update v2User reference field for v3Id
-        if( !$v2User->v3_user_id && $v3User ) {
-            $this->addV2SQL(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
+        if( !empty($v3User) ) {
+
+            $this->syncUserAssoc($v2User, $v3User);
+
+            if( !$v2User->v3_user_id ) {
+                $this->addV2SQL(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
+            }
         }
 
         // Migrate roles if applies

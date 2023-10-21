@@ -14,6 +14,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
      */
     protected function getBaseQuery(): Builder
     {
+        $selectedPrograms = $this->params[self::PROGRAM_IDS];
         $query = DB::table('users');
         $query->join('program_user', 'program_user.user_id', '=', 'users.id');
         $query->join('programs', 'programs.id', '=', 'program_user.program_id');
@@ -24,6 +25,11 @@ class ReportAwardDetailService extends ReportServiceAbstract
         $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
         $query->join('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
         $query->join('users as awarder', 'awarder.account_holder_id', '=', 'event_xml_data.awarder_account_holder_id');
+        $query->leftJoin('events', function ($join) use ($selectedPrograms) {
+            $join->on('events.name', '=', 'event_xml_data.name')
+                ->whereIn('events.program_id', $selectedPrograms);
+        });
+        $query->leftJoin('event_ledger_codes', 'event_ledger_codes.id', '=', 'events.ledger_code');
 
         $query->addSelect([
             'programs.account_holder_id as program_id',
@@ -91,9 +97,8 @@ class ReportAwardDetailService extends ReportServiceAbstract
             'journal_events.notes as journal_event_notes',
             'journal_event_types.type as journal_event_type',
         ]);
-        // TODO: No table "event_ledger_codes", no "award_level" functional
         $query->addSelect([
-            DB::raw("'' as ledger_code"),
+            'event_ledger_codes.ledger_code',
             DB::raw("
                 IF(`event_xml_data`.`award_level_name` IS NULL,`journal_event_types`.`type`,`event_xml_data`.`award_level_name`) AS `award_level_name`
             ")
@@ -140,72 +145,118 @@ class ReportAwardDetailService extends ReportServiceAbstract
 
     public function getCsvHeaders(): array
     {
-        return [
-            [
-                'label' => 'Program Name',
-                'key' => 'program_name'
-            ],
-            [
-                'label' => 'Program Id',
-                'key' => 'program_id'
-            ],
-            [
-                'label' => 'External Id',
-                'key' => 'external_id'
-            ],
-            [
-                'label' => 'Event',
-                'key' => 'event_name'
-            ],
-            [
-                'label' => 'GL Code',
-                'key' => 'ledger_code'
-            ],
-            [
-                'label' => 'Award Level',
-                'key' => 'award_level_name'
-            ],
-            [
-                'label' => 'Date',
-                'key' => 'posting_timestamp'
-            ],
-            [
-                'label' => 'First Name',
-                'key' => 'recipient_first_name'
-            ],
-            [
-                'label' => 'Program Name',
-                'key' => 'program_name'
-            ],
-            [
-                'label' => 'Last Name',
-                'key' => 'recipient_last_name'
-            ],
-            [
-                'label' => 'Email',
-                'key' => 'recipient_email'
-            ],
-            [
-                'label' => 'From',
-                'key' => 'awarder_full'
-            ],
-            [
-                'label' => 'Referrer',
-                'key' => 'referrer'
-            ],
-            [
-                'label' => 'Notes',
-                'key' => 'notes'
-            ],
-            [
-                'label' => 'Value',
-                'key' => 'points'
-            ],
-            [
-                'label' => 'Dollar Value',
-                'key' => 'dollar_value'
-            ],
-        ];
+        if ($this->params[self::SERVER] === 'program'){
+            return [
+                [
+                    'label' => 'Event',
+                    'key' => 'event_name'
+                ],
+                [
+                    'label' => 'GL Code',
+                    'key' => 'ledger_code'
+                ],
+                [
+                    'label' => 'Date',
+                    'key' => 'posting_timestamp'
+                ],
+                [
+                    'label' => 'First Name',
+                    'key' => 'recipient_first_name'
+                ],
+                [
+                    'label' => 'Last Name',
+                    'key' => 'recipient_last_name'
+                ],
+                [
+                    'label' => 'Email',
+                    'key' => 'recipient_email'
+                ],
+                [
+                    'label' => 'From',
+                    'key' => 'awarder_full'
+                ],
+                [
+                    'label' => 'Referrer',
+                    'key' => 'referrer'
+                ],
+                [
+                    'label' => 'Notes',
+                    'key' => 'notes'
+                ],
+                [
+                    'label' => 'Dollar Value',
+                    'key' => 'dollar_value'
+                ],
+            ];
+        } else {
+            return [
+                [
+                    'label' => 'Program Name',
+                    'key' => 'program_name'
+                ],
+                [
+                    'label' => 'Program Id',
+                    'key' => 'program_id'
+                ],
+                [
+                    'label' => 'External Id',
+                    'key' => 'external_id'
+                ],
+                [
+                    'label' => 'Event',
+                    'key' => 'event_name'
+                ],
+                [
+                    'label' => 'GL Code',
+                    'key' => 'ledger_code'
+                ],
+                [
+                    'label' => 'Award Level',
+                    'key' => 'award_level_name'
+                ],
+                [
+                    'label' => 'Date',
+                    'key' => 'posting_timestamp'
+                ],
+                [
+                    'label' => 'First Name',
+                    'key' => 'recipient_first_name'
+                ],
+                [
+                    'label' => 'Program Name',
+                    'key' => 'program_name'
+                ],
+                [
+                    'label' => 'Last Name',
+                    'key' => 'recipient_last_name'
+                ],
+                [
+                    'label' => 'Email',
+                    'key' => 'recipient_email'
+                ],
+                [
+                    'label' => 'From',
+                    'key' => 'awarder_full'
+                ],
+                [
+                    'label' => 'Referrer',
+                    'key' => 'referrer'
+                ],
+                [
+                    'label' => 'Notes',
+                    'key' => 'notes'
+                ],
+                [
+                    'label' => 'Value',
+                    'key' => 'points'
+                ],
+                [
+                    'label' => 'Dollar Value',
+                    'key' => 'dollar_value'
+                ],
+            ];
+        }
+
     }
 
 }
