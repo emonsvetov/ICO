@@ -21,7 +21,7 @@ class MigrateProgramAccountsService extends MigrationService
     public array $importedPrograms = [];
     public array $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
     public array $cacheJournalEventsMap = [];
-    public bool $printSql = true;
+    public bool $isPrintSql = true;
     public bool $useTransactions = true;
 
     public function __construct()
@@ -87,9 +87,7 @@ class MigrateProgramAccountsService extends MigrationService
                         $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.* FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id where accounts.account_holder_id = %d AND accounts.id=%d AND je.v3_journal_event_id IS NULL ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $program->v2_account_holder_id, $v2Account->id);
                         printf(" - Fetching journal_events+postings for program:\"%s\" & account:\"%s\". Please wait...\n", $program->name, $v2Account->id);
                         $results = $this->v2db->select($sql);
-                        if( $this->printSql ) {
-                            print($sql . "\n");
-                        }
+                        $this->printSql($sql . "\n");
                         // pr($sql);
                         // pr($v2Account->id);
                         // pr(count($results));
@@ -173,18 +171,18 @@ class MigrateProgramAccountsService extends MigrationService
         }
     }
 
-    public function migrate() {
-        $this->iteration++;
-        printf("Migrating programAccounts, iteration:%d\n", $this->iteration);
-        $v3Programs = Program::whereNotNull('v2_account_holder_id')->skip($this->offset)->take($this->limit)->select(['id', 'v2_account_holder_id', 'account_holder_id', 'name'])->get();
-        if( ($countV3Programs = count($v3Programs)) > 0)
-        foreach( $v3Programs as $v2Program ) {
-            $this->migrateAccounts( $v2Program );
-        }
-        $this->offset = $this->offset + $this->limit;
-        // if( $this->count >= 20 ) exit;
-        if( $countV3Programs >= $this->limit) {
-            $this->migrate();
-        }
-    }
+    // public function migrate() {
+    //     $this->iteration++;
+    //     printf("Migrating programAccounts, iteration:%d\n", $this->iteration);
+    //     $v3Programs = Program::whereNotNull('v2_account_holder_id')->skip($this->offset)->take($this->limit)->select(['id', 'v2_account_holder_id', 'account_holder_id', 'name'])->get();
+    //     if( ($countV3Programs = count($v3Programs)) > 0)
+    //     foreach( $v3Programs as $v2Program ) {
+    //         $this->migrateAccounts( $v2Program );
+    //     }
+    //     $this->offset = $this->offset + $this->limit;
+    //     // if( $this->count >= 20 ) exit;
+    //     if( $countV3Programs >= $this->limit) {
+    //         $this->migrate();
+    //     }
+    // }
 }

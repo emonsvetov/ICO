@@ -13,7 +13,7 @@ class MigrationService
     public bool $overwrite = false;
     public int $importedCount = 0;
     public array $imported = [];
-    public bool $printSql = true;
+    public bool $isPrintSql = true;
     public string $v2Sql = '';
     public string $v3Sql = '';
     public bool $debug = true;
@@ -94,7 +94,13 @@ class MigrationService
     }
 
     public function isPrintSql() {
-        return $this->printSql;
+        return $this->isPrintSql;
+    }
+
+    public function printSql( $sql ) {
+        if($this->isPrintSql()) {
+            print("SQL:" . $sql . "\n");
+        }
     }
 
     protected function isDebug() {

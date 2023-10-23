@@ -14,7 +14,7 @@ class MigrateInvoiceJournalEventsService extends MigrationService
     public $limit = 1000;
     public $iteration = 0;
     public $count = 0;
-    public bool $printSql = true;
+    public bool $isPrintSql = true;
 
     public function __construct()
     {

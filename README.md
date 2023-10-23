@@ -247,4 +247,6 @@ Running this program will fetch the nested tree of the given program. The import
  - ProgramAccounts
 
 `php artisan v2migrate:giftcodes`
-`php artisan v2migrate:journalevents`
+`php artisan v2migrate:journalevents --type=merchants`
+`php artisan v2migrate:journalevents --type=programs`
+`php artisan v2migrate:journalevents --type=users`

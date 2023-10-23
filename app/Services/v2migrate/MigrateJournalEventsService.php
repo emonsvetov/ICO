@@ -22,7 +22,7 @@ class MigrateJournalEventsService extends MigrationService
     public $limit = 1;
     public $iteration = 0;
     public $count = 0;
-    public bool $printSql = true;
+    public bool $isPrintSql = false;
     public bool $resycnRoles = true;
     public array $v3UserCache = [];
     public $v2User = null;
@@ -93,14 +93,28 @@ class MigrateJournalEventsService extends MigrationService
     }
 
     public function migrateUsersJournalEvents() {
-        $v3UserAccounts = Account::join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'users.id AS user_id', 'users.v2_account_holder_id AS v2_user_account_holder_id'])->get();
+        // DB::enableQueryLog();
+        DB::statement("SET SQL_MODE=''"); //Fix for groupBy error!
+        $query = Account::join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id')->join('user_v2_users', 'user_v2_users.user_id', '=', 'users.id')->join('account_v2_accounts AS a2a', 'a2a.account_id', '=', 'accounts.id')->select(['accounts.*', 'users.id AS user_id', 'user_v2_users.v2_user_account_holder_id', 'a2a.v2_account_id as a2a_v2_account_id']);
+        // $query->where('users.id', 2520);
+        // $query->groupBy('a2a_v2_account_id');
+        $query->groupBy('accounts.id');
+        $query->orderBy('accounts.id');
+        $v3UserAccounts = $query->get(); //326 ach for 2520
+        // select `accounts`.*, `users`.`id` as `user_id`, `users`.`v2_account_holder_id` as `v2_user_account_holder_id`  from `accounts` inner join `users` on `users`.`account_holder_id` = `accounts`.`account_holder_id` INNER JOIN user_v2_users ON users.id=user_v2_users.user_id GROUP BY accounts.id
+        // pr(toSql(DB::getQueryLog()));
+        // // pr(count($v3UserAccounts));
+        // pr($v3UserAccounts->toArray());
+        // // pr("Hell");
+        // exit;
         if(count($v3UserAccounts)) {
             foreach($v3UserAccounts as $v3UserAccount)  {
-                $v3User = new \App\Models\User([
-                    'id' => $v3UserAccount['user_id'],
-                    'account_holder_id' => $v3UserAccount['account_holder_id'],
-                    'v2_account_holder_id' => $v3UserAccount['v2_user_account_holder_id'],
-                ]);
+                // $v3User = new \App\Models\User([
+                //     'id' => $v3UserAccount['user_id'],
+                //     'account_holder_id' => $v3UserAccount['account_holder_id'],
+                //     'v2_account_holder_id' => $v3UserAccount['v2_user_account_holder_id'],
+                // ]);
+                $v3User = \App\Models\User::find($v3UserAccount['user_id']);
                 $this->migrateJournalEventsByModelAndAccount($v3User, $v3UserAccount);
             }
         }
@@ -169,10 +183,17 @@ class MigrateJournalEventsService extends MigrationService
         // pr($v3Model->toArray());
         // pr($v3Model->toArray());
         // pr($v3Model instanceof Merchant);
-        // exit;
+        // exit;buildMerchantQuery
 
-        if( !$v3Model->v2_account_holder_id || !$v3Account->v2_account_id)    {
-            throw new Exception(sprintf("Invalid \"v2_account_holder_id\" in model \"%s\" or account. Are you sure this model and account was imported properly?\"\n\n", $this->modelName));
+        if( $v3Model instanceof User)   {
+            $v2_users = $v3Model->v2_users()->pluck('v2_user_account_holder_id');
+            if( !$v2_users ) {
+                throw new Exception(sprintf("No v2_users for v3User:%s. Are you sure this user was imported properly?\"\n", $v3Model->id));
+            }
+        }   else {
+            if( !$v3Model->v2_account_holder_id || !$v3Account->v2_account_id)    {
+                throw new Exception(sprintf("Invalid \"v2_account_holder_id\" in model \"%s\" or account. Are you sure this model and account was imported properly?\"\n\n", $this->modelName));
+            }
         }
 
         if( $v3Model instanceof Merchant)   {
@@ -212,15 +233,53 @@ class MigrateJournalEventsService extends MigrationService
         }   else {
             // $sql = sprintf("SELECT postings.id AS posting_id, postings.*, je.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
 
-            //Get a few fields only. Keeping above for debugging.
-            $sql = sprintf("SELECT postings.id AS posting_id, postings.journal_event_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id = %d AND accounts.id=%d ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC", $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
+            if( $v3Model instanceof User )  {
+                // pr($v3Model->id);
+                $in__v2_account_holder_id_col = $v3Model->v2_users()->pluck('v2_user_account_holder_id');
+                if( !$in__v2_account_holder_id_col ) {
+                    throw new Exception(" - empty 'v2_user_account_holder_id'");
+                }
+                $in__v2_account_holder_id = implode(',', $in__v2_account_holder_id_col->toArray());
+                pr($in__v2_account_holder_id);
+                // pr($in__v2_account_holder_id->toArray());
+                // exit;
+                $query = Account::join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id')->join('user_v2_users', 'user_v2_users.user_id', '=', 'users.id')->join('account_v2_accounts AS a2a', 'a2a.account_id', '=', 'accounts.id')->select(['accounts.*', 'users.id AS user_id', 'user_v2_users.v2_user_account_holder_id', 'a2a.v2_account_id as a2a_v2_account_id']);
+                $query->where('users.id', $v3Model->id);
+                $query->groupBy('a2a_v2_account_id');
+                // $query->groupBy('accounts.id');
+                // $query->orderBy('accounts.id');
+                $v3UserAccounts = $query->get(); //326 ach for 2520
+                $in__v2_account_id_col = $v3UserAccounts->pluck('a2a_v2_account_id');
+                if( !$in__v2_account_id_col ) {
+                    throw new Exception(" - empty 'in__v2_account_holder_id'");
+                }
+                $in__v2_account_id = implode(',', $in__v2_account_id_col->toArray());
+                pr($in__v2_account_id);
+            }   else {
+                $in__v2_account_holder_id = [$v3Model->v2_account_holder_id];
+                $in__v2_account_id = [$v3Model->v2_account_id];
+            }
 
-            $this->printf(" - Fetching journal_events+postings for model %s:\"%s\" & account:\"%s\".\n\n", $this->modelName, $v3Model->id, $v3Account->v2_account_id);
+            if( !$in__v2_account_holder_id || !$in__v2_account_id) {
+                throw new Exception(" - empty 'in__v2_account_holder_id' or 'in__v2_account_id'");
+            }
+
+            // pr($in__v2_account_holder_id);
+            // exit;
+
+            //Get a few fields only. Keeping above for debugging.
+            $sql = "SELECT postings.id AS posting_id, postings.journal_event_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id IN ($in__v2_account_holder_id) AND accounts.id IN ($in__v2_account_id) ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC";
+
+            $this->printf(" - Fetching journal_events+postings for model %s:\"%s\"\n", $this->modelName, $v3Model->id);
+            $this->printSql($sql . "\n\n");
+            // exit;
             $results = $this->v2db->select($sql);
 
             // $this->printf($sql . "\n\n");
 
             if( $results )  {
+                // pr(count($results));
+                // exit;
                 $this->printf("%d journal_events+postings found.\n", count($results));
                 $this->countPostings += count($results);
                 foreach( $results as $row) {
@@ -261,16 +320,22 @@ class MigrateJournalEventsService extends MigrationService
 
         $this->setRefByModel($v3Model, $v2Model);
 
-        if( !$v3Model->v2_account_holder_id )    {
-            throw new Exception(sprintf("Invalid \"v2_account_holder_id\" in model \"%s\". Are you sure this model was imported properly?\"\n", $this->modelName));
-        }
+        if( $v3Model instanceof User)   {
+            $userV2user = $v3Model->v2_users()->where('v2_user_account_holder_id', $v2Model->account_holder_id)->first();
+            if( !$userV2user ) {
+                throw new Exception(sprintf("Invalid \"userV2user\". Are you sure this user was imported properly?\"\n"));
+            }
+        } else {
+            if( !$v3Model->v2_account_holder_id )    {
+                throw new Exception(sprintf("Invalid \"v2_account_holder_id\" in model \"%s\". Are you sure this model was imported properly?\"\n", $this->modelName));
+            }
+            $accounts = \App\Models\Account::where('account_holder_id', $v3Model->account_holder_id)->get();
 
-        $accounts = \App\Models\Account::where('account_holder_id', $v3Model->account_holder_id)->get();
-
-        if( count($accounts) > 0 )  {
-            foreach( $accounts as $v3Account)    {
-                if( $v3Account->v2_account_id ) {
-                    $this->migrateJournalEventsByModelAndAccount($v3Model, $v3Account);
+            if( count($accounts) > 0 )  {
+                foreach( $accounts as $v3Account)    {
+                    if( $v3Account->v2_account_id )  {
+                        $this->migrateJournalEventsByModelAndAccount($v3Model, $v3Account);
+                    }
                 }
             }
         }

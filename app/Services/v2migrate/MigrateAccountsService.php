@@ -19,7 +19,7 @@ class MigrateAccountsService extends MigrationService
     public $count = 0;
     public array $importMap = [];
     public array $cacheJournalEventsMap = [];
-    public bool $printSql = true;
+    public bool $isPrintSql = true;
     public bool $useTransactions = true;
     public $modelName = null;
 
@@ -143,9 +143,7 @@ class MigrateAccountsService extends MigrationService
                      * There are multiple user accounts for one user in v2 so we need to migrate their accounts into one single account in v3.
                      * */
                     $this->syncAccountAssoc( $v2Account, $v3Account );
-                    $v3Account->v2_account_id = null; //We save them in assocication table
-                    $v3Account->save();
-                }   else {
+                }   else { //if not type user (i.e. it is a program or merchant)
                     if( !$v3Account->v2_account_id )    { //if v2 ref is null
                         $v3Account->v2_account_id = $v2Account->id;
                         $v3Account->save();
@@ -269,6 +267,10 @@ class MigrateAccountsService extends MigrationService
             $newAssoc = new AccountV2Account(['v2_account_id' => $v2Account->id]);
             $v3Account->v2_accounts()->save($newAssoc);
             $this->printf(" -- New accountV2Account assoc added for account v2:%d and v3:%s\n", $v2Account->id, $v3Account->id);
+        }
+        if( $v3Account->v2_account_id ) {
+            $v3Account->v2_account_id = null; //We save them in assocication table
+            $v3Account->save();
         }
     }
 }

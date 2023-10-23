@@ -27,7 +27,7 @@ class MigrateProgramsService extends MigrationService
     public array $importedPrograms = [];
     public array $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
     public array $cacheJournalEventsMap = [];
-    public bool $printSql = true;
+    public bool $isPrintSql = true;
     public $countPostings = 0;
     public $newPrograms = [];
     public $newProgramsCount = 0;

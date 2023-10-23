@@ -28,7 +28,7 @@ class MigrateUserRoleService extends MigrationService
     public function __construct()
     {
         parent::__construct();
-        $this->printSql = true;
+        $this->isPrintSql = true;
 
         //Get count of user roles
 

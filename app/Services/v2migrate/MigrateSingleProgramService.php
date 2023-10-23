@@ -97,10 +97,13 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // if( $v2Program->account_holder_id != 719006) return;
             // pr($v2Program->account_holder_id);
             //Migration Accounts
+            $this->printf("Migrating program accounts\n");
             $this->migrateProgramAccounts( $v3Program );
 
             // Import program users with roles
+            $this->printf("Migrating program users\n");
             $this->migrateProgramUsers($v2Program, $v3Program);
+            // exit;
 
             // exit;
 

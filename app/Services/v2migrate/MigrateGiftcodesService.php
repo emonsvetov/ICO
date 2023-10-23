@@ -103,6 +103,9 @@ class MigrateGiftcodesService extends MigrationService
                 $createGiftcode = true;
                 $v2Updates = [];
                 $v3Updates = [];
+                if( $row->redemption_datetime == '0000-00-00 00:00:00') {
+                    $row->redemption_datetime = null;
+                }
                 if( $row->v3_medium_info_id ) {
                     $this->printf("v2Medium: v3_medium_info_id IS NOT NULL. Confirming.\n");
                     $v3Giftcode = Giftcode::find($row->v3_medium_info_id);
@@ -184,6 +187,9 @@ class MigrateGiftcodesService extends MigrationService
                 if( !empty($v3Giftcode) ) {
                     //Check for redemption updates
                     if( $row->redemption_date ) {
+                        if( !$row->redemption_datetime ) {
+                            $row->redemption_datetime = $row->redemption_date;
+                        }
                         //check redemption_date
                         if( !$v3Giftcode->redemption_date ) {
                             //The code used in v2 but not updated in v3
