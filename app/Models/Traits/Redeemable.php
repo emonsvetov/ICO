@@ -151,7 +151,8 @@ trait Redeemable
 					'redemption_date' => now(),
 					'redemption_datetime' => now(),
 					'redeemed_user_id' => $user->id,
-					'redeemed_merchant_id' => $code->merchant->id,
+					'merchant_id' => $code->merchant->id,
+					'redeemed_merchant_id' => $code->redeemed_merchant->id,
 					'redeemed_program_id' => $program->id,
 				]);
 				$response['success'] = true;
@@ -303,7 +304,8 @@ trait Redeemable
 					'redemption_date' => now(),
 					'redemption_datetime' => now(),
 					'redeemed_user_id' => $user->id,
-					'redeemed_merchant_id' => $code->merchant->id,
+					'merchant_id' => $code->merchant->id,
+					'redeemed_merchant_id' => $code->redeemed_merchant->id,
 					'redeemed_program_id' => $program->id,
 				]);
 				$response['success'] = true;
