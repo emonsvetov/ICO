@@ -103,9 +103,17 @@ class GiftcodeService
 	public function getRedeemableListByMerchant( int|Merchant $merchant, $filters = [], $orders=[] )
     {
         if( !($merchant instanceof Merchant) && is_numeric($merchant) )	{
-			$merchant = Merchant::find($merchant);
-		}
+            $merchant = Merchant::find($merchant);
+        }
+
         if( !$merchant->exists() ) throw new \Exception ('Merchant not found');
+
+        $topMerchant = null;
+        if ($merchant->get_gift_codes_from_root) {
+            $topMerchant = $merchant->getRoot();
+        }
+
+        $merchant_id = $merchant->get_gift_codes_from_root ? $topMerchant->id : $merchant->id;
 
 		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
 		$query = Giftcode::selectRaw(
@@ -123,7 +131,7 @@ class GiftcodeService
 		->groupBy('redemption_value')
 		->orderBy('sku_value')
 		->orderBy('redemption_value')
-		->where('medium_info.merchant_id', $merchant->id)
+		->where('medium_info.merchant_id', $merchant_id)
 		->where(function($query){
             $query->orWhere('medium_info.hold_until', '<=', DB::raw('NOW()'));
             $query->orWhereNull('medium_info.hold_until');
@@ -163,7 +171,13 @@ class GiftcodeService
             $query->orderBy($orders['column'], $orders['direction']);
         }
 
-		//throw new \Exception ($query->toSql());
+		/*
+		$sql = $query->toSql();
+        $bindings = $query->getBindings();
+
+        $interpolatedSql = DB::raw(vsprintf($sql, $bindings));
+        //throw new \Exception (print_r($bindings,true));
+		*/
 
 		return $query->get();
 	}
