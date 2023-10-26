@@ -9,6 +9,8 @@ use App\Models\SocialWallPost;
 use App\Models\SocialWallPostType;
 use App\Models\User;
 use App\Repositories\interfaces\UserRepositoryInterface;
+use App\Mail\templates\MentionUserEmail;
+use Illuminate\Support\Facades\Mail;
 
 class SocialWallPostService
 {
@@ -24,11 +26,17 @@ class SocialWallPostService
     public function create(array $data): ?SocialWallPost
     {
         $resultObject = SocialWallPost::create($data);
-
+        if(!empty($data['mentions_user_ids'])) {
+            foreach($data['mentions_user_ids'] as $user_id) {
+                $user = User::where('id',$user_id)->get()->first();
+                $content = $this->prepareContent($user->email);
+                $message = new MentionUserEmail($content);
+                Mail::to($user->email)->send($message);
+            }
+        }
         return $resultObject;
-
     }
-
+    
     public function like(Organization $organization, Program $program, $user, array $request)
     {
         // print_r($request['id']);
@@ -118,6 +126,15 @@ class SocialWallPostService
         $resultProgramIds = array_unique($resultProgramIds);
 
         return $resultProgramIds;
+    }
+    /**
+     * @return string
+     */
+    private function prepareContent($userName)
+    {
+        return "<p>Dear {$userName},</p>
+            <p>You are mentioned on social wall!</p>
+            <p>Thanks!</p>";
     }
 
 }

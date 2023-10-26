@@ -39,7 +39,8 @@ class EmailTemplateType extends Model
         self::EMAIL_TEMPLATE_TYPE_PEER_ALLOCATION => 'PeerAllocationEmail',
         self::EMAIL_TEMPLATE_TYPE_PEER_AWARD => 'PeerAwardEmail',
         self::EMAIL_TEMPLATE_TYPE_REWARD_EXPIRATION_NOTICE => 'RewardExpirationNoticeEmail',
-        self::EMAIL_TEMPLATE_TYPE_WELCOME => 'WelcomeEmail'
+        self::EMAIL_TEMPLATE_TYPE_WELCOME => 'WelcomeEmail',
+        self::EMAIL_TEMPLATE_TYPE_MENTION_USER => 'MentionUserEmail',
     ];
 
     public static function getIdByType( $type, $insert = false ) {
