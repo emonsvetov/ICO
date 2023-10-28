@@ -32,6 +32,12 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
 
     private $total = [];
 
+    protected function calc()
+    {
+        $this->table = [];
+        $res = $this->getBaseQuery()->get()->toArray();
+        $this->table['data'] = $res;
+    }
 
     protected function getBaseQuery(): Builder
     {
@@ -46,9 +52,10 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
                 SUM(redemption_value - sku_value) as 'total_premium',
                 sku_value,
                 redemption_value,
-                merchant_id as id
-            "),
+                merchant_id as id"),
         );
+
+        $query->groupBy(['sku_value','redemption_value','merchant_id']);
 
         if ($report_key == self::FIELD_REDEMPTION_VALUE) {
             $query->addSelect(
