@@ -253,6 +253,16 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return self::getStatusNew()->id;
     }
 
+    public static function getStatusPendingActivation()
+    {
+        return self::getStatusByName(self::STATUS_PENDING_ACTIVATION);
+    }
+
+    public static function getIdStatusPendingActivation()
+    {
+        return self::getStatusPendingActivation()->id;
+    }
+
     /**
      * @inheritDoc
      */
