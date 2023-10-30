@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Models\Program;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -75,12 +76,14 @@ class GiftcodeService
      * @param Giftcode $giftcode
      * @return bool
      */
-    public function purchaseFromV2(Giftcode $giftcode): bool
+    public function purchaseFromV2(Giftcode $giftcode, User $user): bool
     {
         $result = false;
         try {
             $giftcode->purchased_by_v2 = true;
-            $giftcode->purchase_date = Carbon::now()->format('Y-m-d');
+            $giftcode->redemption_date = Carbon::now()->format('Y-m-d');
+            $giftcode->redemption_datetime = Carbon::now()->format('Y-m-d H:i:s');
+            //$giftcode->redeemed_user_id = $user->id; not working
             $result = $giftcode->save();
         } catch (\Exception $exception){
             Log::debug($exception->getMessage());
