@@ -14,7 +14,9 @@ use Carbon\Carbon;
 
 /**
  * @property date $purchase_date
- * @property int $purchased_by_v2
+ * @property date $redemption_date
+ * @property date $redemption_datetime
+ * @property int $redeemed_user_id
  */
 class Giftcode extends Model
 {
