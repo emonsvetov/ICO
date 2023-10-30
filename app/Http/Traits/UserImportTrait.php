@@ -268,10 +268,10 @@ trait UserImportTrait
      * @param Organization $organization
      * @param Program $program
      * @param array $userData
-     * @param User $currentUser
+     * @param User|null $currentUser
      * @return array
      */
-    private function changeUserData(Organization $organization, Program $program, array $userData, User $currentUser): array
+    private function changeUserData(Organization $organization, Program $program, array $userData, $currentUser): array
     {
         $userData = $this->changeUserDataLiv($organization, $program, $userData, $currentUser);
         return $userData;
@@ -281,10 +281,10 @@ trait UserImportTrait
      * @param Organization $organization
      * @param Program $program
      * @param array $userData
-     * @param User $currentUser
+     * @param User|null $currentUser
      * @return array
      */
-    private function changeUserDataLiv(Organization $organization, Program $program, array $userData, User $currentUser): array
+    private function changeUserDataLiv(Organization $organization, Program $program, array $userData, $currentUser): array
     {
         if ($currentUser) {
 
