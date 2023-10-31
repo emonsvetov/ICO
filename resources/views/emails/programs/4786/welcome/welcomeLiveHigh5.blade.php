@@ -37,7 +37,7 @@ border-left:solid 1px;
                         To kick things off, Liv has awarded you Liv Loot which you can redeem now for a gift card of your choice or save it for later and combine it with other awards.
                     </p>
                     <p style="margin-left:30px; margin-right:30px;">
-                        Visit <a href="{{ $activationLink }}" style="color:#ab0717; font-weight:bold;" target="blank">{{ $activationLink }}</a> to activate your account by logging in with your email and creating a password.
+                        Visit <a href="{{ $activationLink }}" style="color:#ab0717; font-weight:bold;" target="blank">www.livhigh5.com</a> to activate your account by logging in with your email and creating a password.
                     </p>
                     <p style="margin-left:30px; margin-right:30px; margin-bottom: 50px;">
                         Questions?
