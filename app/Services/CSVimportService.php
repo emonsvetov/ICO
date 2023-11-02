@@ -729,8 +729,8 @@ class CSVimportService
                     $result = $this->awardUser($csvImport, $this->saveData, $this->supplied_constants);
                     break;
             }
-            $result['success'] = $result ? true : false;
-            return $result;
+            $finalResult['success'] = $result ? true : false;
+            return $finalResult;
         }
     }
 
