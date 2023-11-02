@@ -48,6 +48,11 @@ class SocialWallPostService
         $post->save();
     }
 
+    public function mentions(Organization $organization, Program $program, $user, array $request)
+    {
+        
+    }
+
     public function getIndexData(Organization $organization, Program $program, $user, array $request): array
     {
         $uses_social_wall = (bool)$program->uses_social_wall;
