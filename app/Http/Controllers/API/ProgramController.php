@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Mail\templates\WelcomeEmail;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\ProgramPaymentReverseRequest;
@@ -28,6 +29,7 @@ use App\Models\Posting;
 use App\Models\Invoice;
 use App\Models\Event;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 
 class ProgramController extends Controller
 {
