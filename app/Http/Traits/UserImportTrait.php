@@ -2,6 +2,8 @@
 namespace App\Http\Traits;
 
 use App\Mail\templates\ProcessCompletionReportEmail;
+use App\Models\EmailTemplate;
+use App\Models\EmailTemplateType;
 use App\Models\Event;
 use App\Models\User;
 use App\Models\Award;
@@ -262,6 +264,50 @@ trait UserImportTrait
         return $currentUser;
     }
 
+    /**
+     * @param Organization $organization
+     * @param Program $program
+     * @param array $userData
+     * @param User|null $currentUser
+     * @return array
+     */
+    private function changeUserData(Organization $organization, Program $program, array $userData, $currentUser): array
+    {
+        $userData = $this->changeUserDataLiv($organization, $program, $userData, $currentUser);
+        return $userData;
+    }
+
+    /**
+     * @param Organization $organization
+     * @param Program $program
+     * @param array $userData
+     * @param User|null $currentUser
+     * @return array
+     */
+    private function changeUserDataLiv(Organization $organization, Program $program, array $userData, $currentUser): array
+    {
+        if ($currentUser) {
+
+        } else {
+            $emailTemplateTypeId = EmailTemplateType::getIdByType(EmailTemplateType::EMAIL_TEMPLATE_TYPE_WELCOME);
+            $programId = $program->id;
+//            $programId = 217;
+            $emailTemplate = EmailTemplate::where('program_id', $programId)
+                ->where('email_template_type_id', $emailTemplateTypeId)
+                ->where('is_default', 1)
+                ->first();
+
+            if ($emailTemplate && $emailTemplate->name === 'Welcome Live High 5') {
+                $explode = explode('@', $userData['email']);
+                if (isset($explode[1]) && mb_strpos($explode[1], 'brooks.us.com') !== false){
+                    $userData['user_status_id'] = User::getIdStatusPendingActivation();
+                }
+            }
+        }
+
+        return $userData;
+    }
+
     public function addAndAwardParticipant($csvImport, $data, $suppliedConstants, AwardService $awardService)
     {
         try
@@ -274,10 +320,11 @@ trait UserImportTrait
                 $program = Program::find($data['CSVProgramRequest'][$key]['program_id']);
                 $organization = Organization::find($suppliedConstants['organization_id']);
                 $currentUser = $this->getUserByData($userData);
+                $userData = $this->changeUserData($organization, $program, $userData, $currentUser);
 
                 if($currentUser){
                     $currentUser->update($userData);
-                    $userStatusId = isset($userData['UserRequest']['user_status_id']) ? (int)$userData['UserRequest']['user_status_id'] : 0;
+                    $userStatusId = isset($userData['user_status_id']) ? (int)$userData['user_status_id'] : 0;
                     $userStatusId = !$userStatusId && isset($data['setups']['UserRequest']['status']) ? (int)$data['setups']['UserRequest']['status'] : $userStatusId;
                     $userStatusId = !$userStatusId ? User::getIdStatusNew() : $userStatusId;
 

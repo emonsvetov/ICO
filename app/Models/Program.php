@@ -442,6 +442,10 @@ class Program extends BaseModel
         return self::IsRoot()->whereIn('type', ['employee'])->get();
     }
 
+    public static function getAllRoot(){
+        return self::IsRoot()->get();
+    }
+
     public function getActiveManagers( $count = false )
     {
         $query = User::whereHas('roles', function ($query) {

@@ -8,10 +8,11 @@ use App\Models\Giftcode;
 use App\Services\GiftcodeService;
 Use Exception;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class GiftcodeController extends Controller
 {
-    public function purchaseFromV2( GiftcodePurchaseRequest $request, GiftcodeService $giftcodeService)
+    public function purchaseFromV2( GiftcodePurchaseRequest $request, GiftcodeService $giftcodeService, User $user)
     {
         $result['success'] = false;
 
@@ -21,7 +22,7 @@ class GiftcodeController extends Controller
                 $giftcode = Giftcode::getByCode($code);
 
                 $result['gift_code'] = $giftcode;
-                $result['success'] = $giftcodeService->purchaseFromV2($giftcode);
+                $result['success'] = $giftcodeService->purchaseFromV2($giftcode, $user);
             }
         } catch (\Exception $exception){
             $result['data'] = $exception->getMessage();

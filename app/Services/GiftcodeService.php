@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Models\Program;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -75,12 +76,14 @@ class GiftcodeService
      * @param Giftcode $giftcode
      * @return bool
      */
-    public function purchaseFromV2(Giftcode $giftcode): bool
+    public function purchaseFromV2(Giftcode $giftcode, User $user): bool
     {
         $result = false;
         try {
             $giftcode->purchased_by_v2 = true;
-            $giftcode->purchase_date = Carbon::now()->format('Y-m-d');
+            $giftcode->redemption_date = Carbon::now()->format('Y-m-d');
+            $giftcode->redemption_datetime = Carbon::now()->format('Y-m-d H:i:s');
+            //$giftcode->redeemed_user_id = $user->id; not working
             $result = $giftcode->save();
         } catch (\Exception $exception){
             Log::debug($exception->getMessage());
@@ -103,9 +106,17 @@ class GiftcodeService
 	public function getRedeemableListByMerchant( int|Merchant $merchant, $filters = [], $orders=[] )
     {
         if( !($merchant instanceof Merchant) && is_numeric($merchant) )	{
-			$merchant = Merchant::find($merchant);
-		}
+            $merchant = Merchant::find($merchant);
+        }
+
         if( !$merchant->exists() ) throw new \Exception ('Merchant not found');
+
+        $topMerchant = null;
+        if ($merchant->get_gift_codes_from_root) {
+            $topMerchant = $merchant->getRoot();
+        }
+
+        $merchant_id = $merchant->get_gift_codes_from_root ? $topMerchant->id : $merchant->id;
 
 		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
 		$query = Giftcode::selectRaw(
@@ -123,7 +134,7 @@ class GiftcodeService
 		->groupBy('redemption_value')
 		->orderBy('sku_value')
 		->orderBy('redemption_value')
-		->where('medium_info.merchant_id', $merchant->id)
+		->where('medium_info.merchant_id', $merchant_id)
 		->where(function($query){
             $query->orWhere('medium_info.hold_until', '<=', DB::raw('NOW()'));
             $query->orWhereNull('medium_info.hold_until');
@@ -163,7 +174,13 @@ class GiftcodeService
             $query->orderBy($orders['column'], $orders['direction']);
         }
 
-		//throw new \Exception ($query->toSql());
+		/*
+		$sql = $query->toSql();
+        $bindings = $query->getBindings();
+
+        $interpolatedSql = DB::raw(vsprintf($sql, $bindings));
+        //throw new \Exception (print_r($bindings,true));
+		*/
 
 		return $query->get();
 	}

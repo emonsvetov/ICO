@@ -271,13 +271,16 @@ class UserService
             } else {
                 $success = false;
                 $code = 404;
+                $message = 'User is not found';
             }
         } else {
             $success = false;
             $code = 403;
+            $message = 'Access is denied';
         }
         return [
             'success' => $success,
+            'message' => $message,
             'code' => $code,
         ];
     }
