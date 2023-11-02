@@ -369,7 +369,7 @@ trait UserImportTrait
                         throw new \Exception(print_r($data, true) . $validator->errors()->first());
                     }
                     $managers = $program->getManagers();
-                    if (empty($managers)) {
+                    if (!isset($managers[0])) {
                         throw new \Exception("No managers in program {$program->name}");
                     }
 

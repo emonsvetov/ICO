@@ -1,12 +1,13 @@
 @php
     $activationLink = false;
     $explode = explode('@', $contactEmail);
-    if (isset($explode[1]) && mb_strpos($explode[1], 'brooks.us.com') !== false){
-        $user = \App\Models\User::where('email', $contactEmail)
+    $user = \App\Models\User::where('email', $contactEmail)
         ->whereHas('roles', function ($query) use ($program) {
             $query->where('roles.name', 'LIKE', config('roles.participant'))
             ->where('model_has_roles.program_id', $program->id);
         })->first();
+
+    if ($user && $user->status->status === \App\Models\User::STATUS_PENDING_ACTIVATION){
         $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
         $activationLink = "{$contactProgramHost0}/invitation?token={$token}";
         Illuminate\Support\Facades\Log::debug("activationLink={$activationLink}");
