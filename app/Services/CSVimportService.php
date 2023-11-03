@@ -765,6 +765,10 @@ class CSVimportService
                         if ($fieldsWithImportRules && ! empty($fieldsWithImportRules[$dbField])) {
                             $this->saveData[$formRequest][$this->line][$dbField] = $this->getImportRule($formRequest,
                                 $fieldsWithImportRules[$dbField], $csvFieldValue, $dbField, $this->line);
+                            // HARDCODE.. status may differ from our database, so disable rule
+                            if($dbField == 'user_status_id' && empty($this->saveData[$formRequest][$this->line][$dbField])){
+                                $this->saveData[$formRequest][$this->line][$dbField] = ($csvFieldValue !== '') ? $csvFieldValue : null;
+                            }
                         } else {
                             $this->saveData[$formRequest][$this->line][$dbField] = ($csvFieldValue !== '') ? $csvFieldValue : null;
                         }

@@ -286,12 +286,12 @@ trait UserImportTrait
      */
     private function changeUserDataLiv(Organization $organization, Program $program, array $userData, $currentUser): array
     {
+        return $userData; // task changed
         if ($currentUser) {
 
         } else {
             $emailTemplateTypeId = EmailTemplateType::getIdByType(EmailTemplateType::EMAIL_TEMPLATE_TYPE_WELCOME);
             $programId = $program->id;
-//            $programId = 217;
             $emailTemplate = EmailTemplate::where('program_id', $programId)
                 ->where('email_template_type_id', $emailTemplateTypeId)
                 ->where('is_default', 1)
@@ -322,13 +322,21 @@ trait UserImportTrait
                 $currentUser = $this->getUserByData($userData);
                 $userData = $this->changeUserData($organization, $program, $userData, $currentUser);
 
+                $userStatusId = isset($userData['user_status_id']) ? $userData['user_status_id'] : 0;
+                if ($userStatusId && $userStatusId == User::TERMINATED){
+                    $userStatusId = User::getIdStatusPendingDeactivation();
+                } else {
+                    $userStatusId = isset($data['setups']['UserRequest']['status']) ? (int)$data['setups']['UserRequest']['status'] : null;
+                }
+                if (!$userStatusId){
+                    throw new \Exception('User Status is Required');
+                }
+                $userData['user_status_id'] = $userStatusId;
+
                 if($currentUser){
                     $filteredData = array_merge(array(), $userData);
                     unset($filteredData['email']);
                     $updated = $currentUser->update($filteredData);
-                    $userStatusId = isset($userData['user_status_id']) ? (int)$userData['user_status_id'] : 0;
-                    $userStatusId = !$userStatusId && isset($data['setups']['UserRequest']['status']) ? (int)$data['setups']['UserRequest']['status'] : $userStatusId;
-                    $userStatusId = !$userStatusId ? User::getIdStatusNew() : $userStatusId;
 
                     $currentUser->changeStatus([$currentUser->id], $userStatusId);
                     $currentUser = User::find($currentUser->id);
