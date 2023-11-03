@@ -323,7 +323,9 @@ trait UserImportTrait
                 $userData = $this->changeUserData($organization, $program, $userData, $currentUser);
 
                 if($currentUser){
-                    $currentUser->update($userData);
+                    $filteredData = array_merge(array(), $userData);
+                    unset($filteredData['email']);
+                    $updated = $currentUser->update($filteredData);
                     $userStatusId = isset($userData['user_status_id']) ? (int)$userData['user_status_id'] : 0;
                     $userStatusId = !$userStatusId && isset($data['setups']['UserRequest']['status']) ? (int)$data['setups']['UserRequest']['status'] : $userStatusId;
                     $userStatusId = !$userStatusId ? User::getIdStatusNew() : $userStatusId;
