@@ -113,10 +113,11 @@ class CheckoutService
                 $where = [
                     'purchased_by_v2' => 0
                 ];
-                if( $program->is_demo || env('APP_ENV') != 'production'){
-                    $where = [
-                        'medium_info_is_test' => 1
-                    ];
+
+                if( GiftcodeService::isTestMode($program) ){
+                    $where['medium_info_is_test'] = 1;
+                }else{
+                    $where['medium_info_is_test'] = 0;
                 }
 
 				$gift_code_values_response = Giftcode::getRedeemableListByMerchant ( $merchant, $where );
@@ -186,9 +187,9 @@ class CheckoutService
                     'purchased_by_v2' => 0
                 ];
                 if( GiftcodeService::isTestMode($program) ){
-                    $where = [
-                        'medium_info_is_test' => 1
-                    ];
+                    $where = ['medium_info_is_test' => 1];
+                }else{
+                    $where = ['medium_info_is_test' => 0];
                 }
 
 				if (in_array ( $merchant->id, $merchantsCostToProgram )) {

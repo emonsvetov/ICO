@@ -279,7 +279,9 @@ class Giftcode extends Model
 		->orderBy('medium_info.id')
 		->limit(1);
 
-		if(env('APP_ENV') != 'production'){
+		if(env('APP_ENV') == 'production'){
+		    $query->where('medium_info_is_test', '=', 0);
+        }else{
 		    $query->where('medium_info_is_test', '=', 1);
         }
 
