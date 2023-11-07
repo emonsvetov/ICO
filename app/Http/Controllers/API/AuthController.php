@@ -6,6 +6,8 @@ use App\Http\Requests\SsoAddTokenRequest;
 use App\Http\Requests\SsoLoginRequest;
 use App\Services\UserService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use PragmaRX\Google2FA\Google2FA;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -137,32 +139,49 @@ class AuthController extends Controller
                 return response(['message' => 'Invalid Credentials'], 422);
             }
 
-            $user->load(['organization', 'roles']);
+            $google2fa = app(Google2FA::class);
+            $secretKey = $google2fa->generateSecretKey();
+            $user->google2fa_secret_key = $secretKey;
+            $user->save();
 
-            $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
+            $google2faUrl = $google2fa->getQRCodeUrl(
+                'Incento',
+                $user->email,
+                $secretKey
+            );
 
-            $response = ['user' => $user, 'access_token' => $accessToken];
+            Mail::raw('Your 2FA Secret Key: ' . $secretKey, function ($message) use ($user) {
+                $message->to($user->email)->subject('2FA Secret Key');
+            });
 
-            $isValidDomain = $domainService->isValidDomain();
+            return response()->json(['google2fa_url' => $google2faUrl]);
 
-            if( $isValidDomain )
-            {
-                $domain = $domainService->getDomain();
-                $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
-                if( !$user->programRoles )  {
-                    return response(['message' => 'No program roles '], 422);
-                }
-                $response['domain'] = $domain;
-                return response( $response );
-            }
-            else if( is_null($isValidDomain) )
-            {
-                if( ($user->isSuperAdmin() || $user->isAdmin()) )
-                {
-                    $response['programCount'] = $user->organization->programs()->count();
-                    return response($response);
-                }
-            }
+            // $user->load(['organization', 'roles']);
+
+            // $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
+
+            // $response = ['user' => $user, 'access_token' => $accessToken];
+
+            // $isValidDomain = $domainService->isValidDomain();
+
+            // if( $isValidDomain )
+            // {
+            //     $domain = $domainService->getDomain();
+            //     $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
+            //     if( !$user->programRoles )  {
+            //         return response(['message' => 'No program roles '], 422);
+            //     }
+            //     $response['domain'] = $domain;
+            //     return response( $response );
+            // }
+            // else if( is_null($isValidDomain) )
+            // {
+            //     if( ($user->isSuperAdmin() || $user->isAdmin()) )
+            //     {
+            //         $response['programCount'] = $user->organization->programs()->count();
+            //         return response($response);
+            //     }
+            // }
 
             throw new \Exception ('Unknown error: Invalid domain or user');
         }
