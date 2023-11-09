@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Services\reports\User\ReportServiceUserHistory;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -92,6 +94,24 @@ class ProgramUserController extends Controller
 
     public function show(Organization $organization, Program $program, User $user): UserResource
     {
+        return $this->UserResponse($user);
+    }
+
+    public function history(Request $request, Organization $organization, Program $program, User $user)
+    {
+        $params = [
+            'program_account_holder_id' => $program->account_holder_id,
+            'user_account_holder_id' => $user->account_holder_id,
+            'paginate' => true,
+            'page' => $request->get('page'),
+            'limit' => $request->get('limit'),
+        ];
+        $report = new ReportServiceUserHistory ($params);
+        return response($report->getReport());
+
+        print_r($reportTable);
+        die;
+
         return $this->UserResponse($user);
     }
 

@@ -24,6 +24,7 @@ abstract class ReportServiceAbstract
     const FIELD_JOURNAL_EVENT_TYPE = "journal_event_type";
 
     const PROGRAM_ID = 'programId';
+    const PROGRAM_ACCOUNT_HOLDER_ID = 'program_account_holder_id';
     const CREATED_ONLY = 'createdOnly';
     const PROGRAMS = 'program_account_holder_ids';
     const PROGRAM_IDS = 'program_ids';
@@ -38,6 +39,7 @@ abstract class ReportServiceAbstract
     const JOURNAL_EVENT_TYPES = "journal_event_types";
     const FIELD_ACCOUNT_TYPE = "account_type_name";
     const ACCOUNT_HOLDER_IDS = "account_holder_ids";
+    const USER_ACCOUNT_HOLDER_ID = "user_account_holder_id";
     const ACCOUNT_TYPES = "account_types";
     const SERVER = "server";
 
@@ -68,6 +70,8 @@ abstract class ReportServiceAbstract
         $this->params[self::MERCHANTS_ACTIVE] = $params[self::MERCHANTS_ACTIVE] ?? null;
         $this->params[self::FIELD_REPORT_KEY] = $params[self::FIELD_REPORT_KEY] ?? null;
         $this->params[self::PROGRAM_ID] = $params[self::PROGRAM_ID] ?? null;
+        $this->params[self::PROGRAM_ACCOUNT_HOLDER_ID] = $params[self::PROGRAM_ACCOUNT_HOLDER_ID] ?? null;
+        $this->params[self::USER_ACCOUNT_HOLDER_ID] = $params[self::USER_ACCOUNT_HOLDER_ID] ?? null;
         $this->params[self::CREATED_ONLY] = $params[self::CREATED_ONLY] ?? null;
         $this->params[self::SQL_GROUP_BY] = $params[self::SQL_GROUP_BY] ?? null;
         $this->params[self::SQL_ORDER_BY] = $params[self::SQL_ORDER_BY] ?? null;
