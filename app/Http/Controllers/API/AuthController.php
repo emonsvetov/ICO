@@ -138,13 +138,13 @@ class AuthController extends Controller
             }
 
             else {
-                if ($request->code != $user->token_2fa || !$user->twoFA_verified) {
+                if ($request->code != $user->token_2fa || !$user->twofa_verified) {
                     return response(['message' => 'Invalid 2FA code'], 422);
                 }
 
             }
 
-            $user->twoFA_verified = false;
+            $user->twofa_verified = false;
 
             $user->save();
             

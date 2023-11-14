@@ -305,7 +305,7 @@ class UserService
         $token = Str::random(6);
         $recipientEmail = $user->email;
         $user->token_2fa = $token;
-        $user->twoFA_verified = true;
+        $user->twofa_verified = true;
         $user->save();
        
         try {

@@ -15,7 +15,7 @@ class Add2faVerifiedToUserTable extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             //
-            $table->boolean('twoFA_verified');
+            $table->boolean('twofa_verified');
         });
     }
 
@@ -28,7 +28,7 @@ class Add2faVerifiedToUserTable extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             //
-            $table->dropColumn('twoFA_verified');
+            $table->dropColumn('twofa_verified');
 
         });
     }

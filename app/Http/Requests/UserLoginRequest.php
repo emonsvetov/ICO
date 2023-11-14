@@ -76,7 +76,10 @@ class UserLoginRequest extends FormRequest
             'password' => 'required',
             'domainKey' => 'sometimes|string',
             'code' => [
-                'required'
+                'required',
+                Rule::exists('users')->where(function ($query) {
+                    $query->where('code', $this->code);
+                }),
             ]
         ];
     }
