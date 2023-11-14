@@ -24,7 +24,11 @@ class TokenCreationRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email|mustExistInModel:User|use:email',
+            'email' => [
+                'required',
+            'email',
+            Rule::exists(User::class, 'email'),
+            ]
         ];
     }
 }
