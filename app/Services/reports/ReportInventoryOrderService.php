@@ -23,7 +23,7 @@ class ReportInventoryOrderService extends ReportServiceAbstract
             "merchant_optimal_values.optimal_value",
         )
             ->join('merchant_optimal_values', 'merchant_optimal_values.merchant_id', '=',
-                'merchants.account_holder_id');
+                'merchants.id');
         $result = $query->get();
 
         foreach ($result as $row) {
