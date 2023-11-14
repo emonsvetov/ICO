@@ -3,8 +3,11 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Services\DomainService;
+
+use Illuminate\Validation\Rule;
 
 class UserLoginRequest extends FormRequest
 {
@@ -19,7 +22,14 @@ class UserLoginRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+        return $this->request->has('code');
+    }
+
+    protected function failedAuthorization()
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => 'Code is required',
+        ], 403));
     }
 
     public function withValidator($validator)
@@ -40,6 +50,20 @@ class UserLoginRequest extends FormRequest
         });
     }
 
+    protected function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors();
+
+        if ($errors->has('code.required')) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Code is required.',
+                'errors' => $errors,
+            ], 403));
+        }
+
+
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -50,7 +74,10 @@ class UserLoginRequest extends FormRequest
         return [
             'email' => 'required|email',
             'password' => 'required',
-            'domainKey' => 'sometimes|string'
+            'domainKey' => 'sometimes|string',
+            'code' => [
+                'required'
+            ]
         ];
     }
 }

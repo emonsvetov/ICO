@@ -4,10 +4,9 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\SsoAddTokenRequest;
 use App\Http\Requests\SsoLoginRequest;
+use App\Http\Requests\TokenCreationRequest;
 use App\Services\UserService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -138,9 +137,6 @@ class AuthController extends Controller
                 return response(['message' => 'Invalid Credentials'], 422);
             }
 
-            if (!$request->code) {
-                return response(['message' => 'Code is required'], 403);
-            }
             else {
                 if ($request->code != $user->token_2fa || !$user->twoFA_verified) {
                     return response(['message' => 'Invalid 2FA code'], 422);
@@ -194,35 +190,13 @@ class AuthController extends Controller
         }
     }
 
-    public function generate2faSecret(Request $request)
+    public function generate2faSecret(TokenCreationRequest $request, UserService $service)
     {
-        $user = User::where('email', $request->email)->first();
-        $token = Str::random(6);
-        $recipientEmail = $user->email;
-        $user->token_2fa = $token;
-        $user->twoFA_verified = true;
-        $user->save();
-       
-        try {
-            Mail::raw($token, function ($message) use ($recipientEmail) {
-                $message->to($recipientEmail)
-                        ->subject('2FA code for Incentco');
-            });
-            return response(['message' => 'Verification email sent'], 200);
-        }
-        catch(\Exception $e)
-        {
-        return response(
-            [
-                            'message'=>'Mail request failed',
-                            'errors' => [
-                                'mailError' => $e->getMessage()
-                            ]
-                        ],
-                        422);
-
-        }
-       
+        $data = $request->validated();
+        $res = $service->generate2faSecret($data);
+        return response([
+            'success' => $res['success']
+        ], $res['code']);
     }
 
     public function logout (Request $request) {
