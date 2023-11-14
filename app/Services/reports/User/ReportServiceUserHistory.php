@@ -30,7 +30,6 @@ class ReportServiceUserHistory extends ReportServiceAbstractBase
         });
         $query->join('postings', function ($join) use ($account_type) {
             $join->on('postings.account_id', '=', 'accounts.id');
-//            $join->on('postings.is_credit', '=', DB::raw("'1'"));
         });
         $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
         $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
@@ -43,7 +42,18 @@ class ReportServiceUserHistory extends ReportServiceAbstractBase
             if(`postings`.`is_credit` = 1, `postings`.`posting_amount`, -`postings`.`posting_amount`) AS amount,
             `postings`.`is_credit`,
             `postings`.`is_credit` as is_credit2,
-            '{$program->name}' as program
+            \"{$program->name}\" as program,
+            (
+                SELECT
+                    SUM(if(p.is_credit = 1, p.posting_amount, -p.posting_amount)) as total
+                FROM
+                    `postings` p
+                    INNER JOIN `journal_events` je ON je.id = p.journal_event_id
+                    INNER JOIN `journal_event_types` jet ON jet.id = je.journal_event_type_id
+                WHERE
+                    p.account_id = `accounts`.id
+                    AND jet.id = `journal_event_types`.id
+            ) as event_total
         ");
 
         return $query;

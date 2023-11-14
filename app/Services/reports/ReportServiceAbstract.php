@@ -40,6 +40,7 @@ abstract class ReportServiceAbstract
     const FIELD_ACCOUNT_TYPE = "account_type_name";
     const ACCOUNT_HOLDER_IDS = "account_holder_ids";
     const USER_ACCOUNT_HOLDER_ID = "user_account_holder_id";
+    const USER_ID = "user_id";
     const ACCOUNT_TYPES = "account_types";
     const SERVER = "server";
 
@@ -69,6 +70,7 @@ abstract class ReportServiceAbstract
         $this->params[self::MERCHANTS] = isset($params[self::MERCHANTS]) && is_array($params[self::MERCHANTS]) ? $params[self::MERCHANTS] : [];
         $this->params[self::MERCHANTS_ACTIVE] = $params[self::MERCHANTS_ACTIVE] ?? null;
         $this->params[self::FIELD_REPORT_KEY] = $params[self::FIELD_REPORT_KEY] ?? null;
+        $this->params[self::USER_ID] = $params[self::USER_ID] ?? null;
         $this->params[self::PROGRAM_ID] = $params[self::PROGRAM_ID] ?? null;
         $this->params[self::PROGRAM_ACCOUNT_HOLDER_ID] = $params[self::PROGRAM_ACCOUNT_HOLDER_ID] ?? null;
         $this->params[self::USER_ACCOUNT_HOLDER_ID] = $params[self::USER_ACCOUNT_HOLDER_ID] ?? null;

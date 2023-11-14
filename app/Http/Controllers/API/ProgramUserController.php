@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\API;
 
 use App\Services\reports\User\ReportServiceUserHistory;
+use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
+use App\Services\reports\User\ReportServiceUserChangeLogs;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Exception;
@@ -103,16 +105,43 @@ class ProgramUserController extends Controller
             'program_account_holder_id' => $program->account_holder_id,
             'user_account_holder_id' => $user->account_holder_id,
             'paginate' => true,
-            'page' => $request->get('page'),
             'limit' => $request->get('limit'),
+            'offset' => ($request->get('page') - 1) * $request->get('limit'),
         ];
-        $report = new ReportServiceUserHistory ($params);
+        $params = array_merge($params, $request->all());
+        $report = new ReportServiceUserHistory($params);
+
         return response($report->getReport());
+    }
 
-        print_r($reportTable);
-        die;
+    public function giftCodesRedeemed(Request $request, Organization $organization, Program $program, User $user)
+    {
+        $params = [
+            'programId' => $program->id,
+            'user_id' => $user->id,
+            'paginate' => true,
+            'limit' => $request->get('limit'),
+            'offset' => ($request->get('page') - 1) * $request->get('limit'),
+        ];
+        $params = array_merge($params, $request->all());
+        $report = new ReportServiceUserGiftCodeReedemed($params);
 
-        return $this->UserResponse($user);
+        return response($report->getReport());
+    }
+
+    public function changeLogs(Request $request, Organization $organization, Program $program, User $user)
+    {
+        $params = [
+            'programId' => $program->id,
+            'user_id' => $user->id,
+            'paginate' => true,
+            'limit' => $request->get('limit'),
+            'offset' => ($request->get('page') - 1) * $request->get('limit'),
+        ];
+        $params = array_merge($params, $request->all());
+        $report = new ReportServiceUserChangeLogs($params);
+
+        return response($report->getReport());
     }
 
     public function update(UserRequest $request, Organization $organization, Program $program, User $user)
