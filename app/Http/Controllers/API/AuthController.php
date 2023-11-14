@@ -74,7 +74,8 @@ class AuthController extends Controller
         $data = $request->validated();
         $res = $service->ssoAddToken($data, $request->ip());
         return response([
-            'success' => $res['success']
+            'success' => $res['success'],
+            'message'=> $res['message']
         ], $res['code']);
     }
 
