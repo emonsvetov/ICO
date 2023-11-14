@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Services\DomainService;
-
+use App\Models\User;
 use Illuminate\Validation\Rule;
 
 class UserLoginRequest extends FormRequest
@@ -50,18 +50,28 @@ class UserLoginRequest extends FormRequest
         });
     }
 
-    protected function failedValidation(Validator $validator)
+    // protected function failedValidation($validator)
+    // {
+    //     $errors = $validator->errors();
+
+    //     if ($errors->has('code')) {
+    //         $failedRules = $validator->failed()['code'];
+
+    
+    //             throw new HttpResponseException(response()->json([
+    //                 'message' => 'Invalid Credentials.',
+    //                 'errors' => $errors,
+    //             ], 422));
+            
+    //     }
+
+    // }
+
+    public function messages()
     {
-        $errors = $validator->errors();
-
-        if ($errors->has('code.required')) {
-            throw new HttpResponseException(response()->json([
-                'message' => 'Code is required.',
-                'errors' => $errors,
-            ], 403));
-        }
-
-
+        return [
+            'email.exists' => 'Invalid code is given',
+        ];
     }
 
     /**
@@ -72,14 +82,18 @@ class UserLoginRequest extends FormRequest
     public function rules()
     {
         return [
-            'email' => 'required|email',
+            'email' => [
+                'required',
+                'email',
+                Rule::exists(User::class, 'email')->where(function ($query) {
+                    $query->where('twofa_verified', true)
+                          ->where('token_2fa', $this->code);
+                })
+            ],
             'password' => 'required',
             'domainKey' => 'sometimes|string',
             'code' => [
                 'required',
-                Rule::exists('users')->where(function ($query) {
-                    $query->where('code', $this->code);
-                }),
             ]
         ];
     }

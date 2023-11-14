@@ -1,9 +1,10 @@
 <?php
 
 namespace App\Http\Requests;
-
+namespace App\Http\Requests;
+use Illuminate\Validation\Rule;
 use Illuminate\Foundation\Http\FormRequest;
-
+use App\Models\User;
 class TokenCreationRequest extends FormRequest
 {
     /**

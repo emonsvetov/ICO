@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class Add2faVerifiedToUserTable extends Migration
+class AddTwo2faToUsers extends Migration
 {
     /**
      * Run the migrations.
@@ -14,8 +14,7 @@ class Add2faVerifiedToUserTable extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
-            $table->boolean('twofa_verified');
+            $table->boolean('twofa_verified')->nullable();
         });
     }
 
@@ -27,9 +26,7 @@ class Add2faVerifiedToUserTable extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            //
             $table->dropColumn('twofa_verified');
-
         });
     }
 }

@@ -126,6 +126,7 @@ class AuthController extends Controller
         try {
 
             $validated = $request->validated();
+            
             if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                 return response(['message' => 'Invalid Credentials'], 422);
             }
@@ -137,17 +138,10 @@ class AuthController extends Controller
                 return response(['message' => 'Invalid Credentials'], 422);
             }
 
-            else {
-                if ($request->code != $user->token_2fa || !$user->twofa_verified) {
-                    return response(['message' => 'Invalid 2FA code'], 422);
-                }
-
-            }
-
             $user->twofa_verified = false;
 
             $user->save();
-            
+
             $user->load(['organization', 'roles']);
 
             $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
@@ -155,10 +149,12 @@ class AuthController extends Controller
             $response = ['user' => $user, 'access_token' => $accessToken];
 
             $isValidDomain = $domainService->isValidDomain();
-
+ 
             if( $isValidDomain )
             {
                 $domain = $domainService->getDomain();
+                print_r('error');
+
                 $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
                 if( !$user->programRoles )  {
                     return response(['message' => 'No program roles '], 422);

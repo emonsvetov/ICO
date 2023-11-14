@@ -15,7 +15,7 @@ class Add2faToUserTable extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             //
-            $table->string('token_2fa');
+            $table->string('token_2fa')->nullable();
         });
     }
 
