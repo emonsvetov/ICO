@@ -298,6 +298,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}',[App\Http\Controllers\API\ProgramUserController::class, 'show'])->middleware('can:view,App\ProgramUser,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/history',[App\Http\Controllers\API\ProgramUserController::class, 'history'])->middleware('can:view,App\ProgramUser,organization,program,user');
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/gift-codes-redeemed',[App\Http\Controllers\API\ProgramUserController::class, 'giftCodesRedeemed'])->middleware('can:view,App\ProgramUser,organization,program,user');
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/change-logs',[App\Http\Controllers\API\ProgramUserController::class, 'changeLogs'])->middleware('can:view,App\ProgramUser,organization,program,user');
+
     Route::post('/v1/organization/{organization}/program/{program}/user',[App\Http\Controllers\API\ProgramUserController::class, 'store'])->middleware('can:add,App\ProgramUser,organization,program');
 
     Route::put('/v1/organization/{organization}/program/{program}/user/{user}',[App\Http\Controllers\API\ProgramUserController::class, 'update'])->middleware('can:update,App\ProgramUser,organization,program,user');
