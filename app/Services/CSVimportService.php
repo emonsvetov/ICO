@@ -736,6 +736,7 @@ class CSVimportService
 
     private function field_mapping_parse($csvImport, $csvImportSettings)
     {
+        $csvImportSettings->toArray();
         $stream = CsvImport::getAutoImportS3($csvImport);
         if (is_string($stream)) {
             $this->errors[] = $stream;
@@ -744,7 +745,8 @@ class CSVimportService
             while ((($filedata = fgetcsv($stream)) !== false)) {
                 if ($this->line === 0) {
                     foreach ($filedata as $key => $value) {
-                        $headers[trim($value)] = $key;
+                        $value = filterNonPrintable(trim($value));
+                        $headers[$value] = $key;
                     }
                     $this->line++;
                     continue;
