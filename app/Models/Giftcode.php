@@ -26,6 +26,14 @@ class Giftcode extends Model
     protected $table = 'medium_info';
     private static bool $all = false;
 
+
+    const SYNC_STATUS_NOT_REQUIRED = 0;
+    const SYNC_STATUS_REQUIRED = 1;
+    const SYNC_STATUS_IN_PROGRESS = 2;
+    const SYNC_STATUS_ERROR = 3;
+    const SYNC_STATUS_SUCCESS = 5;
+
+
     public function newQuery()
     {
         $query = parent::newQuery();
@@ -408,11 +416,22 @@ class Giftcode extends Model
     public static function readNotSubmittedTangoCodes()
     {
         return self::with('merchant')
-            ->where('medium_info.virtual_inventory', 1)
+            ->where('medium_info.virtual_inventory', '=', 1)
             ->whereNull('medium_info.tango_reference_order_id')
             ->whereNotNull('medium_info.redemption_date')
             ->where('medium_info.redemption_date' , ">=", "2023-08-01")
             ->orderBy('medium_info.sku_value', 'ASC')
+            ->get();
+    }
+
+    public static function readNotSyncedCodes()
+    {
+        return self::with('merchant')
+            ->where('medium_info.virtual_inventory', '=', 0)
+            ->where('medium_info.medium_info_is_test', '=', 0)
+            ->whereNotNull('medium_info.redemption_date')
+            ->where('medium_info.v2_sync_status', '=', self::SYNC_STATUS_REQUIRED)
+            ->orderBy('medium_info.redemption_date', 'ASC')
             ->get();
     }
 }
