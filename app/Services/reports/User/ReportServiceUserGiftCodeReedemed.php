@@ -39,12 +39,4 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
         return $query;
     }
 
-    /**
-     * @inheritDoc
-     */
-    protected function setOrderBy(Builder $query): Builder
-    {
-        $query->orderBy('medium_info.redemption_datetime', 'DESC');
-        return $query;
-    }
 }

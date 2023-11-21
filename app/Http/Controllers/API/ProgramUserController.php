@@ -107,6 +107,8 @@ class ProgramUserController extends Controller
             'paginate' => true,
             'limit' => $request->get('limit'),
             'offset' => ($request->get('page') - 1) * $request->get('limit'),
+            'order' => $request->get('sortby'),
+            'dir' => $request->get('direction'),
         ];
         $params = array_merge($params, $request->all());
         $report = new ReportServiceUserHistory($params);
@@ -122,6 +124,8 @@ class ProgramUserController extends Controller
             'paginate' => true,
             'limit' => $request->get('limit'),
             'offset' => ($request->get('page') - 1) * $request->get('limit'),
+            'order' => $request->get('sortby'),
+            'dir' => $request->get('direction'),
         ];
         $params = array_merge($params, $request->all());
         $report = new ReportServiceUserGiftCodeReedemed($params);
