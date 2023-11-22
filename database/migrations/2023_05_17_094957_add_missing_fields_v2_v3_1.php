@@ -40,7 +40,6 @@ class AddMissingFieldsV2V31 extends Migration
             $table->integer('v2_invoice_id')->nullable();
         });
         Schema::table('merchants', function (Blueprint $table) {
-            $table->dropColumn('v2_merchant_id')->nullable();
             $table->integer('v2_account_holder_id')->nullable();
             $table->string('logo')->nullable()->change();
             $table->string('icon')->nullable()->change();
