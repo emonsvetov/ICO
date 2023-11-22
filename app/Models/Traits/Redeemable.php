@@ -1,6 +1,7 @@
 <?php
 namespace App\Models\Traits;
 
+use App\Models\Giftcode;
 use Illuminate\Support\Facades\DB;
 
 use App\Models\JournalEventType;
@@ -145,19 +146,21 @@ trait Redeemable
 			);
 
 			if( $code->id > 0 )	{ //which it should!
-				$medium_info = self::find( $code->id );
-				$medium_info->update(
-				[
-					'redemption_date' => now(),
-					'redemption_datetime' => now(),
-					'redeemed_user_id' => $user->id,
-					'merchant_id' => $code->merchant->id,
-					'redeemed_merchant_id' => $code->redeemed_merchant->id,
-					'redeemed_program_id' => $program->id,
-				]);
+				$medium_info = Giftcode::find( $code->id );
+				if($medium_info){
+				    $medium_info->update([
+                        'redemption_date' => now(),
+                        'redemption_datetime' => now(),
+                        'redeemed_user_id' => $user->id,
+                        'merchant_id' => $code->merchant->id,
+                        'redeemed_merchant_id' => $code->redeemed_merchant->id,
+                        'redeemed_program_id' => $program->id,
+                    ]);
+                }
 				$response['success'] = true;
-				$response['journal_event_id'] = $journal_event_id;
-				$response['medium_info_id'] = $code->id;
+                $response['journal_event_id'] = $journal_event_id;
+                $response['medium_info_id'] = $code->id;
+
 			}
 		} catch (Exception $e)	{
 			$response['errors'] = "Error while redeeming. Message: {$e->getMessage()} in line: {$e->getLine()}";
