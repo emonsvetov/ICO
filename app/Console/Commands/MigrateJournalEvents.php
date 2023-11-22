@@ -14,6 +14,9 @@ class MigrateJournalEvents extends Command
      * @var string
      */
     protected $signature = 'v2migrate:journalevents {--type=}';
+    //Example: php artisan v2migrate:journalevents --type=merchants
+    //Example: php artisan v2migrate:journalevents --type=programs
+    //Example: php artisan v2migrate:journalevents --type=users
 
     /**
      * The console command description.

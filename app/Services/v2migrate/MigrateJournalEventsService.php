@@ -52,11 +52,14 @@ class MigrateJournalEventsService extends MigrationService
      */
 
     public function buildMerchantQuery($account_holder_ids = [], $v2_account_holder_id, $v2_account_id) {
-        if( !$account_holder_ids || $account_holder_ids || $account_holder_ids) {
+        if( !$account_holder_ids || !$v2_account_holder_id || !$v2_account_id) {
             throw new Exception("One or more invalid arguments passed");
         }
         $selectColumns = "postings.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id";
-        return $sql = sprintf("SELECT %s FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id=%d AND accounts.id=%d AND je.prime_account_holder_id IN(%s) ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC;", $selectColumns, $v2_account_holder_id, $v2_account_id,  implode(',', $account_holder_ids));
+        $sql = sprintf("SELECT %s FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id=%d AND accounts.id=%d AND je.prime_account_holder_id IN(%s) ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC;", $selectColumns, $v2_account_holder_id, $v2_account_id,  implode(',', $account_holder_ids));
+        // pr($sql);
+        // exit;
+        return $sql;
     }
 
     public function migrateMerchantsJournalEvents() {
@@ -65,12 +68,15 @@ class MigrateJournalEventsService extends MigrationService
         // exit;
         if(count($v3MerchantAccounts)) {
             foreach($v3MerchantAccounts as $v3MerchantAccount)  {
-                $v3Merchant = new \App\Models\Merchant([
-                    'id' => $v3MerchantAccount['merchant_id'],
-                    'account_holder_id' => $v3MerchantAccount['account_holder_id'],
-                    'v2_account_holder_id' => $v3MerchantAccount['v2_merchant_account_holder_id'],
-                ]);
-                $this->migrateJournalEventsByModelAndAccount($v3Merchant, $v3MerchantAccount);
+                // $v3Merchant = new \App\Models\Merchant([
+                //     'id' => $v3MerchantAccount['merchant_id'],
+                //     'account_holder_id' => $v3MerchantAccount['account_holder_id'],
+                //     'v2_account_holder_id' => $v3MerchantAccount['v2_merchant_account_holder_id'],
+                // ]);
+                $v3Merchant = \App\Models\Merchant::find( $v3MerchantAccount['merchant_id'] );
+                if( $v3Merchant ) {
+                    $this->migrateJournalEventsByModelAndAccount($v3Merchant, $v3MerchantAccount);
+                }
             }
         }
     }
@@ -82,12 +88,15 @@ class MigrateJournalEventsService extends MigrationService
         // exit;
         if(count($v3ProgramAccounts)) {
             foreach($v3ProgramAccounts as $v3ProgramAccount)  {
-                $v3Program = new \App\Models\Program([
-                    'id' => $v3ProgramAccount['program_id'],
-                    'account_holder_id' => $v3ProgramAccount['account_holder_id'],
-                    'v2_account_holder_id' => $v3ProgramAccount['v2_program_account_holder_id'],
-                ]);
-                $this->migrateJournalEventsByModelAndAccount($v3Program, $v3ProgramAccount);
+                // $v3Program = new \App\Models\Program([
+                //     'id' => $v3ProgramAccount['program_id'],
+                //     'account_holder_id' => $v3ProgramAccount['account_holder_id'],
+                //     'v2_account_holder_id' => $v3ProgramAccount['v2_program_account_holder_id'],
+                // ]);
+                $v3Program = \App\Models\Program::find( $v3ProgramAccount['program_id']);
+                if( $v3Program ) {
+                    $this->migrateJournalEventsByModelAndAccount($v3Program, $v3ProgramAccount);
+                }
             }
         }
     }
@@ -115,7 +124,9 @@ class MigrateJournalEventsService extends MigrationService
                 //     'v2_account_holder_id' => $v3UserAccount['v2_user_account_holder_id'],
                 // ]);
                 $v3User = \App\Models\User::find($v3UserAccount['user_id']);
-                $this->migrateJournalEventsByModelAndAccount($v3User, $v3UserAccount);
+                if( $v3User ) {
+                    $this->migrateJournalEventsByModelAndAccount($v3User, $v3UserAccount);
+                }
             }
         }
     }
@@ -199,6 +210,8 @@ class MigrateJournalEventsService extends MigrationService
         if( $v3Model instanceof Merchant)   {
 
             //For merchants we need to get all postings by Owner (account_holder_id=1)
+            // pr($v3Model->v2_account_holder_id);
+            // pr($v3Account->v2_account_id);
             $sql = $this->buildMerchantQuery([1], $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
 
             $results = $this->v2db->select($sql);
@@ -214,19 +227,21 @@ class MigrateJournalEventsService extends MigrationService
             // $this->printf($this->countPostings . " posts imported\n\n");
 
             //If migration is to be done for merchants then we need to limit the postings by existing account_holders in v3 so that we do not pull data for non existent users in v3
-            $users = AccountHolder::join('accounts', 'accounts.account_holder_id', '=', 'account_holders.id')->join('users', 'users.account_holder_id', '=', 'account_holders.id')->where('account_holders.context', '=', 'User')->whereNotNull('users.v2_account_holder_id')->select('users.v2_account_holder_id')->get();
+            $users = AccountHolder::join('accounts', 'accounts.account_holder_id', '=', 'account_holders.id')->join('users', 'users.account_holder_id', '=', 'account_holders.id')->join('user_v2_users', 'user_v2_users.user_id', '=', 'users.id')->where('account_holders.context', '=', 'User')->select('user_v2_users.v2_user_account_holder_id AS v2_account_holder_id')->groupBy('user_v2_users.v2_user_account_holder_id')->get();
             if( $users ) {
                 // $account_holder_ids = $users->pluck('account_holder_id');
                 $accountHolderIds = $users->pluck('v2_account_holder_id');
                 // pr($accountHolderIds);
-                $sql = $this->buildMerchantQuery($accountHolderIds->toArray(), $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
-                $results = $this->v2db->select($sql);
-                if( $results )  {
-                    $count = 0;
-                    $this->countPostings += count($results);
-                    foreach( $results as $row) {
-                        $this->migrateSingleJournalEventByPostingData( (object) $row );
-                        $count++;
+                if( $accountHolderIds ) {
+                    $sql = $this->buildMerchantQuery($accountHolderIds->toArray(), $v3Model->v2_account_holder_id, $v3Account->v2_account_id);
+                    $results = $this->v2db->select($sql);
+                    if( $results )  {
+                        $count = 0;
+                        $this->countPostings += count($results);
+                        foreach( $results as $row) {
+                            $this->migrateSingleJournalEventByPostingData( (object) $row );
+                            $count++;
+                        }
                     }
                 }
             }
@@ -587,7 +602,7 @@ class MigrateJournalEventsService extends MigrationService
                             if( !empty($this->cachedPrimeAccountHolders[$v2_prime_account_holder_id]) ) {
                                 $v3_prime_account_holder_id = $this->cachedPrimeAccountHolders[$v2_prime_account_holder_id];
                             }   else {
-                                $tmpUser = User::where('v2_account_holder_id', $v2_prime_account_holder_id)->first();
+                                $tmpUser = User::join('user_v2_users', 'user_v2_users.user_id', '=', 'users.id')->where('user_v2_users.v2_user_account_holder_id', $v2_prime_account_holder_id)->first();
                                 if( $tmpUser )  {
                                     $v3_prime_account_holder_id = $tmpUser->account_holder_id;
                                     $this->cachedPrimeAccountHolders[$v2_prime_account_holder_id] = $v3_prime_account_holder_id;
@@ -709,66 +724,66 @@ class MigrateJournalEventsService extends MigrationService
         }
     }
 
-    public function fixPostingsAccoundIds() {
-        // DB::enableQueryLog();
-        $results = \App\Models\Posting::where('account_id', 'LIKE', $this->idPrefix . '%')->get();
-        // pr(sizeof($results));
-        // pr(toSql(DB::getQueryLog()));
-        if( sizeof($results) > 0 )  {
-            foreach( $results as $v3Posting )   {
-                if( !$v3Posting->v2_posting_id) {
-                    continue;
-                }
-                $create = false;
-                $exists = false;
-                $v2_account_id = (int) str_replace($this->idPrefix, '', $v3Posting->account_id);
-                if( $v2_account_id ) {
-                    $sql = sprintf("SELECT * FROM `postings` WHERE `account_id`=%d AND id=%d", $v2_account_id, $v3Posting->v2_posting_id) ;
-                    $v2Posting = current($this->v2db->select($sql));
-                    if( $v2Posting ) {
-                        $v3Account = Account::where('v2_account_id', $v2_account_id)->first();
-                        if( !$v3Account ) {
-                            $sql = sprintf("SELECT * FROM `accounts` WHERE `id`=%d", $v2_account_id) ;
-                            $result = $this->v2db->select($sql);
-                            if( sizeof($result) > 0) {
-                                $v2Account = current($result);
-                                if( $v2Account )    {
-                                    if( $v2Account->v3_account_id ) {
-                                        $v3Account = Account::find($v2Account->v3_account_id);
-                                        if( !$v3Account ) {
-                                            $create = true;
-                                        } else {
-                                            $exists = true;
-                                        }
-                                    }   else {
-                                        $create = true;
-                                    }
-                                }
-                            }
-                        }   else {
-                            $exists = true;
-                        }
-                        if( $create ) {
-                            $v2_account_holder_id = $v2Account->account_holder_id;
-                            pr("create");
-                            // pr($v2_account_holder_id);
-                            $v3Account = Account::create([
-                                'account_holder_id' => $this->idPrefix . $v2_account_holder_id,
-                                'account_type_id' => $v2Account->account_type_id,
-                                'finance_type_id' => $v2Account->finance_type_id,
-                                'medium_type_id' => $v2Account->medium_type_id,
-                                'currency_type_id' => $v2Account->currency_type_id,
-                                'v2_account_id' => $v2Account->id,
-                            ]);
-                        }
+    // public function fixPostingsAccoundIds() {
+    //     // DB::enableQueryLog();
+    //     $results = \App\Models\Posting::where('account_id', 'LIKE', $this->idPrefix . '%')->get();
+    //     // pr(sizeof($results));
+    //     // pr(toSql(DB::getQueryLog()));
+    //     if( sizeof($results) > 0 )  {
+    //         foreach( $results as $v3Posting )   {
+    //             if( !$v3Posting->v2_posting_id) {
+    //                 continue;
+    //             }
+    //             $create = false;
+    //             $exists = false;
+    //             $v2_account_id = (int) str_replace($this->idPrefix, '', $v3Posting->account_id);
+    //             if( $v2_account_id ) {
+    //                 $sql = sprintf("SELECT * FROM `postings` WHERE `account_id`=%d AND id=%d", $v2_account_id, $v3Posting->v2_posting_id) ;
+    //                 $v2Posting = current($this->v2db->select($sql));
+    //                 if( $v2Posting ) {
+    //                     $v3Account = Account::where('v2_account_id', $v2_account_id)->first();
+    //                     if( !$v3Account ) {
+    //                         $sql = sprintf("SELECT * FROM `accounts` WHERE `id`=%d", $v2_account_id) ;
+    //                         $result = $this->v2db->select($sql);
+    //                         if( sizeof($result) > 0) {
+    //                             $v2Account = current($result);
+    //                             if( $v2Account )    {
+    //                                 if( $v2Account->v3_account_id ) {
+    //                                     $v3Account = Account::find($v2Account->v3_account_id);
+    //                                     if( !$v3Account ) {
+    //                                         $create = true;
+    //                                     } else {
+    //                                         $exists = true;
+    //                                     }
+    //                                 }   else {
+    //                                     $create = true;
+    //                                 }
+    //                             }
+    //                         }
+    //                     }   else {
+    //                         $exists = true;
+    //                     }
+    //                     if( $create ) {
+    //                         $v2_account_holder_id = $v2Account->account_holder_id;
+    //                         pr("create");
+    //                         // pr($v2_account_holder_id);
+    //                         $v3Account = Account::create([
+    //                             'account_holder_id' => $this->idPrefix . $v2_account_holder_id,
+    //                             'account_type_id' => $v2Account->account_type_id,
+    //                             'finance_type_id' => $v2Account->finance_type_id,
+    //                             'medium_type_id' => $v2Account->medium_type_id,
+    //                             'currency_type_id' => $v2Account->currency_type_id,
+    //                             'v2_account_id' => $v2Account->id,
+    //                         ]);
+    //                     }
 
-                        if($create || $exists ) {
-                            $v3Posting->account_id = $v3Account->id;
-                            $v3Posting->save();
-                        }
-                    }
-                }
-            }
-        }
-    }
+    //                     if($create || $exists ) {
+    //                         $v3Posting->account_id = $v3Account->id;
+    //                         $v3Posting->save();
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 }
