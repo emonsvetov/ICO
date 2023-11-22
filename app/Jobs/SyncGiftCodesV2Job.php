@@ -10,6 +10,8 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class SyncGiftCodesV2Job implements ShouldQueue
@@ -44,38 +46,41 @@ class SyncGiftCodesV2Job implements ShouldQueue
         $errors = [];
 
         foreach( $codes as $code ){
-
-            DB::table(MEDIUM_INFO)
-                ->where('id', $code->id)
-                ->update(['v2_sync_status' => Giftcode::SYNC_STATUS_IN_PROGRESS]);
-
-            $responseV2 = Http::withHeaders([
-                'X-API-KEY' => env('V2_API_KEY'),
-            ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
-                'code' => $code->code,
-                'redeemed_merchant_account_holder_id' => $code->merchant->v2_merchant_id
-            ]);
-
-
-            $Logger->info('V2: ' . $code->code);
-            $Logger->info('giftcodes_sync result:' . $responseV2->body());
-
-            $res = $responseV2->body();
-            if(!$res->success){
-                DB::table(MEDIUM_INFO)
-                    ->where('id', $code->id)
-                    ->update(['v2_sync_status' => Giftcode::SYNC_STATUS_ERROR]);
-                $errors[] = print_r($res, true);
+            if($code->v2_sync_status == Giftcode::SYNC_STATUS_ERROR){
+                $errors[] = $code->toArray();
             }else{
                 DB::table(MEDIUM_INFO)
                     ->where('id', $code->id)
-                    ->update(['v2_sync_status' => Giftcode::SYNC_STATUS_SUCCESS]);
+                    ->update(['v2_sync_status' => Giftcode::SYNC_STATUS_IN_PROGRESS]);
+
+                $responseV2 = Http::withHeaders([
+                    'X-API-KEY' => env('V2_API_KEY'),
+                ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
+                    'code' => $code->code,
+                    'redeemed_merchant_account_holder_id' => $code->merchant->v2_merchant_id
+                ]);
+
+                $Logger->info('V2: ' . $code->code);
+
+                $res = json_decode($responseV2->body());
+                if( isset($res->error) && $res->error){
+                    $Logger->info('giftcodes_sync result: error. ' . $responseV2->body());
+                    DB::table(MEDIUM_INFO)
+                        ->where('id', $code->id)
+                        ->update(['v2_sync_status' => Giftcode::SYNC_STATUS_ERROR]);
+                    $errors[] = print_r($res, true);
+                }else{
+                    $Logger->info('giftcodes_sync result: success');
+                    DB::table(MEDIUM_INFO)
+                        ->where('id', $code->id)
+                        ->update(['v2_sync_status' => Giftcode::SYNC_STATUS_SUCCESS]);
+                }
             }
         }
 
         if($errors){
             $subject = "V3->V2 Sync Gift Codes errors";
-            $message = print_r($errors, true)."</pre>";
+            $message = "<pre>".print_r($errors, true)."</pre>";
             Mail::to('emonsvetov@incentco.com')->send(new ErrorEmail($subject, $message));
         }
     }
