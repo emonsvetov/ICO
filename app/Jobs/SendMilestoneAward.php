@@ -35,7 +35,7 @@ class SendMilestoneAward implements ShouldQueue
         cronlog ( $msg );
         try {
             $milestoneAwardService = new MilestoneAwardService();
-            $milestoneAwardService->sendMilestoneAward();
+            // $milestoneAwardService->sendMilestoneAward();
         } catch (\Exception $ex) {
             cronlog( " ERROR  " . $ex->getMessage() );
         }
