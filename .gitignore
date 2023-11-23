@@ -19,3 +19,4 @@ php_errors.log
 .idea
 /storage/invoices
 .vscode/
+public/upload/
