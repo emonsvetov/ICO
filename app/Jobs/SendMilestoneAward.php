@@ -31,7 +31,7 @@ class SendMilestoneAward implements ShouldQueue
      */
     public function handle()
     {
-        echo $msg = PHP_EOL . "Sending milestone cron START on " . date('Y-m-d h:i:s') . PHP_EOL;
+        echo $msg = "Sending milestone cron START on " . date('Y-m-d h:i:s');
         cronlog ( $msg );
         try {
             $milestoneAwardService = new MilestoneAwardService();
