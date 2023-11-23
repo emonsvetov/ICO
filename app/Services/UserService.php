@@ -257,6 +257,7 @@ class UserService
     public function ssoAddToken($data, $ip): array
     {
         $ssoAllowedIps = json_decode(config('sso.sso_allowed_ips'), true);
+        $message = '';
         if (in_array($ip, $ssoAllowedIps)) {
             $user = User::leftJoin('program_user', 'users.id', '=', 'program_user.user_id')
                 ->select('users.*')

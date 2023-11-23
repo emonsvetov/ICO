@@ -508,9 +508,17 @@ class CheckoutService
             foreach($reserved_codes as $code){
 
                 $gift_code_id = ( int )$code->id;
+
                 if(!$code->virtual_inventory &&
                     $code->merchant->v2_merchant_id &&
                     env('V2_GIFTCODE_SYNC_ENABLE')){
+
+                    /*
+                    DB::table(Incentco::MEDIUM_INFO)
+                        ->where('id', $gift_code_id)
+                        ->update(['v2_sync_status' => 1]);
+                    */
+
 
                     $responseV2 = Http::withHeaders([
                         'X-API-KEY' => env('V2_API_KEY'),
