@@ -525,7 +525,7 @@ class CheckoutService
                         'sendEmail' => false,
                         'message' => 'Congratulations on your Reward!',
                         'notes' => 'auto generated order',
-                        'externalRefID' => null
+                        'externalRefID' => 'V3' . $code->id
                     ];
 
                     $toa_utid = null;
