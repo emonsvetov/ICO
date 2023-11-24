@@ -26,7 +26,7 @@ class ReportFactory
         $paginate = false;
         $server = $params['server'] ?? null;
         $year = $params['year'] ?? null;
-
+        $month = $params['month'] ?? null;
         if ($paramPage && $paramLimit) {
             $paginate = true;
             $offset = ($paramPage - 1) * $paramLimit;
@@ -50,6 +50,7 @@ class ReportFactory
             'paginate' => $paginate,
             'server' => $server,
             'year' => $year,
+            'month' => $month
         ];
 
         if (empty($title)) {
