@@ -78,6 +78,7 @@ abstract class ReportServiceAbstract
         $this->params[self::USER_ACCOUNT_HOLDER_ID] = $params[self::USER_ACCOUNT_HOLDER_ID] ?? null;
         $this->params[self::CREATED_ONLY] = $params[self::CREATED_ONLY] ?? null;
         $this->params[self::SQL_GROUP_BY] = $params[self::SQL_GROUP_BY] ?? null;
+        $this->params[self::SQL_ORDER_BY_DIR] = $params[self::SQL_ORDER_BY_DIR] ?? null;
         $this->params[self::SQL_ORDER_BY] = $params[self::SQL_ORDER_BY] ?? null;
         $this->params[self::PAGINATE] = $params[self::PAGINATE] ?? null;
         $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];
@@ -250,7 +251,7 @@ abstract class ReportServiceAbstract
     protected function setOrderBy(Builder $query): Builder
     {
         if ($this->params[self::SQL_ORDER_BY]){
-            $query->orderBy($this->params[self::SQL_ORDER_BY]);
+            $query->orderBy($this->params[self::SQL_ORDER_BY], $this->params[self::SQL_ORDER_BY_DIR]);
         }
         return $query;
     }
