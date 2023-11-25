@@ -54,10 +54,10 @@ class MilestoneAwardService extends AwardService {
         $query->where( function ($query) {
             $query->orWhereNotNull('work_anniversary');
             $query->orWhereNotNull('hire_date');
-            $query->orWhere(function ($subQuery) {
-                $subQuery->where('birth_day', '>', 0);
-                $subQuery->where('birth_month', '>', 0);
-            });
+            // $query->orWhere(function ($subQuery) {
+            //     $subQuery->where('birth_day', '>', 0);
+            //     $subQuery->where('birth_month', '>', 0);
+            // });
         });
         $participants = $query->get();
         pr(DB::getQueryLog());
