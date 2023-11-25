@@ -113,10 +113,11 @@ class CheckoutService
                 $where = [
                     'purchased_by_v2' => 0
                 ];
-                if( $program->is_demo || env('APP_ENV') != 'production'){
-                    $where = [
-                        'medium_info_is_test' => 1
-                    ];
+
+                if( GiftcodeService::isTestMode($program) ){
+                    $where['medium_info_is_test'] = 1;
+                }else{
+                    $where['medium_info_is_test'] = 0;
                 }
 
 				$gift_code_values_response = Giftcode::getRedeemableListByMerchant ( $merchant, $where );
@@ -186,9 +187,9 @@ class CheckoutService
                     'purchased_by_v2' => 0
                 ];
                 if( GiftcodeService::isTestMode($program) ){
-                    $where = [
-                        'medium_info_is_test' => 1
-                    ];
+                    $where = ['medium_info_is_test' => 1];
+                }else{
+                    $where = ['medium_info_is_test' => 0];
                 }
 
 				if (in_array ( $merchant->id, $merchantsCostToProgram )) {
@@ -513,21 +514,9 @@ class CheckoutService
                     $code->merchant->v2_merchant_id &&
                     env('V2_GIFTCODE_SYNC_ENABLE')){
 
-                    /*
-                    DB::table(Incentco::MEDIUM_INFO)
-                        ->where('id', $gift_code_id)
-                        ->update(['v2_sync_status' => 1]);
-                    */
-
-
-                    $responseV2 = Http::withHeaders([
-                        'X-API-KEY' => env('V2_API_KEY'),
-                    ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
-                        'code' => $code->code,
-                        'redeemed_merchant_account_holder_id' => $code->merchant->v2_merchant_id
-                    ]);
-                    $Logger->info('V2: ' . $code->code  );
-                    $Logger->info('giftcodes_sync result:' . $responseV2->body()  );
+                     DB::table(MEDIUM_INFO)
+                            ->where('id', $code->id)
+                            ->update(['v2_sync_status' => 1]);
                 }
 
                 if($code->virtual_inventory){
@@ -536,7 +525,7 @@ class CheckoutService
                         'sendEmail' => false,
                         'message' => 'Congratulations on your Reward!',
                         'notes' => 'auto generated order',
-                        'externalRefID' => null
+                        'externalRefID' => 'V3' . $code->id
                     ];
 
                     $toa_utid = null;
