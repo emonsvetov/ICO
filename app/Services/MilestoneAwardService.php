@@ -25,7 +25,7 @@ class MilestoneAwardService extends AwardService {
             foreach($events as $event)   {
                 $participants = $this->getMilestoneAwardeesByEvent( $event );
                 if( $participants ) {
-                    pr($participants);
+                    // pr($participants);
                     // foreach( $participants as $participant )   {
                     //     if ( !$programService->canProgramPayForAwards($event->program, $event, [$participant->id], $event->max_awardable_amount) ) {
                     //         cronlog ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
@@ -53,6 +53,10 @@ class MilestoneAwardService extends AwardService {
         $query->where( function ($query) {
             $query->orWhereNotNull('work_anniversary');
             $query->orWhereNotNull('hire_date');
+            $query->orWhere(function ($subQuery) {
+                $subQuery->where('birth_day', '>', 0);
+                $subQuery->where('birth_month', '>', 0);
+            });
         });
         $participants = $query->get();
         $eligibleParticipants = collect([]);
@@ -68,6 +72,9 @@ class MilestoneAwardService extends AwardService {
                     // pr($dateObject->format('Y-m-d'));
                     // pr($dateObject->isToday());
                     // pr(\Carbon\Carbon::now()->format('Y-m-d'));
+                    if($dateObject->isYesterday())  {
+                        pr("Yesterday was for ". $participant->email);
+                    }
                     if($dateObject->isToday())  {
                         if ( ! $participant->canBeAwarded($event->program) ) {
                             // Log::info ("User cannot be rewarded. User Id: {$participant->id} at"  . date('Y-m-d h:i:s')  );
