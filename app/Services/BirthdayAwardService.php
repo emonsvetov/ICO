@@ -10,13 +10,13 @@ use App\Models\Event;
 use App\Models\User;
 use Exception;
 
-class MilestoneAwardService extends AwardService {
+class BirthdayAwardService extends AwardService {
 
     public array $programUserCache = [];
 
-    public function sendMilestoneAward() {
+    public function sendBirthdayAward() {
         DB::enableQueryLog();
-        $events = Event::getActiveMilestoneAwardsWithProgram();
+        $events = Event::getBirthdayAwardsWithProgram();
         // pr($events->toArray());
         // pr(toSql(DB::getQueryLog()));
         // exit;
@@ -25,7 +25,7 @@ class MilestoneAwardService extends AwardService {
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
                 DB::enableQueryLog();
-                $participants = $this->getMilestoneAwardeesByEvent( $event );
+                $participants = $this->getBirthdayAwardeesByEvent( $event );
                 pr($participants->toArray());
                 // pr(toSql(DB::getQueryLog()));
                 if( $participants ) {
@@ -44,7 +44,7 @@ class MilestoneAwardService extends AwardService {
         // pr(DB::getQueryLog());
     }
 
-    private function getMilestoneAwardeesByEvent( Event $event )   {
+    private function getBirthdayAwardeesByEvent( Event $event )   {
         $milestoneYears = $event->milestone_award_frequency;
         $userStatus = User::getStatusByName(User::STATUS_DELETED);
 
@@ -54,7 +54,7 @@ class MilestoneAwardService extends AwardService {
                 ->where('model_has_roles.program_id', $program->id);
         });
         $query->where('user_status_id', '!=', $userStatus->id);
-        $query->whereNotNull('work_anniversary');
+        $query->whereNotNull('dob');
         try{
             $participants = $query->get();
         }   catch (Exception $e) {
@@ -69,10 +69,9 @@ class MilestoneAwardService extends AwardService {
                     continue;
                 }
                 if( $participant->id != 11 ) continue;
-                $userMilestoneDate = $this->getAnniversaryDateForUser( $participant );
-                if( $userMilestoneDate )    {
-                    $dateObject = \Carbon\Carbon::parse($userMilestoneDate);
-                    $dateObject->addYears($milestoneYears);
+                $userBirthDate = $this->getBirthdayDateForUser( $participant );
+                if( $userBirthDate )    {
+                    $dateObject = \Carbon\Carbon::parse($userBirthDate);
                     if($dateObject->isToday())  {
                         $eligibleParticipants->add($participant);
                     }
@@ -84,18 +83,18 @@ class MilestoneAwardService extends AwardService {
         return $eligibleParticipants;
     }
 
-    private function getAnniversaryDateForUser( $user ) {
-        if( empty($user->work_anniversary) || $user->work_anniversary == '0000-00-00' )    {
+    private function getBirthdayDateForUser( $user ) {
+        if( empty($user->dob) || $user->dob == '0000-00-00' )    {
             return;
         }
-        $data = ['work_anniversary' => $user->work_anniversary];
-        $rules = ['work_anniversary' => 'date_format:Y-m-d|nullable'];
+        $data = ['dob' => $user->dob];
+        $rules = ['dob' => 'date_format:Y-m-d|nullable'];
         $validator = Validator::make($data, $rules);
         if( $validator->failed() )   {
-            return;
+            continue;
         }
-        if( !empty($data['work_anniversary']) && $data['work_anniversary'] != '0000-00-00' ) {
-            return $data['work_anniversary'];
+        if( !empty($data['dob']) && $data['dob'] != '0000-00-00' ) {
+            return $data['dob'];
         }
     }
 }
