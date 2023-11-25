@@ -8,6 +8,8 @@ use App\Services\DomainService;
 
 class UserLoginRequest extends FormRequest
 {
+    protected DomainService $domainService;
+
     public function __construct(DomainService $domainService)
     {
         $this->domainService = $domainService;

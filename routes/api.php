@@ -122,6 +122,7 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::post('/v1/sso-add-token', [App\Http\Controllers\API\AuthController::class, 'ssoAddToken'])->name('api.v1.ssoAddToken');
     Route::post('/v1/login', [App\Http\Controllers\API\AuthController::class, 'login'])->name('api.v1.login');
     Route::post('/v1/admin/login', [App\Http\Controllers\API\AuthController::class, 'adminLogin'])->name('api.v1.adminLogin');
+    Route::post('/v1/mobileapp-login', [App\Http\Controllers\API\AuthController::class, 'mobileAppLogin'])->name('api.v1.mobileLogin');
     Route::post('/v1/register', [App\Http\Controllers\API\AuthController::class, 'register'])->name('api.v1.register');
 
     Route::post('/v1/password/forgot', [App\Http\Controllers\API\PasswordController::class, 'forgotPassword']);
