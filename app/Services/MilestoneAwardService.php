@@ -51,7 +51,6 @@ class MilestoneAwardService extends AwardService {
             $query->where('name', 'LIKE', config('roles.participant'))
                 ->where('model_has_roles.program_id', $program->id);
         });
-        pr("Here");
         $query->where('user_status_id', '!=', $userStatus->id);
         $query->where( function ($query) {
             $query->orWhereNotNull('work_anniversary');
@@ -61,7 +60,9 @@ class MilestoneAwardService extends AwardService {
             //     $subQuery->where('birth_month', '>', 0);
             // });
         });
+        pr("Here");
         $participants = $query->get();
+        pr("THere");
         pr(DB::getQueryLog());
         exit;
         $eligibleParticipants = collect([]);
