@@ -24,6 +24,7 @@ class MilestoneAwardService extends AwardService {
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
                 $participants = $this->getMilestoneAwardeesByEvent( $event );
+                pr($participants);
                 if( $participants ) {
                     // pr($participants);
                     // foreach( $participants as $participant )   {
