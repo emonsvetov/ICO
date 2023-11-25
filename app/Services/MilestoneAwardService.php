@@ -16,27 +16,28 @@ class MilestoneAwardService extends AwardService {
     public function sendMilestoneAward() {
         DB::enableQueryLog();
         $events = Event::getActiveMilestoneAwardsWithProgram();
-        pr($events->toArray());
-        pr(toSql(DB::getQueryLog()));
-        exit;
+        // pr($events->toArray());
+        // pr(toSql(DB::getQueryLog()));
+        // exit;
         // pr($events->toArray());
         if( $events->isNotEmpty() )  {
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
                 $participants = $this->getMilestoneAwardeesByEvent( $event );
                 if( $participants ) {
-                    foreach( $participants as $participant )   {
-                        if ( !$programService->canProgramPayForAwards($event->program, $event, [$participant->id], $event->max_awardable_amount) ) {
-                            cronlog ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
-                            continue;
-                        }
-                        cronlog (sprintf("going to award %d to UserID:%d",$event->max_awardable_amount, $participant->id));
-                        $this->awardUser($event, $participant, $participant);
-                    }
+                    pr($participants);
+                    // foreach( $participants as $participant )   {
+                    //     if ( !$programService->canProgramPayForAwards($event->program, $event, [$participant->id], $event->max_awardable_amount) ) {
+                    //         cronlog ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
+                    //         continue;
+                    //     }
+                    //     cronlog (sprintf("going to award %d to UserID:%d",$event->max_awardable_amount, $participant->id));
+                    //     $this->awardUser($event, $participant, $participant);
+                    // }
                 }
             }
         }
-        // pr(DB::getQueryLog());
+        pr(DB::getQueryLog());
     }
 
     private function getMilestoneAwardeesByEvent( Event $event )   {
