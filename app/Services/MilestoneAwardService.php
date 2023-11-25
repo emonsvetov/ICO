@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Program;
 use App\Models\Event;
 use App\Models\User;
+use Exception;
 
 class MilestoneAwardService extends AwardService {
 
@@ -61,7 +62,12 @@ class MilestoneAwardService extends AwardService {
             // });
         });
         pr("Here");
-        $participants = $query->get();
+        try{
+            $participants = $query->get();
+        }   catch (Exception $e) {
+            throw new Exception("Error: ". $e->getMessage());
+        }
+
         pr("THere");
         pr(DB::getQueryLog());
         exit;
