@@ -65,6 +65,7 @@ class MilestoneAwardService extends AwardService {
         try{
             $participants = $query->get();
         }   catch (Exception $e) {
+            pr( $e->getMessage() );
             throw new Exception("Error: ". $e->getMessage());
         }
 
