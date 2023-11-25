@@ -47,6 +47,7 @@ class Event extends Model
                 $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_MILESTONE_AWARD);
                 $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_MILESTONE_BADGE);
                 $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_BIRTHDAY_AWARD);
+                $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_BIRTHDAY_BADGE);
             });
         })
         ->where('enable', true)
