@@ -42,7 +42,7 @@ class MilestoneAwardService extends AwardService {
     }
 
     private function getMilestoneAwardeesByEvent( Event $event )   {
-        pr("Here");
+
         $milestoneYears = $event->milestone_award_frequency;
         $userStatus = User::getStatusByName(User::STATUS_DELETED);
 
@@ -51,6 +51,7 @@ class MilestoneAwardService extends AwardService {
             $query->where('name', 'LIKE', config('roles.participant'))
                 ->where('model_has_roles.program_id', $program->id);
         });
+        pr("Here");
         $query->where('user_status_id', '!=', $userStatus->id);
         $query->where( function ($query) {
             $query->orWhereNotNull('work_anniversary');
