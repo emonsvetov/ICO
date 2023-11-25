@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Models\Traits\Treeable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 
 class MediumInfo extends BaseModel
 {
@@ -58,10 +57,8 @@ class MediumInfo extends BaseModel
      * @param string $endDate
      * @return Collection
      */
-    public static function getRedeemableDenominationsByMerchant(int $merchantId = 0, $whereColumn = '', $whereValue = 0, $endDate = '', $extraArgs = []): Collection
+    public static function getRedeemableDenominationsByMerchant(int $merchantId, string $endDate = ''): Collection
     {
-        $whereValue = (float) $whereValue;
-
         /**
          * check to see if the merchant gets its gift codes from the root merchant
          * if it does, query using the root merchant id instead
@@ -73,47 +70,39 @@ class MediumInfo extends BaseModel
             $merchantId = (int)$rootMerchant->account_holder_id;
         }
 
-        // Construct the query
         $query = MediumInfo::select(
-            'account_holder_id as merchant_id',
-            DB::raw('FORMAT(redemption_value, 2) as redemption_value'),
-            DB::raw('FORMAT(sku_value, 2) as sku_value'),
-            'virtual_inventory',
-            DB::raw('FORMAT(redemption_value - sku_value, 2) as redemption_fee'),
-            DB::raw('COUNT(DISTINCT medium_info.id) as count'),
-            DB::raw('SUM(case when virtual_inventory = 1 then 1 else 0 end) as count_virtual_inventory'),
-            DB::raw('SUM(case when virtual_inventory = 0 then 1 else 0 end) as count_real_inventory')
-        )
+            DB::raw("
+                max(`merchant_id`) as merchant_id,
+                `redemption_value`,
+                `sku_value`,
+                `redemption_value` - `sku_value` as `redemption_fee`,
+                 COUNT(DISTINCT `medium_info`.`id`) as count
+            "))
             ->join('postings', 'medium_info.id', '=', 'postings.medium_info_id')
-            ->join('accounts as a', 'postings.account_id', '=', 'a.id')
-            ->where('account_holder_id', $merchantId);
-            //->where('hold_until', '<=', now());
+            ->join('accounts', 'accounts.id', '=', 'postings.account_id');
 
-        // Date conditions
-        if (!empty($endDate)) {
+        if (self::isTest()) {
+            $query->where('medium_info_is_test', '=', 1);
+        }
+        if ($endDate) {
             $query->where('purchase_date', '<=', $endDate)
                 ->where(function ($query) use ($endDate) {
-                    $query->whereNull('redemption_date')
+                    return $query
+                        ->whereNull('redemption_date')
                         ->orWhere('redemption_date', '>', $endDate);
                 });
         } else {
             $query->whereNull('redemption_date');
         }
 
-        // Dynamic where column condition
-        if (!empty($whereColumn) && $whereValue != 0) {
-            $query->where($whereColumn, '=', $whereValue);
-        }
-
-        // Group By and Order By
-        $query->groupBy('sku_value', 'redemption_value')
+        $query->where('merchant_id', '=', $merchantId)
+//            ->where('hold_until', '<=', 'now()')
+            ->groupBy('sku_value', 'redemption_value')
             ->orderBy('sku_value', 'ASC')
             ->orderBy('redemption_value', 'ASC');
 
-        // Execute the query and return the result
         return $query->get();
     }
-
 
     public static function getListRedeemedByParticipant(int $userId, bool $obfuscate = true, int $offset = 0, int $limit = 10)
     {
