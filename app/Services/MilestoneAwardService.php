@@ -16,8 +16,8 @@ class MilestoneAwardService extends AwardService {
     public function sendMilestoneAward() {
         DB::enableQueryLog();
         $events = Event::getActiveMilestoneAwardsWithProgram();
-        pr($events->toArray());
-        pr(toSql(DB::getQueryLog()));
+        // pr($events->toArray());
+        // pr(toSql(DB::getQueryLog()));
         // exit;
         // pr($events->toArray());
         if( $events->isNotEmpty() )  {
@@ -60,6 +60,8 @@ class MilestoneAwardService extends AwardService {
             });
         });
         $participants = $query->get();
+        pr(DB::getQueryLog());
+        exit;
         $eligibleParticipants = collect([]);
         if( $participants->isNotEmpty() )  {
             foreach($participants as $participant)   {
