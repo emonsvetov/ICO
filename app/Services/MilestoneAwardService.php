@@ -38,10 +38,11 @@ class MilestoneAwardService extends AwardService {
                 }
             }
         }
-        pr(DB::getQueryLog());
+        // pr(DB::getQueryLog());
     }
 
     private function getMilestoneAwardeesByEvent( Event $event )   {
+        pr("Here");
         $milestoneYears = $event->milestone_award_frequency;
         $userStatus = User::getStatusByName(User::STATUS_DELETED);
 
