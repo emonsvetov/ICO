@@ -16,7 +16,7 @@ class AddBirthdayAwardToEventTypesTable extends Migration
             DB::table('event_types')->insert(
                 array(
                     'name' => 'Birthday Award',
-                    'type' => 'Birthday Award',
+                    'type' => 'birthday award',
                     'description' => 'Award on Birthday',
                 )
             );

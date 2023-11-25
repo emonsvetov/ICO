@@ -26,6 +26,7 @@ class EventType extends Model
     const EVENT_TYPE_AUTO_AWARD = 'auto award';
     const EVENT_TYPE_MILESTONE_AWARD = 'milestone award';
     const EVENT_TYPE_MILESTONE_BADGE = 'milestone badge';
+    const EVENT_TYPE_BIRTHDAY_AWARD = 'birthday award';
 
     /**
      * @param string $type
