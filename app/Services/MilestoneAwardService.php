@@ -4,8 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use App\Models\Program;
+// use Illuminate\Support\Facades\DB;
 use App\Models\Event;
 use App\Models\User;
 use Exception;
@@ -15,33 +14,25 @@ class MilestoneAwardService extends AwardService {
     public array $programUserCache = [];
 
     public function sendMilestoneAward() {
-        DB::enableQueryLog();
-        $events = Event::getActiveMilestoneAwardsWithProgram();
-        // pr($events->toArray());
+        // DB::enableQueryLog();
         // pr(toSql(DB::getQueryLog()));
-        // exit;
-        // pr($events->toArray());
+        $events = Event::getActiveMilestoneAwardsWithProgram();
         if( $events->isNotEmpty() )  {
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
-                DB::enableQueryLog();
                 $participants = $this->getMilestoneAwardeesByEvent( $event );
-                pr($participants->toArray());
-                // pr(toSql(DB::getQueryLog()));
                 if( $participants ) {
-                    // pr($participants);
-                    // foreach( $participants as $participant )   {
-                    //     if ( !$programService->canProgramPayForAwards($event->program, $event, [$participant->id], $event->max_awardable_amount) ) {
-                    //         cronlog ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
-                    //         continue;
-                    //     }
-                    //     cronlog (sprintf("going to award %d to UserID:%d",$event->max_awardable_amount, $participant->id));
-                    //     $this->awardUser($event, $participant, $participant);
-                    // }
+                    foreach( $participants as $participant )   {
+                        if ( !$programService->canProgramPayForAwards($event->program, $event, [$participant->id], $event->max_awardable_amount) ) {
+                            cronlog ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
+                            continue;
+                        }
+                        cronlog (sprintf("going to award %d to UserID:%d",$event->max_awardable_amount, $participant->id));
+                        $this->awardUser($event, $participant, $participant);
+                    }
                 }
             }
         }
-        // pr(DB::getQueryLog());
     }
 
     private function getMilestoneAwardeesByEvent( Event $event )   {
@@ -60,7 +51,6 @@ class MilestoneAwardService extends AwardService {
         }   catch (Exception $e) {
             throw new Exception("Error: ". $e->getMessage());
         }
-        // pr(toSql(DB::getQueryLog()));
         $eligibleParticipants = collect([]);
         if( $participants->isNotEmpty() )  {
             foreach($participants as $participant)   {
@@ -68,7 +58,6 @@ class MilestoneAwardService extends AwardService {
                     // Log::info ("User cannot be rewarded. User Id: {$participant->id} at"  . date('Y-m-d h:i:s')  );
                     continue;
                 }
-                if( $participant->id != 11 ) continue;
                 $userMilestoneDate = $this->getAnniversaryDateForUser( $participant );
                 if( $userMilestoneDate )    {
                     $dateObject = \Carbon\Carbon::parse($userMilestoneDate);

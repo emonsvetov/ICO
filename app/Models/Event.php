@@ -57,20 +57,14 @@ class Event extends Model
     }
 
     public static function getBirthdayAwardsWithProgram()    {
-        return self::select(
-            //'id', 'name', 'max_awardable_amount', 'event_icon_id', 'post_to_social_wall', 'message', 'amount_override', 'program_id', 'enable'
-        )
-        ->whereHas('eventType', function ($query) {
+        return self::whereHas('eventType', function ($query) {
             $query->where( function ($query) {
                 $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_BIRTHDAY_AWARD);
                 $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_BIRTHDAY_BADGE);
             });
         })
         ->where('enable', true)
-        ->with(['program' => function($query) {
-            // $query->select('id', 'name', 'organization_id');
-            // $query->where('allow_milestone_award', true);
-        }, 'eventIcon'])
+        ->with(['program', 'eventIcon'])
         ->get();
     }
 
