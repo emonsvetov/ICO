@@ -416,20 +416,24 @@ class Giftcode extends Model
 
     public static function readNotSubmittedTangoCodes()
     {
-        return self::with('merchant')
+        $isProduction = app()->environment('production') ? true : false;
+        $query =  self::with('merchant')
             ->where('medium_info.virtual_inventory', '=', 1)
             ->whereNull('medium_info.tango_reference_order_id')
             ->whereNotNull('medium_info.redemption_date')
             ->where('medium_info.redemption_date' , ">=", "2023-08-01")
-            ->orderBy('medium_info.sku_value', 'ASC')
-            ->get();
+            ->where('medium_info.medium_info_is_test' , "=", $isProduction ? 0 : 1)
+            ->orderBy('medium_info.sku_value', 'ASC');
+
+        return $query->get();
     }
 
     public static function readNotSyncedCodes()
     {
+        $isProduction = app()->environment('production') ? true : false;
         return self::with('merchant')
             ->where('medium_info.virtual_inventory', '=', 0)
-            ->where('medium_info.medium_info_is_test', '=', 1)
+            ->where('medium_info.medium_info_is_test', '=', $isProduction?0:1)
             ->whereNotNull('medium_info.redemption_date')
             ->whereIn('medium_info.v2_sync_status', [self::SYNC_STATUS_REQUIRED, self::SYNC_STATUS_ERROR])
             ->orderBy('medium_info.redemption_date', 'ASC')

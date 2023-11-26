@@ -23,6 +23,8 @@ class ReportFactory
         $createdOnly = $params['createdOnly'] ?? null;
         $group = $params['group'] ?? null;
         $order = $params['order'] ?? null;
+        $order = $order ?? $params['sortby'] ?? null;
+        $dir = $params['direction'] ?? null;
         $paginate = false;
         $server = $params['server'] ?? null;
         $year = $params['year'] ?? null;
@@ -47,6 +49,7 @@ class ReportFactory
             'createdOnly' => $createdOnly,
             'group' => $group,
             'order' => $order,
+            'dir' => $dir,
             'paginate' => $paginate,
             'server' => $server,
             'year' => $year,
