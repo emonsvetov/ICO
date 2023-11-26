@@ -56,6 +56,7 @@ class JournalEventType extends BaseModel
     const JOURNAL_EVENT_TYPES_VOID_CHARGE_PROGRAM_FOR_CONVENIENCE_FEE = 'VOID Charge program for convenience fee';
     const JOURNAL_EVENT_TYPES_VOID_CHARGE_PROGRAM_FOR_DEPOSIT_FEE = 'VOID Charge program for deposit fee';
     const JOURNAL_EVENT_TYPES_VOID_CHARGE_PROGRAM_FOR_MONIES_PENDING = 'VOID Charge program for monies pending';
+    const JOURNAL_EVENT_TYPES_PROGRAM_TRANSFERS_MONIES_AVAILABLE = 'Program transfers monies available';
 
 
     public static function getTypeAllocatePeerPoints(): int
