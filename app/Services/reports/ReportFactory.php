@@ -26,6 +26,7 @@ class ReportFactory
         $paginate = false;
         $server = $params['server'] ?? null;
         $year = $params['year'] ?? null;
+        $codes = $params['codes'] ?? null;
 
         if ($paramPage && $paramLimit) {
             $paginate = true;
@@ -50,6 +51,7 @@ class ReportFactory
             'paginate' => $paginate,
             'server' => $server,
             'year' => $year,
+            'codes' => $codes,
         ];
 
         if (empty($title)) {
