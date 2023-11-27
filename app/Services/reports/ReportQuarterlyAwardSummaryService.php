@@ -93,19 +93,19 @@ class ReportQuarterlyAwardSummaryService extends ReportServiceAbstract
         `event_xml_data`.`name` AS `event_name`,
         year(`posts`.`created_at`) AS `year`
         from
-                (((((((((((`users` `recipient`
-                join `accounts` `a` ON ((`a`.`account_holder_id` = `recipient`.`account_holder_id`)))
-                join `account_types` `atypes` ON ((`atypes`.`id` = `a`.`account_type_id`)))
-                join `postings` `posts` ON ((`posts`.`account_id` = `a`.`id`)))
-                join `journal_events` `je` ON ((`je`.`id` = `posts`.`journal_event_id`)))
-                join `journal_event_types` `jet` ON ((`jet`.`id` = `je`.`journal_event_type_id`)))
-                join `postings` `program_posting` ON ((`program_posting`.`journal_event_id` = `je`.`id`)))
-                join `accounts` `program_accounts` ON ((`program_accounts`.`id` = `program_posting`.`account_id`)))
+                `users` `recipient`
+                join `accounts` `a` ON ((`a`.`account_holder_id` = `recipient`.`account_holder_id`))
+                join `account_types` `atypes` ON ((`atypes`.`id` = `a`.`account_type_id`))
+                join `postings` `posts` ON ((`posts`.`account_id` = `a`.`id`))
+                join `journal_events` `je` ON ((`je`.`id` = `posts`.`journal_event_id`))
+                join `journal_event_types` `jet` ON ((`jet`.`id` = `je`.`journal_event_type_id`))
+                join `postings` `program_posting` ON ((`program_posting`.`journal_event_id` = `je`.`id`))
+                join `accounts` `program_accounts` ON ((`program_accounts`.`id` = `program_posting`.`account_id`))
                 join `account_types` `program_account_types` ON (((`program_account_types`.`id` = `program_accounts`.`account_type_id`)
-                    and (`program_account_types`.`name` = 'Monies Fees'))))
-                join `programs` `p` ON ((`p`.`account_holder_id` = `program_accounts`.`account_holder_id`)))
-                left join `event_xml_data` ON ((`event_xml_data`.`id` = `je`.`event_xml_data_id`)))
-                left join `users` `awarder` ON ((`awarder`.`account_holder_id` = `event_xml_data`.`awarder_account_holder_id`)))";
+                    and (`program_account_types`.`name` = 'Monies Fees')))
+                join `programs` `p` ON ((`p`.`account_holder_id` = `program_accounts`.`account_holder_id`))
+                left join `event_xml_data` ON ((`event_xml_data`.`id` = `je`.`event_xml_data_id`))
+                left join `users` `awarder` ON ((`awarder`.`account_holder_id` = `event_xml_data`.`awarder_account_holder_id`))";
         return $sql;
     }
 
