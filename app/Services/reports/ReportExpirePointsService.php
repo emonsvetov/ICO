@@ -52,6 +52,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                 ,sum((`postings`.`posting_amount` * `postings`.`qty`)) AS `amount`
                 ,`programs`.factor_valuation
                 ,`users`.account_holder_id as user_account_holder_id
+                ,`journal_event_types`.type as journal_event_type_name
 
                 #,`programs`.name as program_name
                 ,`expiration_rules`.name as 'expiration_name'
@@ -74,7 +75,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
             $subQuery->groupBy(DB::raw('
                 program_id, user_id, user_account_holder_id, is_credit, expiration_name, account_type_name,
                 cast(`postings`.`created_at` as date), expire_offset, end_date, end_year, program_name, program_parent_id,
-                participant_first_name, participant_last_name, participant_email
+                participant_first_name, participant_last_name, participant_email, journal_event_type_name
             '));
         }, 'subQuery')
             ->selectRaw("
@@ -88,7 +89,11 @@ class ReportExpirePointsService extends ReportServiceAbstract
                 participant_email,
                 SUM(IF(is_credit = 1, amount, 0)) AS total_credit,
                 SUM(IF(is_credit = 0, amount, 0)) AS total_debit,
-                SUM(IF(is_credit = 1 AND end_year >= end_date, amount, 0)) AS total_expiring_points,
+                SUM(IF(is_credit = 1 AND journal_event_type_name NOT IN (
+                    '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES."',
+                    '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING."',
+                    '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES."'
+                    ) AND end_year >= end_date, amount, 0)) AS total_expiring_points,
                 factor_valuation,
                 end_date as 'expire_date'
                 ,(
@@ -127,11 +132,13 @@ class ReportExpirePointsService extends ReportServiceAbstract
             total_debit,
             total_credit,
             (total_debit - total_credit) * factor_valuation as 'balance_without_redeemed',
-            (total_debit - total_credit - IF(redeemed = 1, redeemed, 0)) * factor_valuation as 'balance',
+            (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) * factor_valuation as 'balance',
             total_expiring_points,
-            total_expiring_points * factor_valuation as 'amount_expiring',
+            IF((total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) > total_expiring_points ,
+                total_expiring_points,
+                (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)))* factor_valuation as 'amount_expiring',
             expire_date,
-            IF(redeemed = 1, redeemed, 0) * factor_valuation as redeemed
+            IF(redeemed IS NOT NULL, redeemed, 0) * factor_valuation as redeemed
         ");
 
         $query->whereRaw("
