@@ -11,6 +11,7 @@ abstract class ReportServiceAbstract
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
     const YEAR = 'year';
+    const CODES = 'codes';
     const DATE_BEGIN = self::DATE_FROM;
     const DATE_END = self::DATE_TO;
 
@@ -83,6 +84,7 @@ abstract class ReportServiceAbstract
         $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
         $this->params[self::SERVER] = $params[self::SERVER] ?? null;
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
+        $this->params[self::CODES] = $params[self::CODES] ?? null;
 
         $this->reportHelper = new ReportHelper() ?? null;
     }
@@ -142,8 +144,7 @@ abstract class ReportServiceAbstract
         if (empty($this->table)) {
             $this->calc();
         }
-        // pr($this->table);
-        // pr($this->params[self::PAGINATE]);
+
         if( $this->params[self::PAGINATE] )
         {
             if( isset($this->table['data']) && isset($this->table['total']))    {
