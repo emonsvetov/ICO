@@ -28,6 +28,12 @@ class EventType extends Model
     const EVENT_TYPE_MILESTONE_BADGE = 'milestone badge';
     const EVENT_TYPE_BIRTHDAY_AWARD = 'birthday award';
     const EVENT_TYPE_BIRTHDAY_BADGE = 'birthday badge';
+    const EVENT_TYPE_PROGRAM_PAYS_FOR_MONIES_PENDING = 'Program pays for monies pending';
+    const EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE = 'Program transfers monies available';
+    const EVENT_TYPE_RECLAIM_MONIES = 'Reclaim monies';
+    const EVENT_TYPE_AWARD_MONIES_TO_RECIPIENT = 'Award monies to recipient';
+    const EVENT_TYPE_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING = 'Reversal program pays for monies pending';
+    const EVENT_TYPE_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE = 'Reversal program pays for deposit fee';
 
     /**
      * @param string $type
