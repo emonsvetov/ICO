@@ -44,8 +44,8 @@ class Event extends Model
         )
         ->whereHas('eventType', function ($query) {
             $query->where( function ($query) {
-                $query->orWhere('type', EventType::EVENT_TYPE_MILESTONE_AWARD);
-                $query->orWhere('type', EventType::EVENT_TYPE_MILESTONE_BADGE);
+                $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_MILESTONE_AWARD);
+                $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_MILESTONE_BADGE);
             });
         })
         ->where('enable', true)
@@ -53,6 +53,18 @@ class Event extends Model
             // $query->select('id', 'name', 'organization_id');
             $query->where('allow_milestone_award', true);
         }, 'eventIcon'])
+        ->get();
+    }
+
+    public static function getBirthdayAwardsWithProgram()    {
+        return self::whereHas('eventType', function ($query) {
+            $query->where( function ($query) {
+                $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_BIRTHDAY_AWARD);
+                $query->orWhere('type', 'LIKE', EventType::EVENT_TYPE_BIRTHDAY_BADGE);
+            });
+        })
+        ->where('enable', true)
+        ->with(['program', 'eventIcon'])
         ->get();
     }
 

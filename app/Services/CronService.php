@@ -13,8 +13,7 @@ use App\Jobs\Program\GenerateMonthlyInvoicesJob;
 use App\Jobs\Program\SubmitTangoOrdersJob;
 use App\Jobs\Program\SendActivationReminderJob;
 use App\Jobs\SendMilestoneAward;
-use App\Jobs\SyncGiftCodesV2Job;
-
+use App\Jobs\SendBirthdayAward;
 // use App\Notifications\CronNotification; //Can be used for CronNotifications
 
 class CronService
@@ -47,14 +46,14 @@ class CronService
     public function sendMilestoneAward() {
         dispatch( new SendMilestoneAward() );
     }
+    public function sendBirthdayAward() {
+        dispatch( new SendBirthdayAward() );
+    }
     public function submitGiftCodesToTangoJob() {
         dispatch( new SubmitGiftCodesToTangoJob() );
     }
     public function balanceNotificationJob()
     {
         dispatch(new BalanceNotificationJob());
-    }
-    public function syncGiftCodesV2() {
-        dispatch( new SyncGiftCodesV2Job() );
     }
 }

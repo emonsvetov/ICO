@@ -44,6 +44,17 @@ class ProgramController extends Controller
         return response([]);
     }
 
+    public function all(ProgramService $programService, Request $request)
+    {
+        $programs = $programService->index(null, $request->all());
+
+        if ($programs->isNotEmpty()) {
+            return response($programs);
+        }
+
+        return response([]);
+    }
+
     public function store(ProgramRequest $request, Organization $organization, ProgramService $programService)
     {
         if ($organization) {
