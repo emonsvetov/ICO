@@ -232,6 +232,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Program routes
     Route::get('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'index'])->middleware('can:viewAny,App\Program,organization');
+    Route::get('/v1/programs-all', [App\Http\Controllers\API\ProgramController::class, 'all'])->middleware('can:viewAny,App\Program,organization');
     Route::get('/v1/organization/{organization}/program/hierarchy', [App\Http\Controllers\API\ProgramController::class, 'hierarchy'])->middleware('can:viewAny,App\Program,organization');
     Route::post('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'store'])->middleware('can:create,App\Program,organization');
     Route::get('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'show'])->middleware('can:view,App\Program,organization,program');
@@ -297,6 +298,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}',[App\Http\Controllers\API\ProgramUserController::class, 'show'])->middleware('can:view,App\ProgramUser,organization,program,user');
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/history',[App\Http\Controllers\API\ProgramUserController::class, 'history'])->middleware('can:view,App\ProgramUser,organization,program,user');
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/gift-codes-redeemed',[App\Http\Controllers\API\ProgramUserController::class, 'giftCodesRedeemed'])->middleware('can:view,App\ProgramUser,organization,program,user');
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/change-logs',[App\Http\Controllers\API\ProgramUserController::class, 'changeLogs'])->middleware('can:view,App\ProgramUser,organization,program,user');
 
     Route::post('/v1/organization/{organization}/program/{program}/user',[App\Http\Controllers\API\ProgramUserController::class, 'store'])->middleware('can:add,App\ProgramUser,organization,program');
 
@@ -595,6 +600,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         {
             Route::get('', [SocialWallPostController::class, 'index']);
             Route::post('create', [SocialWallPostController::class,'store']);
+            Route::post('uploadImage', [SocialWallPostController::class,'uploadImage']);
             Route::post('like',[SocialWallPostController::class, 'like']);
             Route::delete('{socialWallPost}',[App\Http\Controllers\API\SocialWallPostController::class, 'delete'])
                 ->middleware('can:delete, App\SocialWallPost,organization,program,socialWallPost');

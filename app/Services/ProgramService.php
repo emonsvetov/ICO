@@ -97,7 +97,7 @@ class ProgramService
         return $params;
     }
 
-    private function _buildQuery($organization, $params = [])
+    private function _buildQuery($organization = null, $params = [])
     {
 
         $params = array_merge(self::DEFAULT_PARAMS, self::_buildParams($params));
@@ -187,11 +187,43 @@ class ProgramService
                 }
             }
         }
-        $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
+        if ($organization){
+            $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
+        } else {
+            $query = $query->orderByRaw($orderByRaw);
+        }
         return $query;
     }
 
     public function index($organization, $params = [])
+    {
+        $params = $this->_buildParams($params);
+        $query = $this->_buildQuery($organization, $params);
+        if ( !$params['all'] ) {
+            $query->whereNull('parent_id');
+        }
+
+        if( $params['paginate'] ) {
+            $results = $query->paginate( $params['limit']);
+            if ($params['minimal']) {
+                $results->getCollection()->transform(function ($value) {
+                    $value = childrenizeModel($value);
+                    return $value;
+                });
+            }
+        } else {
+            $results = $query->get();
+            if ($params['minimal']) {
+                $results = childrenizeCollection($results);
+            }
+            if ($params['flatlist']) {
+                $results = _flatten($results);
+            }
+        }
+        return $results;
+    }
+
+    public function all($organization, $params = [])
     {
         $params = $this->_buildParams($params);
         $query = $this->_buildQuery($organization, $params);

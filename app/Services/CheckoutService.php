@@ -113,10 +113,11 @@ class CheckoutService
                 $where = [
                     'purchased_by_v2' => 0
                 ];
-                if( $program->is_demo || env('APP_ENV') != 'production'){
-                    $where = [
-                        'medium_info_is_test' => 1
-                    ];
+
+                if( GiftcodeService::isTestMode($program) ){
+                    $where['medium_info_is_test'] = 1;
+                }else{
+                    $where['medium_info_is_test'] = 0;
                 }
 
 				$gift_code_values_response = Giftcode::getRedeemableListByMerchant ( $merchant, $where );
@@ -144,7 +145,6 @@ class CheckoutService
 
             // $Logger->info("\$redemption_value_total:$redemption_value_total");
 
-            // pr($redemption_value_total);
 
             $merchants_info[$merchant->account_holder_id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
@@ -182,15 +182,17 @@ class CheckoutService
 				// pr($merchantsCostToProgram);
 				// pr($gift_code->gift_code_provider_account_holder_id);
 				// pr( in_array ( $merchant->account_holder_id, $merchantsCostToProgram ) );
+
+                $where = [
+                    'purchased_by_v2' => 0
+                ];
+                if( GiftcodeService::isTestMode($program) ){
+                    $where = ['medium_info_is_test' => 1];
+                }else{
+                    $where = ['medium_info_is_test' => 0];
+                }
+
 				if (in_array ( $merchant->id, $merchantsCostToProgram )) {
-                    $where = [
-                        'purchased_by_v2' => 0
-                    ];
-                    if( GiftcodeService::isTestMode($program) ){
-                        $where = [
-                            'medium_info_is_test' => 1
-                        ];
-                    }
 					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $redemptionValue, '', $where );
 					if (! isset ( $denomination_list ) || count ( $denomination_list ) < 1) {
 						// throw new RuntimeException ( 'Out of inventory' );
@@ -216,9 +218,7 @@ class CheckoutService
 						return $response;
 					}
 				} else {
-					$denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $gift_code->redemption_value );
-					// pr($denomination_list);
-					// exit;
+				    $denomination_list = GiftCode::getRedeemableListByMerchantAndRedemptionValue ( $gift_code->merchant_id, $gift_code->redemption_value, '', $where );
 					if (! isset ( $denomination_list ) || count ( $denomination_list ) < 1) {
 						// throw new RuntimeException ( 'Out of inventory' );
 						$response['errors'][] = 'Out of inventory';
@@ -311,8 +311,7 @@ class CheckoutService
 					$reserved_code = Giftcode::holdGiftcode ([
 						'user_account_holder_id' => $user->account_holder_id,
 						// 'program' => $program,
-						// 'merchant_account_holder_id' => $gift_code2->gift_code_provider_account_holder_id,
-						'merchant_account_holder_id' => $gift_code2->merchant_account_holder_id,
+						'merchant_account_holder_id' => $gift_code2->gift_code_provider_account_holder_id,
 						'redemption_value' => $gift_code2->redemption_value,
 						'sku_value' => $gift_code2->sku_value,
 						'merchants' => $merchants->toArray(),
@@ -332,9 +331,11 @@ class CheckoutService
 
 				$reserved_code->gift_code_provider_account_holder_id = ( int ) $gift_code2->gift_code_provider_account_holder_id;
 				if (! isset ( $reserved_code->merchant )) {
-					$reserved_code->merchant = isset( $all_merchants[$gift_code2->merchant_id] ) ? $all_merchants[$gift_code2->merchant_id] : $all_merchants[$gift_code2->merchant_id] = Merchant::find($gift_code2->merchant_id); //Beware, inline assignment!
+					$reserved_code->merchant = isset( $all_merchants[$gift_code2->merchant_id] ) ?
+                                                      $all_merchants[$gift_code2->merchant_id] :
+                                                      $all_merchants[$gift_code2->merchant_id] = Merchant::find($gift_code2->merchant_id); //Beware, inline assignment!
 				}
-				// pr($reserved_code->toArray());
+
 				// exit;
 				// $reserved_code->merchant->account_holder_id = $gift_code2->merchant_id;
 				// If the shopping cart item has a redemption url set, it means that the merchant that this code will be redeemed from
@@ -342,15 +343,14 @@ class CheckoutService
 				// if (isset ( $gift_code2->redemption_url ) && $gift_code2->redemption_url != '') {
 					// $reserved_code->redemption_url = $gift_code2->redemption_url;
 				// }
-				$reserved_codes [] = $reserved_code;
-				// return $reserved_code;
 
 				$merch = $merchants_info [$reserved_code->gift_code_provider_account_holder_id];
 				$reserved_code->merchant->toa_id = $merch->toa_id;
 				$reserved_code->merchant->virtual_denominations = $merch->virtual_denominations;
 				$reserved_code->merchant->merchant_code = $merch->merchant_code;
+				$reserved_code->redeemed_merchant = $merch;
+				$reserved_codes [] = $reserved_code;
 
-				// pr($merch);
 				// exit;
 				if ($merch->requires_shipping) {
 					if ($order_id == 0) {
@@ -415,7 +415,6 @@ class CheckoutService
 				}
 			}
 		}
-
 		try {
 			// I am not sure why some of the database transactions above are exempted from the rollback. Probably we need to move the DB::beginTransaction(); to the very top of this function ; Arvind
 			DB::statement("LOCK TABLES postings WRITE, medium_info WRITE, journal_events WRITE;");
@@ -503,22 +502,21 @@ class CheckoutService
             DB::commit();
             DB::statement("UNLOCK TABLES;");
 
+
+            $Logger->info("before sync:");
+
             // purchase codes from Tango since all transactions are final
             foreach($reserved_codes as $code){
 
                 $gift_code_id = ( int )$code->id;
+
                 if(!$code->virtual_inventory &&
-                    $code->merchant->v2_account_holder_id &&
+                    $code->merchant->v2_merchant_id &&
                     env('V2_GIFTCODE_SYNC_ENABLE')){
 
-                    $responseV2 = Http::withHeaders([
-                        'X-API-KEY' => env('V2_API_KEY'),
-                    ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
-                        'code' => $code->code,
-                        'redeemed_merchant_account_holder_id' => $code->merchant->v2_account_holder_id
-                    ]);
-                    Log::info('V2: ' . $code->code);
-                    Log::debug('giftcodes_sync result:' . $responseV2->body());
+                     DB::table(MEDIUM_INFO)
+                            ->where('id', $code->id)
+                            ->update(['v2_sync_status' => 1]);
                 }
 
                 if($code->virtual_inventory){
@@ -527,7 +525,7 @@ class CheckoutService
                         'sendEmail' => false,
                         'message' => 'Congratulations on your Reward!',
                         'notes' => 'auto generated order',
-                        'externalRefID' => null
+                        'externalRefID' => 'V3' . $code->id
                     ];
 
                     $toa_utid = null;
@@ -543,13 +541,14 @@ class CheckoutService
                         }
                     }
 
-                    Log::info('code: ' . print_r($code, true));
+                    $Logger->info('code: ' . print_r($code, true) );
+
 
                     $tangoResult = $this->tangoVisaApiService->submit_order($data, $code->merchant->toa_id, $toa_utid, $code->merchant->merchant_code);
 
-                    Log::info('gift_code_id: ' . $gift_code_id);
-                    Log::info('merchant code: ' . $code->merchant->merchant_code);
-                    Log::info('Tango logs: ' . print_r($tangoResult, true));
+                    $Logger->info('gift_code_id: ' . $gift_code_id );
+                    $Logger->info('merchant code: ' . $code->merchant->merchant_code );
+                    $Logger->info('Tango logs: ' . print_r($tangoResult, true) );
 
                     if(isset($tangoResult['referenceOrderID']) && $tangoResult['referenceOrderID']){
                         DB::table(MEDIUM_INFO)

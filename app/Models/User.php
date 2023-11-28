@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     const STATUS_PENDING_ACTIVATION = 'Pending Activation';
     const STATUS_DELETED = 'Deleted';
     const STATUS_PENDING_DEACTIVATION = 'Pending Deactivation';
+    const TERMINATED = 'Terminated';
     const STATUS_DEACTIVATED = 'Deactivated';
     const STATUS_LOCKED = 'Locked';
     const STATUS_NEW = 'New';
@@ -254,6 +255,26 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     public static function getIdStatusNew()
     {
         return self::getStatusNew()->id;
+    }
+
+    public static function getStatusPendingDeactivation()
+    {
+        return self::getStatusByName(self::STATUS_PENDING_DEACTIVATION);
+    }
+
+    public static function getIdStatusPendingDeactivation()
+    {
+        return self::getStatusPendingDeactivation()->id;
+    }
+
+    public static function getStatusPendingActivation()
+    {
+        return self::getStatusByName(self::STATUS_PENDING_ACTIVATION);
+    }
+
+    public static function getIdStatusPendingActivation()
+    {
+        return self::getStatusPendingActivation()->id;
     }
 
     /**

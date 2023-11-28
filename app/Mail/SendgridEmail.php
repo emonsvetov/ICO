@@ -2,9 +2,11 @@
 
 namespace App\Mail;
 
+use App\Models\EmailTemplate;
 use App\Models\EmailTemplateSender;
+use App\Models\EmailTemplateType;
+use App\Models\Program;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Queue\SerializesModels;
@@ -13,7 +15,7 @@ use ReflectionClass;
 /**
  * @example
  * Mail::to('oganshonkov@incentco.com')->send(
- *     new WelcomeEmail('Oleg', 'oganshonkov@incentco.com', 'contact_programHost0')
+ *     new WelcomeEmail('Oleg', 'oganshonkov@incentco.com', $program)
  * );
  */
 class SendgridEmail extends Mailable
@@ -41,7 +43,8 @@ class SendgridEmail extends Mailable
 
     protected function init($arguments)
     {
-        $parameters = (new ReflectionClass($this))
+        $reflectionClass = (new ReflectionClass($this));
+        $parameters = $reflectionClass
             ->getConstructor()
             ->getParameters();
 
@@ -49,17 +52,61 @@ class SendgridEmail extends Mailable
             $argument = $arguments[$key] ?? '';
             $this->data[$parameter->name] = $argument;
 
-            if( $parameter->name == 'program' && $argument ){
+            if ($parameter->name == 'program' && $argument) {
                 $argument->loadTemplate();
                 $this->data[$parameter->name] = $argument;
-                $this->data['template'] = $argument->template??\App\Models\ProgramTemplate::DEFAULT_TEMPLATE;
+                $this->data['template'] = $argument->template ?? \App\Models\ProgramTemplate::DEFAULT_TEMPLATE;
 
-                /** @var EmailTemplateSender $emailTemplateSender */
-                $emailTemplateSender = $argument->getEmailTemplateSender();
-                if ($emailTemplateSender){
-                    $this->fromEmail = $emailTemplateSender->email;
-                    $this->fromUsername = $emailTemplateSender->username;
-                }
+                $this->fixDomain($argument);
+                $this->emailTemplateSender($argument);
+                $this->customEmailTemplate($argument, $reflectionClass);
+            }
+        }
+    }
+
+    protected function fixDomain(Program $program)
+    {
+        if (empty($this->data['contactProgramHost0'])) {
+            $domain = $program->getDomain()->toArray();
+            $scheme = !empty($domain['scheme']) ? $domain['scheme'] : 'http';
+            $domainName = !empty($domain['name']) ? $domain['name'] : '';
+            $port = !empty($domain['port']) ? ':' . $domain['port'] : '';
+            $this->data['contactProgramHost0'] = $scheme . '://' . $domainName . $port;
+        }
+    }
+
+    protected function emailTemplateSender(Program $program)
+    {
+        /** @var EmailTemplateSender $emailTemplateSender */
+        $emailTemplateSender = $program->getEmailTemplateSender();
+        if ($emailTemplateSender) {
+            $this->fromEmail = $emailTemplateSender->email;
+            $this->fromUsername = $emailTemplateSender->username;
+        }
+    }
+
+    protected function customEmailTemplate(Program $program, ReflectionClass $reflectionClass)
+    {
+        $emailTemplateTypeName = str_replace('Email', '', $reflectionClass->getShortName());
+        $emailTemplateTypeId = EmailTemplateType::getIdByType($emailTemplateTypeName);
+        $emailTemplateTypeDir = lcfirst($emailTemplateTypeName);
+
+        $programId = $program->id;
+//        $programId = 217;
+        $emailTemplate = EmailTemplate::where('program_id', $programId)
+            ->where('email_template_type_id', $emailTemplateTypeId)
+            ->where('is_default', 1)
+            ->first();
+
+        if ($emailTemplate) {
+//            $programId = 4786;
+            $emailTemplateName = lcfirst(str_replace(' ', '', $emailTemplate->name));
+            $path = "emails.programs.{$programId}.{$emailTemplateTypeDir}.{$emailTemplateName}";
+            $fullPath = base_path() . '/resources/views/' . str_replace('.', '/', $path) . '.blade.php';
+
+            if (file_exists($fullPath)) {
+                $this->type = $path;
+                $this->subject = $emailTemplate->subject;
             }
         }
     }
@@ -96,13 +143,13 @@ class SendgridEmail extends Mailable
         $mailMessage->subject($data->subject);
         $mailMessage->view($data->view, $data->viewData);
         $mailMessage->from = $this->prepareArray($data->from, true);
-        if ($cc){
+        if ($cc) {
             $mailMessage->cc = $cc;
         }
-        if ($bcc){
+        if ($bcc) {
             $mailMessage->bcc = $bcc;
         }
-        if ($replyTo){
+        if ($replyTo) {
             $mailMessage->replyTo = $replyTo;
         }
 
@@ -120,11 +167,11 @@ class SendgridEmail extends Mailable
                     $newArr[] = $item['name'];
                 }
             }
-            if (!empty($newArr)){
+            if (!empty($newArr)) {
                 $result[] = $newArr;
             }
         }
-        if($onlyFirst){
+        if ($onlyFirst) {
             $result = array_shift($result);
         }
         return $result ?? [];

@@ -729,13 +729,14 @@ class CSVimportService
                     $result = $this->awardUser($csvImport, $this->saveData, $this->supplied_constants);
                     break;
             }
-            $result['success'] = $result ? true : false;
-            return $result;
+            $finalResult['success'] = $result ? true : false;
+            return $finalResult;
         }
     }
 
     private function field_mapping_parse($csvImport, $csvImportSettings)
     {
+        $csvImportSettings->toArray();
         $stream = CsvImport::getAutoImportS3($csvImport);
         if (is_string($stream)) {
             $this->errors[] = $stream;
@@ -744,7 +745,8 @@ class CSVimportService
             while ((($filedata = fgetcsv($stream)) !== false)) {
                 if ($this->line === 0) {
                     foreach ($filedata as $key => $value) {
-                        $headers[trim($value)] = $key;
+                        $value = filterNonPrintable(trim($value));
+                        $headers[$value] = $key;
                     }
                     $this->line++;
                     continue;
@@ -765,6 +767,10 @@ class CSVimportService
                         if ($fieldsWithImportRules && ! empty($fieldsWithImportRules[$dbField])) {
                             $this->saveData[$formRequest][$this->line][$dbField] = $this->getImportRule($formRequest,
                                 $fieldsWithImportRules[$dbField], $csvFieldValue, $dbField, $this->line);
+                            // HARDCODE.. status may differ from our database, so disable rule
+                            if($dbField == 'user_status_id' && empty($this->saveData[$formRequest][$this->line][$dbField])){
+                                $this->saveData[$formRequest][$this->line][$dbField] = ($csvFieldValue !== '') ? $csvFieldValue : null;
+                            }
                         } else {
                             $this->saveData[$formRequest][$this->line][$dbField] = ($csvFieldValue !== '') ? $csvFieldValue : null;
                         }

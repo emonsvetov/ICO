@@ -448,18 +448,19 @@ if (! function_exists('getMilestoneOptions')) {
         return $options;
     }
 }
-function inilog( $content, $mail = false ) {
-	$appPath = app_path();
-    $bt = debug_backtrace();
-    $caller = array_shift($bt);
-    $relativePath = str_replace( $appPath, '', $caller['file']);
-    $file_line = $relativePath . "(line " . $caller['line'] . ")\n";
-	$write = !is_string($content) ? json_encode($content) : $content;
-	if( $mail ) {
-		mail("arvind@inimisttech.com","Debugging on Incentco QA", $file_line . $write);
-		return;
-	}
-    $fp = fopen(storage_path() . "/logs/inimist.log", "a+");
-    fwrite($fp, $file_line . $write . "\n\n");
-    fclose($fp);
+
+if (! function_exists ( 'filterNonPrintable' ))
+{
+    /**
+     * @desc Codes 32-127 are common for all the different variations of the ASCII table, they are called printable characters
+     *       FILTER_FLAG_STRIP_LOW - Strip characters with ASCII value below 32
+     *       FILTER_FLAG_STRIP_HIGH - Strip characters with ASCII value above 127
+     * @param $string
+     * @return string
+     */
+    function filterNonPrintable($string)
+    {
+        $string = filter_var($string, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW|FILTER_FLAG_STRIP_HIGH);
+        return $string;
+    }
 }

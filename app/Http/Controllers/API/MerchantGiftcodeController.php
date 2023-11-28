@@ -102,9 +102,10 @@ class MerchantGiftcodeController extends Controller
         }
 
         // obfuscation
+        /*
         $query->addSelect(
             DB::raw("upper(substring(MD5(RAND()), 1, 20)) as `code`")
-        );
+        );*/
 
         $query = $query->orderByRaw($orderByRaw);
 

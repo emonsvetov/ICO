@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Mail\templates\WelcomeEmail;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\ProgramPaymentReverseRequest;
@@ -28,12 +29,24 @@ use App\Models\Posting;
 use App\Models\Invoice;
 use App\Models\Event;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 
 class ProgramController extends Controller
 {
     public function index(Organization $organization, ProgramService $programService, Request $request)
     {
         $programs = $programService->index($organization, $request->all());
+
+        if ($programs->isNotEmpty()) {
+            return response($programs);
+        }
+
+        return response([]);
+    }
+
+    public function all(ProgramService $programService, Request $request)
+    {
+        $programs = $programService->index(null, $request->all());
 
         if ($programs->isNotEmpty()) {
             return response($programs);
