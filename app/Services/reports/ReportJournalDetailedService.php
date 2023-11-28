@@ -437,6 +437,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         foreach( $this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
         }
+        sort($this->table);
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */
