@@ -516,7 +516,7 @@ class CheckoutService
 
                      DB::table(MEDIUM_INFO)
                             ->where('id', $code->id)
-                            ->update(['v2_sync_status' => 1]);
+                            ->update(['v2_sync_status' => Giftcode::SYNC_STATUS_REQUIRED]);
                 }
 
                 if($code->virtual_inventory){

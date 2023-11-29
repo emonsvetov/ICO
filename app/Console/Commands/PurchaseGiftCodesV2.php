@@ -5,21 +5,21 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\CronService;
 
-class SyncGiftCodesWithV2 extends Command
+class PurchaseGiftCodesV2 extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'cron:sync-gift-codes-v2';
+    protected $signature = 'cron:purchase-gift-codes-v2';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Command to sync gift codes with v2';
+    protected $description = 'Command to purchase gift codes with v2';
 
     /**
      * Create a new command instance.
@@ -39,9 +39,9 @@ class SyncGiftCodesWithV2 extends Command
      */
     public function handle()
     {
-        \Log::info("...... cron:sync-gift-codes-v2 command running ......");
-        $this->cronService->syncGiftCodesV2();
-        \Log::info("------ cron:sync-gift-codes-v2 done! ------");
+        \Log::info("...... cron:purchase-gift-codes-v2 command running ......");
+        $this->cronService->purchaseGiftCodesV2();
+        \Log::info("------ cron:purchase-gift-codes-v2 done! ------");
         return 0;
     }
 }
