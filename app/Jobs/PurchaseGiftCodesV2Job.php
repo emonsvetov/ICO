@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
-class SyncGiftCodesV2Job implements ShouldQueue
+class PurchaseGiftCodesV2Job implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -35,11 +35,11 @@ class SyncGiftCodesV2Job implements ShouldQueue
     public function handle()
     {
         if(!env('V2_GIFTCODE_SYNC_ENABLE')){
-            echo PHP_EOL . "Sync Gift Codes process is disabled in the settings" . PHP_EOL;
+            echo PHP_EOL . "Purchase Gift Codes process is disabled in the settings" . PHP_EOL;
             exit;
         }
 
-        echo PHP_EOL . "Sync Gift Codes cron is Started on " . date('Y-m-d h:i:s') . PHP_EOL;
+        echo PHP_EOL . "Purchase Gift Codes cron is Started on " . date('Y-m-d h:i:s') . PHP_EOL;
 
         $Logger = Log::channel('redemption');
         $codes = Giftcode::readNotSyncedCodes();
@@ -79,7 +79,7 @@ class SyncGiftCodesV2Job implements ShouldQueue
         }
 
         if($errors){
-            $subject = "V3->V2 Sync Gift Codes errors";
+            $subject = "V3->V2 Purchase Gift Codes errors";
             $message = "<pre>".print_r($errors, true)."</pre>";
             Mail::to('emonsvetov@incentco.com')->send(new ErrorEmail($subject, $message));
         }
