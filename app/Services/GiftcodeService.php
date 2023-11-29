@@ -76,11 +76,13 @@ class GiftcodeService
      * @param Giftcode $giftcode
      * @return bool
      */
-    public function purchaseFromV2(Giftcode $giftcode, User $user): bool
+    public function purchaseFromV2(Giftcode $giftcode, User $user, $v2_medium_info_id, $redeemed_merchant_id): bool
     {
         $result = false;
         try {
             $giftcode->purchased_by_v2 = true;
+            $giftcode->v2_medium_info_id = $v2_medium_info_id;
+            $giftcode->redeemed_merchant_id = $redeemed_merchant_id;
             $giftcode->redemption_date = Carbon::now()->format('Y-m-d');
             $giftcode->redemption_datetime = Carbon::now()->format('Y-m-d H:i:s');
             //$giftcode->redeemed_user_id = $user->id; not working

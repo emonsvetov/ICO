@@ -26,6 +26,14 @@ class Giftcode extends Model
     protected $table = 'medium_info';
     private static bool $all = false;
 
+
+    const SYNC_STATUS_NOT_REQUIRED = 0;
+    const SYNC_STATUS_REQUIRED = 1;
+    const SYNC_STATUS_IN_PROGRESS = 2;
+    const SYNC_STATUS_ERROR = 3;
+    const SYNC_STATUS_SUCCESS = 5;
+
+
     public function newQuery()
     {
         $query = parent::newQuery();
@@ -264,6 +272,7 @@ class Giftcode extends Model
 			'medium_info.pin',
 			'posts.account_id',
 			'm.name',
+            'm.v2_merchant_id'
 		])
 		->join('postings AS posts', 'posts.medium_info_id', '=', 'medium_info.id')
 		->join('accounts AS a', 'posts.account_id', '=', 'a.id')
@@ -276,7 +285,7 @@ class Giftcode extends Model
 		->where('medium_info.hold_until', '<=', now())
         ->whereNull('medium_info.redemption_date')
         ->where('medium_info.purchased_by_v2', '=', 0)
-		->orderBy('medium_info.id')
+		->orderBy('medium_info.virtual_inventory', 'ASC')
 		->limit(1);
 
 		if(env('APP_ENV') == 'production'){
@@ -329,6 +338,7 @@ class Giftcode extends Model
 	private static function _read_by_merchant_and_medium_info_id($merchant_account_holder_id = 0, $medium_info_id = 0) {
 		$query = Posting::select([
 			'medium_info.*',
+			'merchants.v2_merchant_id',
 			'postings.created_at'
 		])
 		->join('medium_info', 'medium_info.id', '=', 'postings.medium_info_id')
@@ -339,9 +349,8 @@ class Giftcode extends Model
 		->where('medium_types.id', 1)
 		->where('merchants.account_holder_id', $merchant_account_holder_id)
 		->orderBy('medium_info.purchase_date')
-		->orderBy('medium_info.id')
-		->groupBy('medium_info.id')
-        ;
+		->orderBy('medium_info.virtual_inventory', 'ASC')
+		->groupBy('medium_info.id');
 		return $query->first();
 	}
 
@@ -407,12 +416,27 @@ class Giftcode extends Model
 
     public static function readNotSubmittedTangoCodes()
     {
-        return self::with('merchant')
-            ->where('medium_info.virtual_inventory', 1)
+        $isProduction = app()->environment('production') ? true : false;
+        $query =  self::with('merchant')
+            ->where('medium_info.virtual_inventory', '=', 1)
             ->whereNull('medium_info.tango_reference_order_id')
             ->whereNotNull('medium_info.redemption_date')
             ->where('medium_info.redemption_date' , ">=", "2023-08-01")
-            ->orderBy('medium_info.sku_value', 'ASC')
+            ->where('medium_info.medium_info_is_test' , "=", $isProduction ? 0 : 1)
+            ->orderBy('medium_info.sku_value', 'ASC');
+
+        return $query->get();
+    }
+
+    public static function readNotSyncedCodes()
+    {
+        $isProduction = app()->environment('production') ? true : false;
+        return self::with('merchant')
+            ->where('medium_info.virtual_inventory', '=', 0)
+            ->where('medium_info.medium_info_is_test', '=', $isProduction?0:1)
+            ->whereNotNull('medium_info.redemption_date')
+            ->whereIn('medium_info.v2_sync_status', [self::SYNC_STATUS_REQUIRED, self::SYNC_STATUS_ERROR])
+            ->orderBy('medium_info.redemption_date', 'ASC')
             ->get();
     }
 }

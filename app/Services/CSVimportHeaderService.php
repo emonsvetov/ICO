@@ -66,6 +66,10 @@ class CSVimportHeaderService
 
         ini_set('auto_detect_line_endings',FALSE);
 
+        foreach ($headers as $key => $item) {
+            $headers[$key] = filterNonPrintable(trim($item));
+        }
+
         return $headers;
 
     }

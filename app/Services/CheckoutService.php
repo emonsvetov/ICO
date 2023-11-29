@@ -509,18 +509,14 @@ class CheckoutService
             foreach($reserved_codes as $code){
 
                 $gift_code_id = ( int )$code->id;
+
                 if(!$code->virtual_inventory &&
                     $code->merchant->v2_merchant_id &&
                     env('V2_GIFTCODE_SYNC_ENABLE')){
 
-                    $responseV2 = Http::withHeaders([
-                        'X-API-KEY' => env('V2_API_KEY'),
-                    ])->post(env('V2_API_URL') . '/rest/gift_codes/redeem', [
-                        'code' => $code->code,
-                        'redeemed_merchant_account_holder_id' => $code->merchant->v2_merchant_id
-                    ]);
-                    $Logger->info('V2: ' . $code->code  );
-                    $Logger->info('giftcodes_sync result:' . $responseV2->body()  );
+                     DB::table(MEDIUM_INFO)
+                            ->where('id', $code->id)
+                            ->update(['v2_sync_status' => 1]);
                 }
 
                 if($code->virtual_inventory){
@@ -529,7 +525,7 @@ class CheckoutService
                         'sendEmail' => false,
                         'message' => 'Congratulations on your Reward!',
                         'notes' => 'auto generated order',
-                        'externalRefID' => null
+                        'externalRefID' => 'V3' . $code->id
                     ];
 
                     $toa_utid = null;

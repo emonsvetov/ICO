@@ -29,6 +29,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('cron:submit-tango-orders')->hourly();
         $schedule->command('cron:generate-virtual-inventory')->everyFiveMinutes();
         $schedule->command('cron:send-milestone-award')->daily();
+        $schedule->command('cron:send-birthday-award')->daily();
     }
 
     /**

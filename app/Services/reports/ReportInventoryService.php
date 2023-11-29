@@ -23,7 +23,7 @@ class ReportInventoryService extends ReportServiceAbstract
             $merchantId = (int)$merchant->account_holder_id;
             $table[$merchantId] = (object)$merchant->toArray();
             foreach ($skuValues as $sku_value) {
-                $sku_value = number_format($sku_value, 2, '.', '');
+                $sku_value = number_format($sku_value, 4, '.', '');
                 if ( ! $merchant['get_gift_codes_from_root']) {
                     $table[$merchantId]->on_hand[$sku_value] = 0;
                     $table[$merchantId]->optimal_values[$sku_value] = 0;
@@ -39,21 +39,27 @@ class ReportInventoryService extends ReportServiceAbstract
 
         /** For each merchant get the amount of inventory they have on hand and the optimal values set */
         foreach ($table as $merchantId => $merchant) {
-            if ( ! $merchant->get_gift_codes_from_root) {
+            if (!$merchant->get_gift_codes_from_root) {
                 /** Read the amount in inventory for each merchant */
                 $denominationList = MediumInfo::getRedeemableDenominationsByMerchant($merchantId, $endDate);
 
                 foreach ($denominationList as $denomination) {
-                    $skuValueAmount = number_format($denomination->sku_value, 2, '.', '');
-                    if ( ! $merchant->get_gift_codes_from_root) {
-                        $table[$merchantId]->on_hand[$skuValueAmount] += $denomination->count;
-                    } else {
-                        $table[$merchantId]->on_hand[$skuValueAmount] = "^";
+                    $skuValueAmount = number_format($denomination->sku_value, 4, '.', '');
+
+                    // Initialize 'on hand' value if not set
+                    if (!isset($table[$merchantId]->on_hand[$skuValueAmount])) {
+                        $table[$merchantId]->on_hand[$skuValueAmount] = 0;
                     }
+
+                    // Update the 'on hand' value
+                    $table[$merchantId]->on_hand[$skuValueAmount] += $denomination->count;
                 }
             }
 
-            $optimalValues = OptimalValue::getByMerchantId($merchantId);
+
+
+
+        $optimalValues = OptimalValue::getByMerchantId($merchantId);
             foreach ($optimalValues as $optimalValue) {
                 $skuValueAmount = number_format($optimalValue->denomination, 2, '.', '');
 

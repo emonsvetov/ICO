@@ -27,13 +27,23 @@ class ReportSupplierRedemptionTotalAverageService extends ReportServiceAbstract
     protected function setWhereFilters(Builder $query): Builder
     {
         $query->whereNotNull('medium_info.redemption_date');
-        $query->whereIn('merchant_id', $this->params[self::MERCHANTS]);
-        $query->where('redemption_value', '>', 'cost_basis');
-        if ($this->params [self::MERCHANTS_ACTIVE]) {
-            $query->where('merchants.status', '=', 1);
+
+        if (!empty($this->params['merchants'])) {
+            $query->whereIn('merchants.id', $this->params['merchants']);
         }
-        $query->whereBetween('medium_info.redemption_date',
-            [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+
+        if (!empty($this->params['active'])) {
+            $query->where('merchants.status', $this->params['active']);
+        }
+
+        if (!empty($this->params['codes'])) {
+            $query->where('medium_info.virtual_inventory', $this->params['codes']);
+        }
+
+        if (!empty($this->params['dateFrom']) && !empty($this->params['dateTo'])) {
+            $query->whereBetween('medium_info.redemption_datetime', [$this->params['dateFrom'], $this->params['dateTo']]);
+        }
+
         return $query;
     }
 }
