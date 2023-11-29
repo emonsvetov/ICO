@@ -443,6 +443,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 			array_push($temp, $program);
 		}
 		$this->table = $temp;
+		sort($this->table);
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */
