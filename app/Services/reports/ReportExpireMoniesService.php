@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
-class ReportExpirePointsService extends ReportServiceAbstract
+class ReportExpireMoniesService extends ReportServiceAbstract
 {
     const START_DATE_FIELD = 'posting_date';
 
@@ -48,7 +48,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                 , `users`.last_name as participant_last_name
                 , `users`.email as participant_email
                 , cast(`postings`.`created_at` as date) AS `{$start_date_field}`
-                ,`user_account_types`.`name` AS `account_type_name`
+                ,`account_types`.`name` AS `account_type_name`
                 ,`postings`.`is_credit` AS `is_credit`
                 ,sum((`postings`.`posting_amount` * `postings`.`qty`)) AS `amount`
                 ,`programs`.factor_valuation
@@ -110,8 +110,8 @@ class ReportExpirePointsService extends ReportServiceAbstract
             ");
 
             $subQuery->where('roles.name', 'LIKE', config('roles.participant'));
-            $subQuery->where('programs.invoice_for_awards', '1');
-            $subQuery->where('user_account_types.name', 'LIKE', AccountType::ACCOUNT_TYPE_POINTS_AWARDED);
+            $subQuery->where('programs.invoice_for_awards', '0');
+            $subQuery->where('user_account_types.name', 'LIKE', AccountType::ACCOUNT_TYPE_MONIES_AWARDED);
             $subQuery->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
             $subQuery->groupBy(DB::raw('
                 program_id, user_id, user_account_holder_id, is_credit, expiration_name, account_type_name,
@@ -121,7 +121,6 @@ class ReportExpirePointsService extends ReportServiceAbstract
         }, 'subQuery')
             ->selectRaw("
                 user_id,
-                account_type_name,
                 user_account_holder_id,
                 program_id,
                 program_parent_id,
@@ -158,7 +157,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                     where
                         a.account_holder_id = user_account_holder_id
                         and posts.is_credit = 0
-                        and at.name in ('".AccountType::ACCOUNT_TYPE_POINTS_AWARDED."')
+                        and at.name in ('".AccountType::ACCOUNT_TYPE_MONIES_AWARDED."')
                         and jet.type in (
                         '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES."',
                         '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING."',
@@ -171,7 +170,6 @@ class ReportExpirePointsService extends ReportServiceAbstract
         $query = DB::table(DB::raw("({$subQuery2->toSql()}) as sub2"));
         $query->selectRaw("
             user_id,
-            account_type_name,
             user_account_holder_id,
             program_id,
             program_parent_id,
@@ -180,14 +178,14 @@ class ReportExpirePointsService extends ReportServiceAbstract
             CONCAT(LEFT(participant_email, 4), '*******', right(participant_email, 4), '.') as participant_email,
             total_debit,
             total_credit,
-            (total_debit - total_credit) * factor_valuation as 'balance_without_redeemed',
-            (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) * factor_valuation as 'balance',
+            (total_debit - total_credit) as 'balance_without_redeemed',
+            (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) as 'balance',
             total_expiring_points,
             IF((total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) > total_expiring_points ,
                 total_expiring_points,
-                (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)))* factor_valuation as 'amount_expiring',
+                (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0))) as 'amount_expiring',
             expire_date,
-            IF(redeemed IS NOT NULL, redeemed, 0) * factor_valuation as redeemed
+            IF(redeemed IS NOT NULL, redeemed, 0) as redeemed
         ");
 
         $query->whereRaw("
