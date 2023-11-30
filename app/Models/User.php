@@ -369,4 +369,13 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
             $query->where('model_has_roles.program_id', '=', $programId);
         })->first();
     }
+
+    public function getActiveOrNewUserByEmail( $email ) {
+        return self::where('email', 'like', $email)
+        ->whereHas('status', function($query) {
+            $query->whereIn('status', ['Active', 'New']);
+            $query->where('context', 'LIKE', 'Users');
+        })
+        ->first();
+    }
 }

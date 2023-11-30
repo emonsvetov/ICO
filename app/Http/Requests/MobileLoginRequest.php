@@ -13,25 +13,31 @@ class MobileLoginRequest extends FormRequest
 
     public function __construct(ValidationFactory $validationFactory, DomainService $domainService)
     {
-        $this->domainService = $domainService;
+        // $this->domainService = $domainService;
         // $request = $this->all();
 
         $validationFactory->extend(
-            'validate_password',
+            'password_validation',
             function ($attribute, $value, $parameters) {
                 $request = $this->all();
-                pr($request);
-                // if($request['goal_plan_type_id'] == $sale_type_id) {
-                //     $exceeded_event = Event::getEvent($request['exceeded_event_id']);
-                //     if(!empty($exceeded_event))
-                //     $exceeded_event->load('eventType');
-                //     if($exceeded_event->eventType->id != EventType::getIdByTypeStandard()) {
-                //         return false;
-                //     }
-                //  }
-                 return false;
+                if( empty( $request['step'] ) && !$value ) {
+                    return false;
+                }
+                return true;
             },
-            'Password is a requied field'
+            'Invalid password.'
+        );
+        $validationFactory->extend(
+            'step_validation',
+            function ($attribute, $value, $parameters) {
+                if( !in_array($value, ['email', 'password', 'createpassword']) ) return false;
+                $request = $this->all();
+                if( $value === 'password' && empty($request['password']) ) {
+                    return false;
+                }
+                return true;
+            },
+            'Invalid login request or step.'
         );
 
     }
@@ -74,9 +80,15 @@ class MobileLoginRequest extends FormRequest
     {
         return [
             'email' => 'required|email',
-            'password' => 'validate_password|string',
+            'password' => 'password_validation',
             'domainKey' => 'sometimes|string',
-            'step' => 'sometimes|integer',
+            'step' => 'step_validation',
+        ];
+    }
+    public function messages()
+    {
+        return [
+            'step'     => 'Invalid login attempt',
         ];
     }
 }

@@ -182,59 +182,8 @@ class AuthController extends Controller
 
     public function mobileAppLogin(MobileLoginRequest $request)
     {
-        try {
-            $validated = $request->validated();
-            if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
-                return response(['message' => 'Invalid Credentials'], 422);
-            }
-
-            $user = auth()->guard('web')->user();
-
-            $status = User::getStatusByName(User::STATUS_ACTIVE );
-            if( !in_array($user->user_status_id, [$status->id])){
-                return response(['message' => 'Invalid Credentials'], 422);
-            }
-
-            $user->load(['organization', 'roles']);
-
-            $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
-
-            $response = ['user' => $user, 'access_token' => $accessToken];
-
-            $isValidDomain = $domainService->isValidDomain();
-
-            if( $isValidDomain )
-            {
-                $domain = $domainService->getDomain();
-                $user->programRoles = $user->getCompiledProgramRoles(null, $domain );
-                if( !$user->programRoles )  {
-                    return response(['message' => 'No program roles '], 422);
-                }
-                $response['domain'] = $domain;
-                return response( $response );
-            }
-            else if( is_null($isValidDomain) )
-            {
-                if( ($user->isSuperAdmin() || $user->isAdmin()) )
-                {
-                    $response['programCount'] = $user->organization->programs()->count();
-                    return response($response);
-                }
-            }
-
-            throw new \Exception ('Unknown error: Invalid domain or user');
-        }
-        catch(\Exception $e)
-        {
-            return response(
-                [
-                    'message'=>'Login request failed',
-                    'errors' => [
-                        'loginError' => $e->getMessage()
-                    ]
-                ],
-                422);
-        }
+        $validated = $request->validated();
+        return (new \App\Services\LoginService)->mobileAppLogin( $validated );
     }
 
     public function logout (Request $request) {
