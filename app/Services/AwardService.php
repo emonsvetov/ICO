@@ -146,6 +146,8 @@ class AwardService
         $isMilestoneAward = $eventType->isEventTypeMilestoneAward();
         $isMilestoneBadge = $eventType->isEventTypeMilestoneBadge();
         $isPeer2peerBadge = $eventType->isEventTypePeer2PeerBadge();
+        $isBirthdayAward = $eventType->isEventTypeBirthdayAward();
+        $isBirthdayBadge = $eventType->isEventTypeBirthdayBadge();
         $isPromotional = $event->is_promotional;
         $overrideCashValue = $data->override_cash_value ?? 0;
         $eventAmountOverride = $overrideCashValue > 0;
@@ -155,7 +157,7 @@ class AwardService
         if ( $isPeer2peerBadge ) {
             $isPeer2peer = true;
 		}
-        if( $isPeer2peerBadge || $isMilestoneBadge )
+        if( $isPeer2peerBadge || $isMilestoneBadge ||  $isBirthdayBadge)
         {
             $isBadge = true;
         }
@@ -172,6 +174,12 @@ class AwardService
         }
         if ( $isMilestoneBadge ) {
             $notificationType = 'MilestoneBadge';
+        }
+        if ( $isBirthdayAward ) {
+            $notificationType = 'BirthdayAward';
+        }
+        if ( $isBirthdayBadge ) {
+            $notificationType = 'BirthdayBadge';
         }
         if ( $isPeer2peer ){
             $notificationType = 'PeerAward';
