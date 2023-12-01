@@ -54,8 +54,8 @@ class ReportFactory
             'paginate' => $paginate,
             'server' => $server,
             'year' => $year,
-            'month' => $month
-            'codes' => $codes,
+            'month' => $month,
+            'codes' => $codes
         ];
 
         if (empty($title)) {
