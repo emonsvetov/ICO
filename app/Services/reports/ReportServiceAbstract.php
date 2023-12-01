@@ -11,6 +11,8 @@ abstract class ReportServiceAbstract
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
     const YEAR = 'year';
+    const MONTH = 'month';
+    const CODES = 'codes';
     const DATE_BEGIN = self::DATE_FROM;
     const DATE_END = self::DATE_TO;
 
@@ -22,7 +24,7 @@ abstract class ReportServiceAbstract
     const FIELD_VALUE = "value";
     const FIELD_MONTH = "month";
     const FIELD_JOURNAL_EVENT_TYPE = "journal_event_type";
-
+    const FIELD_COUNT = "count";
     const PROGRAM_ID = 'programId';
     const PROGRAM_ACCOUNT_HOLDER_ID = 'program_account_holder_id';
     const CREATED_ONLY = 'createdOnly';
@@ -43,10 +45,11 @@ abstract class ReportServiceAbstract
     const USER_ID = "user_id";
     const ACCOUNT_TYPES = "account_types";
     const SERVER = "server";
-
     const SQL_WHERE = 'where';
     const SQL_ORDER_BY_DIR = 'dir';
 
+    const FIELD_TOTAL = "total";
+    
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;
@@ -83,7 +86,8 @@ abstract class ReportServiceAbstract
         $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
         $this->params[self::SERVER] = $params[self::SERVER] ?? null;
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
-
+        $this->params[self::MONTH] = $params[self::MONTH] ?? null;
+        $this->params[self::CODES] = $params[self::CODES] ?? null;
         $this->reportHelper = new ReportHelper() ?? null;
     }
 
@@ -142,8 +146,7 @@ abstract class ReportServiceAbstract
         if (empty($this->table)) {
             $this->calc();
         }
-        // pr($this->table);
-        // pr($this->params[self::PAGINATE]);
+
         if( $this->params[self::PAGINATE] )
         {
             if( isset($this->table['data']) && isset($this->table['total']))    {
