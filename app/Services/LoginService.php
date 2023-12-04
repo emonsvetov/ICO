@@ -11,8 +11,8 @@ class LoginService
                 case 'email':
                     $user = (new \App\Models\User)->getActiveOrNewUserByEmail( $validated['email'] );
                     if( $user ) {
-                        if( $user->user_status_id === $user->getStatusIdByName( $user::STATUS_NEW ) ) {
-                            return response(['password' => 'create'], 422);
+                        if( $user->forcePasswordChange() ) {
+                            return response(['forcePasswordChange' => true], 422);
                         }
                         return response([
                             'id' => $user->id,
@@ -20,13 +20,16 @@ class LoginService
                         ]);
                     } else {
                         return response([
-                            'error' => 'Email/username not found'
+                            'error' => 'Email/username invalid or not found'
                         ], 404);
                     }
                 break;
                 case 'password':
                     $userByEmail = (new \App\Models\User)->getActiveOrNewUserByEmail( $validated['email'] );
                     if( $userByEmail ) {
+                        if( $userByEmail->forcePasswordChange() ) {
+                            return response(['forcePasswordChange' => true], 422);
+                        }
                         if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                             return response(['error' => 'Invalid Credentials'], 422);
                         }
@@ -66,11 +69,20 @@ class LoginService
 
                     } else {
                         return response([
-                            'error' => 'Email/username not found'
+                            'error' => 'Email/username invalid or not found'
                         ], 404);
                     }
                 break;
-                case 'create':
+                case 'createpassword':
+                    $user = (new \App\Models\User)->getActiveOrNewUserByEmail( $validated['email'] );
+                    if( $user->forcePasswordChange() ) {
+                        $user->forceFill([
+                            'password' => $validated['password']
+                        ])->save();
+                        return response([
+                            'password_changed' => 'Password created successfully.'
+                        ]);
+                    }
 
                 break;
                 default:
