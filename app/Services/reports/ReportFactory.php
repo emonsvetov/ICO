@@ -23,10 +23,13 @@ class ReportFactory
         $createdOnly = $params['createdOnly'] ?? null;
         $group = $params['group'] ?? null;
         $order = $params['order'] ?? null;
+        $order = $order ?? $params['sortby'] ?? null;
+        $dir = $params['direction'] ?? null;
         $paginate = false;
         $server = $params['server'] ?? null;
         $year = $params['year'] ?? null;
-
+        $month = $params['month'] ?? null;
+        $codes = $params['codes'] ?? null;
         if ($paramPage && $paramLimit) {
             $paginate = true;
             $offset = ($paramPage - 1) * $paramLimit;
@@ -47,9 +50,12 @@ class ReportFactory
             'createdOnly' => $createdOnly,
             'group' => $group,
             'order' => $order,
+            'dir' => $dir,
             'paginate' => $paginate,
             'server' => $server,
             'year' => $year,
+            'month' => $month,
+            'codes' => $codes
         ];
 
         if (empty($title)) {
