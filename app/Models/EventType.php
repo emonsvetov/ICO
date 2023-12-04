@@ -35,6 +35,7 @@ class EventType extends Model
     const EVENT_TYPE_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING = 'Reversal program pays for monies pending';
     const EVENT_TYPE_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE = 'Reversal program pays for deposit fee';
 
+
     /**
      * @param string $type
      * @return int|null
