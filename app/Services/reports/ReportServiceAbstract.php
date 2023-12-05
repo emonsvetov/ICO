@@ -49,7 +49,7 @@ abstract class ReportServiceAbstract
     const SQL_ORDER_BY_DIR = 'dir';
 
     const FIELD_TOTAL = "total";
-    
+
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;
