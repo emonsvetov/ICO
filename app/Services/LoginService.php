@@ -77,7 +77,8 @@ class LoginService
                     $user = (new \App\Models\User)->getActiveOrNewUserByEmail( $validated['email'] );
                     if( $user->forcePasswordChange() ) {
                         $user->forceFill([
-                            'password' => $validated['password']
+                            'password' => $validated['password'],
+                            'user_status_id' => (new \App\Models\User)->getIdStatusActive()
                         ])->save();
                         return response([
                             'password_changed' => 'Password created successfully.'
