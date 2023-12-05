@@ -72,11 +72,7 @@ class GiftcodeService
         return $response;
     }
 
-    /**
-     * @param Giftcode $giftcode
-     * @return bool
-     */
-    public function purchaseFromV2(Giftcode $giftcode, User $user, $v2_medium_info_id, $redeemed_merchant_id): bool
+    public function purchaseFromV2(Giftcode $giftcode, User $user, $v2_medium_info_id, $redeemed_merchant_id)
     {
         $error = '';
         try {
