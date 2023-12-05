@@ -12,7 +12,7 @@ class LoginService
                     $user = (new \App\Models\User)->getActiveOrNewUserByEmail( $validated['email'] );
                     if( $user ) {
                         if( $user->forcePasswordChange() ) {
-                            return response(['forcePasswordChange' => true], 422);
+                            return response(['forcePasswordChange' => true]);
                         }
                         return response([
                             'id' => $user->id,
@@ -28,7 +28,7 @@ class LoginService
                     $userByEmail = (new \App\Models\User)->getActiveOrNewUserByEmail( $validated['email'] );
                     if( $userByEmail ) {
                         if( $userByEmail->forcePasswordChange() ) {
-                            return response(['forcePasswordChange' => true], 422);
+                            return response(['forcePasswordChange' => true]);
                         }
                         if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                             return response(['error' => 'Invalid Credentials'], 422);
