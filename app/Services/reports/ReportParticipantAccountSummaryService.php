@@ -41,32 +41,58 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
     {
 
         $programs = Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray();
-        $program = Program::findOrFail($this->params[self::PROGRAM_ID]);
+//        $program = Program::findOrFail($this->params[self::PROGRAM_ID]);
+//
+//        $redeem_international_jet = '';
+//        if ($program->programIsInvoiceForAwards()) {
+//            $account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
+//            $redeem_giftCode_jet = JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES;
+//            $redeem_international_jet = JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING;
+//            $reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS;
+//            $award_credit_reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS;
+//
+//            $peer_account = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+//            $peer_jet_reclaim = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
+//            $peer_jet_awarded = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
+//        } else {
+//            $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
+//            $peer_account_type = AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES;
+//            $redeem_giftCode_jet = JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES;
+//            $reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES;
+//            $award_credit_reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES;
+//            $peer_account = AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES;
+//            $peer_jet_reclaim = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_MONIES;
+//            $peer_jet_awarded = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT;
+//        }
+        $account_type = [AccountType::ACCOUNT_TYPE_POINTS_AWARDED, AccountType::ACCOUNT_TYPE_MONIES_AWARDED];
+        $redeem_giftCode_jet = [
+            JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES,
+            JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES
+        ];
+        $redeem_international_jet = JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING;
+        $reclaim_jet = [
+            JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS,
+            JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES
+        ];
+        $award_credit_reclaim_jet = [
+            JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS,
+            JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES
+        ];
+        $peer_account = [
+            AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS,
+            AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES
+        ];
+        $peer_jet_reclaim = [
+            JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS,
+            JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_MONIES
+        ];
+        $peer_jet_awarded = [
+            JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT,
+            JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT
+        ];
 
-        $redeem_international_jet = '';
-        if ($program->programIsInvoiceForAwards()) {
-            $account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
-            $redeem_giftCode_jet = JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES;
-            $redeem_international_jet = JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING;
-            $reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS;
-            $award_credit_reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS;
-
-            $peer_account = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
-            $peer_jet_reclaim = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
-            $peer_jet_awarded = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
-        } else {
-            $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
-            $peer_account_type = AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES;
-            $redeem_giftCode_jet = JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES;
-            $reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES;
-            $award_credit_reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES;
-            $peer_account = AccountType::ACCOUNT_TYPE_PEER2PEER_MONIES;
-            $peer_jet_reclaim = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_MONIES;
-            $peer_jet_awarded = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT;
-        }
-
-        $topLevelProgram = $program->getRoot(['id']);
-        $root_program_id = $topLevelProgram->id;
+//        $topLevelProgram = $program->getRoot(['id']);
+//        $root_program_id = $topLevelProgram->id;
 
         // Get user ids for report query to optimise query execution time
         $query = DB::table('users');
@@ -95,7 +121,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
             WHERE
                 `accounts`.account_holder_id = recipient_id
                 AND is_credit = 1
-                AND `account_types`.name = '{$account_type}'
+                AND `account_types`.name  IN (".$this->customIn($account_type).")
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
         )";
@@ -112,8 +138,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                     INNER JOIN `account_types` ON `accounts`.account_type_id = account_types.id
                     INNER JOIN `account_holders` ON `accounts`.account_holder_id = account_holders.id
                 WHERE
-                    `accounts`.account_holder_id = recipient_id AND is_credit = 1
-                    AND `account_types`.name = '" . $peer_account . "'
+                    `accounts`.account_holder_id = recipient_id AND is_credit = 4
+                    AND `account_types`.name IN (".$this->customIn($peer_account).")
             )
             -
             (
@@ -128,8 +154,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                     INNER JOIN `account_holders` ON `accounts`.account_holder_id = account_holders.id
                 WHERE
                     `accounts`.account_holder_id = recipient_id AND is_credit = 0
-                    AND `account_types`.name = '" . $peer_account . "'
-                    AND `journal_event_types`.type = '" . $peer_jet_reclaim . "'
+                    AND `account_types`.name IN (".$this->customIn($peer_account).")
+                    AND `journal_event_types`.type IN (".$this->customIn($peer_jet_reclaim).")
             )
         )";
 
@@ -145,7 +171,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 INNER JOIN `journal_event_types` on `journal_event_types`.id = `journal_events`.journal_event_type_id
             WHERE `accounts`.account_holder_id = recipient_id
                 AND is_credit = 0
-                AND `account_types`.name = '" . $account_type . "'
+                AND `account_types`.name IN (".$this->customIn($account_type).")
                 AND (
                     `journal_event_types`.type = '" . JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES . "'
                     OR `journal_event_types`.type = '" . JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS . "'
@@ -169,11 +195,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 INNER JOIN `account_holders` ON `accounts`.account_holder_id = account_holders.id
             WHERE `accounts`.account_holder_id = recipient_id
                 AND is_credit = 0
-                AND `account_types`.name = '" . $account_type . "'
-                AND (
-                    `journal_event_types`.type = '" . $redeem_giftCode_jet . "'" . "
-                    OR `journal_event_types`.type = '" . $redeem_international_jet . "'
-                    )
+                AND `account_types`.name IN (".$this->customIn($account_type).")
+                AND `journal_event_types`.type IN (".$this->customIn(array_merge($redeem_giftCode_jet, [$redeem_international_jet])).")
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
         )";
@@ -191,8 +214,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 INNER JOIN `account_holders` ON `accounts`.account_holder_id = account_holders.id
             WHERE
                 `accounts`.account_holder_id = recipient_id AND is_credit = 0
-                AND `account_types`.name = '" . $peer_account . "'
-                AND `journal_event_types`.type = '" . $peer_jet_awarded . "'
+                AND `account_types`.name IN (".$this->customIn($peer_account).")
+                AND `journal_event_types`.type IN (".$this->customIn($peer_jet_awarded).")
         )";
 
         $points_reclaimed_sub_query = "
@@ -209,8 +232,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
             WHERE
                 `accounts`.account_holder_id = recipient_id
                 AND is_credit = 0
-                AND `account_types`.name = '" . $account_type . "'
-                AND `journal_event_types`.type = '" . $reclaim_jet . "'
+                AND `account_types`.name IN (".$this->customIn($account_type).")
+                AND `journal_event_types`.type IN (".$this->customIn($reclaim_jet).")
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
         )";
@@ -228,8 +251,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 INNER JOIN `account_holders` ON `accounts`.account_holder_id = account_holders.id
             WHERE `accounts`.account_holder_id = recipient_id
                 AND is_credit = 0
-                AND `account_types`.name = '" . $account_type . "'
-                AND `journal_event_types`.type = '" . $award_credit_reclaim_jet . "'
+                AND `account_types`.name IN (".$this->customIn($account_type).")
+                AND `journal_event_types`.type IN (".$this->customIn($award_credit_reclaim_jet).")
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
                 AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
         )";
@@ -247,7 +270,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 WHERE
                     `accounts`.account_holder_id = recipient_id
                     AND is_credit = 1
-                    AND `account_types`.name = '" . $account_type . "'
+                    AND `account_types`.name IN (".$this->customIn($account_type).")
                 )
                 -
                 (
@@ -260,7 +283,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 WHERE
                     `accounts`.account_holder_id = recipient_id
                     AND is_credit = 0
-                    AND `account_types`.name = '" . $account_type . "'
+                    AND `account_types`.name IN (".$this->customIn($account_type).")
                 )
         )";
 
@@ -277,7 +300,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 WHERE
                     `accounts`.account_holder_id = recipient_id
                     AND is_credit = 1
-                    AND `account_types`.name = '" . $peer_account . "'
+                    AND `account_types`.name IN (".$this->customIn($peer_account).")
                 )
                 -
                 (
@@ -291,7 +314,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 WHERE
                     `accounts`.account_holder_id = recipient_id
                     AND is_credit = 0
-                    AND `account_types`.name = '" . $peer_account . "'
+                    AND `account_types`.name IN (".$this->customIn($peer_account).")
                 )
         )";
 
@@ -488,4 +511,10 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
         return $data;
     }
 
+    public function customIn($arr)
+    {
+        return implode(",", array_map(function($string) {
+            return '"' . $string . '"';
+        }, $arr));
+    }
 }

@@ -83,13 +83,18 @@ class MerchantGiftcodeController extends Controller
                 $q->whereNull('redemption_datetime');
                 $q->where('purchased_by_v2', '=' , 0);
                 $q->where('virtual_inventory', '=' , 1);
-                if(env('APP_ENV') != 'production'){
+                if(env('APP_ENV') == 'production'){
+                    $q->where('medium_info_is_test', '=' , 0);
+                }else{
                     $q->where('medium_info_is_test', '=' , 1);
                 }
             });
         }elseif($type == 'test'){
             $query->where(function ($q) {
                 $q->where('medium_info_is_test', '=' , 1);
+                $q->whereNull('redemption_datetime');
+                $q->where('purchased_by_v2', '=' , 0);
+                $q->where('virtual_inventory', '=' , 0);
             });
         }
 
