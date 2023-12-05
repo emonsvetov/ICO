@@ -178,9 +178,18 @@ class ProgramController extends Controller
     }
 
     public function getBalance(Organization $organization, Program $program, AccountService $accountService)
-    {
+    {   
         $balance = $accountService->readAvailableBalanceForProgram($program);
         return response($balance);
+    }
+
+    public function getBalanceInformation(Organization $organization, Program $program, AccountService $accountService)
+    {
+        $total_financial_balance = $accountService->readAvailableBalanceForProgram($program);
+        $financial_detail = $accountService->readAvailableBalanceForOwner($program);
+        return response(
+            ["financial_detail" => $total_financial_balance, "total_financial_balance" => $total_financial_balance]
+        );
     }
 
     public function prepareLiveMode(Organization $organization, Program $program, ProgramService $programService, AwardService $awardService)
