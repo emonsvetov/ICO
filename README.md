@@ -244,9 +244,18 @@ Running this program will fetch the nested tree of the given program. The import
  - Invoices
  - Events
  - ProgramAccounts
- - ProgramAccounts
+
+** Migrating giftcodes
 
 `php artisan v2migrate:giftcodes`
+
+** Migrating journalevents
+
 `php artisan v2migrate:journalevents --type=merchants`
 `php artisan v2migrate:journalevents --type=programs`
 `php artisan v2migrate:journalevents --type=users`
+
+** v2-v3 Migration References
+
+- Please check app/Jobs/v2migrate for migration jobs
+- Please check app/Services/v2migrate for service classes
