@@ -2,10 +2,11 @@
 
 namespace App\Console\Commands;
 
+use Exception;
 use Illuminate\Console\Command;
 use App\Services\reports\ReportTrialBalanceService;
 
-class UpdateTrialBalanceData extends Command
+class UpdateTrialBalance extends Command
 {
     /**
      * The name and signature of the console command.
@@ -43,6 +44,7 @@ class UpdateTrialBalanceData extends Command
      *
      * @return int
      */
+    
     public function handle()
     {
         \Log::info("Updating trial balance data...");
