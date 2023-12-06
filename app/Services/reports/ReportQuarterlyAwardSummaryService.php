@@ -27,6 +27,59 @@ class ReportQuarterlyAwardSummaryService extends ReportServiceAbstract
 	
 	}
 
+       /**
+     * Calculate full data
+     *
+     * @return array
+     */
+    protected function calc(): array
+    {
+        $this->table = [];
+        $programDatas = $this->getBaseQuery();
+        $Q1_total_value = 0;
+        $Q1_total_count = 0;
+        $Q2_total_value = 0;
+        $Q2_total_count = 0;
+        $Q3_total_value = 0;
+        $Q3_total_count = 0;
+        $Q4_total_value = 0;
+        $Q4_total_count = 0;
+        $ytd_total_value = 0;
+        $ytd_total_count = 0;
+        foreach ( $programDatas as $programData ) {
+            $Q1_total_value+= $programData->Q1_value;
+            $Q1_total_count+= $programData->Q1_count;
+            
+            $Q2_total_value+= $programData->Q2_value;
+            $Q2_total_count+= $programData->Q2_count;
+            
+            $Q3_total_value+= $programData->Q3_value;
+            $Q3_total_count+= $programData->Q3_count;
+            
+            $Q4_total_value+= $programData->Q4_value;
+            $Q4_total_count+= $programData->Q4_count;
+
+            $ytd_total_value += $programData->YTD_value;
+            $ytd_total_count += $programData->YTD_count;
+        }
+        $totalValue = [
+            "Q1_total_value" =>  $Q1_total_value,
+            "Q1_total_count" => $Q1_total_count,
+            "Q2_total_value" => $Q2_total_value,
+            "Q2_total_count" => $Q2_total_count,
+            "Q3_total_value" => $Q3_total_value,
+            "Q3_total_count" => $Q3_total_count,
+            "Q4_total_value" => $Q4_total_value,
+            "Q4_total_count" => $Q4_total_count,
+            "ytd_total_value" => $ytd_total_value,
+            "ytd_total_count" => $ytd_total_count
+        ];
+        $this->table['results'] =  $programDatas;
+        $this->table['totalValue'] = $totalValue;
+        return $this->table;
+
+    }
+
     public function getTable(): array
     {
         if (empty($this->table)) {
@@ -40,7 +93,8 @@ class ReportQuarterlyAwardSummaryService extends ReportServiceAbstract
                 return $this->table; //Already paginated in child class
             }   else {
                 return [
-                    'data' => $this->table,
+                    'data' => $this->table['results'],
+                    'totalValue' => $this->table['totalValue'],
                     'total' => $this->query instanceof Builder ? $this->query->count() : count($this->table),
                     'filter' => array("year"=> $this->year)
                 ];

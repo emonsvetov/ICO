@@ -23,7 +23,7 @@ class ReportInventoryService extends ReportServiceAbstract
             $merchantId = (int)$merchant->account_holder_id;
             $table[$merchantId] = (object)$merchant->toArray();
             foreach ($skuValues as $sku_value) {
-                $sku_value = number_format((float)$sku_value, 4, '.', '');
+                $sku_value = number_format($sku_value, 4, '.', '');
                 if ( ! $merchant['get_gift_codes_from_root']) {
                     $table[$merchantId]->on_hand[$sku_value] = 0;
                     $table[$merchantId]->optimal_values[$sku_value] = 0;
@@ -44,7 +44,7 @@ class ReportInventoryService extends ReportServiceAbstract
                 $denominationList = MediumInfo::getRedeemableDenominationsByMerchant($merchantId, $endDate);
 
                 foreach ($denominationList as $denomination) {
-                    $skuValueAmount = number_format((float)$denomination->sku_value, 4, '.', '');
+                    $skuValueAmount = number_format($denomination->sku_value, 4, '.', '');
 
                     // Initialize 'on hand' value if not set
                     if (!isset($table[$merchantId]->on_hand[$skuValueAmount])) {
@@ -61,7 +61,7 @@ class ReportInventoryService extends ReportServiceAbstract
 
         $optimalValues = OptimalValue::getByMerchantId($merchantId);
             foreach ($optimalValues as $optimalValue) {
-                $skuValueAmount = number_format((float)$optimalValue->denomination, 2, '.', '');
+                $skuValueAmount = number_format($optimalValue->denomination, 2, '.', '');
 
 
                 if ( ! $merchant->get_gift_codes_from_root) {
