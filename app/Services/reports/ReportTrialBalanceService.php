@@ -53,7 +53,7 @@ class ReportTrialBalanceService extends ReportServiceAbstract
                 postings.account_id,
                 postings.posting_amount,
                 postings.qty,
-                postings.is_credit
+                postings.is_credit,
                 CASE
                     WHEN EXISTS(SELECT 1 FROM merchants WHERE merchants.account_holder_id = accounts.account_holder_id)
                     THEN 'Merchants'
