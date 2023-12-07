@@ -184,11 +184,19 @@ class ReportExpirePointsService extends ReportServiceAbstract
             total_debit,
             total_credit,
             (total_debit - total_credit) * factor_valuation as 'balance_without_redeemed',
-            (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) * factor_valuation as 'balance',
+            CAST(
+                (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) * factor_valuation
+                AS DECIMAL(10, 2)
+                )
+                as 'balance',
             total_expiring_points,
-            IF((total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) > total_expiring_points ,
-                total_expiring_points,
-                (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)))* factor_valuation as 'amount_expiring',
+            CAST(
+                IF((total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) > total_expiring_points ,
+                    total_expiring_points,
+                    (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)))*factor_valuation
+                AS DECIMAL(10, 2)
+                )
+                as 'amount_expiring',
             expire_date,
             IF(redeemed IS NOT NULL, redeemed, 0) * factor_valuation as redeemed
         ");
