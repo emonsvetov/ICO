@@ -28,7 +28,7 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
         $query->join('programs', 'programs.id', '=', 'program_user.program_id');
 
         $query->selectRaw("
-            programs.account_holder_id as program_id,
+            programs.id as program_id,
             users.account_holder_id AS recipient_id,
             users.activated,
             users.created_at as created,
@@ -44,6 +44,8 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
         "
         );
 
+        $query->distinct();
+
         return $query;
     }
 
@@ -53,7 +55,7 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
     protected function setWhereFilters(Builder $query): Builder
     {
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
-
+        $query->where('programs.id', $this->params[self::PROGRAM_ID]);
         return $query;
     }
 
@@ -105,6 +107,20 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
                 'key' => 'recipient_email',
             ],
         ];
+    }
+
+    public function getTable(): array
+    {
+        if (empty($this->table)) {
+            $this->calc();
+        }
+        if ($this->params[self::PAGINATE]) {
+            return [
+                'data' => $this->table,
+                'total' => $this->query instanceof Builder ? $this->query->count('users.id') : count($this->table),
+            ];
+        }
+        return $this->table;
     }
 
 }
