@@ -55,7 +55,6 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
     protected function setWhereFilters(Builder $query): Builder
     {
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
-        $query->where('programs.id', $this->params[self::PROGRAM_ID]);
         return $query;
     }
 
