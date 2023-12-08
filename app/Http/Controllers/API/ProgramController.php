@@ -33,6 +33,17 @@ use Illuminate\Support\Facades\Mail;
 
 class ProgramController extends Controller
 {
+    public function getReportPrograms(Program $program, ProgramService $programService, Request $request)
+    {
+        $programs = $programService->getReportPrograms($program, $request->all());
+
+        if ($programs->isNotEmpty()) {
+            return response($programs);
+        }
+
+        return response([]);
+    }
+
     public function index(Organization $organization, ProgramService $programService, Request $request)
     {
         $programs = $programService->index($organization, $request->all());
@@ -178,7 +189,7 @@ class ProgramController extends Controller
     }
 
     public function getBalance(Organization $organization, Program $program, AccountService $accountService)
-    {   
+    {
         $balance = $accountService->readAvailableBalanceForProgram($program);
         return response($balance);
     }
@@ -310,6 +321,14 @@ class ProgramController extends Controller
 
         return response($result);
     }
+
+    public function hierarchyReport(Program $program, ProgramService $programService, Request $request)
+    {
+        $result = $programService->getHierarchyReport($program)->toArray();
+
+        return response($result);
+    }
+
     public function downloadMoneyTranferTemplate(Organization $organization, Program $program, ProgramService $programService)
     {
         return response()->stream( ...($programService->getTransferTemplateCSV($program)) );

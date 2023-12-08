@@ -235,6 +235,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/programs-all', [App\Http\Controllers\API\ProgramController::class, 'all'])->middleware('can:viewAny,App\Program,organization');
     Route::get('/v1/organization/{organization}/program/{program}/getBalance', [App\Http\Controllers\API\ProgramController::class, 'getBalanceInformation'] )->middleware('can:viewAny,App\Program,organization');
     Route::get('/v1/organization/{organization}/program/hierarchy', [App\Http\Controllers\API\ProgramController::class, 'hierarchy'])->middleware('can:viewAny,App\Program,organization');
+    Route::get('/v1/program/{program}/hierarchy/report', [App\Http\Controllers\API\ProgramController::class, 'hierarchyReport'])->middleware('can:viewAny,App\Program,organization');
     Route::post('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'store'])->middleware('can:create,App\Program,organization');
     Route::get('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'show'])->middleware('can:view,App\Program,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'update'])->middleware('can:update,App\Program,organization,program');
@@ -331,6 +332,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/report',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
     //Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
     Route::get('/v1/organization/{organization}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
+    Route::get('/v1/program/{program}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
 
     //MerchantGiftcodes
 
