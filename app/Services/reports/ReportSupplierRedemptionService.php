@@ -5,6 +5,7 @@ namespace App\Services\reports;
 use App\Models\MediumInfo;
 use App\Models\Merchant;
 use App\Models\OptimalValue;
+use App\Models\ProgramMerchant;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\Cast\Object_;
@@ -46,6 +47,11 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
     protected function setWhereFilters(Builder $query): Builder
     {
         $query->whereNotNull('medium_info.redemption_date');
+        if ($this->params['programId']){
+            $merchantIds = ProgramMerchant::where('program_id', $this->params['programId'])->pluck('merchant_id')->toArray();
+            $query->whereIn('merchants.id', $merchantIds);
+        }
+
 
         if (!empty($this->params['merchants'])) {
             $query->whereIn('merchants.id', $this->params['merchants']);
