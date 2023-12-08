@@ -6,6 +6,7 @@ use App\Jobs\Program\BalanceNotificationJob;
 use App\Jobs\CsvAutoImportJob;
 use App\Jobs\GenerateTestGiftCodesJob;
 use App\Jobs\GenerateVirtualInventoryJob;
+use App\Jobs\PurchaseGiftCodesV2Job;
 use App\Jobs\SubmitGiftCodesToTangoJob;
 use App\Jobs\Program\PostMonthlyChargesToInvoiceJob;
 use App\Jobs\Program\AddProgramsToInvoiceJob;
@@ -14,6 +15,8 @@ use App\Jobs\Program\SubmitTangoOrdersJob;
 use App\Jobs\Program\SendActivationReminderJob;
 use App\Jobs\SendMilestoneAward;
 use App\Jobs\SendBirthdayAward;
+use App\Jobs\SyncGiftCodesV2Job;
+
 // use App\Notifications\CronNotification; //Can be used for CronNotifications
 
 class CronService
@@ -55,5 +58,8 @@ class CronService
     public function balanceNotificationJob()
     {
         dispatch(new BalanceNotificationJob());
+    }
+    public function purchaseGiftCodesV2() {
+        dispatch( new PurchaseGiftCodesV2Job() );
     }
 }

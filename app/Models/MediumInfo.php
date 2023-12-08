@@ -87,7 +87,7 @@ class MediumInfo extends BaseModel
             ->join('postings', 'medium_info.id', '=', 'postings.medium_info_id')
             ->join('accounts as a', 'postings.account_id', '=', 'a.id')
             ->where('account_holder_id', $merchantId);
-            //->where('hold_until', '<=', now());
+        //->where('hold_until', '<=', now());
 
         // Date conditions
         if (!empty($endDate)) {
@@ -118,8 +118,8 @@ class MediumInfo extends BaseModel
     public static function getListRedeemedByParticipant(int $userId, bool $obfuscate = true, int $offset = 0, int $limit = 10)
     {
         $query = MediumInfo::with('merchant')
-        ->select(
-            DB::raw("
+            ->select(
+                DB::raw("
                 medium_info.*
             "));
         if($obfuscate){
@@ -151,7 +151,7 @@ class MediumInfo extends BaseModel
                 ->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
                 ->join('accounts', 'accounts.id', '=', 'postings.account_id')
                 ->where('merchant_id', '=', $merchantId);;
-            }, 'subQuery')
+        }, 'subQuery')
             ->select(
                 DB::raw("
                     COALESCE(SUM(cost_basis), 0) AS total_cost

@@ -30,6 +30,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('cron:generate-virtual-inventory')->everyFiveMinutes();
         $schedule->command('cron:send-milestone-award')->daily();
         $schedule->command('cron:send-birthday-award')->daily();
+        $schedule->command('update:trialbalance')->everyFiveMinutes();
     }
 
     /**
