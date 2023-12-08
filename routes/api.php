@@ -231,6 +231,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:remove,App\Submerchant,merchant');
 
     // Program routes
+    Route::get('/v1/organization/{organization}/program/{program}/hierarchy', [App\Http\Controllers\API\ProgramController::class, 'hierarchyByProgram'])->middleware('can:viewAny,App\Program,organization');
     Route::get('/v1/organization/{organization}/program', [App\Http\Controllers\API\ProgramController::class, 'index'])->middleware('can:viewAny,App\Program,organization');
     Route::get('/v1/programs-all', [App\Http\Controllers\API\ProgramController::class, 'all'])->middleware('can:viewAny,App\Program,organization');
     Route::get('/v1/organization/{organization}/program/{program}/getBalance', [App\Http\Controllers\API\ProgramController::class, 'getBalanceInformation'] )->middleware('can:viewAny,App\Program,organization');

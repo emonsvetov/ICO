@@ -66,6 +66,7 @@ class ProgramService
     {
         // pr($override);
         $params = [];
+        $programsId = ! empty($override['programsId']) ? $override['programsId'] : request()->get('programsId', '');
         $orgId = ! empty($override['orgId']) ? $override['orgId'] : request()->get('orgId', '');
         $programId = ! empty($override['programId']) ? $override['programId'] : request()->get('programId', '');
         $status = ! empty($override['status']) ? $override['status'] : request()->get('status', '');
@@ -82,6 +83,7 @@ class ProgramService
 
         $all = filter_var(isset($override['all']) ? $override['all'] : request()->get('all', false), FILTER_VALIDATE_BOOLEAN);
 
+        $params['programsId'] = $programsId;
         $params['orgId'] = $orgId;
         $params['programId'] = $programId;
         $params['status'] = $status;
@@ -118,6 +120,11 @@ class ProgramService
 
         $query = Program::where($where);
 
+        if( $programsId )
+        {
+            $programsId = explode(',', $programsId);
+            $query->whereIn('id', $programsId);
+        }
         if( $orgId )
         {
             $orgIds = explode(',', $orgId);
@@ -401,6 +408,30 @@ class ProgramService
             $minimalFields = Program::MIN_FIELDS;
             $query = Program::query();
             $query->whereNull('parent_id');
+            $query = $query->select($minimalFields);
+            $query = $query->with([
+                'childrenMinimal' => function ($query) use ($minimalFields) {
+                    $subquery = $query->select($minimalFields);
+                    return $subquery;
+                }
+            ]);
+            $result = $query->get();
+            return childrenizeCollection($result);
+        } catch (\Exception $e) {
+            throw new \Exception(sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile()));
+        }
+    }
+
+    public function getHierarchyByProgramId($organization, $programId)
+    {
+        try {
+            $program = Program::find($programId);
+            $programsId = $program->descendantsAndSelf()->get()->pluck('id')->toArray();
+
+            $minimalFields = Program::MIN_FIELDS;
+            $query = Program::query();
+            $query->whereNull('parent_id');
+            $query->whereIn('id', $programsId);
             $query = $query->select($minimalFields);
             $query = $query->with([
                 'childrenMinimal' => function ($query) use ($minimalFields) {
