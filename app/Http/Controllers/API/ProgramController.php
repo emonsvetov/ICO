@@ -329,14 +329,6 @@ class ProgramController extends Controller
         return response($result);
     }
 
-    public function hierarchyReport(Program $program, ProgramService $programService, Request $request)
-    {
-        $result = $programService->getHierarchyReport($program)->toArray();
-
-        return response($result);
-    }
-
-
     public function hierarchyByProgram(Organization $organization, Program $program, ProgramService $programService, Request $request)
     {
         return response($programService->getHierarchyByProgramId($organization, $program->id)->toArray());

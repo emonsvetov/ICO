@@ -381,27 +381,6 @@ class ProgramService
         }
     }
 
-    public function getHierarchyReport($program)
-    {
-        try {
-            $minimalFields = Program::MIN_FIELDS;
-            $query = Program::query();
-            $query->where('parent_id', $program->id);
-            $query->orWhere('id', $program->id);
-            $query = $query->select($minimalFields);
-            $query = $query->with([
-                'childrenMinimal' => function ($query) use ($minimalFields) {
-                    $subquery = $query->select($minimalFields);
-                    return $subquery;
-                }
-            ]);
-            $result = $query->get();
-            return childrenizeCollection($result);
-        } catch (\Exception $e) {
-            throw new \Exception(sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile()));
-        }
-    }
-
     public function getHierarchy($organization)
     {
         try {
