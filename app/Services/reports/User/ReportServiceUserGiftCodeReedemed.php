@@ -22,10 +22,10 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
         $query->selectRaw("
             `medium_info`.*
             , `merchants`.name
-            , `medium_info`.redemption_value / `medium_info`.factor_valuation as amount
+            , `medium_info`.sku_value as amount
             , upper(substring(MD5(RAND()), 1, 20)) as `code`
         ");
-
+        //  / `medium_info`.factor_valuation
         return $query;
     }
 
