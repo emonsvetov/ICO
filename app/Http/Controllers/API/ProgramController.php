@@ -33,6 +33,17 @@ use Illuminate\Support\Facades\Mail;
 
 class ProgramController extends Controller
 {
+    public function getReportPrograms(Program $program, ProgramService $programService, Request $request)
+    {
+        $programs = $programService->getReportPrograms($program, $request->all());
+
+        if ($programs->isNotEmpty()) {
+            return response($programs);
+        }
+
+        return response([]);
+    }
+
     public function index(Organization $organization, ProgramService $programService, Request $request)
     {
         $programs = $programService->index($organization, $request->all());
@@ -46,7 +57,14 @@ class ProgramController extends Controller
 
     public function all(ProgramService $programService, Request $request)
     {
-        $programs = $programService->index(null, $request->all());
+        $params = $request->all();
+        $programId = $request->get('programId');
+        if ($programId){
+            $program = Program::find($programId);
+            $hierarchy = $program->descendantsAndSelf()->get()->pluck('id')->toArray();
+            $params['programsId'] = implode(',', $hierarchy);
+        }
+        $programs = $programService->index(null, $params);
 
         if ($programs->isNotEmpty()) {
             return response($programs);
@@ -178,7 +196,7 @@ class ProgramController extends Controller
     }
 
     public function getBalance(Organization $organization, Program $program, AccountService $accountService)
-    {   
+    {
         $balance = $accountService->readAvailableBalanceForProgram($program);
         return response($balance);
     }
@@ -310,6 +328,12 @@ class ProgramController extends Controller
 
         return response($result);
     }
+
+    public function hierarchyByProgram(Organization $organization, Program $program, ProgramService $programService, Request $request)
+    {
+        return response($programService->getHierarchyByProgramId($organization, $program->id)->toArray());
+    }
+
     public function downloadMoneyTranferTemplate(Organization $organization, Program $program, ProgramService $programService)
     {
         return response()->stream( ...($programService->getTransferTemplateCSV($program)) );
