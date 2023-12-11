@@ -31,6 +31,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'admin_fee' => 0,
 					'usage_fee' => 0,
 					'deposit_fee' => 0,
+					'deposit_reversal' => 0,
+					'deposit_fee_reversal' => 0,
 					'transaction_fee' => 0,
 					'refunded_transaction_fee' => 0,
 					'deposit_reversal' => 0,
@@ -49,7 +51,9 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'codes_redeemed_premium' => 0,
 					'convenience_fees' => 0,
 					'premium_fee' => 0,
-					'net_points_purchased' => 0
+					'net_points_purchased' => 0,
+					'program_funds_net_transfers' => 0,
+					'program_refunds_for_monies_pending' => 0
 				];
 				foreach ( $ranked_programs as $program ) {
 					array_push($account_holder_ids, $program->account_holder_id);
