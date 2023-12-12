@@ -29,6 +29,7 @@ use App\Models\Posting;
 use App\Models\Invoice;
 use App\Models\Event;
 use App\Models\User;
+use App\Models\ProgramReports;
 use Illuminate\Support\Facades\Mail;
 
 class ProgramController extends Controller
@@ -329,6 +330,14 @@ class ProgramController extends Controller
         return response($result);
     }
 
+    public function hierarchyReport(Program $program, ProgramService $programService, Request $request)
+    {
+        $result = $programService->getHierarchyReport($program)->toArray();
+
+        return response($result);
+    }
+
+
     public function hierarchyByProgram(Organization $organization, Program $program, ProgramService $programService, Request $request)
     {
         return response($programService->getHierarchyByProgramId($organization, $program->id)->toArray());
@@ -353,4 +362,21 @@ class ProgramController extends Controller
     public function getLedgerCodes(Organization $organization, Program $program, ProgramService $programService)    {
         return $programService->getLedgerCodes($program);
     }
+
+    public function saveSelectedReports(Request $request, $organization, $programId)
+    {
+        $program = Program::where('organization_id', $organization)->findOrFail($programId);
+        $selectedReports = $request->input('selected_reports', []);
+
+        DB::transaction(function () use ($program, $selectedReports) {
+            $program->selected_reports()->detach();
+
+            if (!empty($selectedReports)) {
+                $program->selected_reports()->attach($selectedReports);
+            }
+        });
+
+        return response()->json(['message' => 'Selected reports saved successfully'], 200);
+    }
+    
 }
