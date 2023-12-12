@@ -219,7 +219,7 @@ class Program extends BaseModel
         if( $with_rank )    {
             //TODO
         }
-        
+
         $query = self::whereIn('account_holder_id', $programAccountHolderIds);
         return $limit ? $query->limit($limit)->offset($offset)->get() : $query->get();
     }
@@ -426,7 +426,7 @@ class Program extends BaseModel
 
     public function getPointsExpirationDateSql()
     {
-        $end_date_sql = '';
+        $end_date_sql = "date_format(date_add(postings.created_at, interval 1 year), '%Y-12-31')";
         // use the end date of the active goal plan and the expiration rule to set the end date for the future goal goal
 		if ($this->expiration_rule_id == 1){
             // use the annual month and day parameters
