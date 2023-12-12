@@ -280,6 +280,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
+
+    
+    Route::delete('/v1/organization/{organization}/program/{program}/digital-media-type/{programMediaType}',
+    [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete'])->middleware('can:remove,App\ProgramMediaType,organization,program');
 //
 //    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
 //        [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
