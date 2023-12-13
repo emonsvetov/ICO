@@ -16,9 +16,23 @@ class ReportsController extends Controller
 
     public function getReportsByProgramId($programId)
     {
-        $reports = ProgramReports::where('program_id', $programId)->get();
+        $reports = ProgramReports::where('program_id', $programId)
+                    ->with(['report' => function($query) {
+                        $query->select('id', 'name', 'url'); 
+                    }])
+                    ->get();
+
+        $reports = $reports->map(function ($report) {
+            return [
+                'id' => $report->id,
+                'program_id' => $report->program_id,
+                'report_id' => $report->report_id,
+                'name' => $report->report->name, 
+                'link' => $report->report->url, 
+            ];
+        });
 
         return response()->json($reports);
     }
-
 }
+
