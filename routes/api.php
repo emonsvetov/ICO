@@ -247,7 +247,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/program/{program}/save-selected-reports', [App\Http\Controllers\API\ProgramController::class, 'saveSelectedReports']);
     Route::get('/v1/reports', [App\Http\Controllers\API\ReportsController::class, 'getAllReports'])->middleware('can:getAllReports,App\Program,organization,program');
     Route::get('/v1/reports/{program}', [App\Http\Controllers\API\ReportsController::class, 'getReportsByProgramId'])->middleware('can:getReportsByProgramId,App\Program,organization,program');
-    
+    Route::get('/v1/reports/{program}/selected', [App\Http\Controllers\API\ReportsController::class, 'getSelectedReportsByProgramId'])->middleware('can:getSelectedReportsByProgramId,App\Program,organization,program');
+
     // Subprogram Routes
     Route::get('/v1/organization/{organization}/program/{program}/subprogram', [App\Http\Controllers\API\SubprogramController::class, 'index'])->middleware('can:viewAny,App\Subprogram,organization,program');
     Route::get('/v1/organization/{organization}/subprogram/{program}/available/{action}', [App\Http\Controllers\API\SubprogramController::class, 'available'])->middleware('can:viewAny,App\Subprogram,organization,program');
