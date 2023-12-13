@@ -34,5 +34,14 @@ class ReportsController extends Controller
 
         return response()->json($reports);
     }
+
+    public function getSelectedReportsByProgramId($programId)
+    {
+        $selectedReports = ProgramReports::where('program_id', $programId)
+                        ->pluck('report_id');
+
+        return response()->json($selectedReports);
+    }
+
 }
 
