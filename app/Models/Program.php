@@ -18,6 +18,7 @@ use App\Models\BaseModel;
 use App\Models\Currency;
 use App\Models\Account;
 use App\Models\Owner;
+use App\Models\ProgramReports;
 
 /**
  * @property int $account_holder_id
@@ -214,14 +215,12 @@ class Program extends BaseModel
         return $program;
     }
 
-    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false,  $offset = 0, $limit = 0)  {
+    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false)  {
         if( !$programAccountHolderIds ) return;
         if( $with_rank )    {
             //TODO
         }
-
-        $query = self::whereIn('account_holder_id', $programAccountHolderIds);
-        return $limit ? $query->limit($limit)->offset($offset)->get() : $query->get();
+        return self::whereIn('account_holder_id', $programAccountHolderIds)->get();
     }
 
     public function create_setup_fee_account()   {
@@ -466,5 +465,12 @@ class Program extends BaseModel
         $root = $this->getRoot();
         return $root     ? EmailTemplateSender::where('program_id', $root->id)->first() : null;
     }
+
+
+    public function selected_reports()
+    {
+        return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
+    }
+
 
 }
