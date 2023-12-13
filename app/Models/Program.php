@@ -471,6 +471,4 @@ class Program extends BaseModel
     {
         return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
     }
-
-
 }
