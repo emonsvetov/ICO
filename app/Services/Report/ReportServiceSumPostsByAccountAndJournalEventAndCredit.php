@@ -97,6 +97,9 @@ class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServi
 		if (isset ( $this->params [self::JOURNAL_EVENT_TYPES] ) && count ( $this->params [self::JOURNAL_EVENT_TYPES] ) > 0) {
 			$where [] = "jet.type IN ('" . implode ( "','", $this->params [self::JOURNAL_EVENT_TYPES] ) . "')";
 		}
+		if (isset ($this->params [self::YEAR]) && $this->params [self::YEAR] > 0) {
+			$where [] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
+		}
 		return $where;
 
 	}
