@@ -11,6 +11,7 @@ abstract class ReportServiceAbstract
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
     const YEAR = 'year';
+    const MONTH = 'month';
     const CODES = 'codes';
     const DATE_BEGIN = self::DATE_FROM;
     const DATE_END = self::DATE_TO;
@@ -23,7 +24,7 @@ abstract class ReportServiceAbstract
     const FIELD_VALUE = "value";
     const FIELD_MONTH = "month";
     const FIELD_JOURNAL_EVENT_TYPE = "journal_event_type";
-
+    const FIELD_COUNT = "count";
     const PROGRAM_ID = 'programId';
     const PROGRAM_ACCOUNT_HOLDER_ID = 'program_account_holder_id';
     const CREATED_ONLY = 'createdOnly';
@@ -44,10 +45,33 @@ abstract class ReportServiceAbstract
     const USER_ID = "user_id";
     const ACCOUNT_TYPES = "account_types";
     const SERVER = "server";
-
     const SQL_WHERE = 'where';
     const SQL_ORDER_BY_DIR = 'dir';
 
+    const FIELD_TOTAL = "total";
+    const ACCOUNT_TYPE_MONIES_DUE_TO_OWNER = "Monies Due to Owner";
+    const ACCOUNT_TYPE_MONIES_AVAILABLE = "Monies Available";
+    const ACCOUNT_TYPE_POINTS_REDEEMED = "Points Redeemed";
+    const ACCOUNT_TYPE_MONIES_REDEEMED = "Monies Redeemed";
+    const ACCOUNT_TYPE_MONIES_EXPIRED = 'Monies Expired';
+    const ACCOUNT_TYPE_POINTS_EXPIRED = "Points Expired";
+
+    const JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT = "Award points to recipient";
+    const JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT = "Award monies to recipient";
+    const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS = 'Program pays for points';
+    const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING = "Program pays for monies pending";
+    const JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES = "Redeem points for gift codes";
+    const JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING = "Redeem points for international shopping";
+    const JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES = "Redeem monies for gift codes";
+    const JOURNAL_EVENT_TYPES_EXPIRE_POINTS = "Expire points";
+    const JOURNAL_EVENT_TYPES_EXPIRE_MONIES = "Expire monies";
+    const JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS = "Deactivate points";
+    const JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES = "Deactivate monies";
+    const JOURNAL_EVENT_TYPES_RECLAIM_POINTS = "Reclaim points";
+    const JOURNAL_EVENT_TYPES_RECLAIM_MONIES = "Reclaim monies";
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS = "Reversal program pays for points";
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING = "Reversal program pays for monies pending";
+    const ACCOUNT_TYPE_POINTS_AWARDED = "Points Awarded";
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;
@@ -84,8 +108,8 @@ abstract class ReportServiceAbstract
         $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
         $this->params[self::SERVER] = $params[self::SERVER] ?? null;
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
+        $this->params[self::MONTH] = $params[self::MONTH] ?? null;
         $this->params[self::CODES] = $params[self::CODES] ?? null;
-
         $this->reportHelper = new ReportHelper() ?? null;
     }
 

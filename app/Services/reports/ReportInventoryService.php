@@ -11,82 +11,59 @@ class ReportInventoryService extends ReportServiceAbstract
     protected function calc(): array
     {
         $table = [];
-        $this->params[self::DATE_FROM] = $this->params[self::DATE_FROM] ?: date("Y-m-d H:i:s");
-        $date = \DateTime::createFromFormat('Y-m-d H:i:s', $this->params[self::DATE_FROM]);
-        $endDate = $date->format('Y-m-d');
 
-        $this->table = [];
+        // Parse and format the date
+        $this->params[self::DATE_FROM] = $this->params[self::DATE_FROM] ?: date("m/d/Y");
+        $date = \DateTime::createFromFormat('m/d/Y', $this->params[self::DATE_FROM]);
+        $endDate = $date !== false ? $date->format('Y-m-d') : date('Y-m-d');
+
+        // Retrieve merchants and SKU values
         $merchants = Merchant::tree()->depthFirst()->whereIn('id', $this->params[self::MERCHANTS])->get();
         $skuValues = MediumInfo::getSkuValues();
 
-        foreach ($merchants as $key => $merchant) {
+        foreach ($merchants as $merchant) {
             $merchantId = (int)$merchant->account_holder_id;
             $table[$merchantId] = (object)$merchant->toArray();
-            foreach ($skuValues as $sku_value) {
-                $sku_value = number_format($sku_value, 4, '.', '');
-                if ( ! $merchant['get_gift_codes_from_root']) {
-                    $table[$merchantId]->on_hand[$sku_value] = 0;
-                    $table[$merchantId]->optimal_values[$sku_value] = 0;
-                    $table[$merchantId]->percent_remaining[$sku_value] = 0;
-                } else {
-                    $table[$merchantId]->on_hand[$sku_value] = '^';
-                    $table[$merchantId]->optimal_values[$sku_value] = '^';
-                    $table[$merchantId]->percent_remaining[$sku_value] = '^';
-                }
+
+            // Initialize data for each merchant
+            foreach ($skuValues as $skuValue) {
+                $formattedSkuValue = number_format($skuValue, 2, '.', '');
+                $table[$merchantId]->on_hand[$formattedSkuValue] = 0;
+                $table[$merchantId]->optimal_values[$formattedSkuValue] = 0;
+                $table[$merchantId]->percent_remaining[$formattedSkuValue] = 0;
             }
-        }
 
-
-        /** For each merchant get the amount of inventory they have on hand and the optimal values set */
-        foreach ($table as $merchantId => $merchant) {
+            // Process inventory and optimal values
             if (!$merchant->get_gift_codes_from_root) {
-                /** Read the amount in inventory for each merchant */
                 $denominationList = MediumInfo::getRedeemableDenominationsByMerchant($merchantId, $endDate);
-
                 foreach ($denominationList as $denomination) {
-                    $skuValueAmount = number_format($denomination->sku_value, 4, '.', '');
-
-                    // Initialize 'on hand' value if not set
-                    if (!isset($table[$merchantId]->on_hand[$skuValueAmount])) {
-                        $table[$merchantId]->on_hand[$skuValueAmount] = 0;
-                    }
-
-                    // Update the 'on hand' value
-                    $table[$merchantId]->on_hand[$skuValueAmount] += $denomination->count;
+                    $skuValueFormatted = number_format($denomination->sku_value, 2, '.', '');
+                    $table[$merchantId]->on_hand[$skuValueFormatted] += $denomination->count;
                 }
-            }
 
+                $optimalValues = OptimalValue::getByMerchantId($merchantId);
+                foreach ($optimalValues as $optimalValue) {
+                    $skuValueFormatted = number_format($optimalValue->denomination, 2, '.', '');
+                    $table[$merchantId]->optimal_values[$skuValueFormatted] = $optimalValue->optimal_value;
 
-
-
-        $optimalValues = OptimalValue::getByMerchantId($merchantId);
-            foreach ($optimalValues as $optimalValue) {
-                $skuValueAmount = number_format($optimalValue->denomination, 2, '.', '');
-
-
-                if ( ! $merchant->get_gift_codes_from_root) {
-                    $table[$merchantId]->optimal_values[$skuValueAmount] = $optimalValue->optimal_value;
                     if ($optimalValue->optimal_value > 0) {
-                        if (isset($table[$merchantId]->on_hand[$skuValueAmount])) {
-                            $table[$merchantId]->percent_remaining[$skuValueAmount] =
-                                $table[$merchantId]->on_hand[$skuValueAmount] / $optimalValue->optimal_value;
-                        } else {
-                            $table[$merchantId]->percent_remaining[$skuValueAmount] = 0;
-                        }
+                        $table[$merchantId]->percent_remaining[$skuValueFormatted] =
+                            isset($table[$merchantId]->on_hand[$skuValueFormatted]) ?
+                                $table[$merchantId]->on_hand[$skuValueFormatted] / $optimalValue->optimal_value : 0;
                     }
-                } else {
-                    $table[$merchantId]->optimal_values[$skuValueAmount] = "^";
-                    $table[$merchantId]->percent_remaining[$skuValueAmount] = "^";
+                }
+
+                $costBasis = MediumInfo::getCostBasis($merchantId);
+                $table[$merchantId]->cost_basis = $costBasis ?: 0;
+            } else {
+                $table[$merchantId]->cost_basis = '^';
+                foreach ($skuValues as $skuValue) {
+                    $formattedSkuValue = number_format($skuValue, 2, '.', '');
+                    $table[$merchantId]->on_hand[$formattedSkuValue] = '^';
+                    $table[$merchantId]->optimal_values[$formattedSkuValue] = '^';
+                    $table[$merchantId]->percent_remaining[$formattedSkuValue] = '^';
                 }
             }
-
-            if ( ! $merchant->get_gift_codes_from_root) {
-                $costBasis = MediumInfo::getCostBasis($merchantId);
-                $table[$merchantId]->cost_basis = $costBasis;
-            } else {
-                $table[$merchantId]->cost_basis = "^";
-            }
-
         }
 
         if ($this->isExport) {
@@ -101,6 +78,7 @@ class ReportInventoryService extends ReportServiceAbstract
 
         return $this->table;
     }
+
 
     public function getCsvHeaders(): array
     {

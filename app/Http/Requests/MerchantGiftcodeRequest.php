@@ -68,7 +68,7 @@ class MerchantGiftcodeRequest extends FormRequest
                 new CsvContent( [
                     'purchase_date' => 'required|date',
                     'supplier_code' => ['required', 'match_merchant_code'],
-                    'redemption_value' => 'required|integer',
+                    'redemption_value' => 'required|numeric',
                     'cost_basis' => 'required|numeric',
                     'discount' => 'required|numeric',
                     'sku_value' => 'required|string',

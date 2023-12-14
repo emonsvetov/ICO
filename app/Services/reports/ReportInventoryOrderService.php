@@ -27,7 +27,7 @@ class ReportInventoryOrderService extends ReportServiceAbstract
         $result = $query->get();
 
         foreach ($result as $row) {
-            if ( ! isset ($table[$row->account_holder_id])) {
+            if (!isset ($table[$row->account_holder_id])) {
                 $table[$row->account_holder_id] = new stdClass();
                 $table[$row->account_holder_id]->merchant_name = $row->merchant_name;
                 $table[$row->account_holder_id]->optimal_values = [];
@@ -42,7 +42,7 @@ class ReportInventoryOrderService extends ReportServiceAbstract
             $inventory = MediumInfo::getRedeemableDenominationsByMerchant((int)$merchantId);
             foreach ($inventory as $inventoryRow) {
                 $skuValue = number_format($inventoryRow->sku_value, 2);
-                if ( ! isset ($values->optimal_values[$skuValue])) {
+                if (!isset ($values->optimal_values[$skuValue])) {
                     $reportRow = new stdClass ();
                     $reportRow->denomination = number_format($skuValue, 2);
                     $reportRow->optimal_value = 0;
@@ -67,26 +67,21 @@ class ReportInventoryOrderService extends ReportServiceAbstract
         // prepare data for react-table with rowSpan
         $arr = [];
         foreach ($table as $item) {
-
             if (count($item->optimal_values) >= 1) {
-                $row = [];
-                $row['merchant_name'] = $item->merchant_name;
-                $row['denomination'] = 'skip_td';
-                $row['count'] = 'skip_td';
-                $row['optimal_value'] = 'skip_td';
-                $subRows = [];
+                $first = true;
                 foreach ($item->optimal_values as $subKey => $subItem) {
-                    $subRows[] =
-                        [
-                            'id' => $item->merchant_name . $subKey,
-                            'merchant_name' => 'skip_td',
-                            'denomination' => $subItem->denomination,
-                            'count' => $subItem->count,
-                            'optimal_value' => $subItem->optimal_value,
-                        ];
+                    $row = [];
+                    if ($first) {
+                        $row['merchant_name'] = $item->merchant_name;
+                        $first = false;
+                    } else {
+                        $row['merchant_name'] = ''; // Or keep it as 'skip_td' if needed for your frontend logic
+                    }
+                    $row['denomination'] = $subItem->denomination;
+                    $row['count'] = $subItem->count;
+                    $row['optimal_value'] = $subItem->optimal_value;
+                    $arr[] = $row;
                 }
-                $row['subRows'] = $subRows;
-                $arr[] = $row;
             }
         }
 
