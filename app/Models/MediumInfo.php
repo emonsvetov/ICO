@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Traits\Treeable;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -58,10 +59,8 @@ class MediumInfo extends BaseModel
      * @param string $endDate
      * @return Collection
      */
-    public static function getRedeemableDenominationsByMerchant(int $merchantId = 0, $whereColumn = '', $whereValue = 0, $endDate = '', $extraArgs = []): Collection
+    public static function getRedeemableDenominationsByMerchant(int $merchantId = 0, $endDate = FALSE, $extraArgs = []): Collection
     {
-        // Convert whereValue to float
-        $whereValue = (float) $whereValue;
 
         // Retrieve merchant details
         $merchant = Merchant::where('account_holder_id', $merchantId)->first();
@@ -87,10 +86,9 @@ class MediumInfo extends BaseModel
             ->where('account_holder_id', $merchantId);
 
         // Apply conditions based on extraArgs
-        if (!empty($extraArgs['virtual_inventory'])) {
-            $query->where('medium_info.virtual_inventory', '=', 1);
-        } elseif (!empty($extraArgs['real_inventory'])) {
-            $query->where('medium_info.virtual_inventory', '=', 0);
+        $inventoryType = $extraArgs['inventoryType'] ?? FALSE;
+        if ($inventoryType) {
+            $query->where('medium_info.virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
         }
 
         // Apply isTest condition
@@ -107,11 +105,6 @@ class MediumInfo extends BaseModel
                 });
         } else {
             $query->whereNull('redemption_date');
-        }
-
-        // Apply dynamic where column condition
-        if (!empty($whereColumn) && $whereValue != 0) {
-            $query->where($whereColumn, '=', $whereValue);
         }
 
         // Group by and order by
@@ -150,14 +143,29 @@ class MediumInfo extends BaseModel
      * @param int $merchantId
      * @return float
      */
-    public static function getCostBasis(int $merchantId): float
+    public static function getCostBasis(int $merchantId, $params = [])
     {
+        $inventoryType = $params['inventoryType'] ?? FALSE;
+        $endDate = $params['endDate'] ?? FALSE;
         $totalCost = DB::table('medium_info')
             ->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
             ->join('accounts', 'accounts.id', '=', 'postings.account_id')
-            ->where('medium_info.id', '=', $merchantId)
-            ->select(DB::raw('SUM(medium_info.cost_basis) as cost_basis'))
-            ->get();
+            ->where('medium_info.merchant_id', '=', $merchantId)
+            ->select(DB::raw('SUM(medium_info.cost_basis) as cost_basis'));
+
+        if ($endDate) {
+            $totalCost->where('purchase_date', '<=', $endDate);
+            $totalCost->where(function($query) use ($endDate) {
+                $query->orWhere('redemption_date', null)
+                    ->orWhere('redemption_date', '>', $endDate);
+            });
+        }
+
+        if ($inventoryType) {
+            $totalCost->where('virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
+        }
+
+        $totalCost = $totalCost->get();
 
         $finalTotalCost = $totalCost->isEmpty() ? 0 : $totalCost->first()->cost_basis;
 

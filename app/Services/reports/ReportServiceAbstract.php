@@ -13,6 +13,7 @@ abstract class ReportServiceAbstract
     const YEAR = 'year';
     const MONTH = 'month';
     const CODES = 'codes';
+    const INVENTORY_TYPE = 'inventoryType';
     const DATE_BEGIN = self::DATE_FROM;
     const DATE_END = self::DATE_TO;
 
@@ -110,6 +111,7 @@ abstract class ReportServiceAbstract
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
         $this->params[self::MONTH] = $params[self::MONTH] ?? null;
         $this->params[self::CODES] = $params[self::CODES] ?? null;
+        $this->params[self::INVENTORY_TYPE] = $params[self::INVENTORY_TYPE] ?? null;
         $this->reportHelper = new ReportHelper() ?? null;
     }
 
