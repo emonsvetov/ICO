@@ -32,14 +32,23 @@ class ProgramMediaTypeController extends Controller
 
         try {
             $name = $request->get('name');
+            $isMenuItem = $request->get('is_menu_item');
+            $menu_link =  $request->get('menu_link');
             $programMediaType = ProgramMediaType::create([
                 "program_id" => $program->id,
-                "name"       => $name
+                "name"       => $name,
+                "is_menu_item" => $isMenuItem,
+                "menu_link" => $menu_link
             ]);
         } catch (\Exception $e) {
-            return response(['errors' => 11], 422);
+            return response(['errors' => $e->getMessage()], 422);
         }
 
         return response()->json($programMediaType);
+    }
+
+    public function delete(Organization $organization, Program $program, ProgramMediaType $programMediaType) {
+        $programMediaType->delete();
+        return response(['deleted' => true]);
     }
 }
