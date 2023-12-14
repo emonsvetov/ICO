@@ -49,7 +49,29 @@ abstract class ReportServiceAbstract
     const SQL_ORDER_BY_DIR = 'dir';
 
     const FIELD_TOTAL = "total";
-    
+    const ACCOUNT_TYPE_MONIES_DUE_TO_OWNER = "Monies Due to Owner";
+    const ACCOUNT_TYPE_MONIES_AVAILABLE = "Monies Available";
+    const ACCOUNT_TYPE_POINTS_REDEEMED = "Points Redeemed";
+    const ACCOUNT_TYPE_MONIES_REDEEMED = "Monies Redeemed";
+    const ACCOUNT_TYPE_MONIES_EXPIRED = 'Monies Expired';
+    const ACCOUNT_TYPE_POINTS_EXPIRED = "Points Expired";
+
+    const JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT = "Award points to recipient";
+    const JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT = "Award monies to recipient";
+    const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS = 'Program pays for points';
+    const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING = "Program pays for monies pending";
+    const JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES = "Redeem points for gift codes";
+    const JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING = "Redeem points for international shopping";
+    const JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES = "Redeem monies for gift codes";
+    const JOURNAL_EVENT_TYPES_EXPIRE_POINTS = "Expire points";
+    const JOURNAL_EVENT_TYPES_EXPIRE_MONIES = "Expire monies";
+    const JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS = "Deactivate points";
+    const JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES = "Deactivate monies";
+    const JOURNAL_EVENT_TYPES_RECLAIM_POINTS = "Reclaim points";
+    const JOURNAL_EVENT_TYPES_RECLAIM_MONIES = "Reclaim monies";
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS = "Reversal program pays for points";
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING = "Reversal program pays for monies pending";
+    const ACCOUNT_TYPE_POINTS_AWARDED = "Points Awarded";
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;

@@ -35,7 +35,7 @@ class ReportDepositTransfersService extends ReportServiceAbstract
             from_program.account_holder_id as from_program_account_holder_id,
             to_program.name as to_program_name,
             to_program.account_holder_id as to_program_account_holder_id,
-            postings.posting_amount,
+            cast(postings.posting_amount as float) as posting_amount,
             users.account_holder_id as user_id,
             users.first_name,
             users.last_name,
