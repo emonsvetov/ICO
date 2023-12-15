@@ -81,9 +81,9 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
 
             $query->addSelect(['count_award' => function ($query) {
                 $query->from('users');
-                $query->select(DB::raw("COUNT(0)"));
+                $query->select(DB::raw("COUNT(*)"));
 
-                $query->join('accounts', 'accounts.id', '=', 'users.account_holder_id');
+                $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
                 $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
                 $query->join('postings', 'postings.account_id', '=', 'accounts.id');
                 $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
@@ -119,7 +119,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->from('users');
                 $query->select(DB::raw("SUM(postings.posting_amount)"));
 
-                $query->join('accounts', 'accounts.id', '=', 'users.account_holder_id');
+                $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
                 $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
                 $query->join('postings', 'postings.account_id', '=', 'accounts.id');
                 $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
@@ -155,7 +155,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->from('users');
                 $query->select(DB::raw("AVG(postings.posting_amount)"));
 
-                $query->join('accounts', 'accounts.id', '=', 'users.account_holder_id');
+                $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
                 $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
                 $query->join('postings', 'postings.account_id', '=', 'accounts.id');
                 $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
@@ -285,6 +285,16 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
     protected function setOrderBy(Builder $query): Builder
     {
         return $query;
+    }
+
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data = $this->getTable();
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
     }
 
     public function getCsvHeaders(): array
