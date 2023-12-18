@@ -466,9 +466,18 @@ class Program extends BaseModel
         return $root     ? EmailTemplateSender::where('program_id', $root->id)->first() : null;
     }
 
+    public function get_top_level_program_id($id = 0)
+    {
+        $program = self::where('id', $id)->first();
+        if (!$program->parent_id)
+            return $id;
+        else 
+            self::get_top_level_program_id($program->parent_id);
+    }
 
     public function selected_reports()
     {
         return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
+
     }
 }
