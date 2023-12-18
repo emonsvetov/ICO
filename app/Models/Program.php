@@ -18,6 +18,7 @@ use App\Models\BaseModel;
 use App\Models\Currency;
 use App\Models\Account;
 use App\Models\Owner;
+use App\Models\ProgramReports;
 
 /**
  * @property int $account_holder_id
@@ -424,7 +425,7 @@ class Program extends BaseModel
 
     public function getPointsExpirationDateSql()
     {
-        $end_date_sql = '';
+        $end_date_sql = "date_format(date_add(postings.created_at, interval 1 year), '%Y-12-31')";
         // use the end date of the active goal plan and the expiration rule to set the end date for the future goal goal
 		if ($this->expiration_rule_id == 1){
             // use the annual month and day parameters
@@ -472,5 +473,11 @@ class Program extends BaseModel
             return $id;
         else 
             self::get_top_level_program_id($program->parent_id);
+    }
+
+    public function selected_reports()
+    {
+        return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
+
     }
 }

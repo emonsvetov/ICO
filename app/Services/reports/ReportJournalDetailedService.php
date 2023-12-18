@@ -31,8 +31,14 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'admin_fee' => 0,
 					'usage_fee' => 0,
 					'deposit_fee' => 0,
+					'deposit_reversal' => 0,
+					'deposit_fee_reversal' => 0,
 					'transaction_fee' => 0,
 					'refunded_transaction_fee' => 0,
+					'deposit_reversal' => 0,
+					'deposit_fee_reversal' => 0,
+					'program_funds_net_transfers' => 0,
+					'program_refunds_for_monies_pending' => 0,
 					'deposits' => 0,
 					'points_purchased' => 0,
 					'points_redeemed' => 0,
@@ -45,7 +51,9 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'codes_redeemed_premium' => 0,
 					'convenience_fees' => 0,
 					'premium_fee' => 0,
-					'net_points_purchased' => 0
+					'net_points_purchased' => 0,
+					'program_funds_net_transfers' => 0,
+					'program_refunds_for_monies_pending' => 0
 				];
 				foreach ( $ranked_programs as $program ) {
 					array_push($account_holder_ids, $program->account_holder_id);
@@ -437,12 +445,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         foreach( $this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
         }
-		$temp = array();
-		foreach( $this->table as $i => $program) {
-			array_push($temp, $program);
-		}
-		$this->table = $temp;
-		sort($this->table);
+		// sort($this->table); //not sure about this whether we need this
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */

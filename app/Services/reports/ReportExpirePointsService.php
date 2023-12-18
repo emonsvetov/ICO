@@ -64,19 +64,21 @@ class ReportExpirePointsService extends ReportServiceAbstract
                         CASE `expiration_rules`.expire_units
                             WHEN 'DAY' THEN date_add(`postings`.created_at, INTERVAL `expiration_rules`.expire_offset DAY)
                             WHEN 'MONTH' THEN date_add(`postings`.created_at, INTERVAL `expiration_rules`.expire_offset MONTH)
+                            WHEN 'YEAR' THEN date_add(`postings`.created_at, INTERVAL `expiration_rules`.expire_offset YEAR)
                         END
                     WHEN (`expiration_rules`.name IN ('Custom'))
                     THEN
                         CASE `programs`.custom_expire_units
                             WHEN 'DAY' THEN date_add(`postings`.created_at, INTERVAL `programs`.custom_expire_offset DAY)
                             WHEN 'MONTH' THEN date_add(`postings`.created_at, INTERVAL `programs`.custom_expire_offset MONTH)
+                            WHEN 'YEAR' THEN date_add(`postings`.created_at, INTERVAL `programs`.custom_expire_offset YEAR)
                         END
                     WHEN (`expiration_rules`.name IN ('Annual'))
                     THEN
                     	date_add(
                     	    DATE(
                                 CONCAT(
-                                    year(curdate()),
+                                    year(`postings`.created_at),
                                     '-',
                                     LPAD(`programs`.annual_expire_month,2,'0'),
                                     '-',
@@ -103,6 +105,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                         CASE `expiration_rules`.expire_units
                             WHEN 'DAY' THEN date_add(`postings`.created_at, INTERVAL `expiration_rules`.expire_offset DAY)
                             WHEN 'MONTH' THEN date_add(`postings`.created_at, INTERVAL `expiration_rules`.expire_offset MONTH)
+                            WHEN 'YEAR' THEN date_add(`postings`.created_at, INTERVAL `expiration_rules`.expire_offset YEAR)
                         END
                 END as 'end_date'
                 , date_add(date_format(NOW(), '%Y-12-31'),interval 1 day) as 'end_year'
@@ -181,11 +184,19 @@ class ReportExpirePointsService extends ReportServiceAbstract
             total_debit,
             total_credit,
             (total_debit - total_credit) * factor_valuation as 'balance_without_redeemed',
-            (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) * factor_valuation as 'balance',
+            CAST(
+                (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) * factor_valuation
+                AS DECIMAL(10, 2)
+                )
+                as 'balance',
             total_expiring_points,
-            IF((total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) > total_expiring_points ,
-                total_expiring_points,
-                (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)))* factor_valuation as 'amount_expiring',
+            CAST(
+                IF((total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) > total_expiring_points ,
+                    total_expiring_points,
+                    (total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)))*factor_valuation
+                AS DECIMAL(10, 2)
+                )
+                as 'amount_expiring',
             expire_date,
             IF(redeemed IS NOT NULL, redeemed, 0) * factor_valuation as redeemed
         ");

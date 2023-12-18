@@ -29,10 +29,22 @@ use App\Models\Posting;
 use App\Models\Invoice;
 use App\Models\Event;
 use App\Models\User;
+use App\Models\ProgramReports;
 use Illuminate\Support\Facades\Mail;
 
 class ProgramController extends Controller
 {
+    public function getReportPrograms(Program $program, ProgramService $programService, Request $request)
+    {
+        $programs = $programService->getReportPrograms($program, $request->all());
+
+        if ($programs->isNotEmpty()) {
+            return response($programs);
+        }
+
+        return response([]);
+    }
+
     public function index(Organization $organization, ProgramService $programService, Request $request)
     {
         $programs = $programService->index($organization, $request->all());
@@ -46,7 +58,14 @@ class ProgramController extends Controller
 
     public function all(ProgramService $programService, Request $request)
     {
-        $programs = $programService->index(null, $request->all());
+        $params = $request->all();
+        $programId = $request->get('programId');
+        if ($programId){
+            $program = Program::find($programId);
+            $hierarchy = $program->descendantsAndSelf()->get()->pluck('id')->toArray();
+            $params['programsId'] = implode(',', $hierarchy);
+        }
+        $programs = $programService->index(null, $params);
 
         if ($programs->isNotEmpty()) {
             return response($programs);
@@ -178,7 +197,7 @@ class ProgramController extends Controller
     }
 
     public function getBalance(Organization $organization, Program $program, AccountService $accountService)
-    {   
+    {
         $balance = $accountService->readAvailableBalanceForProgram($program);
         return response($balance);
     }
@@ -310,6 +329,20 @@ class ProgramController extends Controller
 
         return response($result);
     }
+
+    public function hierarchyReport(Program $program, ProgramService $programService, Request $request)
+    {
+        $result = $programService->getHierarchyReport($program)->toArray();
+
+        return response($result);
+    }
+
+
+    public function hierarchyByProgram(Organization $organization, Program $program, ProgramService $programService, Request $request)
+    {
+        return response($programService->getHierarchyByProgramId($organization, $program->id)->toArray());
+    }
+
     public function downloadMoneyTranferTemplate(Organization $organization, Program $program, ProgramService $programService)
     {
         return response()->stream( ...($programService->getTransferTemplateCSV($program)) );
@@ -329,4 +362,21 @@ class ProgramController extends Controller
     public function getLedgerCodes(Organization $organization, Program $program, ProgramService $programService)    {
         return $programService->getLedgerCodes($program);
     }
+
+    public function saveSelectedReports(Request $request, $organization, $programId)
+    {
+        $program = Program::where('organization_id', $organization)->findOrFail($programId);
+        $selectedReports = $request->input('selected_reports', []);
+
+        DB::transaction(function () use ($program, $selectedReports) {
+            $program->selected_reports()->detach();
+
+            if (!empty($selectedReports)) {
+                $program->selected_reports()->attach($selectedReports);
+            }
+        });
+
+        return response()->json(['message' => 'Selected reports saved successfully'], 200);
+    }
+    
 }

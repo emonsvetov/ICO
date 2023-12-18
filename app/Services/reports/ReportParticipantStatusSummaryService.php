@@ -86,6 +86,10 @@ class ReportParticipantStatusSummaryService extends ReportServiceAbstract
     {
         return [
             [
+                'label' => 'Program Name',
+                'key' => 'program_name'
+            ],
+            [
                 'label' => 'Status',
                 'key' => 'status'
             ],
