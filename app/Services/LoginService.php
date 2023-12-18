@@ -89,7 +89,7 @@ class LoginService
                 if( $programId ) break;
             }
             if( !$programId )   {
-                return response(['error' => 'Cannot login to program'], 422);
+                return response(['error' => 'Cannot login as participant to program'], 422);
             }
 
             // $user->load(['organization']);
