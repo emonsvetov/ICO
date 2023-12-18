@@ -215,12 +215,12 @@ class Program extends BaseModel
         return $program;
     }
 
-    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false)  {
+    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false, $offset = 1, $limit =99999)  {
         if( !$programAccountHolderIds ) return;
         if( $with_rank )    {
             //TODO
         }
-        return self::whereIn('account_holder_id', $programAccountHolderIds)->get();
+        return self::whereIn('account_holder_id', $programAccountHolderIds)->offset($offset)->limit($limit)->get();
     }
 
     public function create_setup_fee_account()   {
@@ -230,7 +230,7 @@ class Program extends BaseModel
         $program_account_holder_id = $this->account_holder_id;
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
         $journal_event_type_id = JournalEventType::getIdByType( "Charge setup fee to program", true );
-        // 25 - Charge setup fee to program
+        // 25 - Charge setup fee to program 
         $journal_event_id = JournalEvent::insertGetId([
 			'journal_event_type_id' => $journal_event_type_id,
 			'created_at' => now()
