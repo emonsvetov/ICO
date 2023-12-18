@@ -30,9 +30,12 @@ class ReportPointsPurchaseService extends ReportServiceAbstract
 		$subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 		if (is_array ( $this->params [self::PROGRAMS] ) && count ( $this->params [self::PROGRAMS] ) > 0) {
 			// Start by constructing the table with all of the passed in program details ordered by rank
-			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true );
-            if ($ranked_programs->isNotEmpty()) {
+			$all_ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true );
+			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
+			$ranked_programIds = [];
+			if ($ranked_programs->isNotEmpty()) {
 				foreach ( $ranked_programs as $program ) {
+					array_push($ranked_programIds, $program->account_holder_id);
 					$this->table [( int ) $program->account_holder_id] = $program;
 					// Prime the programs report with 0's
 					$this->table [( int ) $program->account_holder_id]->count = 0;
@@ -60,7 +63,7 @@ class ReportPointsPurchaseService extends ReportServiceAbstract
 					$this->table [( int ) $program->account_holder_id]->Q4 = 0;
 					$this->table [( int ) $program->account_holder_id]->YTD = 0;
 				}
-				unset ( $ranked_programs ); // Try to free up memory if possible
+				// unset ( $ranked_programs ); // Try to free up memory if possible
 				                         // Get the Eligible Participants for each program
 				// $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
 				// $subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
@@ -88,7 +91,7 @@ class ReportPointsPurchaseService extends ReportServiceAbstract
 				// Get the monies awards
 				$subreport_params [self::ACCOUNT_TYPES] = array ();
 				$subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
-                $subreport_params [self::PROGRAMS] =  $this->params [self::PROGRAMS];
+                $subreport_params [self::PROGRAMS] =  $ranked_programIds;
 				$subreport_params [self::YEAR] = $this->params [self::YEAR];
 				$subreport_params [self::SQL_GROUP_BY] = array (
 						'p.account_holder_id',
@@ -122,7 +125,7 @@ class ReportPointsPurchaseService extends ReportServiceAbstract
 				// Get the points awards
 				$subreport_params [self::ACCOUNT_TYPES] = array ();
 				$subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
-                $subreport_params [self::PROGRAMS] =  $this->params [self::PROGRAMS];
+                $subreport_params [self::PROGRAMS] =  $ranked_programIds;
 				$subreport_params [self::YEAR] = $this->params [self::YEAR];
 				$subreport_params [self::SQL_GROUP_BY] = array (
 						'p.account_holder_id',
@@ -155,8 +158,8 @@ class ReportPointsPurchaseService extends ReportServiceAbstract
 				unset ( $points_report_table );
 				// Get Reclaims
 				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
-				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
-				$subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
+				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $ranked_programIds;
+				$subreport_params [self::PROGRAMS] = $ranked_programIds;
 				$subreport_params [ReportServiceSumPostsByAccountAndJournalEventAndCredit::IS_CREDIT] = 1;
 				$subreport_params [self::YEAR] = $this->params [self::YEAR];
 				$subreport_params [self::SQL_GROUP_BY] = array (
@@ -246,7 +249,7 @@ class ReportPointsPurchaseService extends ReportServiceAbstract
             }
         }
         $this->table['data'] = $temp_array;
-        $this->table['total'] = count($temp_array);
+        $this->table['total'] = count($all_ranked_programs);
         return $this->table;
     }
 
@@ -311,8 +314,6 @@ class ReportPointsPurchaseService extends ReportServiceAbstract
     protected function getReportForCSV(): array
     {
         $this->isExport = true;
-        $this->params[self::SQL_LIMIT] = null;
-        $this->params[self::SQL_OFFSET] = null;
         $data = $this->getTable();
 
         $data['headers'] = $this->getCsvHeaders();
