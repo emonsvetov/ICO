@@ -83,7 +83,7 @@ class ReportServiceAwardAudit extends ReportServiceAbstractBase
         $where = array();      
         $where[] = "(`atypes`.`name` = 'Points Awarded' OR `atypes`.`name` = 'Monies Awarded')"; 
         $where[] = "(`jet`.`type` = 'Award points to recipient' OR `jet`.`type` = 'Award monies to recipient' OR `jet`.`type` = 'Reclaim points' OR `jet`.`type` = 'Reclaim monies')";
-        //$where[] = "`posts`.`is_credit` = 1";               
+        // $where[] = "`posts`.`is_credit` = 1";               
         $where[] = "`posts`.created_at >= '{$this->params[self::DATE_BEGIN]}'";
         $where[] = "`posts`.created_at <= '{$this->params[self::DATE_END]}'";
         $where[] = "p.account_holder_id IN (". implode(',', $this->params[self::PROGRAMS]) . ")";

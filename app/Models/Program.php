@@ -215,7 +215,7 @@ class Program extends BaseModel
         return $program;
     }
 
-    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false, $offset = 1, $limit =99999)  {
+    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false, $offset = 0, $limit =99999)  {
         if( !$programAccountHolderIds ) return;
         if( $with_rank )    {
             //TODO
