@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-class AddBirthdayAwardToEventTypesTable extends Migration
+class AddBirthdayBadgeToEventTypesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -12,12 +12,12 @@ class AddBirthdayAwardToEventTypesTable extends Migration
      */
     public function up()
     {
-        if( !DB::table('event_types')->where('name', 'LIKE', 'Birthday Award')->first() )  {
+        if( !DB::table('event_types')->where('name', 'LIKE', 'Birthday Badge')->first() )  {
             DB::table('event_types')->insert(
                 array(
-                    'name' => 'Birthday Award',
-                    'type' => 'birthday award',
-                    'description' => 'Award on Birthday',
+                    'name' => 'Birthday Badge',
+                    'type' => 'birthday badge',
+                    'description' => 'Badge on Birthday',
                 )
             );
         }

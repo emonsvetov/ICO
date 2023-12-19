@@ -244,6 +244,12 @@ class AccountService
     public static function read_available_balance_for_program( $program ) {
 		return self::readAvailableBalanceForProgram ( $program );
     }
+
+    public static function readAvailableBalanceForOwner ($program) {
+         $account_type = AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER;
+         $journal_event_types = array ();
+         return self::readBalance ( $program->account_holder_id, $account_type, $journal_event_types );
+    }
     /**
      * This method returns List of Participant Postings ByAccount And Journal Events
      *
