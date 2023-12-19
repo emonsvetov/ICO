@@ -21,7 +21,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 
 		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
             // dd($this->params [self::PROGRAMS]);
-			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true );
+			$total_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, 0, 0  );
+			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
             // dd($ranked_programs->pluck('account_holder_id'));
 			if ( $ranked_programs->isNotEmpty() ) {
 				$account_holder_ids = [];
@@ -64,7 +65,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				}
 				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
 				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
-				$subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
 				$subreport_params [ReportServiceSumPostsByAccountAndJournalEventAndCredit::IS_CREDIT] = 1;
 				$subreport_params [self::ACCOUNT_TYPES] = array (
 					AccountType::ACCOUNT_TYPE_MONIES_FEES,
@@ -104,7 +105,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				$credits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
 
 				$credits_report_table = $credits_report->getTable ();
-
 				if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
 					foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
 						// Get an easier reference to the program
@@ -442,9 +442,13 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 
         //Calculate and add "net_points_purchased"
         //$this->table = array_values($this->table);
+		$tempArray = [];
         foreach( $this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
+			array_push($tempArray, $this->table[$i]);
         }
+		$this->table['data'] = $tempArray;
+		$this->table['total'] = count($total_programs);
 		// sort($this->table); //not sure about this whether we need this
 	}
 
