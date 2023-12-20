@@ -76,7 +76,7 @@ class MerchantController extends Controller
                 $query->whereNull('parent_id');
             }
             $merchants = $query->paginate(request()->get('limit', 50));
-            pr($merchants);
+            // pr($merchants);
             return response( $merchants );
         }
 
