@@ -1,13 +1,11 @@
 <?php
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
+
 use App\Services\Statement\StatementObject;
 use App\Models\JournalEventType;
-use App\Services\InvoiceService;
 use App\Models\Program;
-use App\Models\Posting;
-use App\Models\Role;
-use App\Models\User;
 use DB;
 
 class StatementService
@@ -36,7 +34,7 @@ class StatementService
         foreach($descendants as $descendant)    {
             $invoice_statement = $this->read_statement($descendant, $start_date, $end_date );
             $statement->statement[] = array (
-                    'info' => $invoice_statement 
+                    'info' => $invoice_statement
             );
             // $data['statement'][$key + 1]['name'] = $program->name;
             $statement->total_start_balance += $invoice_statement->start_balance;
@@ -47,11 +45,12 @@ class StatementService
     }
 
 	/** read_statement
-	 * 
-	 * @param int $program       
-	 * @param date $start_date        
-	 * @param date $end_date         */
+	 *
+	 * @param Program $program
+	 * @param string $start_date
+	 * @param string $end_date         */
 	public function read_statement(Program $program, $start_date, $end_date) {
+        Log::channel('invoicing')->info("Program:" . $program->v2_account_holder_id);
 		$statement = new StatementObject ();
         $statement->program_id = $program->id;
 		$statement->program_account_holder_id = $program->account_holder_id;
@@ -59,9 +58,13 @@ class StatementService
 		$statement->end_date = $end_date;
 		// Get the starting balance of the statement requested, used for doing the itemization math
 		$statement->start_balance = $this->read_financial_balance_less_than_date ( $program, $start_date );
+        Log::channel('invoicing')->info($statement->start_balance);
+
+
 		// Get the ending balance of the statement, used to validate that the itemization math was correct
 		// Add 1 day since the query will get everything less than this day and we need to include the end date of the statement
 		$statement->end_balance = $this->read_financial_balance_less_than_date ( $program, date ( 'Y-m-d', strtotime ( '+1 day', strtotime ( $end_date ) ) ) );
+        Log::channel('invoicing')->info($statement->end_balance);
 		// $statement->invoice_amount= $this->read_billed_amount_between($program_account_holder_id, $start_date, $end_date); //commented out in current system
 		$statement->payments = $this->read_payments_between ( $program, $start_date, $end_date );
 		// Read the program info to include in the statement
@@ -72,7 +75,7 @@ class StatementService
         //Prepare Credit Statement
 
 		$sql = "
-        SELECT 
+        SELECT
             a.account_holder_id,
             atypes.name AS account_type_name,
             ftypes.name,
@@ -80,8 +83,8 @@ class StatementService
             posts.is_credit,
             c.type as currency,
             jet.type as journal_event_type,
-            sum(posts.qty) as qty, 
-            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea, 
+            sum(posts.qty) as qty,
+            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea,
             sum(posts.qty * posts.posting_amount) as amount,
             exml.name as event_name,
             posts.created_at
@@ -95,7 +98,7 @@ class StatementService
             INNER JOIN " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
             INNER JOIN " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id
             LEFT JOIN " . EVENT_XML_DATA . " exml ON exml.id = je.event_xml_data_id
-            LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = je.id 
+            LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = je.id
         WHERE
             p.id = :program_id
             AND atypes.name = 'Monies Due to Owner'
@@ -111,11 +114,11 @@ class StatementService
                		or (jet.type not in (
 							'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING . "'
 							, '" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE . "'
-							, '" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'		
-        				) 
-        			and 
+							, '" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'
+        				)
+        			and
         				invoicej.invoice_id is not null
-        			) 
+        			)
             	)
         	";
 		}
@@ -143,7 +146,7 @@ class StatementService
         //Prepare Debig Statement
 
 		$sql = "
-        SELECT 
+        SELECT
             a.account_holder_id,
             atypes.name AS account_type_name,
             ftypes.name,
@@ -151,8 +154,8 @@ class StatementService
             posts.is_credit,
             c.type as currency,
             jet.type as journal_event_type,
-            sum(posts.qty) as qty, 
-            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea, 
+            sum(posts.qty) as qty,
+            sum(posts.qty * posts.posting_amount) / sum(posts.qty) as ea,
             sum(posts.qty * posts.posting_amount) as amount,
             exml.name as event_name
         FROM " . PROGRAMS . " p
@@ -165,7 +168,7 @@ class StatementService
             INNER JOIN " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
             INNER JOIN " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id
             LEFT JOIN " . EVENT_XML_DATA . " exml ON exml.id = je.event_xml_data_id
-            LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = je.id 
+            LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = je.id
         WHERE
             p.id = :program_id
             AND atypes.name = 'Monies Due to Owner'
@@ -184,7 +187,7 @@ class StatementService
 							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE . "'
 							,'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_CONVENIENCE_FEE . "'
         			)
-        		and 
+        		and
         			invoicej.invoice_id is not null
         		)
             )
@@ -215,7 +218,7 @@ class StatementService
         /*
             // This section doing nothing in the current code as well so commented out
             $top_level_program = $program->getRoot(['id', 'name']);
-            
+
             if($invoiceForAwards){
                 $sql_ext = "{$program_account_holder_id}";
             }else{
@@ -224,7 +227,7 @@ class StatementService
         */
 
 		$sql = "
-            SELECT 
+            SELECT
             COALESCE(SUM(mi.cost_basis), 0) AS cost_basis,
             COALESCE(SUM(mi.redemption_value - mi.sku_value), 0) AS premiumamount,
                 jet.type AS journal_event_type,
@@ -248,10 +251,10 @@ class StatementService
                 " . ACCOUNTS . " merchant_account ON merchant_account.id = merchant_posts.account_id
                     INNER JOIN
                 " . MERCHANTS . " m ON m.account_holder_id = merchant_account.account_holder_id
-            WHERE 
-                posts.is_credit = 1 
-                AND atypes.name IN ('Points Redeemed','Monies Redeemed','Monies Available','Monies Due to Owner') 
-                AND jet.type IN ('Redeem points for gift codes','Redeem points for international shopping','Redeem monies for gift codes') 
+            WHERE
+                posts.is_credit = 1
+                AND atypes.name IN ('Points Redeemed','Monies Redeemed','Monies Available','Monies Due to Owner')
+                AND jet.type IN ('Redeem points for gift codes','Redeem points for international shopping','Redeem monies for gift codes')
                 AND a.account_holder_id = :program_account_holder_id
                 AND posts.created_at >= :start_date
                 AND posts.created_at < DATE_ADD(:end_date, INTERVAL 1 DAY)
@@ -272,7 +275,7 @@ class StatementService
 
 		if($program->air_premium_cost_to_program){
 			$premium = new stdClass();
-			 
+
 			$premium->account_holder_id = $premiumRow->account_holder_id;
 			$premium->account_type_name = 'Monies Due to Owner';
             $premium->finance_type_name = 'Asset';
@@ -290,7 +293,7 @@ class StatementService
             $premiumBalance = $premiumRow->premiumamount;
 			$statement->start_balance += $premiumBalance;
 		}
-		
+
 		$statement->credits = $statement_data_credits;
 		$statement->debits = $statement_data_debits;
 		// Validate that the statement is correct
@@ -328,11 +331,11 @@ class StatementService
 
 		if (round ( $start_balance, 4 ) != round ( $statement->end_balance, 4 )) {
 			// throw new \RuntimeException ( 'Internal query failed, value mismatch, please contact API administrator.', 500 );
-            \Log::channel('invoicing')->error( sprintf('StatementService:read_statement() - Value mismatch in statement for program: %s(%d)',$program->name, $program->id) );
+            Log::channel('invoicing')->error( sprintf('StatementService:read_statement() - Value mismatch in statement for program: %s(%d)',$program->name, $program->id) );
             return false;
 		}
 		return $statement;
-	
+
 	}
 
     public function read_financial_balance_less_than_date($program, $end_date) {
@@ -358,7 +361,7 @@ class StatementService
             INNER JOIN
                 " . PROGRAMS . " ON " . PROGRAMS . ".account_holder_id = " . ACCOUNTS . ".account_holder_id
 			LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = " . JOURNAL_EVENTS . ".id
-			
+
             WHERE
                 " . ACCOUNTS . ".account_holder_id = :program_account_holder_id
 				AND " . ACCOUNT_TYPES . ".name = 'Monies Due to Owner'
@@ -377,7 +380,7 @@ class StatementService
 							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE . "'
 						)
 						and
-							invoicej.invoice_id is not null) 
+							invoicej.invoice_id is not null)
                 	)
         	";
 		}
@@ -419,7 +422,7 @@ class StatementService
             INNER JOIN
                 " . PROGRAMS . " ON " . PROGRAMS . ".account_holder_id = " . ACCOUNTS . ".account_holder_id
 			LEFT JOIN " . INVOICE_JOURNAL_EVENTS . " invoicej on invoicej.journal_event_id = " . JOURNAL_EVENTS . ".id
-	
+
             WHERE
                 " . ACCOUNTS . ".account_holder_id = :program_account_holder_id
 	                AND " . ACCOUNT_TYPES . ".name = 'Monies Due to Owner'
@@ -429,7 +432,7 @@ class StatementService
 		if (! $program->program_is_invoice_for_awards ()) {
 			$sql = $sql . "
                 AND ( invoicej.invoice_id is null
-	
+
 					or (" . JOURNAL_EVENT_TYPES . ".type not in (
 							'" . JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING . "'
 							,'" . JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING . "'

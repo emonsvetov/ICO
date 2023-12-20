@@ -29,7 +29,7 @@ class ProgramPaymentService
             return $this->read_list_program_pays_for($program, 'date_paid', 'DESC');
         }
         $invoices = $this->invoiceService->index($program, false);
-        
+
         return [
             'payment_kinds' => Invoice::PROGRAM_PAYMENT_KINDS,
             'invoices' => $invoices,
@@ -47,8 +47,8 @@ class ProgramPaymentService
         $query = Posting::query();
         $query->orderByRaw($orderByRaw);
         $query->select(
-            'postings.posting_amount AS amount', 
-            'postings.created_at AS date_paid', 
+            'postings.posting_amount AS amount',
+            'postings.created_at AS date_paid',
             'postings.is_credit',
             'accounts.account_holder_id',
             'journal_events.id AS journal_event_id',
@@ -64,7 +64,7 @@ class ProgramPaymentService
         $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
         $query->leftJoin('invoice_journal_event', 'invoice_journal_event.journal_event_id', '=', 'journal_events.id');
         $query->leftJoin('invoices', 'invoices.id', '=', 'invoice_journal_event.invoice_id');
-        $query->leftJoin('journal_events AS reversals', 'reversals.parent_id', '=', 'journal_events.id');
+        $query->leftJoin('journal_events AS reversals', 'reversals.parent_journal_event_id', '=', 'journal_events.id');
         $query->where('accounts.account_holder_id', $program->account_holder_id);
         $query->where(function($query1) {
             $query1->orWhere(function($query2) {

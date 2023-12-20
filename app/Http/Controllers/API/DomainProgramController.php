@@ -36,7 +36,7 @@ class DomainProgramController extends Controller
             $where[] = ['status', $status];
         }
 
-        if( $sortby == "name" ) 
+        if( $sortby == "name" )
         {
             $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
             $orderByRaw = "{$sortby} {$collation} {$direction}";
@@ -58,7 +58,7 @@ class DomainProgramController extends Controller
         }
 
         $query = $query->orderByRaw($orderByRaw);
-        
+
         if ( request()->has('minimal') )
         {
             $programs = $query->select('id', 'name')
@@ -74,8 +74,8 @@ class DomainProgramController extends Controller
             ->paginate(request()->get('limit', 10));
         }
 
-        if ( $programs->isNotEmpty() ) 
-        { 
+        if ( $programs->isNotEmpty() )
+        {
             return response( $programs );
         }
 
