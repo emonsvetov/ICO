@@ -67,16 +67,13 @@ class MerchantController extends Controller
                 $query->whereNull('parent_id');
             }
             $merchants = $query->get();
+            return response( $merchants );
         } else {
             $query->with('children');
             if ($tree){
                 $query->whereNull('parent_id');
             }
             $merchants = $query->paginate(request()->get('limit', 50));
-        }
-
-        if ( $merchants->isNotEmpty() )
-        {
             return response( $merchants );
         }
 
