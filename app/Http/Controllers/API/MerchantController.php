@@ -69,7 +69,7 @@ class MerchantController extends Controller
             $merchants = $query->get();
             return response( $merchants );
         } else {
-            $query->with('children');
+            // $query->with('children');
             if ($tree){
                 $query->whereNull('parent_id');
             }
