@@ -5,6 +5,8 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
+// use App\Jobs\v2migrate\MigrateUsersJob;
+
 class Kernel extends ConsoleKernel
 {
     /**
@@ -27,6 +29,9 @@ class Kernel extends ConsoleKernel
         // $schedule->command('inspire')->hourly();
         $schedule->command('cron:monthly-invoicing')->monthly();
         $schedule->command('cron:submit-tango-orders')->hourly();
+        $schedule->command('cron:send-activation-reminder')->daily();
+        // $schedule->command('v2migrate:users --skip-inactive')->daily();
+        // $schedule->job(new MigrateUsersJob)->daily();
         $schedule->command('cron:generate-virtual-inventory')->everyFiveMinutes();
         $schedule->command('cron:send-milestone-award')->daily();
         $schedule->command('cron:send-birthday-award')->daily();

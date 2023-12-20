@@ -14,6 +14,27 @@ Use Singuler name for Controller name. For example `MerchantController.php`
 
 `php artisan make:policy MerchantPolicy --model=Merchant`
 
+## v2 to v3 Migrations
+
+# Migrate Programs
+`php artisan v2migrate:programs`
+    - Creates Organizations, Programs & Subprograms, Domains (Create, Assign Domains, Domain Ips etc), Addresses, Events, Leaderboards, LeaderboardEvents, Invoices, Accounts, JounralEvents & Postings.
+
+# Migrate Merchants
+`php artisan v2migrate:merchants`
+
+# Migrate/Sync Giftcodes
+`php artisan v2migrate:giftcodes`
+
+# Migrate/Sync invoice-journal-events
+`php artisan v2migrate:invoice-journal-events`
+
+# Migrate Users
+`php artisan v2migrate:users`
+
+# Migrate PhysicalOrders
+`php artisan v2migrate:physicalorders`
+
 ## Migrations
 
 # Creating Migrations
@@ -192,3 +213,49 @@ Seed:
 `php artisan db:seed --class=PermissionSeeder`
 
 Visit https://spatie.be/docs/laravel-permission/v5/introduction for more info about the package
+
+
+## v2 to v3 Migrations
+
+*** IMPORTANT - Following the following ORDER of migration is IMPORTANT.
+
+** Migrate Owners
+
+Owners and SuperAdmins should be migrated before running any other migration.
+
+`php artisan v2migrate:owners`
+
+** Migrating Merchants
+
+`php artisan v2migrate:merchants`
+
+NOTE: Merchant migration should be done before migrating programs
+
+** Migrating by program(s)
+
+*** This is the only option right now.
+
+`php artisan v2migrate:program [v2 account_holder_id of root program]`
+
+Running this program will fetch the nested tree of the given program. The import would include:
+ - Domains (Domain of root program only)
+ - Accounts
+ - Users (Program users)
+ - Invoices
+ - Events
+ - ProgramAccounts
+
+** Migrating giftcodes
+
+`php artisan v2migrate:giftcodes`
+
+** Migrating journalevents
+
+`php artisan v2migrate:journalevents --type=merchants`
+`php artisan v2migrate:journalevents --type=programs`
+`php artisan v2migrate:journalevents --type=users`
+
+** v2-v3 Migration References
+
+- Please check app/Jobs/v2migrate for migration jobs
+- Please check app/Services/v2migrate for service classes

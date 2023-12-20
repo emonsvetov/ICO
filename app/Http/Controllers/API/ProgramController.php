@@ -78,9 +78,9 @@ class ProgramController extends Controller
     {
         if ($organization) {
 
-            if($request->get('account_holder_id')){
-                $exists = Program::where('account_holder_id', $request->get('account_holder_id'))->first();
-                if ($exists){
+            if($request->get('v2_account_holder_id')){
+                $exists = Program::where('v2_account_holder_id', $request->get('v2_account_holder_id'))->first();
+                if ( $exists ) {
                     return response([ 'program' => $exists ]);
                 }
             }

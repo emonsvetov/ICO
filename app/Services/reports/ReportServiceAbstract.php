@@ -78,6 +78,7 @@ abstract class ReportServiceAbstract
     protected bool $isExport = false;
     protected $query = null;
     const PAGINATE = 'paginate';
+    const IS_CREDIT = "is_credit";
 
     /**
      * @var ReportHelper|null
@@ -111,6 +112,19 @@ abstract class ReportServiceAbstract
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
         $this->params[self::MONTH] = $params[self::MONTH] ?? null;
         $this->params[self::CODES] = $params[self::CODES] ?? null;
+
+        $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
+            is_array ( $params[self::ACCOUNT_TYPES] ) ? $params[self::ACCOUNT_TYPES] : array (
+                $params[self::ACCOUNT_TYPES]
+            )
+        ) : null;
+
+        $this->params[self::JOURNAL_EVENT_TYPES] = isset($params[self::JOURNAL_EVENT_TYPES]) ? (
+            is_array ( $params[self::JOURNAL_EVENT_TYPES] ) ? $params[self::JOURNAL_EVENT_TYPES] : array (
+                $params[self::JOURNAL_EVENT_TYPES]
+            )
+        ) : null;
+
         $this->params[self::INVENTORY_TYPE] = $params[self::INVENTORY_TYPE] ?? null;
         $this->reportHelper = new ReportHelper() ?? null;
     }
@@ -199,6 +213,7 @@ abstract class ReportServiceAbstract
     /** Calculate data by date range (timestampFrom|To) */
     protected function getDataDateRange() {
         $data = $this->calcByDateRange ( $this->getParams() );
+        // pr($data);
         if (count ( $data ) > 0) {
 			foreach ( $data as $row ) {
 				foreach ( $row as $key => $val ) {
@@ -221,7 +236,7 @@ abstract class ReportServiceAbstract
             $query = $this->setWhereFilters($query);
             $query = $this->setGroupBy($query);
             try {
-                // $this->table['total'] = $query->count();
+                // pr($query->count());
                 $query = $this->setOrderBy($query);
                 $query = $this->setLimit($query);
                 $this->table = $query->get()->toArray();
@@ -234,6 +249,7 @@ abstract class ReportServiceAbstract
         {
             // $this->table['total'] = count($query);
             // $this->table['data'] = $query;
+            // pr($query);
             $this->table = $query;
         }
         // pr(get_class($this));
@@ -319,10 +335,11 @@ abstract class ReportServiceAbstract
         if( $sql != "")
         {
             $sql = $this->addSqlFilters($sql);
+            // pr($sql);
             return DB::select( DB::raw($sql), []);
         }
 
-        DB::table( '' );
+        return DB::table( '' );
     }
 
 	public function getParams() {
