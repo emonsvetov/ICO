@@ -56,13 +56,13 @@ class MerchantController extends Controller
 
         if ( request()->has('minimal') )
         {
-            $query->select('id', 'name')
-            ->with(['children' => function($query){
-                return $query->select('id','name','parent_id')
-                ->with(['children' => function($query){
-                    return $query->select('id','name','parent_id');
-                }]);
-            }]);
+            $query->select('id', 'name');
+            // ->with(['children' => function($query){
+            //     return $query->select('id','name','parent_id')
+            //     ->with(['children' => function($query){
+            //         return $query->select('id','name','parent_id');
+            //     }]);
+            // }]);
             if ($tree){
                 $query->whereNull('parent_id');
             }
@@ -125,7 +125,7 @@ class MerchantController extends Controller
         // DB::enableQueryLog();
         $merchant->inventoryCount();
         $merchant->redeemedCount();
-        $merchant->children;
+        // $merchant->children;
         $merchant->tangoOrdersApi;
 
         return response( $merchant );
