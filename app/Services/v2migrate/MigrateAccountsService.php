@@ -238,7 +238,7 @@ class MigrateAccountsService extends MigrationService
         }
 
         if( $newAccountCreated )    {
-            $this->importMap[$v3Account->id] = $v3Account->id;
+            // $this->importMap[$v3Account->id] = $v3Account->id;
         }
     }
 

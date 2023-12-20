@@ -43,19 +43,21 @@ class MigrateProgramsService extends MigrationService
         global $v2ProgramUsersTotalCount;
         $v2ProgramUsersTotalCount = [];
 
-        (new \App\Services\v2migrate\MigrateOwnersService)->verifyOwner();
+        // (new \App\Services\v2migrate\MigrateOwnersService)->verifyOwner();
 
-        printf("Starting program migration iteration: %d\n\n", $this->iteration++);
+        $this->printf("Starting program migration iteration: %d\n\n", $this->iteration++);
 
         $v2RootPrograms = $this->read_list_all_root_program_ids( $args );
 
         if( !$v2RootPrograms ) {
-            printf("No user found in iteration %d\n", $this->iteration);
+            $this->printf("No program found in iteration %d. Exiting.\n", $this->iteration);
+            return;
+        }   else {
+            $this->printf("%s programs found in iteration %d.\n", count($v2RootPrograms), $this->iteration);
         }
-
-        printf("%s programs found in iteration %d\n", count($v2RootPrograms), $this->iteration);
         // pr($v2RootPrograms);
         // exit;
+        $this->printf("Attempting to migratePrograms num:%d in iteration %d.\n", count($v2RootPrograms), $this->iteration);
         $this->migratePrograms($v2RootPrograms);
         // resolve(\App\Services\v2migrate\MigrateJournalEventsService::class)->fixPostingsAccoundIds();
 
@@ -67,12 +69,11 @@ class MigrateProgramsService extends MigrationService
 
         // DB::rollback();
         // $this->v2db->rollBack();
-        print($this->importedProgramsCount . " programs migrated\n");
-        print(count($v2ProgramUsersTotalCount) . " users found\n");
-        print(implode(',', $v2ProgramUsersTotalCount));
-        print("Rendering Import Map..\n");
-        print_r($this->importMap);
-
+        $this->printf($this->importedProgramsCount . " programs migrated\n");
+        $this->printf(count($v2ProgramUsersTotalCount) . " users found\n");
+        $this->printf(implode(',', $v2ProgramUsersTotalCount));
+        // printf("Rendering Import Map..\n");
+        // print_r($this->importMap);
     }
 
     public function migratePrograms($v2RootPrograms) {
@@ -80,68 +81,90 @@ class MigrateProgramsService extends MigrationService
         // $this->v2db->beginTransaction();
         try {
             foreach ($v2RootPrograms as $v2RootProgram) {
+                $this->printf("Attempting to migration rootProgram:%d\n", $v2RootProgram->account_holder_id);
                 // pr(719006)
                 try{
+                    $this->printf("Before attempting rootProgram:%d we need to make sure it is valid program by getting its info\n", $v2RootProgram->account_holder_id);
                     $rootProgram = $this->get_program_info ( $v2RootProgram->account_holder_id );
                     $this->setv2pid($v2RootProgram->account_holder_id);
+
+                    if( !$rootProgram ) {
+                        $this->printf("rootProgram:%d cannot be verified in 'get_program_info'. Skipping.\n", $v2RootProgram->account_holder_id);
+                        continue;
+                    }
                     // pr($rootProgram);
 
-                    if( $rootProgram ) {
-                        printf("Starting migrations for root program \"%s\"\n", $rootProgram->name);
-                        if( !property_exists($rootProgram, "v3_program_id") || !property_exists($rootProgram, "v3_organization_id" ) ) {
-                            throw new Exception( "v2Fields \"v3_account_holder_id\" and \"v3_organization_id\" are required in v2 table to sync properly. Termininating!");
-                            exit;
-                        }
-                        $createOrganization = false;
+                    $this->printf("Starting migrations for root program.\"%s\"\n", $rootProgram->name);
+                    $this->printf("Before that lets make sure that v2 program \"%s\" has 'v3_program_id' and 'v3_organization_id' fields in the table.\n", $rootProgram->name);
+                    if( !property_exists($rootProgram, "v3_program_id") || !property_exists($rootProgram, "v3_organization_id" ) ) {
+                        $this->printf("v2 program \"%s\" has 'v3_program_id' or 'v3_organization_id' fields in the table. Skipping.\n", $rootProgram->name);
+                        // throw new Exception( "v2Fields \"v3_account_holder_id\" and \"v3_organization_id\" are required in v2 table to sync properly. Termininating!");
+                        continue;
+                    }
 
-                        if( empty($rootProgram->v3_organization_id) ) {
+                    $createOrganization = false;
+
+                    if( empty($rootProgram->v3_organization_id) ) {
+                        $createOrganization = true;
+                        $this->printf("v2 program \"%s\" does not have positive 'v3_organization_id' value. Will create one.\n", $rootProgram->name);
+                    }   else {
+                        $this->printf("v2 program \"%s\" has positive 'v3_organization_id' value. let it verify that v2 organization exists for this positive value\n", $rootProgram->name);
+                        $exists = Organization::find( $rootProgram->v3_organization_id );
+                        if( !$exists ) {
+                            $this->printf("v3:organization does not exist for v2 program \"%s\" which has positive 'v3_organization_id' value. Will need to create one.\n", $rootProgram->name);
                             $createOrganization = true;
-                        }   else {
-                            $exists = Organization::find( $rootProgram->v3_organization_id );
-                            if( !$exists ) {
-                                $createOrganization = true;
-                            }
-                        }
-
-                        if( $createOrganization ) {
-                            //Create organization
-                            try {
-                                $organization = Organization::create([
-                                    'name' => $rootProgram->name
-                                ]);
-                                OrganizationCreated::dispatch($organization);
-                            } catch (Exception $e) {
-                                if( strpos($e->getMessage(), 'Duplicate entry') > 0 && strpos($e->getMessage(), 'organizations_name_unique') > 0) {
-                                    $organization = Organization::where([
-                                        'name' => $rootProgram->name
-                                    ])->first();
-                                }
-                            }
-                            $rootProgram->v3_organization_id = $organization->id;
-                        }
-
-                        try{
-                            $this->v2Program = $rootProgram;
-                            $migrateSingleProgramService = resolve(\App\Services\v2migrate\MigrateSingleProgramService::class);
-                            $v3Program = $migrateSingleProgramService->migrateSingleProgram($rootProgram->v3_organization_id, $rootProgram);
-                            // pr($this->importedProgramsCount);
-                            // pr($newPrograms);
-                        } catch(Exception $e)    {
-                            throw new Exception( sprintf("Error creating new program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
                         }
                     }
+
+                    if( $createOrganization ) {
+                        //Create organization
+                        try {
+                            $this->printf("Creating v3:organization by program name \"%s\".\n", $rootProgram->name);
+                            $organization = Organization::create([
+                                'name' => $rootProgram->name
+                            ]);
+                            OrganizationCreated::dispatch($organization);
+                        } catch (Exception $e) {
+                            if( strpos($e->getMessage(), 'Duplicate entry') > 0 && strpos($e->getMessage(), 'organizations_name_unique') > 0) {
+                                $this->printf("v3:organization exists by program name \"%s\". Getting it for to be used.\n", $rootProgram->name);
+                                $organization = Organization::where([
+                                    'name' => $rootProgram->name
+                                ])->first();
+                            }
+                        }
+                        $rootProgram->v3_organization_id = $organization->id;
+                    }
+
+                    try{
+                        $this->v2Program = $rootProgram;
+                        $migrateSingleProgramService = resolve(\App\Services\v2migrate\MigrateSingleProgramService::class);
+                        $migrateSingleProgramService->migrateSingleProgram($rootProgram->v3_organization_id, $rootProgram);
+                        // pr($this->importedProgramsCount);
+                        // pr($newPrograms);
+                        $this->executeV2SQL();
+                        $this->executeV3SQL();
+                        continue;
+                    } catch(Exception $e)    {
+                        // throw new Exception( sprintf("Error creating new program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
+                        $this->printf("Error creating new program for v2program:%s. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()} Message: {$e->getMessage()}\n", $rootProgram->name);
+                        continue;
+                    }
+
                 } catch(Exception $e)    {
-                    throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+                    // throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+                    $this->printf("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+                    continue;
                 }
             }
-            $this->executeV2SQL();
-            $this->executeV3SQL();
             // DB::commit();
             // $this->v2db->commit();
         } catch (Exception $e) {
             // DB::rollback();
             // $this->v2db->rollBack();
-            throw new Exception("Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+            $error = "Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}";
+            $this->printf($error);
+            // throw new Exception("Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+            return;
         }
     }
 

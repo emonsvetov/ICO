@@ -32,8 +32,10 @@ class MigrateSingleProgramService extends MigrateProgramsService
     {
         // pr($v2Program);
         if( empty($v3_organization_id) || empty($v2Program->account_holder_id) ) {
-            throw new Exception( " - Required fields in v2 table to sync properly are missing. Termininating!\n");
-            exit;
+            $error = " - Required fields in v2 table to sync properly are missing. Termininating!\n";
+            // throw new Exception( $error);
+            $this->printf( $error );
+            return;
         }
 
         $this->v2Program = $v2Program;
@@ -44,23 +46,24 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             $create = true;
 
-            if( $v2Program->v3_program_id )    { //find by v3 id
+            if( $v2Program->v3_program_id )    {
+                $this->printf("v3_program_id not null in v2 program");
                 $v3Program = Program::find( $v2Program->v3_program_id );
                 // pr($existing->toArray());
                 if( $v3Program )   {
-                    printf(" - Program \"%d\" exists for v2:%d\n", $v3Program->id, $v2Program->account_holder_id);
+                    $this->printf(" - Program \"%d\" exists for v2:%d\n", $v3Program->id, $v2Program->account_holder_id);
                     $create = false;
                     //Update??
-                    $this->importMap['program'][$v2Program->account_holder_id]['program'][$v3Program->id]['exists'] = 1;
+                    // $this->importMap['program'][$v2Program->account_holder_id]['program'][$v3Program->id]['exists'] = 1;
                 }
             }   else {
                 //find by v2 id
                 $v3Program = Program::where('v2_account_holder_id', $v2Program->account_holder_id )->first();
                 if( $v3Program )   {
-                    printf(" - Journal Event \"%d\" exists for v2: \"%d\", found via v2_journal_event_id search. Updating null v3_program_id value.\n", $v3Program->id, $v2Program->v3_program_id, $v2Program->account_holder_id);
+                    $this->printf(" - v3 Program \"%d\" exists for v2: \"%d\", found via v2_journal_event_id search. Updating null v3_program_id value.\n", $v3Program->id, $v2Program->v3_program_id, $v2Program->account_holder_id);
                     $this->addV2SQL(sprintf("UPDATE `programs` SET `v3_program_id`=%d WHERE `id`=%d", $v3Program->id, $v2Program->account_holder_id));
                     $create = false;
-                    $this->importMap['program'][$v2Program->account_holder_id]['program'][$v3Program->id]['exists'] = 1;
+                    // $this->importMap['program'][$v2Program->account_holder_id]['program'][$v3Program->id]['exists'] = 1;
                     //Update??
                 }
             }
@@ -82,6 +85,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             if( $create )   {
                 $v3Program = $this->createV3Program( $v3_organization_id, $v2Program, $v3_parent_id);
+                $this->printf("v3Program created for v2 program: \"%s\".\n", $v2Program->name);
                 $this->newPrograms[] = $v3Program;
                 $this->newProgramsCount++;
             }
@@ -91,6 +95,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
             //If it is a parent program then we will try to pull associated domains
 
             if( !$v3_parent_id ) { //Pull and Assign Domains if it is a root program(?)
+                $this->printf("Attempting to migrate domains for v2 program: \"%s\".\n", $v2Program->name);
                 $this->migrateProgramDomains($v3_organization_id, $v2Program, $v3Program);
             }
 
@@ -98,11 +103,11 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // pr($v2Program->account_holder_id);
             //Migration Accounts
             $this->printf("Migrating program accounts\n");
-            $this->migrateProgramAccounts( $v3Program );
+            // $this->migrateProgramAccounts( $v3Program );
 
             // Import program users with roles
-            $this->printf("Migrating program users\n");
-            $this->migrateProgramUsers($v2Program, $v3Program);
+            // $this->printf("Migrating program users\n");
+            // $this->migrateProgramUsers($v2Program, $v3Program);
             // exit;
 
             // exit;
@@ -111,19 +116,23 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // exit;
 
             // Pull Invoices
-            $this->migrateProgramInvoices($v2Program, $v3Program);
+            // $this->migrateProgramInvoices($v2Program, $v3Program);
             // // Pull events
+            $this->printf("Migrating program events\n");
             $this->migrateProgramEvents($v2Program, $v3Program);
 
-            $this->syncProgramMerchantRelations($v2Program, $v3Program);
+            // $this->syncProgramMerchantRelations($v2Program, $v3Program);
             // exit;
             //Migration Accounts
             // ## $this->migrateProgramJournalEvents( $v3Program, $v2Program); //Deprecated!
             // $this->executeV2SQL(); //run for any missing run!
 
             // Pull addresses
+            $this->printf("Migrating program addresses\n");
             $this->migrateProgramAddresses($v2Program, $v3Program);
+
             // // Pull Leaderboards
+            $this->printf("Migrating program Leaderboards\n");
             $this->migrateProgramLeaderboards($v2Program, $v3Program);
 
             if( !property_exists($v2Program, 'sub_programs') ) { //if root program
@@ -173,7 +182,9 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->executeV3SQL();
         } catch(Exception $e)    {
             // pr($v3Program);
-            throw new Exception( sprintf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
+            // throw new Exception( sprintf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
+            $this->printf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage());
+            return;
         }
 
         // pr("End of the program:");
@@ -337,20 +348,22 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 ]
             );
 
-            print(" - New V3 Program created for V2 Program: {$v2Program->account_holder_id}=>{$newProgram->id}\n");
+            $this->printf(" - New V3 Program created for V2 Program: {$v2Program->account_holder_id}=>{$newProgram->id}\n");
 
             $this->v2db->statement("UPDATE ". PROGRAMS . " SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id}");
 
             $v2Program->v3_program_id = $newProgram->id; //To be used in related models
 
             //Log Import Map
-            $this->importMap['program'][$v2Program->account_holder_id]['program'] = $newProgram->toArray();
+            // $this->importMap['program'][$v2Program->account_holder_id]['program'] = $newProgram->toArray();
 
             return $newProgram;
 
-            // print(" - V2 Program updated with v3 identifiying fields v3_organization_id, v3_program_id\n");
+            // $this->printf(" - V2 Program updated with v3 identifiying fields v3_organization_id, v3_program_id\n");
         } catch(Exception $e)    {
-            throw new Exception( sprintf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
+            $this->printf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage());
+            return;
+            // throw new Exception( sprintf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
         }
     }
 
@@ -360,15 +373,15 @@ class MigrateSingleProgramService extends MigrateProgramsService
         if( $domains ) {
             foreach ($domains as $domain) {
                 if( (int) $domain->v3_domain_id ) {
-                    print(" -  - Domain:{$domain->access_key} exists in v3 as: {$domain->v3_domain_id}. Skipping..\n");
+                    $this->printf(" -  - Domain:{$domain->access_key} exists in v3 as: {$domain->v3_domain_id}. Skipping..\n");
                     //TODO: update?!
                     continue;
                 }
                 //Find check
-                print("Finding domain {$domain->name} for Program\n");
+                $this->printf("Finding domain {$domain->name} for Program\n");
                 $v3Domain = Domain::where('name', trim($domain->name))->first();
                 if( !$v3Domain )    {
-                    print(" -  - Domain {$domain->name} not found, creating\n");
+                    $this->printf(" -  - Domain {$domain->name} not found, creating\n");
                     $v3Domain = Domain::create([
                         'organization_id' => $v3_organization_id,
                         'name' => $domain->name,
@@ -380,32 +393,36 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     $this->v2db->statement("UPDATE domains SET `v3_domain_id` = {$v3Domain->id} WHERE `access_key` = {$domain->access_key}");
 
                     //Log Import Map
-                    $this->importMap['domain'][$domain->access_key] = $v3Domain->id;
+                    // $this->importMap['domain'][$domain->access_key] = $v3Domain->id;
                 } else {
-                    print(" -  - Domain {$domain->name} found\n");
+                    $this->printf(" -  - Domain {$domain->name} found\n");
                 }
 
                 if( $v3Domain ) {
                     //Now get domain IPs
+                    $this->printf(" -  - Finding domain ips for {$domain->name}\n");
                     $domainIps = $this->v2db->select("SELECT `id`, `ip_address` FROM `domains_ips` where domain_access_key = {$domain->access_key}");
                     if( $domainIps ) {
+                        $this->printf(" -  - domain ips found for {$domain->name}\n");
                         foreach($domainIps as $domainIp) {
+                            $this->printf(" -  - finding v3domain ip for {$domainIp->ip_address}\n");
                             $v3DomainIp = DomainIP::where('ip_address', $domainIp->ip_address)->where('domain_id', $v3Domain->id)->first();
                             if( !$v3DomainIp ) {
+                                $this->printf(" -  - v3domain ip not found for {$domainIp->ip_address}. creating.\n");
                                 $newDomainIp = DomainIP::create([
                                     'ip_address' => $domainIp->ip_address,
                                     'domain_id' => $v3Domain->id
                                 ]);
-                                print(" -  - Domain IP {$newDomainIp->ip_address} inserted for domain:{$v3Domain->name}\n");
-                                if( !isset($this->importMap['domain'][$domain->access_key]) ) {
-                                    $this->importMap['domain'][$domain->access_key] = [];
-                                    if( !isset($this->importMap['domain'][$domain->access_key]['domainIp']) ) {
-                                        $this->importMap['domain'][$domain->access_key]['domainIp'] = [];
-                                        if( !isset($this->importMap['domain'][$domain->access_key]['domainIp'][$domainIp->id]) ) {
-                                            $this->importMap['domain'][$domain->access_key]['domainIp'][$domainIp->id] = $newDomainIp->id;
-                                        }
-                                    }
-                                }
+                                $this->printf(" -  - Domain IP {$newDomainIp->ip_address} inserted for domain:{$v3Domain->name}\n");
+                                // if( !isset($this->importMap['domain'][$domain->access_key]) ) {
+                                //     $this->importMap['domain'][$domain->access_key] = [];
+                                //     if( !isset($this->importMap['domain'][$domain->access_key]['domainIp']) ) {
+                                //         $this->importMap['domain'][$domain->access_key]['domainIp'] = [];
+                                //         if( !isset($this->importMap['domain'][$domain->access_key]['domainIp'][$domainIp->id]) ) {
+                                //             $this->importMap['domain'][$domain->access_key]['domainIp'][$domainIp->id] = $newDomainIp->id;
+                                //         }
+                                //     }
+                                // }
                             }
                         }
                     }
@@ -442,7 +459,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // if( $v2user->account_holder_id == 719107)   {
                 // pr($v2user->account_holder_id);
                 // exit;
-                $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
+                // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
                 // exit;
             // }
         }
@@ -537,7 +554,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                             $v3Event->save();
                         }
                         $createEvent = false;
-                        $this->importMap['program'][$v2Program->account_holder_id]['event'][$v3Event->id]['exists'] = 1;
+                        // $this->importMap['program'][$v2Program->account_holder_id]['event'][$v3Event->id]['exists'] = 1;
                     }
                     //TODO: update?!
                 }   else {
@@ -548,7 +565,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                         //Need to patch
                         $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$v3Event->id} WHERE `id` = {$v2Event->id}");
                         $createEvent = false;
-                        $this->importMap['program'][$v2Program->account_holder_id]['event'][$v3Event->id]['exists'] = 1;
+                        // $this->importMap['program'][$v2Program->account_holder_id]['event'][$v3Event->id]['exists'] = 1;
                         //Update??
                     }
                 }
@@ -583,15 +600,15 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
                     $this->v2db->statement("UPDATE `event_templates` SET `v3_event_id` = {$newEvent->id} WHERE `id` = {$v2Event->id}");
 
-                    print(" -  - Event:{$newEvent->id} created for new Program: {$v3Program->id}\n");
+                    $this->printf(" -  - Event:{$newEvent->id} created for new Program: {$v3Program->id}\n");
                 }
 
                 $v3Event = $newEvent ?? $v3Event;
 
-                $MigrateEventXmlDataService = new \App\Services\v2migrate\MigrateEventXmlDataService;
-                $MigrateEventXmlDataService->v2Program = $v2Program;
-                $MigrateEventXmlDataService->v3Program = $v3Program;
-                $MigrateEventXmlDataService->migrateEventXmlDataByV2Event($v2Event, $v3Event);
+                // $MigrateEventXmlDataService = new \App\Services\v2migrate\MigrateEventXmlDataService;
+                // $MigrateEventXmlDataService->v2Program = $v2Program;
+                // $MigrateEventXmlDataService->v3Program = $v3Program;
+                // $MigrateEventXmlDataService->migrateEventXmlDataByV2Event($v2Event, $v3Event);
             }
         }
     }
@@ -601,7 +618,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
         if( $v2Leaderboards ) {
             foreach( $v2Leaderboards as $v2Leaderboard ) {
                 if( (int) $v2Leaderboard->v3_leaderboard_id ) {
-                    print(" -  - Leaderboard:{$v2Leaderboard->id} exists in v3 as: {$v2Leaderboard->v3_leaderboard_id}. Skipping..\n");
+                    $this->printf(" -  - Leaderboard:{$v2Leaderboard->id} exists in v3 as: {$v2Leaderboard->v3_leaderboard_id}. Skipping..\n");
                     //TODO: update?!
                     continue;
                 }
@@ -620,12 +637,12 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 //Update v3 reference field in v2 table
                 $this->v2db->statement("UPDATE `leaderboards` SET `v3_leaderboard_id` = {$newLeaderboard->id} WHERE `id` = {$v2Leaderboard->id}");
 
-                print(" -  - Leaderboard:{$newLeaderboard->id} created for program: {$v3Program->id}\n");
+                $this->printf(" -  - Leaderboard:{$newLeaderboard->id} created for program: {$v3Program->id}\n");
 
                 //Log importing
-                $this->importMap['program'][$v2Program->account_holder_id]['leaderboard'][$v2Leaderboard->id] = $newLeaderboard->id;
+                // $this->importMap['program'][$v2Program->account_holder_id]['leaderboard'][$v2Leaderboard->id] = $newLeaderboard->id;
 
-                print(" -  - Looking for Leaderboard Events for v2 Leaderboard:{$v2Leaderboard->id}\n");
+                $this->printf(" -  - Looking for Leaderboard Events for v2 Leaderboard:{$v2Leaderboard->id}\n");
                 //Find LeaderboardEvent relations in v2 table
                 $v2LeaderboardEvents = $this->v2db->select("SELECT e.id, e.v3_event_id FROM `leaderboards_events` le JOIN event_templates e on e.id = le.event_template_id WHERE `leaderboard_id` = {$v2Leaderboard->id}");
                 if( $v2LeaderboardEvents ) {
@@ -661,8 +678,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 ];
 
                 $newAddress = Address::create($addressData);
-                print(" -  - Address created for new Program: {$v3Program->id}\n");
-                $this->importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
+                $this->printf(" -  - Address created for new Program: {$v3Program->id}\n");
+                // $this->importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
             }
         }
     }

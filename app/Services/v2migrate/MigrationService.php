@@ -112,10 +112,10 @@ class MigrationService
     }
 
     protected function printf($string) {
-        if(!$this->isDebug()) return;
         $argv = func_get_args();
         $format = array_shift( $argv );
         vprintf( $format, $argv );
+        \Illuminate\Support\Facades\Log::channel('v2migration')->info(vsprintf( $format, $argv ));
     }
 
     protected  function prepareSQL($sql) {

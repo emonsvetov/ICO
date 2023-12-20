@@ -16,58 +16,125 @@ class AddMissingFieldsV2V31 extends Migration
     {
         /**************** v3 updates **************/
         Schema::table('users', function (Blueprint $table) {
-            $table->bigInteger('v2_parent_program_id')->nullable();
-            $table->bigInteger('v2_account_holder_id')->nullable();
-            $table->tinyInteger('previous_user_status_id')->default(1);
-            $table->date('hire_date')->nullable();
+            $hasColumn = Schema::hasColumn('users', 'v2_parent_program_id');
+            if( !$hasColumn ) {
+                $table->bigInteger('v2_parent_program_id')->nullable();
+            }
+            $hasColumn = Schema::hasColumn('users', 'v2_account_holder_id');
+            if( !$hasColumn ) {
+                $table->bigInteger('v2_account_holder_id')->nullable();
+            }
+            $hasColumn = Schema::hasColumn('users', 'previous_user_status_id');
+            if( !$hasColumn ) {
+                $table->tinyInteger('previous_user_status_id')->default(1);
+            }
+            $hasColumn = Schema::hasColumn('users', 'hire_date');
+            if( !$hasColumn ) {
+                $table->date('hire_date')->nullable();
+            }
         });
         Schema::table('programs', function (Blueprint $table) {
-            $table->bigInteger('v2_account_holder_id')->nullable(); //This is account holder id in v2
+            $hasColumn = Schema::hasColumn('programs', 'v2_account_holder_id');
+            if( !$hasColumn ) {
+                $table->bigInteger('v2_account_holder_id')->nullable(); //This is account holder id in v2
+            }
         });
         Schema::table('events', function (Blueprint $table) {
-            $table->integer('v2_event_id')->nullable();
-            $table->string('icon', 64)->nullable();
-            $table->boolean('is_team_award')->default(0);
-            $table->renameColumn('is_anniversary_award', 'is_work_anniversary_award');
+            $hasColumn = Schema::hasColumn('events', 'v2_event_id');
+            if( !$hasColumn ) {
+                $table->integer('v2_event_id')->nullable();
+            }
+            $hasColumn = Schema::hasColumn('events', 'icon');
+            if( !$hasColumn ) {
+                $table->string('icon', 64)->nullable();
+            }
+            $hasColumn = Schema::hasColumn('events', 'is_team_award');
+            if( !$hasColumn ) {
+                $table->boolean('is_team_award')->default(0);
+            }
+            $hasColumn = Schema::hasColumn('events', 'is_anniversary_award');
+            if( $hasColumn ) {
+                $table->renameColumn('is_anniversary_award', 'is_work_anniversary_award');
+            }
         });
         Schema::table('leaderboards', function (Blueprint $table) {
-            $table->integer('v2_leaderboard_id')->nullable();
+            $hasColumn = Schema::hasColumn('leaderboards', 'v2_leaderboard_id');
+            if( !$hasColumn ) {
+                $table->integer('v2_leaderboard_id')->nullable();
+            }
         });
         Schema::table('domains', function (Blueprint $table) {
-            $table->integer('v2_domain_id')->nullable();
+            $hasColumn = Schema::hasColumn('domains', 'v2_domain_id');
+            if( !$hasColumn ) {
+                $table->integer('v2_domain_id')->nullable();
+            }
         });
         Schema::table('invoices', function (Blueprint $table) {
-            $table->integer('v2_invoice_id')->nullable();
+            $hasColumn = Schema::hasColumn('invoices', 'v2_invoice_id');
+            if( !$hasColumn ) {
+                $table->integer('v2_invoice_id')->nullable();
+            }
         });
         Schema::table('merchants', function (Blueprint $table) {
-            $table->integer('v2_account_holder_id')->nullable();
-            $table->string('logo')->nullable()->change();
-            $table->string('icon')->nullable()->change();
+            $hasColumn = Schema::hasColumn('merchants', 'v2_account_holder_id');
+            if( !$hasColumn ) {
+                $table->integer('v2_account_holder_id')->nullable();
+            }
+            $hasColumn = Schema::hasColumn('merchants', 'logo');
+            if( !$hasColumn ) {
+                $table->string('logo')->nullable();
+            }   else {
+                $table->string('logo')->nullable()->change();
+            }
+            $hasColumn = Schema::hasColumn('merchants', 'icon');
+            if( !$hasColumn ) {
+                $table->string('icon')->nullable();
+            }   else {
+                $table->string('icon')->nullable()->change();
+            }
         });
 
         /**************** v2 updates **************/
         Schema::connection('v2')->table('users', function($table) {
-            $table->bigInteger('v3_user_id')->nullable();
-            $table->bigInteger('v3_organization_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('users', 'v3_user_id'))    {
+                $table->bigInteger('v3_user_id')->nullable();
+            }
+            if (!Schema::connection('v2')->hasColumn('users', 'v3_organization_id'))    {
+                $table->bigInteger('v3_organization_id')->nullable();
+            }
         });
         Schema::connection('v2')->table('programs', function($table) {
-            $table->bigInteger('v3_program_id')->nullable();
-            $table->bigInteger('v3_organization_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('programs', 'v3_program_id'))    {
+                $table->bigInteger('v3_program_id')->nullable();
+            }
+            if (!Schema::connection('v2')->hasColumn('programs', 'v3_organization_id'))    {
+                $table->bigInteger('v3_organization_id')->nullable();
+            }
         });
         Schema::connection('v2')->table('event_templates', function($table) {
-            $table->integer('v3_event_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('event_templates', 'v3_event_id'))    {
+                $table->integer('v3_event_id')->nullable();
+            }
         });
         Schema::connection('v2')->table('leaderboards', function($table) {
-            $table->integer('v3_leaderboard_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('leaderboards', 'v3_leaderboard_id'))    {
+                $table->integer('v3_leaderboard_id')->nullable();
+            }
         });
         Schema::connection('v2')->table('domains', function($table) {
-            $table->integer('v3_domain_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('domains', 'v3_domain_id'))    {
+                $table->integer('v3_domain_id')->nullable();
+            }
         });
         Schema::connection('v2')->table('invoices', function($table) {
-            $table->integer('v3_invoice_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('invoices', 'v3_invoice_id'))    {
+                $table->integer('v3_invoice_id')->nullable();
+            }
         });
         Schema::connection('v2')->table('merchants', function($table) {
-            $table->integer('v3_merchant_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('merchants', 'v3_merchant_id'))    {
+                $table->integer('v3_merchant_id')->nullable();
+            }
         });
     }
 
@@ -78,65 +145,67 @@ class AddMissingFieldsV2V31 extends Migration
      */
     public function down()
     {
-        /**************** V3 updates **************/
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('v2_parent_program_id');
-            $table->dropColumn('v2_account_holder_id');
-            $table->dropColumn('previous_user_status_id');
-            $table->dropColumn('hire_date');
-        });
-        Schema::table('programs', function (Blueprint $table) {
-            $table->dropColumn('v2_account_holder_id'); //This is account holder id in v2
-        });
+        // It is VERY RISKY to drop columns!!!
+        // Run it manually, see bottom of this page
+        // /**************** V3 updates **************/
+        // Schema::table('users', function (Blueprint $table) {
+        //     $table->dropColumn('v2_parent_program_id');
+        //     $table->dropColumn('v2_account_holder_id');
+        //     $table->dropColumn('previous_user_status_id');
+        //     $table->dropColumn('hire_date');
+        // });
+        // Schema::table('programs', function (Blueprint $table) {
+        //     $table->dropColumn('v2_account_holder_id'); //This is account holder id in v2
+        // });
 
-        //Events
-        Schema::table('events', function (Blueprint $table) {
-            $table->dropColumn('v2_event_id');
-            $table->dropColumn('icon');
-            $table->dropColumn('is_team_award');
-            $table->renameColumn('is_work_anniversary_award', 'is_anniversary_award');
-        });
-        Schema::table('leaderboards', function (Blueprint $table) {
-            $table->dropColumn('v2_leaderboard_id');
-        });
-        Schema::table('domains', function (Blueprint $table) {
-            $table->dropColumn('v2_domain_id');
-        });
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropColumn('v2_invoice_id');
-        });
-        Schema::table('merchants', function (Blueprint $table) {
-            $table->integer('v2_merchant_id')->nullable()->default(0);
-            $table->dropColumn('v2_account_holder_id');
-            $table->string('logo')->nullable(false)->change();
-            $table->string('icon')->nullable(false)->change();
-        });
+        // //Events
+        // Schema::table('events', function (Blueprint $table) {
+        //     $table->dropColumn('v2_event_id');
+        //     $table->dropColumn('icon');
+        //     $table->dropColumn('is_team_award');
+        //     $table->renameColumn('is_work_anniversary_award', 'is_anniversary_award');
+        // });
+        // Schema::table('leaderboards', function (Blueprint $table) {
+        //     $table->dropColumn('v2_leaderboard_id');
+        // });
+        // Schema::table('domains', function (Blueprint $table) {
+        //     $table->dropColumn('v2_domain_id');
+        // });
+        // Schema::table('invoices', function (Blueprint $table) {
+        //     $table->dropColumn('v2_invoice_id');
+        // });
+        // Schema::table('merchants', function (Blueprint $table) {
+        //     $table->integer('v2_merchant_id')->nullable()->default(0);
+        //     $table->dropColumn('v2_account_holder_id');
+        //     $table->string('logo')->nullable(false)->change();
+        //     $table->string('icon')->nullable(false)->change();
+        // });
 
-        /**************** V2 updates **************/
+        // /**************** V2 updates **************/
 
-        Schema::connection('v2')->table('users', function($table) {
-            $table->dropColumn('v3_user_id');
-            $table->dropColumn('v3_organization_id');
-        });
-        Schema::connection('v2')->table('programs', function($table) {
-            $table->dropColumn('v3_program_id');
-            $table->dropColumn('v3_organization_id');
-        });
-        Schema::connection('v2')->table('event_templates', function($table) {
-            $table->dropColumn('v3_event_id');
-        });
-        Schema::connection('v2')->table('leaderboards', function($table) {
-            $table->dropColumn('v3_leaderboard_id');
-        });
-        Schema::connection('v2')->table('domains', function($table) {
-            $table->dropColumn('v3_domain_id');
-        });
-        Schema::connection('v2')->table('invoices', function($table) {
-            $table->dropColumn('v3_invoice_id');
-        });
-        Schema::connection('v2')->table('merchants', function($table) {
-            $table->dropColumn('v3_merchant_id');
-        });
+        // Schema::connection('v2')->table('users', function($table) {
+        //     $table->dropColumn('v3_user_id');
+        //     $table->dropColumn('v3_organization_id');
+        // });
+        // Schema::connection('v2')->table('programs', function($table) {
+        //     $table->dropColumn('v3_program_id');
+        //     $table->dropColumn('v3_organization_id');
+        // });
+        // Schema::connection('v2')->table('event_templates', function($table) {
+        //     $table->dropColumn('v3_event_id');
+        // });
+        // Schema::connection('v2')->table('leaderboards', function($table) {
+        //     $table->dropColumn('v3_leaderboard_id');
+        // });
+        // Schema::connection('v2')->table('domains', function($table) {
+        //     $table->dropColumn('v3_domain_id');
+        // });
+        // Schema::connection('v2')->table('invoices', function($table) {
+        //     $table->dropColumn('v3_invoice_id');
+        // });
+        // Schema::connection('v2')->table('merchants', function($table) {
+        //     $table->dropColumn('v3_merchant_id');
+        // });
     }
 }
 

@@ -14,7 +14,7 @@ class MigratePrograms extends Command
      *
      * @var string
      */
-    protected $signature = 'v2migrate:programs {id}';
+    protected $signature = 'v2migrate:program {id}';
 
     /**
      * The console command description.

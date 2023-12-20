@@ -15,12 +15,18 @@ class AddV2V3MigrationMediumInfoFields extends Migration
     {
         /**************** V3 updates **************/
         Schema::table('medium_info', function (Blueprint $table) {
-            $table->integer('v2_medium_info_id')->nullable();
+            if( !Schema::hasColumn('medium_info', 'v2_medium_info_id')) {
+                $table->integer('v2_medium_info_id')->nullable();
+            }
         });
         /**************** V2 updates **************/
         Schema::connection('v2')->table('medium_info', function($table) {
-            $table->boolean('purchased_by_v3')->default(0);
-            $table->integer('v3_medium_info_id')->nullable();
+            if (!Schema::connection('v2')->hasColumn('medium_info', 'purchased_by_v3'))    {
+                $table->boolean('purchased_by_v3')->default(0);
+            }
+            if (!Schema::connection('v2')->hasColumn('medium_info', 'v3_medium_info_id'))    {
+                $table->integer('v3_medium_info_id')->nullable();
+            }
         });
     }
 
@@ -31,14 +37,14 @@ class AddV2V3MigrationMediumInfoFields extends Migration
      */
     public function down()
     {
-         /**************** V3 updates **************/
-         Schema::table('medium_info', function (Blueprint $table) {
-            $table->dropColumn('v2_medium_info_id');
-        });
-        /**************** V2 updates **************/
-        Schema::connection('v2')->table('medium_info', function($table) {
-            $table->dropColumn('purchased_by_v3');
-            $table->dropColumn('v3_medium_info_id');
-        });
+        //  /**************** V3 updates **************/
+        //  Schema::table('medium_info', function (Blueprint $table) {
+        //     $table->dropColumn('v2_medium_info_id');
+        // });
+        // /**************** V2 updates **************/
+        // Schema::connection('v2')->table('medium_info', function($table) {
+        //     $table->dropColumn('purchased_by_v3');
+        //     $table->dropColumn('v3_medium_info_id');
+        // });
     }
 }
