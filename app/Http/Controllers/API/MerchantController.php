@@ -25,8 +25,6 @@ class MerchantController extends Controller
     public function index(Organization $organization)
     {
 
-        die("Jere");
-
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
@@ -68,9 +66,11 @@ class MerchantController extends Controller
             if ($tree){
                 $query->whereNull('parent_id');
             }
+            die("Tere");
             $merchants = $query->get();
         } else {
-            $query->with('children');
+            // $query->with('children');
+            die("Jere");
             if ($tree){
                 $query->whereNull('parent_id');
             }
