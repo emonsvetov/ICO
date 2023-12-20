@@ -211,14 +211,14 @@ class Program extends BaseModel
         return $program;
     }
 
-    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false)  {
+    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false, $offset = 0, $limit =99999)  {
         if( !$programAccountHolderIds ) return;
         // pr($programAccountHolderIds);
         if( $with_rank )    {
             $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
             return $programs;
         }
-        return self::whereIn('account_holder_id', $programAccountHolderIds)->get();
+        return self::whereIn('account_holder_id', $programAccountHolderIds)->offset($offset)->limit($limit)->get();
     }
 
     public function create_setup_fee_account()   {
@@ -228,7 +228,7 @@ class Program extends BaseModel
         $program_account_holder_id = $this->account_holder_id;
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
         $journal_event_type_id = JournalEventType::getIdByType( "Charge setup fee to program", true );
-        // 25 - Charge setup fee to program
+        // 25 - Charge setup fee to program 
         $journal_event_id = JournalEvent::insertGetId([
 			'journal_event_type_id' => $journal_event_type_id,
 			'created_at' => now()
@@ -464,9 +464,18 @@ class Program extends BaseModel
         return $root     ? EmailTemplateSender::where('program_id', $root->id)->first() : null;
     }
 
+    public function get_top_level_program_id($id = 0)
+    {
+        $program = self::where('id', $id)->first();
+        if (!$program->parent_id)
+            return $id;
+        else 
+            self::get_top_level_program_id($program->parent_id);
+    }
 
     public function selected_reports()
     {
         return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
+
     }
 }

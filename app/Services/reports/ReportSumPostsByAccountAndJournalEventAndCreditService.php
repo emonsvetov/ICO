@@ -39,7 +39,6 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 			foreach ( $data as $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
 			}
-            pr($this->table);
 		}
         return $this->table;
 	}

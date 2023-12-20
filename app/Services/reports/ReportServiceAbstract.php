@@ -335,7 +335,7 @@ abstract class ReportServiceAbstract
         if( $sql != "")
         {
             $sql = $this->addSqlFilters($sql);
-            pr($sql);
+            // pr($sql);
             return DB::select( DB::raw($sql), []);
         }
 

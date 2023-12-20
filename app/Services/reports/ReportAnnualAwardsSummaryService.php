@@ -67,7 +67,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
         $this->year = ( int ) date ( "Y" );
         $this->month = ( int ) date ( "m" );
         if ( $this->params [self::MONTH] )
-            $this->month = $this->params [self::MONTH];
+            $this->month = $this->params [self::MONTH] +1;
         if ( $this->params [self::YEAR] )
            $this->year = $this->params [self::YEAR];
 
@@ -81,7 +81,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
         if (count($annual_awards_total_report_table) > 0)
     		$this->table [self::ROW_AWARD_TOTALS]->annual = $annual_awards_total_report_table [0]->{self::FIELD_TOTAL};
 		$annual_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
-		$this->table [self::ROW_BUDGET]->annual = $annual_budget_total_report->getTable ();
+		$this->table [self::ROW_BUDGET]->annual = $annual_budget_total_report->getTable ()[0]->value;
 
         $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
 		$subreport_params [self::ACCOUNT_TYPES] = array (
@@ -129,35 +129,35 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
     $previous_year_awards_report = new ReportServiceAwardAudit ( $subreport_params );
     $previous_year_awards_report_table = $previous_year_awards_report->getTable ();
     $previous_year_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
-		$this->table [self::ROW_BUDGET]->previous_year_annual = $previous_year_budget_total_report->getTable ();
-		$subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
-		$subreport_params [self::ACCOUNT_TYPES] = array (
-            [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER],
-            [self::ACCOUNT_TYPE_MONIES_AVAILABLE] 
-		);
-		$subreport_params [self::JOURNAL_EVENT_TYPES] = array (
-            [self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS],
-            [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES] 
-		);
-		$previous_year_reclaims_report = new ReportServiceSumByAccountAndJournalEvent ( $subreport_params );
-		$previous_year_reclaims_report_table = $previous_year_reclaims_report->getTable ();
-		$subreport_params [self::ACCOUNT_TYPES] = array (
-            [self::ACCOUNT_TYPE_MONIES_FEES] 
-		);
-		$subreport_params [self::JOURNAL_EVENT_TYPES] = array (
-            [self::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT],
-            [self::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT] 
-		);
-		$previous_year_transaction_fees_report = new ReportServiceSumByAccountAndJournalEvent ( $subreport_params );
-		$previous_year_transaction_fees_report_table = $previous_year_transaction_fees_report->getTable ();
-		$subreport_params [self::SQL_GROUP_BY] = "event_name";
-		$previous_year_awards_report = new ReportServiceAwardAudit ( $subreport_params );
-		$previous_year_awards_report_table = $previous_year_awards_report->getTable ();
+    $this->table [self::ROW_BUDGET]->previous_year_annual = $previous_year_budget_total_report->getTable ()[0]->value;
+    $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
+    $subreport_params [self::ACCOUNT_TYPES] = array (
+        [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER],
+        [self::ACCOUNT_TYPE_MONIES_AVAILABLE] 
+    );
+    $subreport_params [self::JOURNAL_EVENT_TYPES] = array (
+        [self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS],
+        [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES] 
+    );
+    $previous_year_reclaims_report = new ReportServiceSumByAccountAndJournalEvent ( $subreport_params );
+    $previous_year_reclaims_report_table = $previous_year_reclaims_report->getTable ();
+    $subreport_params [self::ACCOUNT_TYPES] = array (
+        [self::ACCOUNT_TYPE_MONIES_FEES] 
+    );
+    $subreport_params [self::JOURNAL_EVENT_TYPES] = array (
+        [self::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT],
+        [self::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT] 
+    );
+    $previous_year_transaction_fees_report = new ReportServiceSumByAccountAndJournalEvent ( $subreport_params );
+    $previous_year_transaction_fees_report_table = $previous_year_transaction_fees_report->getTable ();
+    $subreport_params [self::SQL_GROUP_BY] = "event_name";
+    $previous_year_awards_report = new ReportServiceAwardAudit ( $subreport_params );
+    $previous_year_awards_report_table = $previous_year_awards_report->getTable ();
     // Month
     $subreport_params = array ();
     $subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
-    $subreport_params [self::DATE_BEGIN] = date ( 'Y-m-01 00:00:00', strtotime ( $this->params [self::YEAR] . '-' . $this->month . '-01' ) );
-    $subreport_params [self::DATE_END] = date ( 'Y-m-t 23:59:59', strtotime ( $this->params [self::YEAR] . '-' . $this->month . '-01' ) );
+    $subreport_params [self::DATE_BEGIN] = date ( 'Y-m-01 00:00:00', strtotime ( $this->params [self::YEAR] . '-' . $this->month ) );
+    $subreport_params [self::DATE_END] = date ( 'Y-m-t 23:59:59', strtotime ( $this->params [self::YEAR] . '-' . $this->month ) );
     $subreport_params [self::MONTH] = $this->month;
     $subreport_params [self::YEAR] = $this->year;
     $month_awards_total_report = new ReportServiceAwardAudit ( $subreport_params );
@@ -165,7 +165,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
     if (count($month_awards_total_report_table) > 0)
         $this->table [self::ROW_AWARD_TOTALS]->month = $month_awards_total_report_table [0]->{self::FIELD_TOTAL};
     $month_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
-    $this->table [self::ROW_BUDGET]->month = $month_budget_total_report->getTable ();
+    $this->table [self::ROW_BUDGET]->month = $month_budget_total_report->getTable ()[0]->value;
     $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
     $subreport_params [self::ACCOUNT_TYPES] = array (
         [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER],
@@ -202,7 +202,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
     if (count($previous_year_month_awards_total_report_table) > 0 )
         $this->table [self::ROW_AWARD_TOTALS]->previous_year_month = $previous_year_month_awards_total_report_table [0]->{self::FIELD_TOTAL};
     $previous_year_month_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
-    $this->table [self::ROW_BUDGET]->previous_year_month = $previous_year_month_budget_total_report->getTable ();
+    $this->table [self::ROW_BUDGET]->previous_year_month = $previous_year_month_budget_total_report->getTable ()[0]->value;
     $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
     $subreport_params [self::ACCOUNT_TYPES] = array (
         [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER],
@@ -506,6 +506,15 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
             ];
         }
 
+    }
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data['data'] = $this->getTable();
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
     }
 
 }

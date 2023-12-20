@@ -18,7 +18,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 
 		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
             // dd($this->params [self::PROGRAMS]);
-			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true );
+			$total_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, 0, 0  );
+			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
             // dd($ranked_programs->pluck('account_holder_id'));
 			if ( $ranked_programs->isNotEmpty() ) {
 				$account_holder_ids = [];
@@ -477,9 +478,13 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 
         //Calculate and add "net_points_purchased"
         //$this->table = array_values($this->table);
+		$tempArray = [];
         foreach( $this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
+			array_push($tempArray, $this->table[$i]);
         }
+		$this->table['data'] = $tempArray;
+		$this->table['total'] = count($total_programs);
 		// sort($this->table); //not sure about this whether we need this
 	}
 
