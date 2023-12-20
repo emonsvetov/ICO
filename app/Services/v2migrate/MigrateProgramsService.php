@@ -124,6 +124,7 @@ class MigrateProgramsService extends MigrationService
                                 'name' => $rootProgram->name
                             ]);
                             OrganizationCreated::dispatch($organization);
+                            $this->v2db->statement("UPDATE `programs` SET `v3_organization_id` = {$organization->id} WHERE `account_holder_id` = {$rootProgram->account_holder_id}");
                         } catch (Exception $e) {
                             if( strpos($e->getMessage(), 'Duplicate entry') > 0 && strpos($e->getMessage(), 'organizations_name_unique') > 0) {
                                 $this->printf("v3:organization exists by program name \"%s\". Getting it for to be used.\n", $rootProgram->name);

@@ -97,13 +97,14 @@ class MigrateSingleProgramService extends MigrateProgramsService
             if( !$v3_parent_id ) { //Pull and Assign Domains if it is a root program(?)
                 $this->printf("Attempting to migrate domains for v2 program: \"%s\".\n", $v2Program->name);
                 $this->migrateProgramDomains($v3_organization_id, $v2Program, $v3Program);
+                $this->executeV2SQL();
             }
 
             // if( $v2Program->account_holder_id != 719006) return;
             // pr($v2Program->account_holder_id);
             //Migration Accounts
             $this->printf("Migrating program accounts\n");
-            // $this->migrateProgramAccounts( $v3Program );
+            $this->migrateProgramAccounts( $v3Program );
 
             // Import program users with roles
             // $this->printf("Migrating program users\n");
@@ -142,11 +143,12 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 $programs_tree = array ();
                 if ( $children_heirarchy_list ) {
                     // pr($children_heirarchy_list);
-                    $this->printf("Arranging childen tree for v2:%d..\n", $v2Program->account_holder_id);
+                    // exit;
+                    $this->printf("Arranging childen tree for v2 program:%d..\n", $v2Program->account_holder_id);
                     $programs_tree = sort_programs_by_rank_for_view($programs_tree, $children_heirarchy_list);
                     if( $programs_tree && sizeof($programs_tree) > 0 ) {
                         foreach( $programs_tree as $subprograms) {
-                            $this->printf("Checking whether sub-programs exist for v2:%d..\n", $v2Program->account_holder_id);
+                            $this->printf("Checking whether v2:sub-programs exist for v2:%d..\n", $v2Program->account_holder_id);
                             if( isset( $subprograms['sub_programs']) && sizeof($subprograms['sub_programs']) > 0) {
                                 $this->printf(" - sub-programs exist for v2:%d, count:%d..\n", $v2Program->account_holder_id, sizeof($subprograms['sub_programs']));
                                 foreach( $subprograms['sub_programs'] as $subprogram) {
@@ -350,7 +352,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             $this->printf(" - New V3 Program created for V2 Program: {$v2Program->account_holder_id}=>{$newProgram->id}\n");
 
-            $this->v2db->statement("UPDATE ". PROGRAMS . " SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id}");
+            $this->v2db->statement("UPDATE `programs` SET `v3_organization_id` = {$v3_organization_id}, `v3_program_id` = {$newProgram->id} WHERE `account_holder_id` = {$v2Program->account_holder_id}");
 
             $v2Program->v3_program_id = $newProgram->id; //To be used in related models
 
