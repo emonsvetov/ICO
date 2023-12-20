@@ -25,6 +25,8 @@ class MerchantController extends Controller
     public function index(Organization $organization)
     {
 
+        die("Jere");
+
         $keyword = request()->get('keyword');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
