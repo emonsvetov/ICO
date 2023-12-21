@@ -9,17 +9,16 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 {
     protected $reportFactory;
 
-	protected function calcByDateRange( $params = [] )
+	protected function calc(): array
     {
 		// Setup the default params for the sub reports
 		$subreport_params = array ();
-		$subreport_params [self::DATE_FROM] = $params [self::DATE_FROM];
-		$subreport_params [self::DATE_TO] = $params [self::DATE_TO];
-
+		$subreport_params [self::DATE_BEGIN] = $this->params [self::DATE_BEGIN];
+		$subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
             // dd($this->params [self::PROGRAMS]);
-			$total_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, 0, 0  );
-			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
+			$total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
+			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
             // dd($ranked_programs->pluck('account_holder_id'));
 			if ( $ranked_programs->isNotEmpty() ) {
 				$account_holder_ids = [];
@@ -62,7 +61,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				}
 				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
 				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
-				$subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
 				$subreport_params [self::IS_CREDIT] = 1;
 				$subreport_params [self::ACCOUNT_TYPES] = array (
 					AccountType::ACCOUNT_TYPE_MONIES_FEES,
@@ -250,6 +249,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE,
 					JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_CONVENIENCE_FEE,
 				);
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
                 // dd("HERE");
 				// $debits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
 
@@ -337,6 +337,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING,
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES
 				);
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
 				// $cost_of_redeemed_report = new ReportServiceSumProgramCostOfGiftCodesRedeemed ( $subreport_params );
 				// $cost_of_redeemed_report_table = $cost_of_redeemed_report->getTable ();
                 $cost_of_redeemed_report = $this->reportFactory->build("SumProgramCostOfGiftCodesRedeemed", $subreport_params);
@@ -406,7 +407,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				// Get the monies awards
 				$subreport_params [self::ACCOUNT_TYPES] = [];
 				$subreport_params [self::JOURNAL_EVENT_TYPES] = [];
-
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
 				// $points_report = new ReportServiceSumProgramAwardsMonies ( $subreport_params );
 				// $points_report_table = $points_report->getTable ();
 
@@ -426,6 +427,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				// Get the points awards
 				$subreport_params[self::ACCOUNT_TYPES] = [];
 				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
 				// $points_report = new ReportServiceSumProgramAwardsPoints ( $subreport_params );
 				// $points_report_table = $points_report->getTable ();
                 $points_report = $this->reportFactory->build("SumProgramAwardsPoints", $subreport_params);
@@ -445,6 +447,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				// Get the points awards
 				$subreport_params[self::ACCOUNT_TYPES] = [];
 				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
 				// $premium_fee = new ReportServiceSumProgramCostOfGiftCodesRedeemedFee ( $subreport_params );
 				// $premium_fee_report_table = $premium_fee->getTable ();
                 $premium_fee = $this->reportFactory->build("SumProgramCostOfGiftCodesRedeemedFee", $subreport_params);
@@ -483,9 +486,11 @@ class ReportJournalDetailedService extends ReportServiceAbstract
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
 			array_push($tempArray, $this->table[$i]);
         }
+		$this->table = [];
 		$this->table['data'] = $tempArray;
 		$this->table['total'] = count($total_programs);
 		// sort($this->table); //not sure about this whether we need this
+		return $this->table;
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */
@@ -578,5 +583,13 @@ class ReportJournalDetailedService extends ReportServiceAbstract
             ],
 
         ];
+    }
+	protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $data = $this->getTable();
+		
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
     }
 }

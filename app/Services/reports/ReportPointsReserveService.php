@@ -276,20 +276,51 @@ class ReportPointsReserveService extends ReportServiceAbstract
     {
         return [
             [
-                'label' => 'Program Name',
-                'key' => 'program_name'
+                'label' => 'Program',
+                'key' => 'name'
             ],
             [
-                'label' => 'Status',
-                'key' => 'status'
+                'label' => 'Awarded',
+                'key' => 'value_awarded'
             ],
             [
-                'label' => 'count',
-                'key' => 'count'
+                'label' => 'Expired',
+                'key' => 'expired'
             ],
             [
-                'label' => 'Unique Count',
-                'key' => 'unique_count'
+                'label' => 'Reclaimed',
+                'key' => 'reclaimed'
+            ],
+            [
+                'label' => 'Redeemed',
+                'key' => 'redeemed'
+            ],
+            [
+                'label' => 'Unredeemed',
+                'key' => 'value_unredeemed'
+            ],
+            [
+                'label' => 'Paid',
+                'key' => 'value_paid'
+            ],
+
+            [
+                'label' => 'Reclaimed',
+                'key' => 'reclaimed'
+            ],
+            [
+                'label' => 'Balance',
+                'key' => 'balance'
+            ],
+
+            [
+                'label' => 'Reserve %',
+                'key' => 'reserve_percentage'
+            ],
+
+            [
+                'label' => 'Calculated Reserve',
+                'key' => 'calculated_reserve'
             ],
         ];
     }
@@ -297,8 +328,6 @@ class ReportPointsReserveService extends ReportServiceAbstract
     protected function getReportForCSV(): array
     {
         $this->isExport = true;
-        $this->params[self::SQL_LIMIT] = null;
-        $this->params[self::SQL_OFFSET] = null;
         $data = $this->getTable();
 
         $data['headers'] = $this->getCsvHeaders();
