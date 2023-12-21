@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\Program;
+use App\Services\reports\ReportServiceAbstract;
+use App\Services\reports\User\ReportServiceUserChangeLogs;
+use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
+use App\Services\reports\User\ReportServiceUserHistory;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\Controller;
@@ -58,4 +64,53 @@ class UserController extends Controller
         $user->programRoles = $user->compileProgramRoles($user->getAllProgramRoles());
         return new UserResource($user);
     }
+
+    protected function history(Request $request, Organization $organization, User $user) {
+        $params = [
+            'program_account_holder_id' => NULL,
+            'user_account_holder_id' => $user->account_holder_id,
+            'paginate' => true,
+            'limit' => $request->get('limit'),
+            'offset' => ($request->get('page') - 1) * $request->get('limit'),
+            'order' => $request->get('sortby'),
+            'dir' => $request->get('direction'),
+            'programs' => $request->get('programs'),
+        ];
+        $params = array_merge($params, $request->all());
+        $report = new ReportServiceUserHistory($params);
+
+        return response($report->getReport());
+    }
+
+    protected function giftCodesRedeemed(Request $request, Organization $organization, User $user) {
+        $params = [
+            'programId' => NULL,
+            'user_id' => $user->id,
+            'paginate' => true,
+            'limit' => $request->get('limit'),
+            'offset' => ($request->get('page') - 1) * $request->get('limit'),
+            'order' => $request->get('sortby'),
+            'dir' => $request->get('direction'),
+        ];
+        $params = array_merge($params, $request->all());
+        $report = new ReportServiceUserGiftCodeReedemed($params);
+
+        return response($report->getReport());
+    }
+
+    public function changeLogs(Request $request, Organization $organization, Program $program, User $user)
+    {
+        $params = [
+            'programId' => NULL,
+            'user_id' => $user->id,
+            'paginate' => true,
+            'limit' => $request->get('limit'),
+            'offset' => ($request->get('page') - 1) * $request->get('limit'),
+        ];
+        $params = array_merge($params, $request->all());
+        $report = new ReportServiceUserChangeLogs($params);
+
+        return response($report->getReport());
+    }
+
 }
