@@ -21,6 +21,9 @@ class ReportInventoryService extends ReportServiceAbstract
         // Retrieve merchants and SKU values
         $merchants = Merchant::tree()->depthFirst()->whereIn('id', $this->params[self::MERCHANTS])->get();
         $skuValues = MediumInfo::getSkuValues();
+        $skuValues = array_map(function ($item) {
+            return (int) $item;
+        }, $skuValues);
 
         foreach ($merchants as $merchant) {
             $merchantId = (int) $merchant->account_holder_id;
@@ -61,6 +64,12 @@ class ReportInventoryService extends ReportServiceAbstract
 
             $optimalValues = OptimalValue::getByMerchantId($merchant->id);
             foreach ($optimalValues as $optimalValue) {
+
+                // skip values not included in the $skuValues, for equal columns in a export.
+                if (!in_array($optimalValue->denomination, $skuValues)) {
+                    continue;
+                }
+
                 $skuValueFormatted = number_format($optimalValue->denomination, 2, '.', '');
                 if (!$merchant->get_gift_codes_from_root) {
                     $table[$merchantId]->optimal_values[$skuValueFormatted] = $optimalValue->optimal_value;
@@ -92,6 +101,12 @@ class ReportInventoryService extends ReportServiceAbstract
 
         $this->clearZeroColumns($table, $skuValues);
 
+        if ($this->isExport) {
+            $this->table['skuValues'] = $skuValues;
+            $this->table['data'] = $this->prepareForExport($table);
+            return $this->table;
+        }
+
         $this->table['data']['report'] = $table;
         $this->table['data']['skuValues'] = $skuValues;
         $this->table['total'] = count($table);
@@ -105,7 +120,7 @@ class ReportInventoryService extends ReportServiceAbstract
      * @param $table
      * @param $skuValues
      */
-    public function clearZeroColumns(&$table, $skuValues)
+    public function clearZeroColumns(&$table, &$skuValues)
     {
         foreach ($skuValues as $skuValue) {
             $formattedSkuValue = number_format($skuValue, 2, '.', '');
@@ -133,38 +148,11 @@ class ReportInventoryService extends ReportServiceAbstract
                          ] as $item) {
                     foreach ($table as &$merchant) {
                         unset($merchant->{$item}[$formattedSkuValue]);
+                        unset($skuValue);
                     }
                 }
             }
         }
-    }
-
-
-    public function getCsvHeaders(): array
-    {
-        $arr = [];
-        $arr[] = [
-            'label' => 'Merchant Name',
-            'key' => 'name'
-        ];
-        if ($this->table['skuValues']) {
-            $z = 0;
-            for ($i = 0; $i < 3; $i++) {
-                foreach ($this->table['skuValues'] as $item) {
-                    $arr[] = [
-                        'label' => number_format((float)$item, 2, '.', ''),
-                        'key' => 'key' . $z . number_format((float)$item, 2, '.', '')
-                    ];
-                    $z++;
-                }
-            }
-        }
-        $arr[] = [
-            'label' => 'Cost Basis',
-            'key' => 'cost_basis'
-        ];
-
-        return $arr;
     }
 
     private function prepareForExport($table): array
@@ -175,15 +163,14 @@ class ReportInventoryService extends ReportServiceAbstract
             $row = [];
             $row['name'] = $item->name;
             foreach ($item->on_hand as $subKey => $subItem) {
-                $row['key' . $z . $subKey] = $subItem;
+                $row['oh.' . '' . $subKey] = $subItem;
                 $z++;
             }
             foreach ($item->optimal_values as $subKey => $subItem) {
-                $row['key' . $z . $subKey] = $subItem;
-                $z++;
+                $row['ov.' . '' . $subKey] = $subItem;
             }
             foreach ($item->percent_remaining as $subKey => $subItem) {
-                $row['key' . $z . $subKey] = $subItem;
+                $row['pr.' . '' . $subKey] = $subItem;
                 $z++;
             }
             $row['cost_basis'] = $item->cost_basis;
