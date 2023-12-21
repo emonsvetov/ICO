@@ -1,10 +1,9 @@
 <?php
-namespace App\Services\Report;
+namespace App\Services\reports;
 
 use Illuminate\Support\Facades\DB;
-use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
 
-class ReportServiceAwardAudit extends ReportServiceAbstractBase
+class ReportServiceAwardAudit extends ReportServiceAbstract
 {
 	/** Calculate data by date range (timestampFrom|To) */
     protected function getDataDateRange()
