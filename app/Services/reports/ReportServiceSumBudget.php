@@ -1,5 +1,5 @@
 <?php
-namespace App\Services\Report;
+namespace App\Services\reports;
 
 use Illuminate\Support\Facades\DB;
 use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
