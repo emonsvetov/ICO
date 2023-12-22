@@ -357,7 +357,7 @@ class ReportProgramStatusService extends ReportServiceAbstract
             ],
             [
                 'label'=> "Average",
-                'key'=> "average",
+                'key'=> "transaction_fees",
             ],
             [
                 'label'=> "MTD Awards",
@@ -369,7 +369,7 @@ class ReportProgramStatusService extends ReportServiceAbstract
             ],
             [
                 'label'=> "MTD Average",
-                'key'=> "mtd_average",
+                'key'=> "mtd_transaction_fees",
             ],
             [
                 'label'=> "YTD Awards",
@@ -381,7 +381,7 @@ class ReportProgramStatusService extends ReportServiceAbstract
             ],
             [
                 'label'=> "YTD Average",
-                'key'=> "ytd_average",
+                'key'=> "ytd_transaction_fees",
             ],   
         ];
     }
