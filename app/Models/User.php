@@ -82,6 +82,9 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'updated_at',
         'avatar',
         'join_reminder_at',
+        'v2_parent_program_id',
+        'v2_account_holder_id',
+        'hire_date',
         'sso_token',
         'external_id',
     ];
@@ -397,5 +400,10 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 
     public function neverLoggedIn()    {
         return is_null($this->last_login);
+    }
+
+    public function v2_users()
+    {
+        return $this->hasMany(UserV2User::class);
     }
 }

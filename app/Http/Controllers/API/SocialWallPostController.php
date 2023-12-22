@@ -52,9 +52,11 @@ class SocialWallPostController extends Controller
         $user = auth()->guard('api')->user();
         return $this->socialWallPostService->like($organization, $program, $user, $request->all());
     }
-    
+
     public function delete(Organization $organization, Program $program, SocialWallPost $socialWallPost)
     {
+        $user = auth()->guard('api')->user();
+        $socialWallPost->update(['updated_by' => $user->id]);
         $socialWallPost->delete();
         return response(['success' => true]);
     }

@@ -114,10 +114,10 @@ class MerchantGiftcodeController extends Controller
 
         $query = $query->orderByRaw($orderByRaw);
 
-        if ( request()->has('minimal') )
-        {
-            $giftcodes = $query->select('id', 'code')
-            ->get();
+        if (request()->has('minimal')) {
+            $giftcodes = $query->select('id', 'code')->get();
+        } elseif (request()->has('allmerch')) {
+            $giftcodes = $query->get(); 
         } else {
             $giftcodes = $query->paginate(request()->get('limit', config('global.paginate_limit')));
         }

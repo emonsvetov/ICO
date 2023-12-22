@@ -49,7 +49,8 @@ class InvoiceService
         // });
         // pr(DB::enableQueryLog());
         $query = self::filterable(Invoice::class);
-        $query = $query->where('program_id', $program->id);
+        $query->where('program_id', $program->id);
+        $query->orderByRaw('date_due desc');
         if( $paginate ) {
             $invoices = $query->paginate( self::$PARAMS['limit'] );
         }   else    {

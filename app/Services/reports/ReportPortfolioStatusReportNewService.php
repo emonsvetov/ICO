@@ -231,9 +231,18 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 count_active_user,
                 count_email,
                 count_award,
-                sum_posting_amount,
-                avg_posting_amount,
-                deposit_balance,
+                CAST(
+                    sum_posting_amount
+                    AS DECIMAL(10, 2)
+                ) as sum_posting_amount,
+                CAST(
+                    avg_posting_amount
+                    AS DECIMAL(10, 2)
+                ) as avg_posting_amount,
+                CAST(
+                    deposit_balance
+                    AS DECIMAL(10, 2)
+                ) as deposit_balance,
                 (CASE
                     WHEN count_users > 0 THEN cast((count_email/count_users*100) as decimal(9,1))
                     ELSE 0

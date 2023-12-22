@@ -135,7 +135,7 @@ class AuthController extends Controller
 
             $status = User::getStatusByName(User::STATUS_ACTIVE );
             if( !in_array($user->user_status_id, [$status->id])){
-                return response(['message' => 'Invalid Credentials'], 422);
+                return response(['message' => 'Invalid Credentials*'], 422);
             }
 
             $user->load(['organization', 'roles']);

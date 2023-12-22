@@ -13,11 +13,6 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\Cast\Object_;
 use stdClass;
-use App\Services\Report\ReportServiceSumPostsByAccountAndJournalEventAndCredit;
-use App\Services\Report\ReportServiceSumProgramCostOfGiftCodesRedeemedFee;
-use App\Services\Report\ReportServiceSumProgramCostOfGiftCodesRedeemed;
-use App\Services\Report\ReportServiceSumProgramAwardsMonies;
-use App\Services\Report\ReportServiceSumProgramAwardsPoints;
 
 class ReportPointsReserveService extends ReportServiceAbstract
 {
@@ -30,8 +25,8 @@ class ReportPointsReserveService extends ReportServiceAbstract
 		$subreport_params = array ();
 		$subreport_params[self::DATE_BEGIN] = $this->params[self::DATE_BEGIN];
 		$subreport_params[self::DATE_END] = $this->params[self::DATE_END];
-        $total_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, 0, 0  );
-        $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], true, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
+        $total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
+        $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
         $subreport_params [self::ACCOUNT_HOLDER_IDS] = array ();
 
         if ($ranked_programs->isNotEmpty()) {
@@ -52,7 +47,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
             }
         }
         $subreport_params [self::PROGRAMS] = $subreport_params [self::ACCOUNT_HOLDER_IDS];
-        $subreport_params [ReportServiceSumPostsByAccountAndJournalEventAndCredit::IS_CREDIT] = 1;
+        $subreport_params [ReportSumPostsByAccountAndJournalEventAndCreditService::IS_CREDIT] = 1;
         $subreport_params [self::ACCOUNT_TYPES] = array (
             [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER],
             [self::ACCOUNT_TYPE_MONIES_AVAILABLE],
@@ -76,7 +71,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
             [self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS],
             [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES]
         );
-        $credits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
+        $credits_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
         $credits_report_table = $credits_report->getTable ();
         if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
             foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
@@ -170,7 +165,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
             }
         }
         // Get all of the payment reversals
-        $subreport_params [ReportServiceSumPostsByAccountAndJournalEventAndCredit::IS_CREDIT] = 0;
+        $subreport_params [ReportSumPostsByAccountAndJournalEventAndCreditService::IS_CREDIT] = 0;
         $subreport_params [self::ACCOUNT_TYPES] = array (
             [self::ACCOUNT_TYPE_MONIES_AVAILABLE],
             [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER] 
@@ -179,7 +174,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
             [self::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS],
             [self::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING] 
         );
-        $debits_report = new ReportServiceSumPostsByAccountAndJournalEventAndCredit ( $subreport_params );
+        $debits_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
         $debits_report_table = $debits_report->getTable ();
         if (is_array ( $debits_report_table ) && count ( $debits_report_table ) > 0) {
             foreach ( $debits_report_table as $program_account_holder_id => $programs_debits_report_table ) {
@@ -218,7 +213,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
         	// Get the monies awards
         $subreport_params [self::ACCOUNT_TYPES] = array ();
         $subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
-        $points_report = new ReportServiceSumProgramAwardsMonies ( $subreport_params );
+        $points_report = new ReportSumProgramAwardsMoniesService ( $subreport_params );
         $points_report_table = $points_report->getTable ();
         // Sort the points awards
         if (is_array ( $points_report_table ) && count ( $points_report_table ) > 0) {
@@ -233,7 +228,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
         // Get the points awards
         $subreport_params [self::ACCOUNT_TYPES] = array ();
         $subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
-        $points_report = new ReportServiceSumProgramAwardsPoints ( $subreport_params );
+        $points_report = new ReportSumProgramAwardsPointsService ( $subreport_params );
         $points_report_table = $points_report->getTable ();
         // Sort the points awards
         if (is_array ( $points_report_table ) && count ( $points_report_table ) > 0) {
@@ -262,10 +257,14 @@ class ReportPointsReserveService extends ReportServiceAbstract
 					 * }
 					 */
 				}
+                else {
+                    $row->reserve_percentage = 0;
+                }
 
                 array_push($temp_array, $row);
 			}
 		}
+        $this->table = [];
         $this->table['data'] = $temp_array;
         $this->table['total'] = count($total_programs);
         return  $this->table;
@@ -276,20 +275,51 @@ class ReportPointsReserveService extends ReportServiceAbstract
     {
         return [
             [
-                'label' => 'Program Name',
-                'key' => 'program_name'
+                'label' => 'Program',
+                'key' => 'name'
             ],
             [
-                'label' => 'Status',
-                'key' => 'status'
+                'label' => 'Awarded',
+                'key' => 'value_awarded'
             ],
             [
-                'label' => 'count',
-                'key' => 'count'
+                'label' => 'Expired',
+                'key' => 'expired'
             ],
             [
-                'label' => 'Unique Count',
-                'key' => 'unique_count'
+                'label' => 'Reclaimed',
+                'key' => 'reclaimed'
+            ],
+            [
+                'label' => 'Redeemed',
+                'key' => 'redeemed'
+            ],
+            [
+                'label' => 'Unredeemed',
+                'key' => 'value_unredeemed'
+            ],
+            [
+                'label' => 'Paid',
+                'key' => 'value_paid'
+            ],
+
+            [
+                'label' => 'Reclaimed',
+                'key' => 'reclaimed'
+            ],
+            [
+                'label' => 'Balance',
+                'key' => 'balance'
+            ],
+
+            [
+                'label' => 'Reserve %',
+                'key' => 'reserve_percentage'
+            ],
+
+            [
+                'label' => 'Calculated Reserve',
+                'key' => 'calculated_reserve'
             ],
         ];
     }
@@ -297,8 +327,6 @@ class ReportPointsReserveService extends ReportServiceAbstract
     protected function getReportForCSV(): array
     {
         $this->isExport = true;
-        $this->params[self::SQL_LIMIT] = null;
-        $this->params[self::SQL_OFFSET] = null;
         $data = $this->getTable();
 
         $data['headers'] = $this->getCsvHeaders();

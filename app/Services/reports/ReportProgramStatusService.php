@@ -36,6 +36,7 @@ class ReportProgramStatusService extends ReportServiceAbstract
                 continue;
             }
             $program = (object)$program->toArray();
+            
             $table[$program->account_holder_id] = $program;
             $table[$program->account_holder_id]->program_name = $program->name;
 
@@ -338,6 +339,50 @@ class ReportProgramStatusService extends ReportServiceAbstract
                 'label' => 'Program Name',
                 'key' => 'program_name'
             ],
+            [
+                'label' => "Total Participants",
+                'key' => "participants_count",
+            ],
+            [
+                'label'=> "New Participants",
+                'key'=> "new_participants_count",
+            ],
+            [
+                'label'=> "Awards",
+                'key'=> "awards_count",
+            ],
+            [
+                'label'=> "Value",
+                'key'=> "awards_value",
+            ],
+            [
+                'label'=> "Average",
+                'key'=> "transaction_fees",
+            ],
+            [
+                'label'=> "MTD Awards",
+                'key'=> "mtd_awards_count",
+            ],
+            [
+                'label'=> "MTD Value",
+                'key'=> "mtd_awards_value",
+            ],
+            [
+                'label'=> "MTD Average",
+                'key'=> "mtd_transaction_fees",
+            ],
+            [
+                'label'=> "YTD Awards",
+                'key'=> "ytd_awards_count",
+            ],
+            [
+                'label'=> "YTD Value",
+                'key'=> "ytd_awards_value",
+            ],
+            [
+                'label'=> "YTD Average",
+                'key'=> "ytd_transaction_fees",
+            ],   
         ];
     }
 

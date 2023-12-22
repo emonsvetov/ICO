@@ -38,6 +38,7 @@ class ReadCompiledInvoiceService
 				$invoice_statement = $this->read_on_demand_invoice_details ( $invoice );
 			break;
 			case InvoiceType::INVOICE_TYPE_MONTHLY :
+                // pr($invoice->program->program_is_invoice_for_awards());
 				if (!$invoice->program->program_is_invoice_for_awards()) {
 					// I could not see any difference in these two conditions below but still copying them as it is though! - Arvind
 					$start_date = $invoice->date_begin;
@@ -51,6 +52,8 @@ class ReadCompiledInvoiceService
 					$invoice_statement->journal_summary = $this->readInvoiceJournalSummaryService->get ( $invoice->program, $start_date, $end_date );
 				}
 				$journal_summary = $invoice_statement->journal_summary;
+                pr($journal_summary);
+                exit;
 			break;
 			default :
 				throw new \InvalidArgumentException ( "Unsupported Invoice Type." );
@@ -91,6 +94,8 @@ class ReadCompiledInvoiceService
 		}
 
 		// DHF-135 - suppress all $0 invoices from being created
+        // pr($journal_summary['grand_total']);
+        // pr(isset($journal_summary['grand_total']));
 		if ($invoice->invoice_type->name == InvoiceType::INVOICE_TYPE_MONTHLY && isset($journal_summary['grand_total'])) {
 			$invoice->custom_invoice_amount = $journal_summary['grand_total'];
 		}else{

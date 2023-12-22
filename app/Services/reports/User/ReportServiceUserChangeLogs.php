@@ -57,11 +57,34 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
      */
     protected function setWhereFilters(Builder $query): Builder
     {
-        $program = Program::where('id', $this->params[self::PROGRAM_ID])->first();
-        $topLevelProgram = $program->getRoot(['id', 'name']);
-        $query->where('users_log.parent_program_id', '=', $topLevelProgram->id);
+        $programs = [];
+        if (blank($this->params[self::PROGRAMS])) {
+            if (!blank($this->params[self::PROGRAM_ID])) {
+                $program = Program::where('id', $this->params[self::PROGRAM_ID])->first();
+                $topLevelProgram = $program->getRoot(['id', 'name']);
+                $programs[] = $topLevelProgram->id;
+            }
+        }
+        else {
+            $programIDs = explode(',', $this->params[self::PROGRAMS]);
+            if (!blank($programIDs)) {
+                foreach ($programIDs as $programID) {
+                    $program = Program::where('account_holder_id', $programID)->first();
+                    $topLevelProgram = $program->getRoot(['id', 'name']);
+                    $programs[] = $topLevelProgram->id;
+                }
+                $programs = array_unique($programs);
+            }
+        }
+
+        $query->whereIn('users_log.parent_program_id', $programs);
         $query->where('roles.name', 'LIKE', config('roles.participant'));
         return $query;
+    }
+
+    protected function setDefaultParams() {
+        parent::setDefaultParams ();
+        $this->params[self::PROGRAMS] = request()->get('programs');
     }
 
 }
