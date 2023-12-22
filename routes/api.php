@@ -152,6 +152,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/user', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User');
     Route::put('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'update'])->middleware('can:update,App\User,organization,user');
     Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User,organization');
+    Route::get('/v1/organization/{organization}/user/{user}/history', [App\Http\Controllers\API\UserController::class, 'history'])->middleware('can:view,App\User,organization,user');
+    Route::get('/v1/organization/{organization}/user/{user}/gift-codes-redeemed', [App\Http\Controllers\API\UserController::class, 'giftCodesRedeemed'])->middleware('can:view,App\User,organization,user');
+    Route::get('/v1/organization/{organization}/user/{user}/change-logs', [App\Http\Controllers\API\UserController::class, 'changeLogs'])->middleware('can:view,App\User,organization,user');
     //Route::delete('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'destroy'])->name('api.v1.organization.user.destroy')->middleware('can:delete,user');
 
     // User Status
@@ -285,7 +288,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
 
-    
+
     Route::delete('/v1/organization/{organization}/program/{program}/digital-media-type/{programMediaType}',
     [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete'])->middleware('can:remove,App\ProgramMediaType,organization,program');
 //

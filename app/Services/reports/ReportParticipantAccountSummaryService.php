@@ -107,8 +107,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
         $query->whereIn('model_has_roles.program_id', $programs);
 //        $userIds = $query->get();
 
-        $start_date = $this->params[self::DATE_FROM];
-        $end_date = $this->params[self::DATE_TO];
+        $start_date = $this->params[self::DATE_BEGIN];
+        $end_date = $this->params[self::DATE_END];
         $points_awarded_sub_query = "
         (
             SELECT

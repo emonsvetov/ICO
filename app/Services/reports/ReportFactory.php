@@ -24,7 +24,9 @@ class ReportFactory
         $merchants = isset($params['merchants']) ? $params['merchants'] : null;
         $merchants = $merchants ? explode(',', $merchants) : [];
         $dateFrom = isset($params[CONSTANT::DATE_FROM]) ? date('Y-m-d 00:00:00', strtotime($params[CONSTANT::DATE_FROM])) : '';
+        $dateBegin = isset($params[CONSTANT::DATE_BEGIN]) ? date('Y-m-d 00:00:00', strtotime($params[CONSTANT::DATE_BEGIN])) : '';
         $dateTo = isset($params[CONSTANT::DATE_TO]) ? date('Y-m-d 23:59:59', strtotime($params[CONSTANT::DATE_TO])) : '';
+        $dateEnd = isset($params[CONSTANT::DATE_END]) ? date('Y-m-d 00:00:00', strtotime($params[CONSTANT::DATE_END])) : '';
         $paramPage = isset($params['page']) ? (int)$params['page'] : null;
         $paramLimit = isset($params['limit']) ? (int)$params['limit'] : null;
         $exportToCsv = $params['exportToCsv'] ?? 0;
@@ -52,7 +54,9 @@ class ReportFactory
             'merchants' => $merchants,
             'program_account_holder_ids' => $program_account_holder_ids,
             CONSTANT::DATE_FROM => $dateFrom,
+            CONSTANT::DATE_BEGIN => $dateBegin,
             CONSTANT::DATE_TO => $dateTo,
+            CONSTANT::DATE_END => $dateEnd,
             'limit' => $limit ?? null,
             'offset' => $offset ?? null,
             'exportToCsv' => $exportToCsv,
@@ -69,14 +73,16 @@ class ReportFactory
             'month' => $month,
             'codes' => $codes,
             'inventoryType' => $inventoryType,
+            'programs'=> $programs
         ];
 
         // pr($finalParams);
 
         if( !empty( $params[CONSTANT::ACCOUNT_TYPES] )) {
+
             $finalParams[CONSTANT::ACCOUNT_TYPES] = $params[CONSTANT::ACCOUNT_TYPES];
         }
-
+ 
         if( !empty( $params[CONSTANT::JOURNAL_EVENT_TYPES] )) {
             $finalParams[CONSTANT::JOURNAL_EVENT_TYPES] = $params[CONSTANT::JOURNAL_EVENT_TYPES];
         }
