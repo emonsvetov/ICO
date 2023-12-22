@@ -12,6 +12,7 @@ use App\Models\User;
 class Account extends BaseModel
 {
     protected $guarded = [];
+    public $timestamps = false;
 
 	private static $account_type_fields = [
         'finance_type',
@@ -19,6 +20,11 @@ class Account extends BaseModel
         'account_type',
         'currency_type'
     ];
+
+    public function v2_accounts()
+    {
+        return $this->hasMany(AccountV2Account::class);
+    }
 
     public static function getIdByColumns( $args = [], $insert = true)    {
         $fields = [];
