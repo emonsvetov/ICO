@@ -29,7 +29,7 @@ class JournalEventRequest extends FormRequest
             'notes' => 'nullable|string',
             'event_xml_data_id' => 'nullable|integer',
             'invoice_id' => 'nullable|integer',
-            'parent_id' => 'nullable|integer',
+            'parent_journal_event_id' => 'nullable|integer',
             'is_read' => 'nullable|boolean',
         ];
     }
