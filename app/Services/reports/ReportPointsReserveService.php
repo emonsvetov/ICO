@@ -13,7 +13,6 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\Cast\Object_;
 use stdClass;
-use App\Services\Reports\ReportSumPostsByAccountAndJournalEventAndCreditService;
 
 class ReportPointsReserveService extends ReportServiceAbstract
 {
