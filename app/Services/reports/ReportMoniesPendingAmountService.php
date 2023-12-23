@@ -6,6 +6,7 @@ use App\Models\AccountType;
 use App\Models\JournalEventType;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 class ReportMoniesPendingAmountService extends ReportServiceAbstract
 {
@@ -13,7 +14,7 @@ class ReportMoniesPendingAmountService extends ReportServiceAbstract
     /**
      * @inheritDoc
      */
-    protected function getBaseQuery(): Builder
+    protected function getBaseQuery(): string
     {
         $POSTINGS = 'postings';
         $ACCOUNTS = 'accounts';
@@ -43,7 +44,7 @@ class ReportMoniesPendingAmountService extends ReportServiceAbstract
 
         $orderBy = "ORDER BY date_paid DESC, $ACCOUNTS.account_holder_id, invoice_number";
 
-        $sql = "SELECT $select
+        return "SELECT $select
             FROM $POSTINGS
             INNER JOIN $ACCOUNTS ON $ACCOUNTS.id = $POSTINGS.account_id
             INNER JOIN $PROGRAMS ON $PROGRAMS.account_holder_id = $ACCOUNTS.account_holder_id
@@ -57,16 +58,9 @@ class ReportMoniesPendingAmountService extends ReportServiceAbstract
             LEFT JOIN journal_events reversals ON ($JOURNAL_EVENTS.id = reversals.parent_journal_event_id)
             WHERE
                 $JOURNAL_EVENT_TYPES.type IN ('$journalEventTypes')
-                AND $ACCOUNT_TYPES.account_type_name = '$accountTypeName'
+                AND $ACCOUNT_TYPES.name = '$accountTypeName'
                 AND reversals.id IS NULL
             $orderBy";
-
-        $query = DB::select(DB::raw($sql));
-        if (!$query) {
-            throw new RuntimeException('Internal query failed, please contact the API administrator', 400);
-        }
-
-        return $query;
     }
 
 
