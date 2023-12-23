@@ -7,7 +7,7 @@ use App\Models\JournalEventType;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
-class MoniesPendingAmountService extends ReportServiceAbstract
+class ReportMoniesPendingAmountService extends ReportServiceAbstract
 {
 
     /**
