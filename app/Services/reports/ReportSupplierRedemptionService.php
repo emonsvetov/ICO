@@ -65,8 +65,12 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
             $query->where('medium_info.virtual_inventory', $this->params['codes']);
         }
 
-        if (!empty($this->params['dateFrom']) && !empty($this->params['dateTo'])) {
-            $query->whereBetween('medium_info.redemption_datetime', [$this->params['dateFrom'], $this->params['dateTo']]);
+        if (!empty($this->params['from'])) {
+            $query->where('medium_info.redemption_datetime', '>=', $this->params['from']);
+        }
+
+        if (!empty($this->params['to'])) {
+            $query->where('medium_info.redemption_datetime', '<=', $this->params['to']);
         }
 
         return $query;
