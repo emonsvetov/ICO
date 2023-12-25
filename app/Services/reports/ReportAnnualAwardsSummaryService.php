@@ -2,9 +2,6 @@
 
 namespace App\Services\reports;
 
-use App\Services\Report\ReportServiceAwardAudit;
-use App\Services\Report\ReportServiceSumBudget;
-use App\Services\Report\ReportServiceSumByAccountAndJournalEvent;
 use App\Models\AccountType;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
@@ -78,8 +75,11 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
 		$subreport_params [self::YEAR] = $this->params [self::YEAR];
 		$annual_awards_total_report = new ReportServiceAwardAudit ( $subreport_params );
 		$annual_awards_total_report_table = $annual_awards_total_report->getTable ();
-        if (count($annual_awards_total_report_table) > 0)
-    		$this->table [self::ROW_AWARD_TOTALS]->annual = $annual_awards_total_report_table [0]->{self::FIELD_TOTAL};
+        if (count($annual_awards_total_report_table) > 0){
+            foreach($annual_awards_total_report_table as $row) {
+                $this->table [self::ROW_AWARD_TOTALS]->annual += $row->{self::FIELD_TOTAL};
+            }
+        }
 		$annual_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
 		$this->table [self::ROW_BUDGET]->annual = $annual_budget_total_report->getTable ()[0]->value;
 
@@ -126,8 +126,14 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
     $subreport_params [self::DATE_END] = ($this->params [self::YEAR] - 1) . '-12-31 23:59:59';
     $subreport_params [self::YEAR] = ($this->params [self::YEAR] - 1);
 
-    $previous_year_awards_report = new ReportServiceAwardAudit ( $subreport_params );
-    $previous_year_awards_report_table = $previous_year_awards_report->getTable ();
+    $previous_year_awards_total_report = new ReportServiceAwardAudit ( $subreport_params );
+    $previous_year_awards_total_report_table = $previous_year_awards_total_report->getTable ();
+    if (count($previous_year_awards_total_report_table) > 0){
+        foreach($previous_year_awards_total_report_table as $row) {
+
+            $this->table [self::ROW_AWARD_TOTALS]->previous_year_annual += $row->{self::FIELD_TOTAL};
+        }
+    }
     $previous_year_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
     $this->table [self::ROW_BUDGET]->previous_year_annual = $previous_year_budget_total_report->getTable ()[0]->value;
     $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
@@ -162,8 +168,11 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
     $subreport_params [self::YEAR] = $this->year;
     $month_awards_total_report = new ReportServiceAwardAudit ( $subreport_params );
     $month_awards_total_report_table = $month_awards_total_report->getTable ();
-    if (count($month_awards_total_report_table) > 0)
-        $this->table [self::ROW_AWARD_TOTALS]->month = $month_awards_total_report_table [0]->{self::FIELD_TOTAL};
+    if (count($month_awards_total_report_table) > 0) {
+        foreach ($month_awards_total_report_table as $row) {
+            $this->table [self::ROW_AWARD_TOTALS]->month +=$row->{self::FIELD_TOTAL};
+        }
+    }
     $month_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
     $this->table [self::ROW_BUDGET]->month = $month_budget_total_report->getTable ()[0]->value;
     $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
@@ -199,8 +208,11 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
     $subreport_params [self::YEAR] = ($this->params [self::YEAR] - 1);
     $previous_year_month_awards_total_report = new ReportServiceAwardAudit ( $subreport_params );
     $previous_year_month_awards_total_report_table = $previous_year_month_awards_total_report->getTable ();
-    if (count($previous_year_month_awards_total_report_table) > 0 )
-        $this->table [self::ROW_AWARD_TOTALS]->previous_year_month = $previous_year_month_awards_total_report_table [0]->{self::FIELD_TOTAL};
+    if (count($previous_year_month_awards_total_report_table) > 0 ){
+        foreach($previous_year_month_awards_total_report_table as $row) {
+            $this->table [self::ROW_AWARD_TOTALS]->previous_year_month += $row->{self::FIELD_TOTAL};
+        }
+    }
     $previous_year_month_budget_total_report = new ReportServiceSumBudget ( $subreport_params );
     $this->table [self::ROW_BUDGET]->previous_year_month = $previous_year_month_budget_total_report->getTable ()[0]->value;
     $subreport_params [self::ACCOUNT_HOLDER_IDS] = $this->params [self::PROGRAMS];
@@ -245,7 +257,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
     }
     	if (is_array ( $annual_awards_report_table ) && count ( $annual_awards_report_table ) > 0) {
 			foreach ( $annual_awards_report_table as $event ) {
-				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->annual = $event->{self::FIELD_TOTAL};
+				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->annual += $event->{self::FIELD_TOTAL};
 			}
 		}
 		// Sort the reclaims
@@ -281,7 +293,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
 		// Previous Year Annual
 		if (is_array ( $previous_year_awards_report_table ) && count ( $previous_year_awards_report_table ) > 0) {
 			foreach ( $previous_year_awards_report_table as $event ) {
-				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->previous_year_annual = $event->{self::FIELD_TOTAL};
+				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->previous_year_annual += $event->{self::FIELD_TOTAL};
 			}
 		}
 		// Sort the reclaims
@@ -317,7 +329,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
 		// Month
 		if (is_array ( $month_awards_report_table ) && count ( $month_awards_report_table ) > 0) {
 			foreach ( $month_awards_report_table as $event ) {
-				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->month = $event->{self::FIELD_TOTAL};
+				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->month += $event->{self::FIELD_TOTAL};
 			}
 		}
 		// Sort the reclaims
@@ -353,7 +365,7 @@ class ReportAnnualAwardsSummaryService extends ReportServiceAbstract
 		// Previous Year Month
 		if (is_array ( $previous_year_month_awards_report_table ) && count ( $previous_year_month_awards_report_table ) > 0) {
 			foreach ( $previous_year_month_awards_report_table as $event ) {
-				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->previous_year_month = $event->{self::FIELD_TOTAL};
+				$this->table [self::ROW_EVENT_SUMMARY] [$event->event_name]->previous_year_month += $event->{self::FIELD_TOTAL};
 			}
 		}
 		// Sort the reclaims

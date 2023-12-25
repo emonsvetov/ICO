@@ -196,6 +196,14 @@ class ReportQuarterlyAwardSummaryService extends ReportServiceAbstract
     {
         return [
             [
+                'label' => 'Event name',
+                'key' => 'event_name'
+            ],
+            [
+                'label' => 'Program name',
+                'key' => 'program_name'
+            ],
+            [
                 'label' => 'Q1 value',
                 'key' => 'Q1_value'
             ],
