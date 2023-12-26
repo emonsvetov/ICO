@@ -69,9 +69,9 @@ class MigrateProgramsService extends MigrationService
 
         // DB::rollback();
         // $this->v2db->rollBack();
-        $this->printf($this->importedProgramsCount . " programs migrated\n");
-        $this->printf(count($v2ProgramUsersTotalCount) . " users found\n");
-        $this->printf(implode(',', $v2ProgramUsersTotalCount));
+        // $this->printf($this->importedProgramsCount . " programs migrated\n");
+        // $this->printf(count($v2ProgramUsersTotalCount) . " users found\n");
+        // $this->printf(implode(',', $v2ProgramUsersTotalCount));
         // printf("Rendering Import Map..\n");
         // print_r($this->importMap);
     }
