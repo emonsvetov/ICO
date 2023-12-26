@@ -70,7 +70,10 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
         }
 
         if (!empty($this->params['to'])) {
-            $query->where('medium_info.redemption_datetime', '<=', $this->params['to']);
+            $toDateTime = \DateTime::createFromFormat('Y-m-d H:i:s', $this->params['to']);
+            $toDateTime->setTime(23, 59, 59);
+            $toDateTimeFormatted = $toDateTime->format('Y-m-d H:i:s');
+            $query->where('medium_info.redemption_datetime', '<=', $toDateTimeFormatted);
         }
 
         return $query;
