@@ -40,6 +40,8 @@ class MigrateProgramsService extends MigrationService
 
     public function migrate( $args = [] ) {
 
+        $this->fixAccountHolderIds();
+
         global $v2ProgramUsersTotalCount;
         $v2ProgramUsersTotalCount = [];
 
@@ -710,4 +712,26 @@ class MigrateProgramsService extends MigrationService
 			throw new RuntimeException ( $e, 500 );
 		}
 	}
+
+    protected function fixAccountHolderIds()    {
+        $v3Programs = Program::whereNotNull('account_holder_id')->get();
+        if( $v3Programs )   {
+            foreach( $v3Programs as $v3Program )    {
+                $this->fixBrokenAccountHolderByProgram( $v3Program );
+            }
+        }
+    }
+
+    protected function fixBrokenAccountHolderByProgram( $v3Program )    {
+        //Find and Confirm stored account holder id in v2 db
+        //I needed to do this as I found some very large account holder ids in v3 which did not exist in the v2 database. Probably they were created in some old version of v3 db then AUTO INCREMENT key was reset??
+        $this->printf("Find and confirm model's stored account_holder_id with in v3 db.\n");
+        $v3AccountHolder = \App\Models\AccountHolder::where('id', $v3Program->account_holder_id )->first();
+        if( !$v3AccountHolder ) {
+            $this->printf("v3Program->account_holder_id: %d not found in v3 table.\n", $v3Program->account_holder_id);
+            $this->printf("Going to create new v3 account_holder_id for model and then update: %s:%d.\n", 'Program', $v3Program->id);
+            $v3Program->account_holder_id = \App\Models\AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
+            $v3Program->save();
+        }
+    }
 }
