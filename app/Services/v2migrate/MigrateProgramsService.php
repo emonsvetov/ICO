@@ -728,10 +728,12 @@ class MigrateProgramsService extends MigrationService
         $this->printf("Find and confirm model's stored account_holder_id with in v3 db.\n");
         $v3AccountHolder = \App\Models\AccountHolder::where('id', $v3Program->account_holder_id )->first();
         if( !$v3AccountHolder ) {
-            $this->printf("v3Program->account_holder_id: %d not found in v3 table.\n", $v3Program->account_holder_id);
+            $this->printf("v3Program->account_holder_id: %d NOT FOUND in v3 table.\n", $v3Program->account_holder_id);
             $this->printf("Going to create new v3 account_holder_id for model and then update: %s:%d.\n", 'Program', $v3Program->id);
             $v3Program->account_holder_id = \App\Models\AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
             $v3Program->save();
+        }   else {
+            $this->printf("v3Program->account_holder_id: %d FOUND in v3 table.\n", $v3Program->account_holder_id);
         }
     }
 }
