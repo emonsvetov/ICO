@@ -31,10 +31,10 @@ class ProgramMediaTypeController extends Controller
     {
 
         try {
-            $name = $request->get('name');
+            $name = $request->get('name');           
             $isMenuItem = $request->get('is_menu_item');
             $menu_link =  $request->get('menu_link');
-            $programMediaType = ProgramMediaType::create([
+            $programMediaType = ProgramMediaType::create([                
                 "program_id" => $program->id,
                 "name"       => $name,
                 "is_menu_item" => $isMenuItem,
@@ -47,8 +47,36 @@ class ProgramMediaTypeController extends Controller
         return response()->json($programMediaType);
     }
 
-    public function delete(Organization $organization, Program $program, ProgramMediaType $programMediaType) {
-        $programMediaType->delete();
+    public function saveLink(Request $request, Organization $organization, Program $program,ProgramMediaType $programMediaType)
+    {       
+        try {
+            // $programMediaType->menu_link = $request->get('menu_link');
+            // $programMediaType->program_media_type_id = $request->get('program_media_type_id');
+            // $programMediaType->program_id = $program->id;
+            // $programMediaType->name = $request->get('name');
+            // $programMediaType->is_menu_item = $request->get('is_menu_item');
+            // $programMediaType->save();
+            $menu_link = $request->get('menu_link');
+            $program_media_type_id = $request->get('program_media_type_id');
+            $name = $request->get('name');
+            $is_menu_item = $request->get('is_menu_item');
+
+            ProgramMediaType::where('program_media_type_id', $program_media_type_id)
+            ->update(['menu_link' => $menu_link, 'name' => $name, 'is_menu_item' => $is_menu_item]);
+
+        } catch (\Exception $e) {
+            return response(['errors' => $e->getMessage()], 422);
+        }
+
+        return response()->json($programMediaType);
+    }
+
+    public function delete(Request $request, Organization $organization, Program $program, ProgramMediaType $programMediaType) {
+        $program_media_type_id = $request->program_media_type_id;
+
+        ProgramMediaType::where('program_media_type_id', $program_media_type_id)
+            ->update(['menu_link' => ""]);
+        // $programMediaType->delete();
         return response(['deleted' => true]);
     }
 }

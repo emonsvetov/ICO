@@ -285,6 +285,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store']
     )->middleware('can:add,App\ProgramMediaType,organization,program');
 
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type-iframe',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type-url-delete',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+    
+    Route::put(
+        '/v1/organization/{organization}/program/{program}/digital-media-type',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
 
