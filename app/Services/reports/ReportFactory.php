@@ -45,6 +45,8 @@ class ReportFactory
         $codes = $params['codes'] ?? null;
         $inventoryType = $params['inventoryType'] ?? null;
         $keyword = $params['keyword'] ?? null;
+        $orderStatus = $params['orderStatus'] ?? null;
+        $purchaseByV2 = $params['purchaseByV2'] ?? null;
         if ($paramPage && $paramLimit) {
             $paginate = true;
             $offset = ($paramPage - 1) * $paramLimit;
@@ -75,6 +77,8 @@ class ReportFactory
             'codes' => $codes,
             'inventoryType' => $inventoryType,
             'keyword' => $keyword,
+            'orderStatus' => $orderStatus,
+            'purchaseByV2' => $purchaseByV2,
             'programs'=> $programs
         ];
 

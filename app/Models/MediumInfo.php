@@ -15,6 +15,9 @@ class MediumInfo extends BaseModel
     protected $guarded = [];
     protected $table = 'medium_info';
 
+    const MEDIUM_TYPE_STATUS_SUCCESS = 1;
+    const MEDIUM_TYPE_STATUS_ERROR = 2;
+
     public function newQuery()
     {
         $query = parent::newQuery();

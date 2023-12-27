@@ -2,8 +2,7 @@
 
 namespace App\Services\reports;
 
-use App\Models\AccountType;
-use App\Models\JournalEventType;
+use App\Models\MediumInfo;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -39,6 +38,27 @@ class ReportOrdersService extends ReportServiceAbstract
         if (!blank($merchants)) {
             $query->whereIn('merchant_id', $this->params[self::MERCHANTS]);
         }
+
+        if ($this->params[self::ORDER_STATUS]) {
+            $query->where('virtual_inventory', '=', 1);
+
+            switch ($this->params[self::ORDER_STATUS]) {
+                case MediumInfo::MEDIUM_TYPE_STATUS_SUCCESS:
+                    $query->whereNotNull('tango_reference_order_id');
+                    break;
+
+                case MediumInfo::MEDIUM_TYPE_STATUS_ERROR:
+                    $query->whereNull('tango_reference_order_id');
+                    $query->whereNotNull('tango_request_id');
+                    break;
+            }
+        }
+
+        $purchaseByV2 = $this->params[self::PURCHASE_BY_V2];
+        if ($purchaseByV2) {
+            $query->where('purchased_by_v2', '=', [1 => 0, 2 => 1][$purchaseByV2]);
+        }
+
 
         $search = $this->params[self::KEYWORD];
         if (!blank($search)) {
