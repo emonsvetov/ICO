@@ -111,6 +111,9 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->printf("Migrating program accounts\n");
             $this->migrateProgramAccounts( $v3Program, $v2Program );
 
+            $this->syncProgramMerchantRelations($v2Program, $v3Program);
+            exit;
+
             // Import program users with roles
             // $this->printf("Migrating program users\n");
             // $this->migrateProgramUsers($v2Program, $v3Program);
@@ -127,8 +130,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->printf("Migrating program events\n");
             $this->migrateProgramEvents($v2Program, $v3Program);
 
-            // $this->syncProgramMerchantRelations($v2Program, $v3Program);
-            // exit;
             //Migration Accounts
             // ## $this->migrateProgramJournalEvents( $v3Program, $v2Program); //Deprecated!
             // $this->executeV2SQL(); //run for any missing run!
@@ -691,7 +692,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
-    public function migrateProgramAccounts($v3Program, $v2Program) {
+    public function migrateProgramAccounts(&$v3Program, $v2Program) {
 
         //Before we can migrate account let's fix the incorrect account_holder_holder if found in Program
 
