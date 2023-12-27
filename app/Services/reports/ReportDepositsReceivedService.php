@@ -8,7 +8,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
-class ReportMoniesPendingAmountService extends ReportServiceAbstract
+class ReportDepositsReceivedService extends ReportServiceAbstract
 {
 
     /**
