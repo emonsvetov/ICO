@@ -138,6 +138,36 @@ if(!function_exists('_flatten'))  {
 		return $newCollection;
     }
 }
+
+if(!function_exists('_tree_flatten'))  {
+    function _tree_flatten($collection, $depth = 0, $path = 0)
+    {
+        if(!isset($newCollection)) $newCollection = collect();
+        $depth++;
+        foreach( $collection as $key => $model ) {
+            $children = clone $model->children;
+            unset($model->children);
+            $tmpPath = $path ? explode(',', $path) : [];
+            $tmpPath[] = $model->parent_id;
+            $model->dinamicPath = implode(',', $tmpPath);
+
+            $search = $newCollection->search(function ($item) use ($model) {
+                return $item->id === $model->id;
+            });
+
+            if ($search === false){
+                $model->dinamicDepth = $depth;
+                $newCollection = $newCollection->push($model);
+            }
+
+            if (!$children->isEmpty()) {
+                $newCollection = $newCollection->merge(_tree_flatten($children, $depth, $model->dinamicPath));
+            }
+        }
+        return $newCollection;
+    }
+}
+
 if(!function_exists('collectIdsInATree'))  {
     function collectIdsInATree($treeNodes, &$ids)
     {

@@ -125,11 +125,11 @@ abstract class ReportServiceAbstract
             $this->params[self::ACCOUNT_TYPES] = null;
         }
         // $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
-        //     is_array ( $params[self::ACCOUNT_TYPES] ) ? 
+        //     is_array ( $params[self::ACCOUNT_TYPES] ) ?
         //     foreach( $params[self::ACCOUNT_TYPES] as $param) {
         //         array_push($temp, $param[0]);
         //     }
-        //     : 
+        //     :
         //     array (
         //         $params[self::ACCOUNT_TYPES]
         //     )
@@ -400,4 +400,8 @@ abstract class ReportServiceAbstract
 	protected function getWhereFilters() {
 		return array ();
 	}
+
+    public function amountFormat($value){
+        return number_format((float)$value, 2, '.', '');
+    }
 }
