@@ -112,7 +112,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->migrateProgramAccounts( $v3Program, $v2Program );
 
             $this->syncProgramMerchantRelations($v2Program, $v3Program);
-            exit;
 
             // Import program users with roles
             // $this->printf("Migrating program users\n");
