@@ -15,6 +15,9 @@ class MediumInfo extends BaseModel
     protected $guarded = [];
     protected $table = 'medium_info';
 
+    const MEDIUM_TYPE_STATUS_SUCCESS = 1;
+    const MEDIUM_TYPE_STATUS_ERROR = 2;
+
     public function newQuery()
     {
         $query = parent::newQuery();
@@ -170,6 +173,18 @@ class MediumInfo extends BaseModel
         $finalTotalCost = $totalCost->isEmpty() ? 0 : $totalCost->first()->cost_basis;
 
         return $finalTotalCost;
+    }
+
+    /**
+     * @param $ID
+     * @return mixed
+     */
+    public static function getByID($ID)
+    {
+        $query = DB::table('medium_info');
+        $query->where('id', $ID);
+        $query->selectRaw("medium_info.*");
+        return $query->get()->first();
     }
 
 }
