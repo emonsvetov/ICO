@@ -471,14 +471,14 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 'label' => 'Peer Points Balance',
                 'key' => 'peer_balance'
             ],
-            [
-                'label' => 'Anniversary',
-                'key' => 'anniversary'
-            ],
-            [
-                'label' => 'Birthday',
-                'key' => 'birth'
-            ],
+            // [
+            //     'label' => 'Anniversary',
+            //     'key' => 'anniversary'
+            // ],
+            // [
+            //     'label' => 'Birthday',
+            //     'key' => 'birth'
+            // ],
         ];
     }
 
