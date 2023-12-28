@@ -115,7 +115,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
             $q->where('account_types.name', '=', AccountType::getTypePointsAwarded())
                 ->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());
         });
-        $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
         if (isset($this->params[self::AWARD_LEVEL_NAMES]) && count($this->params[self::AWARD_LEVEL_NAMES]) > 0)
         {

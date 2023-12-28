@@ -75,11 +75,11 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
-		if (isset ( $this->params [self::DATE_FROM] ) && $this->params [self::DATE_FROM] != '') {
-			$where [] = "posts.created_at >= '{$this->params[self::DATE_FROM]}'";
+		if (isset ( $this->params [self::DATE_BEGIN] ) && $this->params [self::DATE_BEGIN] != '') {
+			$where [] = "posts.created_at >= '{$this->params[self::DATE_BEGIN]}'";
 		}
-		if (isset ( $this->params [self::DATE_TO] ) && $this->params [self::DATE_TO] != '') {
-			$where [] = "posts.created_at <= '{$this->params[self::DATE_TO]}'";
+		if (isset ( $this->params [self::DATE_END] ) && $this->params [self::DATE_END] != '') {
+			$where [] = "posts.created_at <= '{$this->params[self::DATE_END]}'";
 		}
         // dd($this->params);
 		$where [] = "a.account_holder_id IN (" . implode ( ',', $this->params [self::PROGRAM_ACCOUNT_HOLDER_IDS] ) . ")";

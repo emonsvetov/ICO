@@ -57,7 +57,7 @@ class ReportDepositTransfersService extends ReportServiceAbstract
         $query->where('account_types.name', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
         $query->where('to_account_types.name', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
         $query->where('postings.is_credit', 0);
-        $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->where(function ($q) {
             $q->whereIn('from_program.account_holder_id', $this->params[self::PROGRAMS]);
             $q->orWhereIn('to_program.account_holder_id', $this->params[self::PROGRAMS]);
