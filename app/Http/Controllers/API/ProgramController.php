@@ -68,7 +68,9 @@ class ProgramController extends Controller
         $programs = $programService->index(null, $params);
 
         if ($programs->isNotEmpty()) {
-            return response($programs);
+            $result['data'] = _flatten($programs);
+            return response($result);
+//            return response($programs);
         }
 
         return response([]);
@@ -378,5 +380,5 @@ class ProgramController extends Controller
 
         return response()->json(['message' => 'Selected reports saved successfully'], 200);
     }
-    
+
 }

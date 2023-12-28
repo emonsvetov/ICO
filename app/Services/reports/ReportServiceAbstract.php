@@ -406,4 +406,8 @@ abstract class ReportServiceAbstract
 	protected function getWhereFilters() {
 		return array ();
 	}
+
+    public function amountFormat($value){
+        return number_format((float)$value, 2, '.', '');
+    }
 }
