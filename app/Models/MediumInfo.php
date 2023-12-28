@@ -175,4 +175,16 @@ class MediumInfo extends BaseModel
         return $finalTotalCost;
     }
 
+    /**
+     * @param $ID
+     * @return mixed
+     */
+    public static function getByID($ID)
+    {
+        $query = DB::table('medium_info');
+        $query->where('id', $ID);
+        $query->selectRaw("medium_info.*");
+        return $query->get()->first();
+    }
+
 }

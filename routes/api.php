@@ -294,7 +294,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         '/v1/organization/{organization}/program/{program}/digital-media-type-url-delete',
         [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete']
     )->middleware('can:add,App\ProgramMediaType,organization,program');
-    
+
     Route::put(
         '/v1/organization/{organization}/program/{program}/digital-media-type',
         [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
@@ -359,6 +359,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
     Route::get('/v1/organization/{organization}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
     Route::get('/v1/program/{program}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
+
+    Route::get('/v1/organization/{organization}/report/order/{order}',[App\Http\Controllers\API\ReportOrderController::class, 'show'])->middleware('can:viewAny,App\Report');
 
     //MerchantGiftcodes
 
