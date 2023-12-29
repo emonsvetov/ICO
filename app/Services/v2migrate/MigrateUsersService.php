@@ -21,7 +21,7 @@ class MigrateUsersService extends MigrationService
     public $limit = 1;
     public $iteration = 0;
     public $count = 0;
-    public bool $isPrintSql = true;
+    public bool $isPrintSql = false;
     public bool $resyncRoles = true;
     public array $v3UserCache = [];
     public array $v3ProgramCache = [];
@@ -187,6 +187,8 @@ class MigrateUsersService extends MigrationService
         // }
         // pr($v3User->toArray());
         //Create user if applies
+        pr($v2User->account_holder_id);
+        pr($v2User->email);
         $v3User = User::where('email', $v2User->email)->first();
         if( $v3User ) {
             $createUser = false;
@@ -426,7 +428,7 @@ class MigrateUsersService extends MigrationService
 				roles.owner_id = {$program_id}
 			";
 		}
-		if ($all) {
+		if ( $all ) {
 			// throw new RuntimeException("BCM HERE 5 - NOT HERE");
 			$root_program_id = resolve(\App\Services\v2migrate\MigrateProgramsService::class)->get_top_level_program_id ( $program_id );
 			$sql = "
@@ -434,7 +436,6 @@ class MigrateUsersService extends MigrationService
 			";
 		}
 		return $sql;
-
 	}
 
     public function migrateSuperAdmins( $v2Program = null, $v3Program = null )    {
