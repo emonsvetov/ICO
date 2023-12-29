@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 
 use App\Jobs\v2migrate\MigrateUsersJob;
+use Exception;
 
 class MigrateUsers extends Command
 {
@@ -20,7 +21,7 @@ class MigrateUsers extends Command
      *
      * @var string
      */
-    protected $description = 'Command to migrate users';
+    protected $description = 'Command to migrate users by program Id or ids. Run `php artisan v2migrate:users --program=[Single or Comma separated Ids of v2 programs]`.';
 
     /**
      * Create a new command instance.
@@ -37,8 +38,22 @@ class MigrateUsers extends Command
     {
         // pr($this->arguments());
         // pr($this->options());
-        // exit;
-        dispatch(new MigrateUsersJob( $this->options() ));
+        $programOption = $this->option('program');
+        if( !$programOption ) {
+            throw new Exception('Missing required option "program"');
+            exit;
+        }
+        $programId = current($programOption);
+        if( !$programId ) {
+            throw new Exception('"programId" must not be empty');
+            exit;
+        }
+        $program = array_filter(explode(',', $programId), function($p) { return ( is_numeric($p) && (int) $p > 0 ); });
+        if( !$program ) {
+            throw new Exception('Invalid or null program ids.');
+            exit;
+        }
+        dispatch(new MigrateUsersJob( ['program' => $program] ));
         return 0;
     }
 }
