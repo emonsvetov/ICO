@@ -308,7 +308,7 @@ class ReportHelper
         $accountTypes = $args['accountTypes'] ?? null;
         $journalEventTypes = $args['journalEventTypes'] ?? null;
         $isCredit = $args['isCredit'] ?? false;
-        $programIds = $args['programIds'] ?? false;
+        $programAccountHolderIds = $args['programAccountHolderIds'] ?? false;
         $months = $args['months'] ?? false;
 
         $query = Account::selectRaw("
@@ -332,6 +332,7 @@ class ReportHelper
         $query->join('accounts as program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
         $query->join('account_types as program_account_types', function ($join) {
             $join->on('program_account_types.id', '=', 'program_accounts.account_type_id');
+            $join->on("program_account_types.name", "=", DB::raw("'" . AccountType::ACCOUNT_TYPE_MONIES_FEES . "'"));
         });
         $query->join('programs', 'programs.account_holder_id', '=', 'program_accounts.account_holder_id');
 
@@ -343,8 +344,8 @@ class ReportHelper
         if ($journalEventTypes) {
             $query->whereIn('journal_event_types.type', $journalEventTypes);
         }
-        if ($programIds) {
-            $query->whereIn('programs.account_holder_id', $programIds);
+        if ($programAccountHolderIds) {
+            $query->whereIn('programs.account_holder_id', $programAccountHolderIds);
         }
 
         $query->groupBy('accounts.account_holder_id');

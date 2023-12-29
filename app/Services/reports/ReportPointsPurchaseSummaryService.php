@@ -27,9 +27,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         $this->params[self::DATE_TO] = $this->params[self::YEAR] . '-12-31 23:59:59';
         $dateBegin = date('Y-m-d 00:00:00', strtotime($this->params[self::DATE_FROM]));
         $dateEnd = date('Y-m-d 23:59:59', strtotime($this->params[self::DATE_TO]));
-        $programIds = $this->params[self::PROGRAMS];
+        $programAccountHolderIds = $this->params[self::PROGRAMS];
+        $programIds = Program::whereIn('account_holder_id', $programAccountHolderIds)->get()->pluck('id')->toArray();
 
-        $programs = (new Program)->whereIn('account_holder_id', $programIds)->get()->toTree();
+        $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
         $programs = _tree_flatten($programs);
 
         foreach ($programs as $program) {
@@ -90,7 +91,7 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         ];
         $args['months'] = true;
         $args['isCredit'] = true;
-        $args['programIds'] = $programIds;
+        $args['programAccountHolderIds'] = $programAccountHolderIds;
         $credits_report = $this->reportHelper->sumPostsByAccountAndJournalEventAndCredit($dateBegin, $dateEnd, $args);
 
         foreach ($credits_report as $program_account_holder_id => $programs_credits_report_table) {
@@ -117,7 +118,7 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         ];
         $args['months'] = true;
         $args['isCredit'] = true;
-        $args['programIds'] = $programIds;
+        $args['programAccountHolderIds'] = $programAccountHolderIds;
         $credits_report = $this->reportHelper->sumPostsByAccountAndJournalEventAndCredit($dateBegin, $dateEnd, $args);
 
         foreach ($credits_report as $program_account_holder_id => $programs_credits_report_table) {
