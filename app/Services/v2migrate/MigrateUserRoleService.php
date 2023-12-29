@@ -10,7 +10,7 @@ class MigrateUserRoleService extends MigrationService
     public int $count = 0;
 
     public function _getRoleNameFromV2RoleName( $v2RoleName ) {
-        $newRoleName = 'Participant';
+        $newRoleName = '';
         if( $v2RoleName == 'Administration')    {
             $newRoleName = 'Super Admin';
         }   elseif( $v2RoleName == 'Administrator' ) {
@@ -19,6 +19,8 @@ class MigrateUserRoleService extends MigrationService
             $newRoleName = 'Participant';
         }   elseif( $v2RoleName == 'Limited Program Manager' ) {
             $newRoleName = 'Limited Manager';
+        }   elseif( $v2RoleName == 'Program Manager' ) {
+            $newRoleName = 'Manager';
         }   elseif( strpos($v2RoleName, 'Read Only' ) !== false ) {
             $newRoleName = 'Read Only Manager';
         }
@@ -76,25 +78,27 @@ class MigrateUserRoleService extends MigrationService
                 $this->printf(" - Looking for role \"%s\" in v3.\n",  $v2UserRole->role_name);
                 $v2RoleName = $this->_getRoleNameFromV2RoleName( $v2UserRole->role_name );
 
-                if( isset($this->rolesCache[$v2UserRole->id]) )   {
-                    $v3RoleId = $this->rolesCache[$v2UserRole->id];
-                }   else {
-                    $v3RoleId = Role::getIdByName($v2RoleName);
-                    if( !$v3RoleId ) {
-                        throw new Exception(sprintf(" - Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email));
-                        continue;
-                    }
-                    $this->rolesCache[$v2UserRole->id] = $v3RoleId;
-                }
-
-                if( $v3RoleId ) {
-                    if( $this->v2pid() ) {
-                        if( !isset( $newProgramRoles[$v2UserRole->v3_program_id] )) {
-                            $newProgramRoles[$v2UserRole->v3_program_id] = [];
-                        }
-                        $newProgramRoles[$v2UserRole->v3_program_id][] = $v3RoleId;
+                if( $v2RoleName )   {
+                    if( isset($this->rolesCache[$v2UserRole->id]) )   {
+                        $v3RoleId = $this->rolesCache[$v2UserRole->id];
                     }   else {
-                        $v3User->syncRoles( [$v3RoleId] );
+                        $v3RoleId = Role::getIdByName($v2RoleName);
+                        if( !$v3RoleId ) {
+                            throw new Exception(sprintf(" - Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email));
+                            continue;
+                        }
+                        $this->rolesCache[$v2UserRole->id] = $v3RoleId;
+                    }
+
+                    if( $v3RoleId ) {
+                        if( $this->v2pid() ) {
+                            if( !isset( $newProgramRoles[$v2UserRole->v3_program_id] )) {
+                                $newProgramRoles[$v2UserRole->v3_program_id] = [];
+                            }
+                            $newProgramRoles[$v2UserRole->v3_program_id][] = $v3RoleId;
+                        }   else {
+                            $v3User->assignRole( [$v3RoleId] );
+                        }
                     }
                 }
             }

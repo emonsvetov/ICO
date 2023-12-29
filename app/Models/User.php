@@ -82,6 +82,9 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'updated_at',
         'avatar',
         'join_reminder_at',
+        'v2_parent_program_id',
+        'v2_account_holder_id',
+        'hire_date',
         'sso_token',
         'external_id',
     ];
@@ -368,5 +371,10 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
             $query->where('model_has_roles.model_id', '=', $userId);
             $query->where('model_has_roles.program_id', '=', $programId);
         })->first();
+    }
+
+    public function v2_users()
+    {
+        return $this->hasMany(UserV2User::class);
     }
 }
