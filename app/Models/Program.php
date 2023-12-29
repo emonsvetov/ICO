@@ -218,7 +218,7 @@ class Program extends BaseModel
             $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
             return $programs;
         }
-        return self::whereIn('account_holder_id', $programAccountHolderIds)->offset($offset)->limit($limit)->get();
+        return self::whereIn('account_holder_id', $programAccountHolderIds)->offset((int)$offset)->limit((int)$limit)->get();
     }
 
     public function create_setup_fee_account()   {
@@ -228,7 +228,7 @@ class Program extends BaseModel
         $program_account_holder_id = $this->account_holder_id;
         $currency_id = Currency::getIdByType(config('global.default_currency'), true);
         $journal_event_type_id = JournalEventType::getIdByType( "Charge setup fee to program", true );
-        // 25 - Charge setup fee to program 
+        // 25 - Charge setup fee to program
         $journal_event_id = JournalEvent::insertGetId([
 			'journal_event_type_id' => $journal_event_type_id,
 			'created_at' => now()
@@ -469,7 +469,7 @@ class Program extends BaseModel
         $program = self::where('id', $id)->first();
         if (!$program->parent_id)
             return $id;
-        else 
+        else
             self::get_top_level_program_id($program->parent_id);
     }
 

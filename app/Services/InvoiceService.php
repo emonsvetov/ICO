@@ -132,7 +132,14 @@ class InvoiceService
 
 			//return $report_data;
 
-			$data = $report_data[$statement['info']->program_account_holder_id];
+            $data = (object)[];
+            foreach ($report_data['data'] as $key => $item) {
+                if ($item->account_holder_id == $statement['info']->program_account_holder_id) {
+                    $data = $item;
+                    break;
+                }
+            }
+
 			// dd($data->invoice_for_awards);
 			// pr($data->toArray());
 			// exit;
