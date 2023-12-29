@@ -5,6 +5,7 @@ namespace App\Services\reports;
 use App\Services\Report\ReportServiceAwardAudit;
 use App\Services\Report\ReportServiceSumBudget;
 use App\Services\Report\ReportServiceSumByAccountAndJournalEvent;
+use Illuminate\Support\Facades\DB;
 use stdClass;
 
 class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummaryService
@@ -22,9 +23,73 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         'amount_reclaimed' => 'Amount Reclaimed',
     ];
 
+    public function getData($filters)
+    {
+        $results = DB::table('programs')
+            ->join('events', 'programs.id', '=', 'events.program_id')
+            ->join('event_xml_data', 'event_xml_data.event_template_id', '=', 'events.id')
+            ->join('journal_events', 'journal_events.event_xml_data_id', '=', 'event_xml_data.id')
+            ->join('postings', 'postings.journal_event_id', '=', 'journal_events.id')
+            ->select('events.id', 'events.name', 'postings.posting_amount', 'postings.created_at')
+            ->distinct()
+            ->where('account_holder_id', $filters['account_holder_id'])
+            ->whereYear('postings.created_at', $filters['year']);
+
+        if (isset($filters['month'])) {
+            $results->whereMonth('postings.created_at', $filters['month']);
+        }
+
+        $results = $results
+            ->orderByDesc('postings.created_at')
+            ->orderBy('postings.posting_amount')
+            ->orderBy('events.id')
+            ->get();
+
+        $res = [];
+        foreach ($results as $val) {
+            if (!isset($res[$val->name])) {
+                $res[$val->name] = 0;
+            }
+            $res[$val->name] += $val->posting_amount;
+        }
+
+        return $res;
+    }
+
+    public static function sumValues($values) {
+        if ($values){
+            return round(array_sum($values), 2);
+        }else{
+            return 0;
+        }
+    }
+
    public function getTable(): array
     {
-        $dataFromParent = parent::getTable();
+        $yearMonthData = $this->getData([
+            'account_holder_id' => $this->params['program_account_holder_ids'],
+            'year' => (int)$this->params['year'] ?? date('Y'),
+            'month' => $this->params['month'] ?? 1,
+        ]);
+
+        $previousYearMonthData = $this->getData([
+            'account_holder_id' => $this->params['program_account_holder_ids'],
+            'year' => (int)$this->params['year']-1 ?? date('Y'),
+            'month' => $this->params['month'] ?? 1,
+        ]);
+
+        $previousYearData = $this->getData([
+            'account_holder_id' => $this->params['program_account_holder_ids'],
+            'year' => (int)$this->params['year']-1 ?? date('Y'),
+        ]);
+
+        $yearData = $this->getData([
+            'account_holder_id' => $this->params['program_account_holder_ids'],
+            'year' => (int)$this->params['year'] ?? date('Y'),
+        ]);
+
+       $events = array_merge($yearMonthData, $previousYearMonthData, $previousYearData, $yearData);
+
         $month = $this->params['month']?? 1;
         $year = (int)$this->params['year'] ?? date('Y');
         $monthName = date('F', mktime(0, 0, 0, $month, 1));
@@ -62,73 +127,55 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         ];
 
         $awardsData = [];
-        $annualData = 0;
-        $previousYearAnnualData = 0;
-        $monthData = 0;
-        $previousYearMonthData = 0;
-
-        $annualTotal = 0;
-        $previousYearAnnualTotal = 0;
-        $monthTotal = 0;
-        $previousYearMonthTotal = 0;
 
         foreach (self::OPTIONS_AWARDS as $key => $val) {
+            $previousMonthValue = 0;
+            $currentMonth = 0;
+            $previousYearValue = 0;
+            $currentYear = 0;
 
-            if (is_object($dataFromParent[$key])){
-                if (is_array($dataFromParent[$key]->annual)) {
-                    $annualData = 0;
-                }else{
-                    $annualData = $dataFromParent[$key]->annual;
-                }
-
-                if (is_array($dataFromParent[$key]->previous_year_annual)) {
-                    $previousYearAnnualData = 0;
-                }else{
-                    $previousYearAnnualData = $dataFromParent[$key]->previous_year_annual;
-                }
-
-                if (is_array($dataFromParent[$key]->month)) {
-                    $monthData = 0;
-                }else{
-                    $monthData = $dataFromParent[$key]->previous_year_annual;
-                }
-
-                if (is_array($dataFromParent[$key]->previous_year_month)) {
-                    $previousYearMonthData = 0;
-                }else{
-                    $previousYearMonthData = $dataFromParent[$key]->previous_year_month;
-                }
-
-            }else{
-                $annualData = $dataFromParent[$key]['annual'];
-                $previousYearAnnualData = $dataFromParent[$key]['previous_year_annual'];
-                $monthData = $dataFromParent[$key]['month'];
-                $previousYearMonthData =$dataFromParent[$key]['previous_year_month'];
+            if ($key == 'event_summary_points_awarded') {
+                $previousMonthValue = self::sumValues($previousYearMonthData);
+                $currentMonth = self::sumValues($yearMonthData);
+                $previousYearValue = self::sumValues($previousYearData);
+                $currentYear = self::sumValues($yearData);
             }
 
             $awardsData[] = [
                 'key' => $key,
                 'financial_summary' => $val,
-                strtolower($monthName . '_' . $year - 1) => (float) $previousYearMonthData,
-                strtolower($monthName . '_' . $year) => (float)$monthData,
-                $year - 1 => (float)$previousYearAnnualData,
-                $year . '' => (float)$annualData,
+                strtolower($monthName . '_' . $year - 1) => (float) $previousMonthValue,
+                strtolower($monthName . '_' . $year) => (float)$currentMonth,
+                $year - 1 => (float)$previousYearValue,
+                $year . '' => (float)$currentYear,
             ];
+        }
+        $eventSummary = [];
+        foreach ($awardsData as $key => $value) {
+            if ($value['key'] == 'event_summary_program_budget') {
+                $awardsTotal = [
+                    'key' => 'awards_total',
+                    'financial_summary' => 'Remaining Budget',
+                    strtolower($monthName . '_' . $year - 1) => $value[strtolower($monthName . '_' . $year - 1)],
+                    strtolower($monthName . '_' . $year) => $value[strtolower($monthName . '_' . $year)],
+                    $year - 1 => $value[$year - 1],
+                    $year . '' => $value[$year . ''],
+                ];
+            } else {
+                $awardsTotal[strtolower($monthName . '_' . $year - 1)] -= $value[strtolower($monthName . '_' . $year - 1)];
+                $awardsTotal[strtolower($monthName . '_' . $year)] -= $value[strtolower($monthName . '_' . $year)];
+                $awardsTotal[$year - 1] -= $value[$year - 1];
+                $awardsTotal[$year . ''] -= $value[$year . ''];
+            }
 
-            $annualTotal+=$annualData;
-            $previousYearAnnualTotal+=$previousYearAnnualData;
-            $monthTotal+=$monthData;
-            $previousYearMonthTotal+=$previousYearMonthData;
+            if ($value['key'] == 'event_summary_transaction_fees') {
+                $eventSummary[] = $value;
+            }
+            if ($value['key'] == 'event_summary_program_reclaimed') {
+                $eventSummary[] = $value;
+            }
         }
 
-        $awardsTotal = [
-            'key' => 'awards_total',
-            'financial_summary' => 'Remaining Budget',
-            strtolower($monthName . '_' . $year - 1) => $previousYearMonthTotal,
-            strtolower($monthName . '_' . $year) => $monthTotal,
-            $year - 1 => $previousYearAnnualTotal,
-            $year . '' => $annualTotal,
-        ];
 
         $annualTotal = 0;
         $previousYearAnnualTotal = 0;
@@ -136,21 +183,24 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         $previousYearMonthTotal = 0;
 
         $rewardData = [];
-        foreach ($dataFromParent['event_summary_program_reward'] as $key => $val) {
-
-            $previousYearMonthTotal+=$val->previous_year_month;
-            $monthTotal+=$val->month;
-            $previousYearAnnualTotal+=$val->previous_year_annual;
-            $annualTotal+=$val->annual;
-
+        foreach ($events as $key => $val) {
             $rewardData[] = [
                 'key' => $key,
-                'financial_summary' => $val->event_name,
-                strtolower($monthName . '_' . $year - 1) => round($val->previous_year_month,2),
-                strtolower($monthName . '_' . $year) => round($val->month,2),
-                $year - 1 => round($val->previous_year_annual,2),
-                $year . '' => round($val->annual,2),
+                'financial_summary' => $key,
+                strtolower($monthName . '_' . $year - 1) => isset($previousYearMonthData[$key]) ? $previousYearMonthData[$key] : 0,
+                strtolower($monthName . '_' . $year) => isset($yearMonthData[$key]) ? $yearMonthData[$key] : 0,
+                $year - 1 => isset($previousYearData[$key]) ? $previousYearData[$key] : 0,
+                $year . '' => isset($yearData[$key]) ? $yearData[$key] : 0,
             ];
+
+            $previousYearMonthTotal += isset($previousYearMonthData[$key]) ? $previousYearMonthData[$key] : 0;
+            $monthTotal += isset($yearMonthData[$key]) ? $yearMonthData[$key] : 0;
+            $previousYearAnnualTotal += isset($previousYearData[$key]) ? $previousYearData[$key] : 0;
+            $annualTotal += isset($yearData[$key]) ? $yearData[$key] : 0;
+        }
+
+        foreach ($eventSummary as $value) {
+            $rewardData[] = $value;
         }
 
         $rewardTotal = [
