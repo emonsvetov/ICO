@@ -348,7 +348,7 @@ class ReportHelper
             $query->whereIn('programs.account_holder_id', $programAccountHolderIds);
         }
 
-        $query->groupBy('accounts.account_holder_id');
+        $query->groupBy('programs.account_holder_id');
         $query->groupBy('account_types.name');
         $query->groupBy('journal_event_types.type');
         if ($months){
