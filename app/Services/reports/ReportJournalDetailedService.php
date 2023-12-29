@@ -11,15 +11,22 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 
 	protected function calc(): array
     {
+        $this->params [self::DATE_BEGIN] = date('Y-m-d 00:00:00', strtotime($this->params [self::DATE_BEGIN]));
+        $this->params [self::DATE_END] = date('Y-m-d 23:59:59', strtotime($this->params [self::DATE_BEGIN]));
 		// Setup the default params for the sub reports
 		$subreport_params = array ();
 		$subreport_params [self::DATE_BEGIN] = $this->params [self::DATE_BEGIN];
 		$subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
             // dd($this->params [self::PROGRAMS]);
-			$total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
-			$ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
+            $total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
+            if ($this->params[self::SQL_OFFSET] && $this->params[self::SQL_LIMIT]) {
+                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]);
+            } else {
+                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false);
+            }
             // dd($ranked_programs->pluck('account_holder_id'));
+
 			if ( $ranked_programs->isNotEmpty() ) {
 				$account_holder_ids = [];
 				$defaultValues = [
@@ -59,6 +66,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 						$this->table[$program->account_holder_id]->setAttribute($key, $value);
 					}
 				}
+
 				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
 				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
 				$subreport_params [self::PROGRAMS] = $account_holder_ids;
@@ -588,7 +596,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
     {
         $this->isExport = true;
         $data = $this->getTable();
-		
+
         $data['headers'] = $this->getCsvHeaders();
         return $data;
     }
