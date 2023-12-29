@@ -33,11 +33,8 @@ class MigrateUsersService extends MigrationService
     }
 
     public function migrate( $options = [] )  {
-        // pr($options['program']);
-        // exit;
         if( !empty( $options['program'] )) {
             $v2programs = array_filter($options['program'], function($p) { return ( is_numeric($p) && (int) $p > 0 ); });
-            // pr($programs);
             if( !$v2programs ) {
                 throw new Exception("Invalid program argument.");
             }
@@ -51,6 +48,7 @@ class MigrateUsersService extends MigrationService
                     $this->recursivelyMigrateUsersByV3Programs($v3Programs);
                 }
             }
+            // exit;
             // $v3Programs = Program::whereIn('v2_account_holder_id', $v2programs)->get()->toTree();
             // $program->descendantsAndSelf()->get()->toTree()
             /**
@@ -157,37 +155,54 @@ class MigrateUsersService extends MigrationService
 
         $this->printf("* Starting migration of v2user:%d with email:%s\n", $v2User->account_holder_id, $v2User->email);
 
-        $isNewUser = false;
         $createUser = true;
-        if( $v2User->v3_user_id ) {
-            $this->printf(" - The \"v3_user_id\" exists for user %s exists. \n -- Confirming.\n",  $v2User->email);
-            $v3User = User::find( $v2User->v3_user_id );
+        // if( $v2User->v3_user_id ) {
+        //     $this->printf(" - The \"v3_user_id\" exists for user %s exists. \n -- Confirming.\n",  $v2User->email);
+        //     $v3User = User::find( $v2User->v3_user_id );
 
-            if( $v3User ) {
-                $this->printf(" -- Confirmed - yes. Synching userV2user assoc now..\n");
-                $createUser = false;
-            }   else {
-                $this->printf("User not found with false positive v2User:v3_user_id. We'll need to create one later..\n");
-            }
-        }   else {
-            //We will try to find by 1. email 2. v2User:account_holder_id in user_v2_users table
-            $v3User = User::where('email', $v2User->email)->first();
-            if( $v3User ) {
-                $createUser = false;
-            }   else {
-                $userV2user = UserV2User::where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
-                if( $userV2user ) {
-                    $v3User = $userV2user->user;
-                    if($v3User) {
-                        $createUser = false;
-                    }
-                }
-            }
-        }
+        //     if( $v3User ) {
+        //         $this->printf(" -- Confirmed - yes. Synching userV2user assoc now..\n");
+        //         //Re-confirm with email id ??
+        //         if( $v2User->email != $v3User->email )  {
+        //             $this->printf(" -- \$v2User->email:%s does not match with \$v3User->email:%s. Not sure what to do? Update refernce column ids?\n", $v2User->email, $v3User->email);
+        //         }
+        //         $createUser = false;
+        //     }   else {
+        //         $this->printf("User not found with false positive v2User:v3_user_id. We'll need to create one later..\n");
+        //     }
+        // }   else {
+        //     //We will try to find by 1. email 2. v2User:account_holder_id in user_v2_users table
+        //     $v3User = User::where('email', $v2User->email)->first();
+        //     if( $v3User ) {
+        //         $createUser = false;
+        //     }   else {
+        //         $userV2user = UserV2User::where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
+        //         if( $userV2user ) {
+        //             $v3User = $userV2user->user;
+        //             if($v3User) {
+        //                 $createUser = false;
+        //             }
+        //         }
+        //     }
+        // }
         // pr($v3User->toArray());
         //Create user if applies
+        $v3User = User::where('email', $v2User->email)->first();
+        if( $v3User ) {
+            $createUser = false;
+            $userV2user = UserV2User::where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
+            if( !$userV2user ) {
+                $this->syncUserAssoc($v2User, $v3User);
+            }
+        }
+        if( $v3User )   {
+            if( $v2User->v3_user_id !=  $v3User->id ) {
+                $this->printf("v3_user_id mismatch found. v3_user_id id stored in v2 db is %d while v3 user id is %d. Fixing now..\n", $v2User->v3_user_id, $v3User->id);
+                $this->v2db->statement(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
+            }
+        }
         if( $createUser ) {
-            $this->printf("Going to create new user with email:%s\n", $v2User->email);
+            $this->printf("Creating new user with email:%s\n", $v2User->email);
             $v3User = $this->createUser($v2User);
             $this->syncUserAssoc($v2User, $v3User);
             $this->v2db->statement(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
@@ -201,8 +216,9 @@ class MigrateUsersService extends MigrationService
 
             $this->syncUserAssoc($v2User, $v3User);
 
-            if( !$v2User->v3_user_id ) {
-                $this->addV2SQL(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
+            if( !$v2User->v3_user_id || ($v2User->v3_user_id != $v3User->id) ) {
+                // $this->addV2SQL(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id));
+                $this->v2db->unprepared( $this->v2db->raw(sprintf("UPDATE `users` SET `v3_user_id`=%d WHERE account_holder_id=%d;", $v3User->id, $v2User->account_holder_id)) );
             }
         }
 

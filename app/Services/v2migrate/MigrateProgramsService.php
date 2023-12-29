@@ -40,7 +40,7 @@ class MigrateProgramsService extends MigrationService
 
     public function migrate( $args = [] ) {
 
-        $this->fixAccountHolderIds();
+        // $this->fixAccountHolderIds();
 
         global $v2ProgramUsersTotalCount;
         $v2ProgramUsersTotalCount = [];

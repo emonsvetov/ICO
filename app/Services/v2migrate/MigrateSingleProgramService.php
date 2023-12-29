@@ -38,6 +38,10 @@ class MigrateSingleProgramService extends MigrateProgramsService
             return;
         }
 
+        $this->printf("Migrating program users\n");
+        $this->migrateProgramUsers( $v2Program );
+        exit;
+
         $this->v2Program = $v2Program;
 
         //Check for existence
@@ -438,38 +442,42 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
-    public function migrateProgramUsers($v2Program, $v3Program) {
-        // if( $v2Program->account_holder_id !== 719006) return;
-        global $v2ProgramUsersTotalCount;
+    public function migrateProgramUsers($v2Program, $v3Program = null) {
 
-        if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
-        // pr($v2Program);
-        // exit;
         $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
-        $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+        $migrateUserService->migrate( ['program' => [$v2Program->account_holder_id]] );
 
-        // pr(count($v2users));
-        // exit;
-        // pr($v2Program->account_holder_id);
-        // pr(collect($v2users)->pluck('account_holder_id'));
-        // exit;
-        $migrateUserService->setv2pid($v2Program->account_holder_id);
-        $migrateUserService->setv3pid($v3Program->id);
-        foreach( $v2users as $v2user)   {
-            array_push($v2ProgramUsersTotalCount, $v2user->account_holder_id);
-            // if( $v2user->account_holder_id != 674321 )
-            // {
-            //     continue;
-            // }
-            // pr($v2user);
-            // continue;
-            // if( $v2user->account_holder_id == 719107)   {
-                // pr($v2user->account_holder_id);
-                // exit;
-                // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
-                // exit;
-            // }
-        }
+        // // if( $v2Program->account_holder_id !== 719006) return;
+        // global $v2ProgramUsersTotalCount;
+
+        // if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
+        // // pr($v2Program);
+        // // exit;
+        // $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+        // $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+
+        // // pr(count($v2users));
+        // // exit;
+        // // pr($v2Program->account_holder_id);
+        // // pr(collect($v2users)->pluck('account_holder_id'));
+        // // exit;
+        // $migrateUserService->setv2pid($v2Program->account_holder_id);
+        // $migrateUserService->setv3pid($v3Program->id);
+        // foreach( $v2users as $v2user)   {
+        //     array_push($v2ProgramUsersTotalCount, $v2user->account_holder_id);
+        //     // if( $v2user->account_holder_id != 674321 )
+        //     // {
+        //     //     continue;
+        //     // }
+        //     // pr($v2user);
+        //     // continue;
+        //     // if( $v2user->account_holder_id == 719107)   {
+        //         // pr($v2user->account_holder_id);
+        //         // exit;
+        //         // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
+        //         // exit;
+        //     // }
+        // }
     }
 
     // public function migrateProgramUsersOthers($v2Program, $v3Program) {
