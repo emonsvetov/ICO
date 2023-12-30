@@ -13,7 +13,7 @@ class MigrationService
     public bool $overwrite = false;
     public int $importedCount = 0;
     public array $imported = [];
-    public bool $isPrintSql = true;
+    public bool $isPrintSql = false;
     public string $v2Sql = '';
     public string $v3Sql = '';
     public bool $debug = true;

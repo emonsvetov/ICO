@@ -28,6 +28,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
     public function addToImportMap( $account_holder_id, $key, mixed $value)    {
         $this->importMap['program'][$account_holder_id][$key] = $value;
     }
+
     public function migrateSingleProgram($v3_organization_id, $v2Program, $v3_parent_id = null)
     {
         // pr($v2Program);
@@ -42,7 +43,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
         //Check for existence
 
-        try{
+        try {
 
             $create = true;
 
@@ -61,7 +62,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                         $v3Program->save();
                     }
                 }
-            }   else {
+            }  else {
                 //find by v2 id
                 $v3Program = Program::where('v2_account_holder_id', $v2Program->account_holder_id )->first();
                 if( $v3Program )   {
@@ -97,8 +98,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             $this->v3Program = $v3Program;
 
-            //If it is a parent program then we will try to pull associated domains
-
+            // If it is a parent program then we will try to pull associated domains
             if( !$v3_parent_id ) { //Pull and Assign Domains if it is a root program(?)
                 $this->printf("Attempting to migrate domains for v2 program: \"%s\".\n", $v2Program->name);
                 $this->migrateProgramDomains($v3_organization_id, $v2Program, $v3Program);
@@ -112,17 +112,12 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->migrateProgramAccounts( $v3Program, $v2Program );
 
             $this->syncProgramMerchantRelations($v2Program, $v3Program);
-            exit;
 
             // Import program users with roles
-            // $this->printf("Migrating program users\n");
-            // $this->migrateProgramUsers($v2Program, $v3Program);
-            // exit;
-
-            // exit;
+            $this->printf("Migrating program users\n");
+            $this->migrateProgramUsers($v2Program);
 
             $this->executeV2SQL(); //run for any missing run!
-            // exit;
 
             // Pull Invoices
             // $this->migrateProgramInvoices($v2Program, $v3Program);
@@ -439,38 +434,42 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
-    public function migrateProgramUsers($v2Program, $v3Program) {
-        // if( $v2Program->account_holder_id !== 719006) return;
-        global $v2ProgramUsersTotalCount;
+    public function migrateProgramUsers($v2Program, $v3Program = null) {
 
-        if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
-        // pr($v2Program);
-        // exit;
         $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
-        $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+        $migrateUserService->migrate( ['program' => [$v2Program->account_holder_id]] );
 
-        // pr(count($v2users));
-        // exit;
-        // pr($v2Program->account_holder_id);
-        // pr(collect($v2users)->pluck('account_holder_id'));
-        // exit;
-        $migrateUserService->setv2pid($v2Program->account_holder_id);
-        $migrateUserService->setv3pid($v3Program->id);
-        foreach( $v2users as $v2user)   {
-            array_push($v2ProgramUsersTotalCount, $v2user->account_holder_id);
-            // if( $v2user->account_holder_id != 674321 )
-            // {
-            //     continue;
-            // }
-            // pr($v2user);
-            // continue;
-            // if( $v2user->account_holder_id == 719107)   {
-                // pr($v2user->account_holder_id);
-                // exit;
-                // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
-                // exit;
-            // }
-        }
+        // // if( $v2Program->account_holder_id !== 719006) return;
+        // global $v2ProgramUsersTotalCount;
+
+        // if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
+        // // pr($v2Program);
+        // // exit;
+        // $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+        // $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+
+        // // pr(count($v2users));
+        // // exit;
+        // // pr($v2Program->account_holder_id);
+        // // pr(collect($v2users)->pluck('account_holder_id'));
+        // // exit;
+        // $migrateUserService->setv2pid($v2Program->account_holder_id);
+        // $migrateUserService->setv3pid($v3Program->id);
+        // foreach( $v2users as $v2user)   {
+        //     array_push($v2ProgramUsersTotalCount, $v2user->account_holder_id);
+        //     // if( $v2user->account_holder_id != 674321 )
+        //     // {
+        //     //     continue;
+        //     // }
+        //     // pr($v2user);
+        //     // continue;
+        //     // if( $v2user->account_holder_id == 719107)   {
+        //         // pr($v2user->account_holder_id);
+        //         // exit;
+        //         // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
+        //         // exit;
+        //     // }
+        // }
     }
 
     // public function migrateProgramUsersOthers($v2Program, $v3Program) {
