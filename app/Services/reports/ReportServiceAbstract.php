@@ -14,6 +14,9 @@ abstract class ReportServiceAbstract
     const MONTH = 'month';
     const CODES = 'codes';
     const INVENTORY_TYPE = 'inventoryType';
+    const ORDER_STATUS = 'orderStatus';
+    const PURCHASE_BY_V2 = 'purchaseByV2';
+    const KEYWORD = 'keyword';
     const DATE_BEGIN = 'from';
     const DATE_END = "to";
     const SQL_LIMIT = 'limit';
@@ -125,11 +128,11 @@ abstract class ReportServiceAbstract
             $this->params[self::ACCOUNT_TYPES] = null;
         }
         // $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
-        //     is_array ( $params[self::ACCOUNT_TYPES] ) ? 
+        //     is_array ( $params[self::ACCOUNT_TYPES] ) ?
         //     foreach( $params[self::ACCOUNT_TYPES] as $param) {
         //         array_push($temp, $param[0]);
         //     }
-        //     : 
+        //     :
         //     array (
         //         $params[self::ACCOUNT_TYPES]
         //     )
@@ -151,6 +154,9 @@ abstract class ReportServiceAbstract
         // ) : null;
 
         $this->params[self::INVENTORY_TYPE] = $params[self::INVENTORY_TYPE] ?? null;
+        $this->params[self::KEYWORD] = $params[self::KEYWORD] ?? null;
+        $this->params[self::ORDER_STATUS] = $params[self::ORDER_STATUS] ?? null;
+        $this->params[self::PURCHASE_BY_V2] = $params[self::PURCHASE_BY_V2] ?? null;
         $this->reportHelper = new ReportHelper() ?? null;
     }
 
@@ -400,4 +406,8 @@ abstract class ReportServiceAbstract
 	protected function getWhereFilters() {
 		return array ();
 	}
+
+    public function amountFormat($value){
+        return number_format((float)$value, 2, '.', '');
+    }
 }

@@ -28,6 +28,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
     public function addToImportMap( $account_holder_id, $key, mixed $value)    {
         $this->importMap['program'][$account_holder_id][$key] = $value;
     }
+
     public function migrateSingleProgram($v3_organization_id, $v2Program, $v3_parent_id = null)
     {
         // pr($v2Program);
@@ -42,26 +43,31 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
         //Check for existence
 
-        try{
+        try {
 
             $create = true;
 
             if( $v2Program->v3_program_id )    {
-                $this->printf("v3_program_id not null in v2 program");
+                $this->printf("v2Program->v3_program_id is not null in v2 program. Let us confirm.\n");
                 $v3Program = Program::find( $v2Program->v3_program_id );
                 // pr($existing->toArray());
                 if( $v3Program )   {
                     $this->printf(" - Program \"%d\" exists for v2:%d\n", $v3Program->id, $v2Program->account_holder_id);
                     $create = false;
                     //Update??
-                    // $this->importMap['program'][$v2Program->account_holder_id]['program'][$v3Program->id]['exists'] = 1;
+
+                    //Also lets us fix the v2_account_holder mismatch if any
+                    if($v3Program->v2_account_holder_id !== $v2Program->account_holder_id)    {
+                        $v3Program->v2_account_holder_id = $v2Program->account_holder_id;
+                        $v3Program->save();
+                    }
                 }
-            }   else {
+            }  else {
                 //find by v2 id
                 $v3Program = Program::where('v2_account_holder_id', $v2Program->account_holder_id )->first();
                 if( $v3Program )   {
-                    $this->printf(" - v3 Program \"%d\" exists for v2: \"%d\", found via v2_journal_event_id search. Updating null v3_program_id value.\n", $v3Program->id, $v2Program->v3_program_id, $v2Program->account_holder_id);
-                    $this->addV2SQL(sprintf("UPDATE `programs` SET `v3_program_id`=%d WHERE `id`=%d", $v3Program->id, $v2Program->account_holder_id));
+                    $this->printf(" - v3 Program \"%d\" exists for v2: \"%d\", found via v2_account_holder_id search. Updating null v3_program_id value.\n", $v3Program->id, $v2Program->v3_program_id, $v2Program->account_holder_id);
+                    $this->v2db->statement("UPDATE `programs` SET `v3_program_id`=%d WHERE `id`=%d", $v3Program->id, $v2Program->account_holder_id);
                     $create = false;
                     // $this->importMap['program'][$v2Program->account_holder_id]['program'][$v3Program->id]['exists'] = 1;
                     //Update??
@@ -92,8 +98,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             $this->v3Program = $v3Program;
 
-            //If it is a parent program then we will try to pull associated domains
-
+            // If it is a parent program then we will try to pull associated domains
             if( !$v3_parent_id ) { //Pull and Assign Domains if it is a root program(?)
                 $this->printf("Attempting to migrate domains for v2 program: \"%s\".\n", $v2Program->name);
                 $this->migrateProgramDomains($v3_organization_id, $v2Program, $v3Program);
@@ -104,17 +109,15 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // pr($v2Program->account_holder_id);
             //Migration Accounts
             $this->printf("Migrating program accounts\n");
-            $this->migrateProgramAccounts( $v3Program );
+            $this->migrateProgramAccounts( $v3Program, $v2Program );
+
+            $this->syncProgramMerchantRelations($v2Program, $v3Program);
 
             // Import program users with roles
-            // $this->printf("Migrating program users\n");
-            // $this->migrateProgramUsers($v2Program, $v3Program);
-            // exit;
-
-            // exit;
+            $this->printf("Migrating program users\n");
+            $this->migrateProgramUsers($v2Program);
 
             $this->executeV2SQL(); //run for any missing run!
-            // exit;
 
             // Pull Invoices
             // $this->migrateProgramInvoices($v2Program, $v3Program);
@@ -122,8 +125,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->printf("Migrating program events\n");
             $this->migrateProgramEvents($v2Program, $v3Program);
 
-            // $this->syncProgramMerchantRelations($v2Program, $v3Program);
-            // exit;
             //Migration Accounts
             // ## $this->migrateProgramJournalEvents( $v3Program, $v2Program); //Deprecated!
             // $this->executeV2SQL(); //run for any missing run!
@@ -433,38 +434,42 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
-    public function migrateProgramUsers($v2Program, $v3Program) {
-        // if( $v2Program->account_holder_id !== 719006) return;
-        global $v2ProgramUsersTotalCount;
+    public function migrateProgramUsers($v2Program, $v3Program = null) {
 
-        if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
-        // pr($v2Program);
-        // exit;
         $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
-        $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+        $migrateUserService->migrate( ['program' => [$v2Program->account_holder_id]] );
 
-        // pr(count($v2users));
-        // exit;
-        // pr($v2Program->account_holder_id);
-        // pr(collect($v2users)->pluck('account_holder_id'));
-        // exit;
-        $migrateUserService->setv2pid($v2Program->account_holder_id);
-        $migrateUserService->setv3pid($v3Program->id);
-        foreach( $v2users as $v2user)   {
-            array_push($v2ProgramUsersTotalCount, $v2user->account_holder_id);
-            // if( $v2user->account_holder_id != 674321 )
-            // {
-            //     continue;
-            // }
-            // pr($v2user);
-            // continue;
-            // if( $v2user->account_holder_id == 719107)   {
-                // pr($v2user->account_holder_id);
-                // exit;
-                // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
-                // exit;
-            // }
-        }
+        // // if( $v2Program->account_holder_id !== 719006) return;
+        // global $v2ProgramUsersTotalCount;
+
+        // if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
+        // // pr($v2Program);
+        // // exit;
+        // $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
+        // $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
+
+        // // pr(count($v2users));
+        // // exit;
+        // // pr($v2Program->account_holder_id);
+        // // pr(collect($v2users)->pluck('account_holder_id'));
+        // // exit;
+        // $migrateUserService->setv2pid($v2Program->account_holder_id);
+        // $migrateUserService->setv3pid($v3Program->id);
+        // foreach( $v2users as $v2user)   {
+        //     array_push($v2ProgramUsersTotalCount, $v2user->account_holder_id);
+        //     // if( $v2user->account_holder_id != 674321 )
+        //     // {
+        //     //     continue;
+        //     // }
+        //     // pr($v2user);
+        //     // continue;
+        //     // if( $v2user->account_holder_id == 719107)   {
+        //         // pr($v2user->account_holder_id);
+        //         // exit;
+        //         // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
+        //         // exit;
+        //     // }
+        // }
     }
 
     // public function migrateProgramUsersOthers($v2Program, $v3Program) {
@@ -686,7 +691,30 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
-    public function migrateProgramAccounts($v3Program) {
+    public function migrateProgramAccounts(&$v3Program, $v2Program) {
+
+        //Before we can migrate account let's fix the incorrect account_holder_holder if found in Program
+
+        if( $v2Program->account_holder_id !== $v3Program->v2_account_holder_id )    {
+            $v3Program->v2_account_holder_id = $v2Program->account_holder_id;
+            $v3Program->save();
+        }
+
+        if( $v2Program->v3_program_id !== $v3Program->id )    {
+            $this->v2db->statement("UPDATE `programs` SET `v3_program_id`=%d WHERE `account_holder_id`=%d", $v3Program->id, $v2Program->account_holder_id);
+        }
+
+        //Find and Confirm stored account holder id in v2 db
+        //I needed to do this as I found some very large account holder ids in v3 which did not exist in the v2 database. Probably they were created in some old version of v3 db then AUTO INCREMENT key was reset??
+        $this->printf("Find and confirm model's stored account_holder_id with in v3 db.\n");
+        $v3AccountHolder = \App\Models\AccountHolder::where('id', $v3Program->account_holder_id )->first();
+        if( !$v3AccountHolder ) {
+            $this->printf("v3Program->account_holder_id: %d not found in v3 table.\n", $v3Program->account_holder_id);
+            $this->printf("Going to create new v3 account_holder_id for model and then update: %s:%d.\n", 'Program', $v3Program->id);
+            $v3Program->account_holder_id = \App\Models\AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
+            $v3Program->save();
+        }
+
         (new \App\Services\v2migrate\MigrateAccountsService)->migrateByModel($v3Program);
         $this->executeV2SQL(); //run for any missing run!
     }

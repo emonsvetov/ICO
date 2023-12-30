@@ -288,6 +288,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store']
     )->middleware('can:add,App\ProgramMediaType,organization,program');
 
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type-iframe',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type-url-delete',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
+    Route::put(
+        '/v1/organization/{organization}/program/{program}/digital-media-type',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
 
@@ -347,6 +362,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
     Route::get('/v1/organization/{organization}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
     Route::get('/v1/program/{program}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
+
+    Route::get('/v1/organization/{organization}/report/order/{order}',[App\Http\Controllers\API\ReportOrderController::class, 'show'])->middleware('can:viewAny,App\Report');
 
     //MerchantGiftcodes
 

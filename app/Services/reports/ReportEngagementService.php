@@ -31,7 +31,7 @@ class ReportEngagementService extends ReportServiceAbstract
     // protected function setWhereFilters(Builder $query): Builder
     // {
     //     $query->whereIn('program_id', $this->params[self::PROGRAMS]);
-        
+
     //     return $query;
     // }
 
@@ -54,8 +54,8 @@ class ReportEngagementService extends ReportServiceAbstract
         $query = DB::table('program_user');
         $query->join('programs', 'programs.id', '=', 'program_user.program_id');
         $query->join('users', 'users.id', '=', 'program_user.user_id');
-       
-        $query->whereBetween('program_user.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+
+        $query->whereBetween('program_user.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->selectRaw("
         program_user.created_at as created,
         programs.name as program,

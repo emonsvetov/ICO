@@ -14,8 +14,9 @@ class ReportInventoryService extends ReportServiceAbstract
         $table = [];
 
         // Parse and format the date
-        $date = Carbon::parse($this->params[self::DATE_FROM] ?: now());
+        $date = Carbon::parse($this->params[self::DATE_BEGIN] ?: now());
         $endDate = $date->format('Y-m-d');
+        // @todo: What is this? :)
         $this->params[self::DATE_FROM] = $endDate;
 
         // Retrieve merchants and SKU values

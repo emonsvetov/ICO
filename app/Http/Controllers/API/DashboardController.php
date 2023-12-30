@@ -44,12 +44,12 @@ class DashboardController extends Controller
 
         $tmp = [];
         $tmp['title'] = "Today's Awards";
-        $tmp['today']['value'] = (float)$awardsToday->awards_value * $program->factor_valuation;
-        $tmp['today']['amount'] = (float)$awardsToday->awards_value;
-        $tmp['mtd']['value'] = (float)$awardsToday->mtd_awards_value * $program->factor_valuation;
-        $tmp['mtd']['amount'] = (float)$awardsToday->mtd_awards_value;
-        $tmp['ytd']['value'] = (float)$awardsToday->ytd_awards_value * $program->factor_valuation;
-        $tmp['ytd']['amount'] = (float)$awardsToday->ytd_awards_value;
+        $tmp['today']['value'] = $awardsToday ? (float)$awardsToday->awards_value * $program->factor_valuation : 0;
+        $tmp['today']['amount'] = $awardsToday ? (float)$awardsToday->awards_value : 0;
+        $tmp['mtd']['value'] = $awardsToday ? (float)$awardsToday->mtd_awards_value * $program->factor_valuation : 0;
+        $tmp['mtd']['amount'] = $awardsToday ? (float)$awardsToday->mtd_awards_value : 0;
+        $tmp['ytd']['value'] = $awardsToday ? (float)$awardsToday->ytd_awards_value * $program->factor_valuation : 0;
+        $tmp['ytd']['amount'] = $awardsToday ? (float)$awardsToday->ytd_awards_value : 0;
         $data['awardsToday'] = (object)$tmp;
 
         // DB::enableQueryLog();

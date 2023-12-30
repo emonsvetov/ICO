@@ -38,7 +38,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->join('roles', 'model_has_roles.role_id', '=', 'roles.id');
                 $query->where('roles.name', 'LIKE', config('roles.participant'));
                 $query->where('model_has_roles.program_id', '=', DB::raw('programs.id'));
-                $query->whereBetween('users.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('users.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             }]);
 
             $query->addSelect(['count_active_user' => function ($query) {
@@ -58,7 +58,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->where('roles.name', 'LIKE', config('roles.participant'));
                 $query->where('statuses.status', 'LIKE', config('global.user_status_active'));
                 $query->where('model_has_roles.program_id', '=', DB::raw('programs.id'));
-                $query->whereBetween('users.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('users.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             }]);
 
             $query->addSelect(['count_email' => function ($query) {
@@ -76,7 +76,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->join('roles', 'model_has_roles.role_id', '=', 'roles.id');
                 $query->where('roles.name', 'LIKE', config('roles.participant'));
                 $query->where('model_has_roles.program_id', '=', DB::raw('programs.id'));
-                $query->whereBetween('users.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('users.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             }]);
 
             $query->addSelect(['count_award' => function ($query) {
@@ -111,7 +111,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                         ->orWhere('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT);
                 });
                 $query->where('postings.is_credit', '=', 1);
-                $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
                 $query->where('p.id', '=', DB::raw('programs.id'));
             }]);
 
@@ -147,7 +147,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                         ->orWhere('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT);
                 });
                 $query->where('postings.is_credit', '=', 1);
-                $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
                 $query->where('p.id', '=', DB::raw('programs.id'));
             }]);
 
@@ -183,7 +183,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                         ->orWhere('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT);
                 });
                 $query->where('postings.is_credit', '=', 1);
-                $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
                 $query->where('p.id', '=', DB::raw('programs.id'));
             }]);
 
@@ -194,7 +194,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
             $subQuery1->where('accounts.account_holder_id', '=', DB::raw('programs.account_holder_id'));
             $subQuery1->where('account_types.name', '=', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
             $subQuery1->where('postings.is_credit', '=', 1);
-            $subQuery1->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+            $subQuery1->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
 
             $subQuery2 = DB::table('accounts');
             $subQuery2->select(DB::raw("sum(postings.posting_amount * postings.qty)"));
@@ -203,7 +203,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
             $subQuery2->where('accounts.account_holder_id', '=', DB::raw('programs.account_holder_id'));
             $subQuery2->where('account_types.name', '=', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
             $subQuery2->where('postings.is_credit', '=', 0);
-            $subQuery2->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+            $subQuery2->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             $query->addSelect([
                 DB::raw("
                 (CASE

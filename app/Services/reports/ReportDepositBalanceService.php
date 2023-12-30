@@ -144,7 +144,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
         "
         );
 
-        $query->whereBetween('posts.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        $query->whereBetween('posts.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->whereIn('a.account_holder_id', $this->params[self::PROGRAMS]);
 
         return $query->get();
@@ -202,7 +202,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
 
         $query->whereIn('a.account_holder_id', $this->params[self::PROGRAMS]);
         $query->where('at.name', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
-        $query->where('p.created_at', '<=', $this->params[self::DATE_FROM]);
+        $query->where('p.created_at', '<=', $this->params[self::DATE_BEGIN]);
 
         $query->groupBy(['a.account_holder_id', 'p.is_credit']);
 

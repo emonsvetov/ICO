@@ -44,6 +44,9 @@ class ReportFactory
         $month = $params['month'] ?? null;
         $codes = $params['codes'] ?? null;
         $inventoryType = $params['inventoryType'] ?? null;
+        $keyword = $params['keyword'] ?? null;
+        $orderStatus = $params['orderStatus'] ?? null;
+        $purchaseByV2 = $params['purchaseByV2'] ?? null;
         if ($paramPage && $paramLimit) {
             $paginate = true;
             $offset = ($paramPage - 1) * $paramLimit;
@@ -73,6 +76,9 @@ class ReportFactory
             'month' => $month,
             'codes' => $codes,
             'inventoryType' => $inventoryType,
+            'keyword' => $keyword,
+            'orderStatus' => $orderStatus,
+            'purchaseByV2' => $purchaseByV2,
             'programs'=> $programs
         ];
 
@@ -82,7 +88,7 @@ class ReportFactory
 
             $finalParams[CONSTANT::ACCOUNT_TYPES] = $params[CONSTANT::ACCOUNT_TYPES];
         }
- 
+
         if( !empty( $params[CONSTANT::JOURNAL_EVENT_TYPES] )) {
             $finalParams[CONSTANT::JOURNAL_EVENT_TYPES] = $params[CONSTANT::JOURNAL_EVENT_TYPES];
         }
