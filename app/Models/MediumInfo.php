@@ -92,8 +92,6 @@ class MediumInfo extends BaseModel
             $query->where('medium_info.virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
         }
 
-        $query->where('medium_info.medium_info_is_test', '=', 0);
-
         // Date conditions
         if (!empty($endDate)) {
             $query->where('purchase_date', '<=', $endDate)
@@ -162,8 +160,6 @@ class MediumInfo extends BaseModel
         if ($inventoryType) {
             $totalCost->where('virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
         }
-
-        $totalCost->where('medium_info.medium_info_is_test', '=', 0);
 
         $totalCost = $totalCost->get();
 
