@@ -245,6 +245,13 @@ Running this program will fetch the nested tree of the given program. The import
  - Events
  - ProgramAccounts
 
+** Migrating Users by Program
+
+By Single Program
+`php artisan v2migrate:users --program=288308`
+By Multiple Programs
+`php artisan v2migrate:users --program=288308,601858`
+
 ** Migrating giftcodes
 
 `php artisan v2migrate:giftcodes`
