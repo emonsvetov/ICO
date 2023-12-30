@@ -65,6 +65,7 @@ class ReportOrdersService extends ReportServiceAbstract
             $query->where(function ($q) use ($search) {
                 $q->where('code', 'LIKE', "%$search%");
                 $q->orWhereRaw("CONCAT(users.first_name, ' ', users.last_name) LIKE ?", ["%" . $search . "%"]);
+                $q->orWhere('sku_value', '=', $search);
                 foreach ([
                     'pin',
                     'redemption_url',
