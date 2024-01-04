@@ -121,7 +121,7 @@ class ReportInventoryService extends ReportServiceAbstract
      * @param $table
      * @param $skuValues
      */
-    public function clearZeroColumns(&$table, &$skuValues)
+    public function clearZeroColumns(&$table, $skuValues)
     {
         foreach ($skuValues as $skuValue) {
             $formattedSkuValue = number_format($skuValue, 2, '.', '');
@@ -147,8 +147,8 @@ class ReportInventoryService extends ReportServiceAbstract
                           'optimal_values',
                           'percent_remaining',
                          ] as $item) {
-                    foreach ($table as &$merchant) {
-                        unset($merchant->{$item}[$formattedSkuValue]);
+                    foreach ($table as $key => $merchant) {
+                        unset($table[$key]->{$item}[$formattedSkuValue]);
                         unset($skuValue);
                     }
                 }
