@@ -117,6 +117,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
         });
         $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
+        $query->whereIn('events.program_id', $this->params[self::PROGRAM_IDS]);
         if (isset($this->params[self::AWARD_LEVEL_NAMES]) && count($this->params[self::AWARD_LEVEL_NAMES]) > 0)
         {
             $query->whereIn('event_xml_data.award_level_name', $this->params[self::AWARD_LEVEL_NAMES]);
