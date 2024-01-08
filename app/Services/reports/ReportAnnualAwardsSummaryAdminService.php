@@ -64,7 +64,7 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         }
     }
 
-   public function getTable(): array
+    public function getTable(): array
     {
         $yearMonthData = $this->getData([
             'account_holder_id' => $this->params['program_account_holder_ids'],
@@ -88,14 +88,14 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
             'year' => (int)$this->params['year'] ?? date('Y'),
         ]);
 
-       $events = array_merge($yearMonthData, $previousYearMonthData, $previousYearData, $yearData);
+        $events = array_merge($yearMonthData, $previousYearMonthData, $previousYearData, $yearData);
 
         $month = $this->params['month']?? 1;
         $year = (int)$this->params['year'] ?? date('Y');
         $monthName = date('F', mktime(0, 0, 0, $month, 1));
         $columans = [
             [
-                'title' => '',
+                'title' => ' ',
                 'dataIndex' => 'financial_summary',
                 'width' => 300,
                 'key' => 'financial_summary',
@@ -233,4 +233,43 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         return [];
     }
 
+    protected function getReportForCSV(): array
+    {
+        $data = $this->getTable();
+        $csvData = [];
+        $csvData = array_merge($csvData, $this->processSection($data['awards']));
+        $csvData[] = [];
+        $csvData = array_merge($csvData, $this->processSection($data['rewards']));
+
+        return $csvData;
+    }
+
+    private function processSection(array $sectionData): array
+    {
+        $csvData = [];
+        $csvData[] = [0 => $sectionData['title']];
+
+        $csvHeaders = array_map(function ($column) {
+            return $column['title'];
+        }, $sectionData['columans']);
+
+        $csvData[] = $csvHeaders;
+
+        foreach ($sectionData['data'] as $value) {
+            $row = array_map(function ($col) use ($value) {
+                return $value[$col['dataIndex']];
+            }, $sectionData['columans']);
+
+            $csvData[] = $row;
+        }
+
+        $total = $sectionData['total'];
+        $row = array_map(function ($col) use ($total) {
+            return $total[$col['dataIndex']];
+        }, $sectionData['columans']);
+
+        $csvData[] = $row;
+
+        return $csvData;
+    }
 }
