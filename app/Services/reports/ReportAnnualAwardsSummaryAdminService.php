@@ -56,15 +56,16 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         return $res;
     }
 
-    public static function sumValues($values) {
-        if ($values){
+    public static function sumValues($values)
+    {
+        if ($values) {
             return round(array_sum($values), 2);
-        }else{
+        } else {
             return 0;
         }
     }
 
-   public function getTable(): array
+    public function getTable(): array
     {
         $yearMonthData = $this->getData([
             'account_holder_id' => $this->params['program_account_holder_ids'],
@@ -74,13 +75,13 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
 
         $previousYearMonthData = $this->getData([
             'account_holder_id' => $this->params['program_account_holder_ids'],
-            'year' => (int)$this->params['year']-1 ?? date('Y'),
+            'year' => (int)$this->params['year'] - 1 ?? date('Y'),
             'month' => $this->params['month'] ?? 1,
         ]);
 
         $previousYearData = $this->getData([
             'account_holder_id' => $this->params['program_account_holder_ids'],
-            'year' => (int)$this->params['year']-1 ?? date('Y'),
+            'year' => (int)$this->params['year'] - 1 ?? date('Y'),
         ]);
 
         $yearData = $this->getData([
@@ -88,23 +89,23 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
             'year' => (int)$this->params['year'] ?? date('Y'),
         ]);
 
-       $events = array_merge($yearMonthData, $previousYearMonthData, $previousYearData, $yearData);
+        $events = array_merge($yearMonthData, $previousYearMonthData, $previousYearData, $yearData);
 
-        $month = $this->params['month']?? 1;
+        $month = $this->params['month'] ?? 1;
         $year = (int)$this->params['year'] ?? date('Y');
         $monthName = date('F', mktime(0, 0, 0, $month, 1));
         $columans = [
             [
-                'title' => '',
+                'title' => ' ',
                 'dataIndex' => 'financial_summary',
                 'width' => 300,
                 'key' => 'financial_summary',
             ],
             [
-                'title' => $monthName . ' ' . $year-1,
-                'dataIndex' => strtolower($monthName . '_' . $year-1),
+                'title' => $monthName . ' ' . $year - 1,
+                'dataIndex' => strtolower($monthName . '_' . $year - 1),
                 'width' => 400,
-                'key' => strtolower($monthName . '_' . $year-1),
+                'key' => strtolower($monthName . '_' . $year - 1),
             ],
             [
                 'title' => $monthName . ' ' . $year,
@@ -113,10 +114,10 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
                 'key' => strtolower($monthName . '_' . $year),
             ],
             [
-                'title' => $year-1,
-                'dataIndex' => $year-1,
+                'title' => $year - 1,
+                'dataIndex' => $year - 1,
                 'width' => 400,
-                'key' => $year-1,
+                'key' => $year - 1,
             ],
             [
                 'title' => $year,
@@ -144,7 +145,7 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
             $awardsData[] = [
                 'key' => $key,
                 'financial_summary' => $val,
-                strtolower($monthName . '_' . $year - 1) => (float) $previousMonthValue,
+                strtolower($monthName . '_' . $year - 1) => (float)$previousMonthValue,
                 strtolower($monthName . '_' . $year) => (float)$currentMonth,
                 $year - 1 => (float)$previousYearValue,
                 $year . '' => (float)$currentYear,
@@ -206,10 +207,10 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         $rewardTotal = [
             'key' => 'reward_total',
             'financial_summary' => 'Total',
-            strtolower($monthName . '_' . $year - 1) => round($previousYearMonthTotal,2),
-            strtolower($monthName . '_' . $year) => round($monthTotal,2),
-            $year - 1 => round($previousYearAnnualTotal,2),
-            $year . '' => round($annualTotal,2),
+            strtolower($monthName . '_' . $year - 1) => round($previousYearMonthTotal, 2),
+            strtolower($monthName . '_' . $year) => round($monthTotal, 2),
+            $year - 1 => round($previousYearAnnualTotal, 2),
+            $year . '' => round($annualTotal, 2),
         ];
 
         return [
@@ -233,4 +234,43 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
         return [];
     }
 
+    protected function getReportForCSV(): array
+    {
+        $data = $this->getTable();
+        $csvData = [];
+        $csvData = array_merge($csvData, $this->processSection($data['awards']));
+        $csvData[] = [];
+        $csvData = array_merge($csvData, $this->processSection($data['rewards']));
+
+        return $csvData;
+    }
+
+    private function processSection(array $sectionData): array
+    {
+        $csvData = [];
+        $csvData[] = [0 => $sectionData['title']];
+
+        $csvHeaders = array_map(function ($column) {
+            return $column['title'];
+        }, $sectionData['columans']);
+
+        $csvData[] = $csvHeaders;
+
+        foreach ($sectionData['data'] as $value) {
+            $row = array_map(function ($col) use ($value) {
+                return $value[$col['dataIndex']];
+            }, $sectionData['columans']);
+
+            $csvData[] = $row;
+        }
+
+        $total = $sectionData['total'];
+        $row = array_map(function ($col) use ($total) {
+            return $total[$col['dataIndex']];
+        }, $sectionData['columans']);
+
+        $csvData[] = $row;
+
+        return $csvData;
+    }
 }
