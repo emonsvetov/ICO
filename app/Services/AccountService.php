@@ -529,7 +529,7 @@ class AccountService
 	public static function read_awarded_total_for_participant(Program $program, User $participant) {
 		$journal_event_types = array ();
 		$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
-		if ($program->programIsInvoiceForAwards( $program )) { //TO DO
+		if ($program->invoice_for_awards) {
 			// use
 			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
 			$journal_event_types [] = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
