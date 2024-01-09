@@ -499,7 +499,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 		$this->table['total'] = count($total_programs);
 		// sort($this->table); //not sure about this whether we need this
 		return $this->table;
-	}
 
 	/** Calculate data by date range (timestampFrom|To) */
 	protected function getDataDateRange() {
