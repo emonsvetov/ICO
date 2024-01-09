@@ -71,6 +71,7 @@ class SocialWallPostService
             ->whereNull('social_wall_post_id')
             ->orderBy('created_at', 'DESC')
             // ->with(['eventXmlData.event.eventIcon:id,name']) //can be used but limit the select fields first
+            ->limit(10)
             ->get();
 
         return [
