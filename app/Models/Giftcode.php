@@ -131,12 +131,12 @@ class Giftcode extends Model
 
         // sku_value could be "$10", let's fix that
         $giftcode['sku_value'] = preg_replace("/[^,.0-9]/", '', $giftcode['sku_value']);
-        $giftcode['sku_value'] = (int) $giftcode['sku_value'];
+        $giftcode['sku_value'] = (float) $giftcode['sku_value'];
 
 		if(!$merchant || !$giftcode ) return;
 		$response = [];
 
-        $currentGiftCode = Giftcode::getByCode($giftcode['code'], false);
+        $currentGiftCode = Giftcode::getByCodeAndSkuValue($giftcode['code'], $giftcode['sku_value'], false);//Adding sku value in condition. Some codes have same code value with different sku value.
         if ($currentGiftCode){
             $response['success'] = true;
             $response['gift_code_id'] = $currentGiftCode->id;
@@ -150,26 +150,32 @@ class Giftcode extends Model
 			$merchant = Merchant::find($merchant);
 		}
 		if( !empty($giftcode['purchase_date']))	{
-			$giftcode['purchase_date'] = Carbon::createFromFormat('m/d/Y', $giftcode['purchase_date'])->format('Y-m-d');
+            $incomingFormat = 'm/d/Y'; //in csv imports
+
+            if (strpos($giftcode['purchase_date'], '-')) { //from v2
+                $incomingFormat = 'Y-m-d';
+            }
+			$giftcode['purchase_date'] = Carbon::createFromFormat($incomingFormat, $giftcode['purchase_date'])->format('Y-m-d');
 		}
 
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
 		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
 
-		if(env('APP_ENV') != 'production'){
-		    $giftcode['medium_info_is_test'] = 1;
-        }
+		// if(env('APP_ENV') != 'production'){
+		//     $giftcode['medium_info_is_test'] = 1;
+        // }
 
 		try{
 		    $gift_code_id = self::insertGetId(
                 $giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
             );
+            $response['inserted'] = true;
         }catch(\Exception $e){
 		    throw new \Exception ( 'Could not create codes. DB query failed with error:' . $e->getMessage(), 400 );
         }
 
 		$response['gift_code_id'] = $gift_code_id;
-		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id:0;
+		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id : 0;
 		$merchant_account_holder_id = $merchant->account_holder_id;
         $owner_account_holder_id = Owner::find(1)->account_holder_id;
 		$journal_event_type_id = JournalEventType::getIdByType( "Purchase gift codes for monies" );
@@ -398,6 +404,15 @@ class Giftcode extends Model
         return $code;
     }
 
+    public static function getByCodeAndSkuValue(string $code, float $skuValue, bool $exception = true)
+    {
+        self::$all = true;
+        $code = self::where('code', $code)->where('sku_value', $skuValue)->first();
+        if (!$code && $exception){
+            throw new \Exception('Gift Code not found.');
+        }
+        return $code;
+    }
 
     public static function getAllByProgramsQuery(array $programs)
     {

@@ -30,7 +30,7 @@ class ReadInvoicePaymentsService
 			join accounts a on (a.id = postings.account_id)
 			join account_types on (a.account_type_id = account_types.id)
 			join programs p on (p.account_holder_id = a.account_holder_id)
-			left join journal_events reversals on (je.id = reversals.parent_id)
+			left join journal_events reversals on (je.id = reversals.parent_journal_event_id)
 		where
 			invoices.id = :invoice_id
 			and account_types.name = 'Monies Due to Owner'
@@ -41,7 +41,7 @@ class ReadInvoicePaymentsService
     	";
 
         DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
-		
+
         try {
 			$result = DB::select( DB::raw($sql), array(
 				'invoice_id' => $invoice->id,

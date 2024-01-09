@@ -52,18 +52,18 @@ class UserProgramController extends Controller
         }
 
         $query = $query->orderByRaw($orderByRaw);
-        
+
         if ( request()->has('minimal') )
         {
             $programs = $query->select('id', 'name')->get();
         }
-        else 
+        else
         {
             $programs = $query->get();
         }
 
-        if ( $programs->isNotEmpty() ) 
-        { 
+        if ( $programs->isNotEmpty() )
+        {
             return response( $programs );
         }
 
@@ -77,7 +77,7 @@ class UserProgramController extends Controller
         $program_id = $validated['program_id'];
 
         $columns = []; //any additional columns set here
-        
+
         try {
             $user->programs()->sync( [ $validated['program_id'] => $columns ], false);
 
@@ -113,11 +113,11 @@ class UserProgramController extends Controller
 
     public function getRole(Organization $organization, User $user, Program $program )
     {
-        
+
         $roles = $user->roles()->wherePivot( 'program_id', '=', $program->id )->get();
 
-        if ( $roles->isNotEmpty() ) 
-        { 
+        if ( $roles->isNotEmpty() )
+        {
             return response( $roles );
         }
 

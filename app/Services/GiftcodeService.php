@@ -11,7 +11,6 @@ use App\Http\Resources\GiftcodeCollection;
 use App\Models\Traits\IdExtractor;
 use App\Models\Giftcode;
 use App\Models\Merchant;
-use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 class GiftcodeService
 {

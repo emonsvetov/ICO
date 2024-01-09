@@ -105,8 +105,8 @@ class ReportCashDepositService extends ReportServiceAbstract
                     LIMIT 1
                 ) as 'Program pays for points'
                 "),
-             
-                
+
+
             ]);
             //$subQuery->where('account_types.name', '=',  AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER);
             $subQuery->whereIn('journal_event_types.type', [
@@ -117,7 +117,7 @@ class ReportCashDepositService extends ReportServiceAbstract
             ]);
             $subQuery->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
             $subQuery->whereNull('reversals.id');
-            $subQuery->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+            $subQuery->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         }, 'subQuery')
             ->select(
                 DB::raw("

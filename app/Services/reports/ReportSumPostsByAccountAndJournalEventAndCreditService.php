@@ -1,12 +1,8 @@
 <?php
-namespace App\Services\Report;
+namespace App\Services\reports;
 
-use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
-
-class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServiceAbstractBase
+class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServiceAbstract
 {
-
-	const IS_CREDIT = "is_credit";
 
 	protected $is_credit = 1;
 
@@ -19,15 +15,12 @@ class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServi
 
 	/** setup default parameters */
 	protected function setDefaultParams() {
-		$this->params [self::IS_CREDIT] = isset ( $is_credit ) && isset ( $this->$is_credit ) ? $this->$is_credit : '1';
+		$this->params [self::IS_CREDIT] = $this->is_credit;
 		if (! isset ( $this->params [self::SQL_GROUP_BY] ) || ! is_array ( $this->params [self::SQL_GROUP_BY] ) || count ( $this->params [self::SQL_GROUP_BY] ) < 1) {
 			$this->params [self::SQL_GROUP_BY] = array (
-					'a.account_holder_id',
-					'atypes.id',
-					'jet.id',
-                    'jet.type',
-                    'atypes.name',
-                    'posts.created_at',
+                'a.account_holder_id',
+                'atypes.id',
+                'jet.id'
 			);
 		}
 	}
@@ -35,13 +28,13 @@ class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServi
 	/** Calculate data by date range (timestampFrom|To) */
 	protected function getDataDateRange() {
 		$data = $this->calcByDateRange ( $this->getParams () );
+
         $this->table = [];
 		if (in_array ( self::FIELD_MONTH, $this->params [self::SQL_GROUP_BY] )) {
 			foreach ( $data as $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [$row->{self::FIELD_MONTH}] = $row->{self::FIELD_VALUE};
 			}
 		} else {
-            // die("D");
 			// Organize the data table so it is easier to look stuff up later
 			foreach ( $data as $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
@@ -96,6 +89,9 @@ class ReportServiceSumPostsByAccountAndJournalEventAndCredit extends ReportServi
 		}
 		if (isset ( $this->params [self::JOURNAL_EVENT_TYPES] ) && count ( $this->params [self::JOURNAL_EVENT_TYPES] ) > 0) {
 			$where [] = "jet.type IN ('" . implode ( "','", $this->params [self::JOURNAL_EVENT_TYPES] ) . "')";
+		}
+		if (isset ($this->params [self::YEAR]) && $this->params [self::YEAR] > 0) {
+			$where [] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
 		}
 		return $where;
 

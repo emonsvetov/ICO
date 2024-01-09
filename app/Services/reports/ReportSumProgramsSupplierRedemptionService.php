@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 
 class ReportSumProgramsSupplierRedemptionService extends ReportServiceAbstract
 {
-
     const FIELD_TOTAL_DOLLAR_VALUE_REDEEMED = 'total_dollar_value_redeemed';
     const FIELD_TOTAL_DOLLAR_VALUE_REBATED = 'total_dollar_value_rebated';
 
@@ -92,7 +91,6 @@ class ReportSumProgramsSupplierRedemptionService extends ReportServiceAbstract
         }
         return $query;
     }
-
 }
 
 

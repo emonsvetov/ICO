@@ -20,15 +20,10 @@ class ReportProgramStatusService extends ReportServiceAbstract
         $table = [];
         $this->table = [];
 
-        $dateBegin = date('Y-m-d 00:00:00', strtotime($this->params[self::DATE_FROM]));
+        $dateBegin = date('Y-m-d 00:00:00', strtotime($this->params[self::DATE_BEGIN]));
         $dateBegin2000 = '2000-01-01 00:00:00';
-        $dateEnd = date('Y-m-d 23:59:59', strtotime($this->params[self::DATE_TO]));
+        $dateEnd = date('Y-m-d 23:59:59', strtotime($this->params[self::DATE_END]));
         $programIds = $this->params[self::PROGRAMS];
-
-//        $dateBegin = date('2022-01-01 00:00:00');
-//        $dateBegin2000 = '2000-01-01 00:00:00';
-//        $dateEnd = date('Y-m-d 23:59:59');
-//        $programIds = [51];
 
         $programs = Program::getFlatTree();
         foreach ($programs as $program) {
@@ -36,6 +31,7 @@ class ReportProgramStatusService extends ReportServiceAbstract
                 continue;
             }
             $program = (object)$program->toArray();
+
             $table[$program->account_holder_id] = $program;
             $table[$program->account_holder_id]->program_name = $program->name;
 
@@ -337,6 +333,50 @@ class ReportProgramStatusService extends ReportServiceAbstract
             [
                 'label' => 'Program Name',
                 'key' => 'program_name'
+            ],
+            [
+                'label' => "Total Participants",
+                'key' => "participants_count",
+            ],
+            [
+                'label'=> "New Participants",
+                'key'=> "new_participants_count",
+            ],
+            [
+                'label'=> "Awards",
+                'key'=> "awards_count",
+            ],
+            [
+                'label'=> "Value",
+                'key'=> "awards_value",
+            ],
+            [
+                'label'=> "Average",
+                'key'=> "transaction_fees",
+            ],
+            [
+                'label'=> "MTD Awards",
+                'key'=> "mtd_awards_count",
+            ],
+            [
+                'label'=> "MTD Value",
+                'key'=> "mtd_awards_value",
+            ],
+            [
+                'label'=> "MTD Average",
+                'key'=> "mtd_transaction_fees",
+            ],
+            [
+                'label'=> "YTD Awards",
+                'key'=> "ytd_awards_count",
+            ],
+            [
+                'label'=> "YTD Value",
+                'key'=> "ytd_awards_value",
+            ],
+            [
+                'label'=> "YTD Average",
+                'key'=> "ytd_transaction_fees",
             ],
         ];
     }

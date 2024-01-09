@@ -1,10 +1,9 @@
 <?php
-namespace App\Services\Report;
+namespace App\Services\reports;
 
 use Illuminate\Support\Facades\DB;
-use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
 
-class ReportServiceSumProgramAwardsPoints extends ReportServiceAbstractBase
+class ReportSumProgramAwardsPointsService extends ReportServiceAbstract
 {
 	/** setup default parameters */
 	protected function setDefaultParams() {
@@ -82,6 +81,10 @@ class ReportServiceSumProgramAwardsPoints extends ReportServiceAbstractBase
 		if (is_array ( $this->params [self::PROGRAMS] ) && count ( $this->params [self::PROGRAMS] ) > 0) {
 			$where [] = "p.account_holder_id IN (" . implode ( ',', $this->params [self::PROGRAMS] ) . ")";
 		}
+		if (isset ($this->params [self::YEAR]) && $this->params [self::YEAR] > 0) {
+			$where [] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
+		}
+		
 		return $where;
 
 	}
