@@ -41,6 +41,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
     {
 
         $programs = Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray();
+
 //        $program = Program::findOrFail($this->params[self::PROGRAM_ID]);
 //
 //        $redeem_international_jet = '';
@@ -122,8 +123,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 `accounts`.account_holder_id = recipient_id
                 AND is_credit = 1
                 AND `account_types`.name  IN (".$this->customIn($account_type).")
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT('{$start_date}','%Y-%m-%d %H:%i:%s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT('{$end_date}','%Y-%m-%d %H:%i:%s')
         )";
 
         $peer_points_awarded_sub_query = "
@@ -178,8 +179,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                     OR `journal_event_types`.type = '" . JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_MONIES . "'
                     OR `journal_event_types`.type = '" . JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_POINTS . "'
                     )
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT('{$start_date}','%Y-%m-%d %H:%i:%s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT('{$end_date}','%Y-%m-%d %H:%i:%s')
         )";
 
         $points_redeemed_sub_query = "
@@ -197,8 +198,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 AND is_credit = 0
                 AND `account_types`.name IN (".$this->customIn($account_type).")
                 AND `journal_event_types`.type IN (".$this->customIn(array_merge($redeem_giftCode_jet, [$redeem_international_jet])).")
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT('{$start_date}','%Y-%m-%d %H:%i:%s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT('{$end_date}','%Y-%m-%d %H:%i:%s')
         )";
 
         $peer_points_given_sub_query = "
@@ -234,8 +235,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 AND is_credit = 0
                 AND `account_types`.name IN (".$this->customIn($account_type).")
                 AND `journal_event_types`.type IN (".$this->customIn($reclaim_jet).")
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT('{$start_date}','%Y-%m-%d %H:%i:%s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT('{$end_date}','%Y-%m-%d %H:%i:%s')
         )";
 
         $award_credit_points_reclaimed_sub_query = "
@@ -253,8 +254,8 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
                 AND is_credit = 0
                 AND `account_types`.name IN (".$this->customIn($account_type).")
                 AND `journal_event_types`.type IN (".$this->customIn($award_credit_reclaim_jet).")
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
-                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT('{$start_date}','%Y-%m-%d %H:%i:%s')
+                AND DATE_FORMAT(`postings`.created_at,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT('{$end_date}','%Y-%m-%d %H:%i:%s')
         )";
 
         $points_balance_sub_query = "
@@ -355,10 +356,10 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
         $subQuery->leftJoin('statuses', 'statuses.id', '=', 'users.user_status_id');
         $subQuery->whereIn('model_has_roles.program_id', $programs);
         if ($this->params[self::CREATED_ONLY]) {
-            $subQuery->whereRaw("
-                DATE_FORMAT(`users`.created_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
-                AND DATE_FORMAT(`users`.created_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
-            ");
+//            $subQuery->whereRaw("
+//                DATE_FORMAT(`users`.created_at,'%Y-%m-%d %H:%i:%s') >= DATE_FORMAT('{$start_date}','%Y-%m-%d %H:%i:%s')
+//                AND DATE_FORMAT(`users`.created_at,'%Y-%m-%d %H:%i:%s') <= DATE_FORMAT('{$end_date}','%Y-%m-%d %H:%i:%s')
+//            ");
         }
 
         $query = DB::table(DB::raw("({$subQuery->toSql()}) as sub"));
