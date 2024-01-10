@@ -3,6 +3,7 @@
 namespace App\Services\reports;
 
 use App\Models\AccountType;
+use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -115,8 +116,11 @@ class ReportAwardDetailService extends ReportServiceAbstract
             $q->where('account_types.name', '=', AccountType::getTypePointsAwarded())
                 ->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());
         });
-        $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
+        $from = Carbon::parse($this->params[self::DATE_BEGIN])->addDays(1)->toDateTimeString();
+        $to = Carbon::parse($this->params[self::DATE_END])->addDays(2)->toDateTimeString();
+        $query->whereBetween('postings.created_at', [$from, $to]);
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
+        $query->whereIn('events.program_id', $this->params[self::PROGRAM_IDS]);
         if (isset($this->params[self::AWARD_LEVEL_NAMES]) && count($this->params[self::AWARD_LEVEL_NAMES]) > 0)
         {
             $query->whereIn('event_xml_data.award_level_name', $this->params[self::AWARD_LEVEL_NAMES]);

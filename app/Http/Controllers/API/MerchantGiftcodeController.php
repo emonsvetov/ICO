@@ -27,6 +27,8 @@ class MerchantGiftcodeController extends Controller
         $from = request()->get('from', null);
         $virtual = request()->get('virtual', null);
         $type = request()->get('type', '');
+        $sku = request()->get('sku', null);
+
 
         $fromDate = '';
         if($from){
@@ -52,6 +54,10 @@ class MerchantGiftcodeController extends Controller
         }
 
         $query = Giftcode::select( 'medium_info.*' )->where($where);
+
+        if ($sku) {
+            $query->where('sku_value', '=', $sku);
+        }
 
         if($type == 'redeemed'){
             $query->leftJoin('users', 'users.id', '=', 'medium_info.redeemed_user_id');
@@ -117,7 +123,7 @@ class MerchantGiftcodeController extends Controller
         if (request()->has('minimal')) {
             $giftcodes = $query->select('id', 'code')->get();
         } elseif (request()->has('allmerch')) {
-            $giftcodes = $query->get(); 
+            $giftcodes = $query->get();
         } else {
             $giftcodes = $query->paginate(request()->get('limit', config('global.paginate_limit')));
         }

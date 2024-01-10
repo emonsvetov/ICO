@@ -66,17 +66,17 @@ class MediumInfo extends BaseModel
     {
 
         // Retrieve merchant details
-        $merchant = Merchant::where('account_holder_id', $merchantId)->first();
+        $merchant = Merchant::where('id', $merchantId)->first();
         if ($merchant->get_gift_codes_from_root) {
             $rootMerchant = $merchant->getRoot();
-            $merchantId = (int)$rootMerchant->account_holder_id;
+            $merchantId = (int)$rootMerchant->id;
         } else {
-            $merchantId = (int)$merchant->account_holder_id;
+            $merchantId = (int)$merchant->id;
         }
 
         // Start constructing the query
         $query = MediumInfo::select(
-            'account_holder_id as merchant_id',
+            'merchant_id as merchant_id',
             DB::raw('FORMAT(redemption_value, 2) as redemption_value'),
             DB::raw('FORMAT(sku_value, 2) as sku_value'),
             'virtual_inventory',
@@ -84,19 +84,12 @@ class MediumInfo extends BaseModel
             DB::raw('SUM(case when virtual_inventory = 1 then 1 else 0 end) as count_virtual_inventory'),
             DB::raw('SUM(case when virtual_inventory = 0 then 1 else 0 end) as count_real_inventory')
         )
-            ->join('postings', 'medium_info.id', '=', 'postings.medium_info_id')
-            ->join('accounts as a', 'postings.account_id', '=', 'a.id')
-            ->where('account_holder_id', $merchantId);
+        ->where('merchant_id', $merchantId);
 
         // Apply conditions based on extraArgs
         $inventoryType = $extraArgs['inventoryType'] ?? FALSE;
         if ($inventoryType) {
             $query->where('medium_info.virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
-        }
-
-        // Apply isTest condition
-        if (self::isTest()) {
-            $query->where('medium_info.medium_info_is_test', '=', 1);
         }
 
         // Date conditions
@@ -151,8 +144,8 @@ class MediumInfo extends BaseModel
         $inventoryType = $params['inventoryType'] ?? FALSE;
         $endDate = $params['endDate'] ?? FALSE;
         $totalCost = DB::table('medium_info')
-            ->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
-            ->join('accounts', 'accounts.id', '=', 'postings.account_id')
+//            ->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
+//            ->join('accounts', 'accounts.id', '=', 'postings.account_id')
             ->where('medium_info.merchant_id', '=', $merchantId)
             ->select(DB::raw('SUM(medium_info.cost_basis) as cost_basis'));
 

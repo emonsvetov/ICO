@@ -56,7 +56,7 @@ class ReportInventoryService extends ReportServiceAbstract
         foreach ($merchants as $merchant) {
             $merchantId = (int) $merchant->account_holder_id;
             if (!$merchant->get_gift_codes_from_root) {
-                $denominationList = MediumInfo::getRedeemableDenominationsByMerchant($merchantId, $endDate, ['inventoryType' => $this->params[self::INVENTORY_TYPE]]);
+                $denominationList = MediumInfo::getRedeemableDenominationsByMerchant($merchant->id, $endDate, ['inventoryType' => $this->params[self::INVENTORY_TYPE]]);
                 foreach ($denominationList as $denomination) {
                     $skuValueFormatted = number_format($denomination->sku_value, 2, '.', '');
                     $table[$merchantId]->on_hand[$skuValueFormatted] += $denomination->count;
@@ -121,7 +121,7 @@ class ReportInventoryService extends ReportServiceAbstract
      * @param $table
      * @param $skuValues
      */
-    public function clearZeroColumns(&$table, &$skuValues)
+    public function clearZeroColumns(&$table, $skuValues)
     {
         foreach ($skuValues as $skuValue) {
             $formattedSkuValue = number_format($skuValue, 2, '.', '');
@@ -147,8 +147,8 @@ class ReportInventoryService extends ReportServiceAbstract
                           'optimal_values',
                           'percent_remaining',
                          ] as $item) {
-                    foreach ($table as &$merchant) {
-                        unset($merchant->{$item}[$formattedSkuValue]);
+                    foreach ($table as $key => $merchant) {
+                        unset($table[$key]->{$item}[$formattedSkuValue]);
                         unset($skuValue);
                     }
                 }
