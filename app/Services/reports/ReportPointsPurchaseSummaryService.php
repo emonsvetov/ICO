@@ -18,6 +18,77 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
 {
     private $total = [];
 
+    /**
+     * @inheritDoc
+     */
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data = $this->getTable();
+
+        $total = [
+            'participants_count' => 0,
+            'month_1' => 0,
+            'month_2' => 0,
+            'month_3' => 0,
+            'month_4' => 0,
+            'month_5' => 0,
+            'month_6' => 0,
+            'month_7' => 0,
+            'month_8' => 0,
+            'month_9' => 0,
+            'month_10' => 0,
+            'month_11' => 0,
+            'month_12' => 0,
+            'YTD' => 0,
+            'per_participant' => 0,
+            'avg_per_month' => 0,
+            'monthly_target' => 0,
+            'annual_target' => 0,
+        ];
+        $empty = [
+            'name' => '',
+            'participants_count' => '',
+            'month_1' => '',
+            'month_2' => '',
+            'month_3' => '',
+            'month_4' => '',
+            'month_5' => '',
+            'month_6' => '',
+            'month_7' => '',
+            'month_8' => '',
+            'month_9' => '',
+            'month_10' => '',
+            'month_11' => '',
+            'month_12' => '',
+            'YTD' => '',
+            'per_participant' => '',
+            'avg_per_month' => '',
+            'monthly_target' => '',
+            'annual_target' => '',
+        ];
+        foreach ($data['data'] as $key => $item) {
+            if ($item->dinamicDepth !== 1) {
+                unset($data['data'][$key]);
+            }
+
+            foreach ($total as $subKey => $subItem) {
+                $total[$subKey] += $item->{$subKey};
+            }
+        }
+
+        $total['name'] = 'Total';
+        $data['data'][] = $empty;
+        $data['data'][] = $total;
+
+        $data['data'] = $data['data'];
+        $data['total'] = count($data['data']);
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
+    }
+
     protected function calc(): array
     {
         $table = [];
@@ -199,77 +270,6 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         $this->table = array_values($newTable);
 
         return [];
-    }
-
-    /**
-     * @inheritDoc
-     */
-    protected function getReportForCSV(): array
-    {
-        $this->isExport = true;
-        $this->params[self::SQL_LIMIT] = null;
-        $this->params[self::SQL_OFFSET] = null;
-        $data = $this->getTable();
-
-        $total = [
-            'participants_count' => 0,
-            'month_1' => 0,
-            'month_2' => 0,
-            'month_3' => 0,
-            'month_4' => 0,
-            'month_5' => 0,
-            'month_6' => 0,
-            'month_7' => 0,
-            'month_8' => 0,
-            'month_9' => 0,
-            'month_10' => 0,
-            'month_11' => 0,
-            'month_12' => 0,
-            'YTD' => 0,
-            'per_participant' => 0,
-            'avg_per_month' => 0,
-            'monthly_target' => 0,
-            'annual_target' => 0,
-        ];
-        $empty = [
-            'name' => '',
-            'participants_count' => '',
-            'month_1' => '',
-            'month_2' => '',
-            'month_3' => '',
-            'month_4' => '',
-            'month_5' => '',
-            'month_6' => '',
-            'month_7' => '',
-            'month_8' => '',
-            'month_9' => '',
-            'month_10' => '',
-            'month_11' => '',
-            'month_12' => '',
-            'YTD' => '',
-            'per_participant' => '',
-            'avg_per_month' => '',
-            'monthly_target' => '',
-            'annual_target' => '',
-        ];
-        foreach ($data['data'] as $key => $item) {
-            if ($item->dinamicDepth !== 1) {
-                unset($data['data'][$key]);
-            }
-
-            foreach ($total as $subKey => $subItem) {
-                $total[$subKey] += $item->{$subKey};
-            }
-        }
-
-        $total['name'] = 'Total';
-        $data['data'][] = $empty;
-        $data['data'][] = $total;
-
-        $data['data'] = $data['data'];
-        $data['total'] = count($data['data']);
-        $data['headers'] = $this->getCsvHeaders();
-        return $data;
     }
 
     public function getCsvHeaders(): array
