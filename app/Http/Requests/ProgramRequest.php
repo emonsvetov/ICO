@@ -32,7 +32,7 @@ class ProgramRequest extends FormRequest
             'status_id'                => 'nullable|integer',
             'setup_fee'             => 'required|numeric',
             'is_demo'             => 'boolean|nullable',
-            'factor_valuation'=>'required|integer',
+            'factor_valuation'=>'nullable|integer',
             'is_pay_in_advance'     => 'required|boolean',
             'invoice_for_awards'=> 'required|boolean',
             'is_add_default_merchants'=> 'required|boolean',
