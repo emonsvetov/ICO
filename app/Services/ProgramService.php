@@ -58,14 +58,17 @@ class ProgramService
         'tree' => true, //whether to return data in tree format
         'flatlist' => false, //whether to return data in tree format
         'except' => [], //array of primary keys,
-        'minimalFields' => Program::MIN_FIELDS
+        'minimalFields' => Program::MIN_FIELDS,
+        'programId' => false,
     ];
 
     private function _buildParams($override = [])
     {
         // pr($override);
         $params = [];
+        $programsId = ! empty($override['programsId']) ? $override['programsId'] : request()->get('programsId', '');
         $orgId = ! empty($override['orgId']) ? $override['orgId'] : request()->get('orgId', '');
+        $programId = ! empty($override['programId']) ? $override['programId'] : request()->get('programId', '');
         $status = ! empty($override['status']) ? $override['status'] : request()->get('status', '');
         $keyword = ! empty($override['keyword']) ? $override['keyword'] : request()->get('keyword', '');
         $sortby = ! empty($override['sortby']) ? $override['sortby'] : request()->get('sortby', 'id');
@@ -80,7 +83,9 @@ class ProgramService
 
         $all = filter_var(isset($override['all']) ? $override['all'] : request()->get('all', false), FILTER_VALIDATE_BOOLEAN);
 
+        $params['programsId'] = $programsId;
         $params['orgId'] = $orgId;
+        $params['programId'] = $programId;
         $params['status'] = $status;
         $params['keyword'] = $keyword;
         $params['sortby'] = $sortby;
@@ -97,7 +102,7 @@ class ProgramService
         return $params;
     }
 
-    private function _buildQuery($organization, $params = [])
+    private function _buildQuery($organization = null, $params = [])
     {
 
         $params = array_merge(self::DEFAULT_PARAMS, self::_buildParams($params));
@@ -115,6 +120,11 @@ class ProgramService
 
         $query = Program::where($where);
 
+        if( $programsId )
+        {
+            $programsId = explode(',', $programsId);
+            $query->whereIn('id', $programsId);
+        }
         if( $orgId )
         {
             $orgIds = explode(',', $orgId);
@@ -149,7 +159,7 @@ class ProgramService
             if (is_array($except)) {
                 $notIn = $except;
             } elseif (strpos($except, ',')) {
-                $notIn = explode( trim($except) );
+                $notIn = explode( trim($except), ',' );
             } elseif ((int)$except) {
                 $notIn = [$except];
             }
@@ -171,7 +181,8 @@ class ProgramService
                             $subquery = $subquery->whereNotIn('id', $notIn);
                         }
                         return $subquery;
-                    }
+                    },
+                    'status'
                 ]);
             } else {
                 $query = $query->with([
@@ -186,11 +197,49 @@ class ProgramService
                 }
             }
         }
-        $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
+        if ($organization){
+            $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
+        } else {
+            $query = $query->orderByRaw($orderByRaw);
+        }
         return $query;
     }
 
     public function index($organization, $params = [])
+    {
+        $params = $this->_buildParams($params);
+        $query = $this->_buildQuery($organization, $params);
+
+        if ((int) $params['programId']) {
+            $query->where('parent_id', $params['programId']);
+            $query->orWhere('id', $params['programId']);
+        }
+
+        if ( !$params['all'] && !$params['programId']) {
+            $query->whereNull('parent_id');
+        }
+
+        if( $params['paginate'] ) {
+            $results = $query->paginate( $params['limit']);
+            if ($params['minimal']) {
+                $results->getCollection()->transform(function ($value) {
+                    $value = childrenizeModel($value);
+                    return $value;
+                });
+            }
+        } else {
+            $results = $query->get();
+            if ($params['minimal']) {
+                $results = childrenizeCollection($results);
+            }
+            if ($params['flatlist']) {
+                $results = _flatten($results);
+            }
+        }
+        return $results;
+    }
+
+    public function all($organization, $params = [])
     {
         $params = $this->_buildParams($params);
         $query = $this->_buildQuery($organization, $params);
@@ -230,11 +279,7 @@ class ProgramService
             $data['status_id'] = Program::getIdStatusActive();
         }
 
-        if(isset($data['account_holder_id'])){
-            $program_account_holder_id = $data['account_holder_id'];
-        }else{
-            $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
-        }
+        $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
 
         if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
             $data['allow_creditcard_deposits'] = 1;
@@ -339,6 +384,30 @@ class ProgramService
             $minimalFields = Program::MIN_FIELDS;
             $query = Program::query();
             $query->whereNull('parent_id');
+            $query = $query->select($minimalFields);
+            $query = $query->with([
+                'childrenMinimal' => function ($query) use ($minimalFields) {
+                    $subquery = $query->select($minimalFields);
+                    return $subquery;
+                }
+            ]);
+            $result = $query->get();
+            return childrenizeCollection($result);
+        } catch (\Exception $e) {
+            throw new \Exception(sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile()));
+        }
+    }
+
+    public function getHierarchyByProgramId($organization, $programId)
+    {
+        try {
+            $program = Program::find($programId);
+            $programsId = $program->descendantsAndSelf()->get()->pluck('id')->toArray();
+
+            $minimalFields = Program::MIN_FIELDS;
+            $query = Program::query();
+            $query->whereNull('parent_id');
+            $query->whereIn('id', $programsId);
             $query = $query->select($minimalFields);
             $query = $query->with([
                 'childrenMinimal' => function ($query) use ($minimalFields) {

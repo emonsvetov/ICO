@@ -4,22 +4,19 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use App\Models\Program;
+// use Illuminate\Support\Facades\DB;
 use App\Models\Event;
 use App\Models\User;
+use Exception;
 
 class MilestoneAwardService extends AwardService {
 
     public array $programUserCache = [];
 
     public function sendMilestoneAward() {
-        DB::enableQueryLog();
-        $events = Event::getActiveMilestoneAwardsWithProgram();
-        // pr($events->toArray());
+        // DB::enableQueryLog();
         // pr(toSql(DB::getQueryLog()));
-        // exit;
-        // pr($events->toArray());
+        $events = Event::getActiveMilestoneAwardsWithProgram();
         if( $events->isNotEmpty() )  {
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
@@ -36,7 +33,6 @@ class MilestoneAwardService extends AwardService {
                 }
             }
         }
-        // pr(DB::getQueryLog());
     }
 
     private function getMilestoneAwardeesByEvent( Event $event )   {
@@ -49,31 +45,25 @@ class MilestoneAwardService extends AwardService {
                 ->where('model_has_roles.program_id', $program->id);
         });
         $query->where('user_status_id', '!=', $userStatus->id);
-        $query->where( function ($query) {
-            $query->orWhereNotNull('work_anniversary');
-            $query->orWhereNotNull('hire_date');
-        });
-        $participants = $query->get();
+        $query->whereNotNull('work_anniversary');
+        try{
+            $participants = $query->get();
+        }   catch (Exception $e) {
+            throw new Exception("Error: ". $e->getMessage());
+        }
         $eligibleParticipants = collect([]);
         if( $participants->isNotEmpty() )  {
             foreach($participants as $participant)   {
-                // pr($participant->id);
+                if ( ! $participant->canBeAwarded($event->program) ) {
+                    // Log::info ("User cannot be rewarded. User Id: {$participant->id} at"  . date('Y-m-d h:i:s')  );
+                    continue;
+                }
                 $userMilestoneDate = $this->getAnniversaryDateForUser( $participant );
                 if( $userMilestoneDate )    {
-                    // pr($milestoneYears);
-                    // pr($userMilestoneDate);
                     $dateObject = \Carbon\Carbon::parse($userMilestoneDate);
                     $dateObject->addYears($milestoneYears);
-                    // pr($dateObject->format('Y-m-d'));
-                    // pr($dateObject->isToday());
-                    // pr(\Carbon\Carbon::now()->format('Y-m-d'));
                     if($dateObject->isToday())  {
-                        if ( ! $participant->canBeAwarded($event->program) ) {
-                            // Log::info ("User cannot be rewarded. User Id: {$participant->id} at"  . date('Y-m-d h:i:s')  );
-                            continue;
-                        }
                         $eligibleParticipants->add($participant);
-                        // array_push($eligibleParticipants, $participant);
                     }
                 }
             }
@@ -84,20 +74,17 @@ class MilestoneAwardService extends AwardService {
     }
 
     private function getAnniversaryDateForUser( $user ) {
-        $fields = ['hire_date']; //also "work_annivarsery" ?
-        foreach ($fields as $field)  {
-            if( empty($user->{$field}) || $user->{$field} == '0000-00-00' )    {
-                continue;
-            }
-            $data = [$field => $user->{$field}];
-            $rules = [$field => 'date_format:Y-m-d|nullable'];
-            $validator = Validator::make($data, $rules);
-            if( $validator->failed() )   {
-                continue;
-            }
-            if( !empty($data[$field]) && $data[$field] != '0000-00-00' ) {
-                return $data[$field];
-            }
+        if( empty($user->work_anniversary) || $user->work_anniversary == '0000-00-00' )    {
+            return;
+        }
+        $data = ['work_anniversary' => $user->work_anniversary];
+        $rules = ['work_anniversary' => 'date_format:Y-m-d|nullable'];
+        $validator = Validator::make($data, $rules);
+        if( $validator->failed() )   {
+            return;
+        }
+        if( !empty($data['work_anniversary']) && $data['work_anniversary'] != '0000-00-00' ) {
+            return $data['work_anniversary'];
         }
     }
 }

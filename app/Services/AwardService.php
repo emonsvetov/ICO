@@ -146,6 +146,8 @@ class AwardService
         $isMilestoneAward = $eventType->isEventTypeMilestoneAward();
         $isMilestoneBadge = $eventType->isEventTypeMilestoneBadge();
         $isPeer2peerBadge = $eventType->isEventTypePeer2PeerBadge();
+        $isBirthdayAward = $eventType->isEventTypeBirthdayAward();
+        $isBirthdayBadge = $eventType->isEventTypeBirthdayBadge();
         $isPromotional = $event->is_promotional;
         $overrideCashValue = $data->override_cash_value ?? 0;
         $eventAmountOverride = $overrideCashValue > 0;
@@ -155,7 +157,7 @@ class AwardService
         if ( $isPeer2peerBadge ) {
             $isPeer2peer = true;
 		}
-        if( $isPeer2peerBadge || $isMilestoneBadge )
+        if( $isPeer2peerBadge || $isMilestoneBadge ||  $isBirthdayBadge)
         {
             $isBadge = true;
         }
@@ -172,6 +174,12 @@ class AwardService
         }
         if ( $isMilestoneBadge ) {
             $notificationType = 'MilestoneBadge';
+        }
+        if ( $isBirthdayAward ) {
+            $notificationType = 'BirthdayAward';
+        }
+        if ( $isBirthdayBadge ) {
+            $notificationType = 'BirthdayBadge';
         }
         if ( $isPeer2peer ){
             $notificationType = 'PeerAward';
@@ -637,6 +645,8 @@ class AwardService
         $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
         $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
         $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->leftJoin('events', 'events.id', '=', 'event_xml_data.event_template_id');
+        $query->leftJoin('event_icons', 'event_icons.id', '=', 'events.event_icon_id');
 
         $query->addSelect(
             DB::raw("
@@ -644,7 +654,7 @@ class AwardService
 				`accounts`.id AS account_id,
 				`journal_events`.id AS journal_event_id,
 				`journal_events`.event_xml_data_id,
-				`event_xml_data`.icon,
+				`event_icons`.path as icon,
 				if(is_credit = 1, `postings`.posting_amount, -`postings`.posting_amount) AS amount ,
 				`event_xml_data`.award_level_name ,
 				if(`event_xml_data`.notes is null, `journal_events`.notes, `event_xml_data`.notes) AS notes,

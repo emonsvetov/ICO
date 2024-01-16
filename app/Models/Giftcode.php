@@ -14,7 +14,9 @@ use Carbon\Carbon;
 
 /**
  * @property date $purchase_date
- * @property int $purchased_by_v2
+ * @property date $redemption_date
+ * @property date $redemption_datetime
+ * @property int $redeemed_user_id
  */
 class Giftcode extends Model
 {
@@ -23,6 +25,14 @@ class Giftcode extends Model
     protected $guarded = [];
     protected $table = 'medium_info';
     private static bool $all = false;
+
+
+    const SYNC_STATUS_NOT_REQUIRED = 0;
+    const SYNC_STATUS_REQUIRED = 1;
+    const SYNC_STATUS_IN_PROGRESS = 2;
+    const SYNC_STATUS_ERROR = 3;
+    const SYNC_STATUS_SUCCESS = 5;
+
 
     public function newQuery()
     {
@@ -121,12 +131,12 @@ class Giftcode extends Model
 
         // sku_value could be "$10", let's fix that
         $giftcode['sku_value'] = preg_replace("/[^,.0-9]/", '', $giftcode['sku_value']);
-        $giftcode['sku_value'] = (int) $giftcode['sku_value'];
+        $giftcode['sku_value'] = (float) $giftcode['sku_value'];
 
 		if(!$merchant || !$giftcode ) return;
 		$response = [];
 
-        $currentGiftCode = Giftcode::getByCode($giftcode['code'], false);
+        $currentGiftCode = Giftcode::getByCodeAndSkuValue($giftcode['code'], $giftcode['sku_value'], false);//Adding sku value in condition. Some codes have same code value with different sku value.
         if ($currentGiftCode){
             $response['success'] = true;
             $response['gift_code_id'] = $currentGiftCode->id;
@@ -140,26 +150,32 @@ class Giftcode extends Model
 			$merchant = Merchant::find($merchant);
 		}
 		if( !empty($giftcode['purchase_date']))	{
-			$giftcode['purchase_date'] = Carbon::createFromFormat('m/d/Y', $giftcode['purchase_date'])->format('Y-m-d');
+            $incomingFormat = 'm/d/Y'; //in csv imports
+
+            if (strpos($giftcode['purchase_date'], '-')) { //from v2
+                $incomingFormat = 'Y-m-d';
+            }
+			$giftcode['purchase_date'] = Carbon::createFromFormat($incomingFormat, $giftcode['purchase_date'])->format('Y-m-d');
 		}
 
 		//While importing it is setting "hold_until" to today. In the get query the today does not match so, a fix.
 		$giftcode['hold_until'] = Carbon::now()->subDays(1)->format('Y-m-d');
 
-		if(env('APP_ENV') != 'production'){
-		    $giftcode['medium_info_is_test'] = 1;
-        }
+		// if(env('APP_ENV') != 'production'){
+		//     $giftcode['medium_info_is_test'] = 1;
+        // }
 
 		try{
 		    $gift_code_id = self::insertGetId(
                 $giftcode + ['merchant_id' => $merchant->id,'factor_valuation' => config('global.factor_valuation')]
             );
+            $response['inserted'] = true;
         }catch(\Exception $e){
 		    throw new \Exception ( 'Could not create codes. DB query failed with error:' . $e->getMessage(), 400 );
         }
 
 		$response['gift_code_id'] = $gift_code_id;
-		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id:0;
+		$user_account_holder_id = ($user && $user->account_holder_id)?$user->account_holder_id : 0;
 		$merchant_account_holder_id = $merchant->account_holder_id;
         $owner_account_holder_id = Owner::find(1)->account_holder_id;
 		$journal_event_type_id = JournalEventType::getIdByType( "Purchase gift codes for monies" );
@@ -262,6 +278,7 @@ class Giftcode extends Model
 			'medium_info.pin',
 			'posts.account_id',
 			'm.name',
+            'm.v2_merchant_id'
 		])
 		->join('postings AS posts', 'posts.medium_info_id', '=', 'medium_info.id')
 		->join('accounts AS a', 'posts.account_id', '=', 'a.id')
@@ -274,10 +291,12 @@ class Giftcode extends Model
 		->where('medium_info.hold_until', '<=', now())
         ->whereNull('medium_info.redemption_date')
         ->where('medium_info.purchased_by_v2', '=', 0)
-		->orderBy('medium_info.id')
+		->orderBy('medium_info.virtual_inventory', 'ASC')
 		->limit(1);
 
-		if(env('APP_ENV') != 'production'){
+		if(env('APP_ENV') == 'production'){
+		    $query->where('medium_info_is_test', '=', 0);
+        }else{
 		    $query->where('medium_info_is_test', '=', 1);
         }
 
@@ -325,6 +344,7 @@ class Giftcode extends Model
 	private static function _read_by_merchant_and_medium_info_id($merchant_account_holder_id = 0, $medium_info_id = 0) {
 		$query = Posting::select([
 			'medium_info.*',
+			'merchants.v2_merchant_id',
 			'postings.created_at'
 		])
 		->join('medium_info', 'medium_info.id', '=', 'postings.medium_info_id')
@@ -335,9 +355,8 @@ class Giftcode extends Model
 		->where('medium_types.id', 1)
 		->where('merchants.account_holder_id', $merchant_account_holder_id)
 		->orderBy('medium_info.purchase_date')
-		->orderBy('medium_info.id')
-		->groupBy('medium_info.id')
-        ;
+		->orderBy('medium_info.virtual_inventory', 'ASC')
+		->groupBy('medium_info.id');
 		return $query->first();
 	}
 
@@ -385,6 +404,15 @@ class Giftcode extends Model
         return $code;
     }
 
+    public static function getByCodeAndSkuValue(string $code, float $skuValue, bool $exception = true)
+    {
+        self::$all = true;
+        $code = self::where('code', $code)->where('sku_value', $skuValue)->first();
+        if (!$code && $exception){
+            throw new \Exception('Gift Code not found.');
+        }
+        return $code;
+    }
 
     public static function getAllByProgramsQuery(array $programs)
     {
@@ -403,12 +431,27 @@ class Giftcode extends Model
 
     public static function readNotSubmittedTangoCodes()
     {
-        return self::with('merchant')
-            ->where('medium_info.virtual_inventory', 1)
+        $isProduction = app()->environment('production') ? true : false;
+        $query =  self::with('merchant')
+            ->where('medium_info.virtual_inventory', '=', 1)
             ->whereNull('medium_info.tango_reference_order_id')
             ->whereNotNull('medium_info.redemption_date')
             ->where('medium_info.redemption_date' , ">=", "2023-08-01")
-            ->orderBy('medium_info.sku_value', 'ASC')
+            ->where('medium_info.medium_info_is_test' , "=", $isProduction ? 0 : 1)
+            ->orderBy('medium_info.sku_value', 'ASC');
+
+        return $query->get();
+    }
+
+    public static function readNotSyncedCodes()
+    {
+        $isProduction = app()->environment('production') ? true : false;
+        return self::with('merchant')
+            ->where('medium_info.virtual_inventory', '=', 0)
+            ->where('medium_info.medium_info_is_test', '=', $isProduction?0:1)
+            ->whereNotNull('medium_info.redemption_date')
+            ->whereIn('medium_info.v2_sync_status', [self::SYNC_STATUS_REQUIRED, self::SYNC_STATUS_ERROR])
+            ->orderBy('medium_info.redemption_date', 'ASC')
             ->get();
     }
 }

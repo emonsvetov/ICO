@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
 use App\Models\BaseModel;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SocialWallPost extends BaseModel
 {
@@ -107,6 +108,35 @@ class SocialWallPost extends BaseModel
             ->where('social_wall_post_id', $parent_id)
             ->join('users AS u', 'u.account_holder_id', '=', 'social_wall_posts.sender_user_account_holder_id')
             ->orderBy('social_wall_posts.created_at', 'DESC')
+            ->get();
+
+        if( $comments ) {
+            foreach( $comments as &$comment )    {
+                $comment->comments = $this->comments( $comment->id );
+            }
+        }
+        return $comments;
+    }
+
+    public function allComments( $parent_id = null)
+    {
+        $parent_id = $parent_id??$this->id;
+        $comments = SocialWallPost::selectRaw(
+            'social_wall_posts.*,
+            concat(u.first_name, " ", u.last_name) as fromUser,
+            DATE_FORMAT(social_wall_posts.created_at, "%m/%d/%Y") as created_at_format_date,
+            DATE_FORMAT(social_wall_posts.created_at,"%m/%d/%Y %H:%i:%s") AS created_at_formated,
+            DATE_FORMAT(social_wall_posts.deleted_at,"%m/%d/%Y") AS deleted_at_format_date,
+            CONCAT(created_by_user.first_name, " ", created_by_user.last_name) as created_by_name,
+            social_wall_post_types.type as social_wall_post_type,
+            u.avatar',
+        )
+            ->where('social_wall_post_id', $parent_id)
+            ->join('users AS u', 'u.account_holder_id', '=', 'social_wall_posts.sender_user_account_holder_id')
+            ->leftJoin('users AS created_by_user', 'created_by_user.id', '=', 'social_wall_posts.created_by')
+            ->join('social_wall_post_types', 'social_wall_post_types.id', '=', 'social_wall_posts.social_wall_post_type_id')
+            ->orderBy('social_wall_posts.created_at', 'DESC')
+            ->withoutGlobalScope(SoftDeletingScope::class)
             ->get();
 
         if( $comments ) {

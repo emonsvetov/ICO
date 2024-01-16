@@ -19,9 +19,11 @@ class ReportHelper
      * @param array $userStatuses
      * @param string $dateBegin
      * @param string $dateEnd
+     * @param array|null $programIds
      * @return array
+     * @throws Exception
      */
-    public function countParticipantsByUserStatuses(array $userStatuses, string $dateBegin, string $dateEnd): array
+    public function countParticipantsByUserStatuses(array $userStatuses, string $dateBegin, string $dateEnd, array $programIds = null): array
     {
         $userClassForSql = str_replace('\\', '\\\\\\\\', get_class(new User));
         $query = User::select(
@@ -40,6 +42,9 @@ class ReportHelper
         $query->where('users.created_at', '>=', $dateBegin);
         $query->where('users.created_at', '<=', $dateEnd);
         $query->whereIn('statuses.status', $userStatuses);
+        if ($programIds){
+            $query->whereIn('model_has_roles.program_id', $programIds);
+        }
         $query->groupBy('model_has_roles.program_id');
 
         try{
@@ -303,17 +308,33 @@ class ReportHelper
         $accountTypes = $args['accountTypes'] ?? null;
         $journalEventTypes = $args['journalEventTypes'] ?? null;
         $isCredit = $args['isCredit'] ?? false;
+        $programAccountHolderIds = $args['programAccountHolderIds'] ?? false;
+        $months = $args['months'] ?? false;
 
-        $query = Account::select(
-            DB::raw('COALESCE(SUM(postings.posting_amount * postings.qty), 0) AS value'),
-            DB::raw('journal_event_types.type as journal_event_type'),
-            'accounts.account_holder_id',
-            'account_types.name as account_type_name',
-        );
+        $query = Account::selectRaw("
+            COALESCE(SUM(postings.posting_amount * postings.qty), 0) AS value,
+            journal_event_types.type as journal_event_type,
+            account_types.name as 'account_type_name',
+            programs.account_holder_id
+        ");
+
+        if ($months){
+            $query->addSelect(
+                DB::raw("MONTH(`postings`.created_at) as 'month'")
+            );
+        }
+
         $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
         $query->join('postings', 'postings.account_id', '=', 'accounts.id');
         $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
         $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
+        $query->join('postings as program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts as program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('account_types as program_account_types', function ($join) {
+            $join->on('program_account_types.id', '=', 'program_accounts.account_type_id');
+            $join->on("program_account_types.name", "=", DB::raw("'" . AccountType::ACCOUNT_TYPE_MONIES_FEES . "'"));
+        });
+        $query->join('programs', 'programs.account_holder_id', '=', 'program_accounts.account_holder_id');
 
         $query->whereBetween('postings.created_at', [$dateBegin, $dateEnd]);
         $query->where('postings.is_credit', '=', (bool)$isCredit);
@@ -321,17 +342,27 @@ class ReportHelper
             $query->whereIn('account_types.name', $accountTypes);
         }
         if ($journalEventTypes) {
-//            $query->whereIn('journal_event_types.type', $journalEventTypes);
+            $query->whereIn('journal_event_types.type', $journalEventTypes);
+        }
+        if ($programAccountHolderIds) {
+            $query->whereIn('programs.account_holder_id', $programAccountHolderIds);
         }
 
-        $query->groupBy('accounts.account_holder_id');
+        $query->groupBy('programs.account_holder_id');
         $query->groupBy('account_types.name');
         $query->groupBy('journal_event_types.type');
+        if ($months){
+            $query->groupBy('month');
+        }
 
         $result = $query->get();
         $table = [];
         foreach ($result as $row) {
-            $table[$row->account_holder_id][$row->account_type_name][$row->journal_event_type] = $row->value;
+            if ($months){
+                $table[$row->account_holder_id][$row->account_type_name][$row->journal_event_type][$row->month] = $row->value;
+            } else {
+                $table[$row->account_holder_id][$row->account_type_name][$row->journal_event_type] = $row->value;
+            }
         }
 
         return $table;

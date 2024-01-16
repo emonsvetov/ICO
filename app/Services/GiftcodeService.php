@@ -2,6 +2,7 @@
 namespace App\Services;
 
 use App\Models\Program;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -10,7 +11,6 @@ use App\Http\Resources\GiftcodeCollection;
 use App\Models\Traits\IdExtractor;
 use App\Models\Giftcode;
 use App\Models\Merchant;
-use Symfony\Component\Translation\Exception\NotFoundResourceException;
 
 class GiftcodeService
 {
@@ -71,22 +71,26 @@ class GiftcodeService
         return $response;
     }
 
-    /**
-     * @param Giftcode $giftcode
-     * @return bool
-     */
-    public function purchaseFromV2(Giftcode $giftcode): bool
+    public function purchaseFromV2(Giftcode $giftcode, User $user, $v2_medium_info_id, $redeemed_merchant_id)
     {
-        $result = false;
+        $error = '';
         try {
             $giftcode->purchased_by_v2 = true;
-            $giftcode->purchase_date = Carbon::now()->format('Y-m-d');
-            $result = $giftcode->save();
+            $giftcode->v2_medium_info_id = $v2_medium_info_id;
+            $giftcode->redeemed_merchant_id = $redeemed_merchant_id;
+            $giftcode->redemption_date = Carbon::now()->format('Y-m-d');
+            $giftcode->redemption_datetime = Carbon::now()->format('Y-m-d H:i:s');
+            //$giftcode->redeemed_user_id = $user->id; not working
+            $giftcode->save();
         } catch (\Exception $exception){
+            $error = $exception->getMessage();
             Log::debug($exception->getMessage());
         }
 
-        return $result;
+        return [
+            'success' => !$error,
+            'error'   => $error
+        ];
     }
 
 	public function getRedeemableListByMerchantAndSkuValue($merchant = 0, $sku_value = 0, $end_date = '') { // $end_date = '2022-10-01' - what is that?
@@ -103,9 +107,17 @@ class GiftcodeService
 	public function getRedeemableListByMerchant( int|Merchant $merchant, $filters = [], $orders=[] )
     {
         if( !($merchant instanceof Merchant) && is_numeric($merchant) )	{
-			$merchant = Merchant::find($merchant);
-		}
+            $merchant = Merchant::find($merchant);
+        }
+
         if( !$merchant->exists() ) throw new \Exception ('Merchant not found');
+
+        $topMerchant = null;
+        if ($merchant->get_gift_codes_from_root) {
+            $topMerchant = $merchant->getRoot();
+        }
+
+        $merchant_id = $merchant->get_gift_codes_from_root ? $topMerchant->id : $merchant->id;
 
 		DB::statement("SET SQL_MODE=''"); //SQLSTATE[42000] fix!
 		$query = Giftcode::selectRaw(
@@ -123,7 +135,7 @@ class GiftcodeService
 		->groupBy('redemption_value')
 		->orderBy('sku_value')
 		->orderBy('redemption_value')
-		->where('medium_info.merchant_id', $merchant->id)
+		->where('medium_info.merchant_id', $merchant_id)
 		->where(function($query){
             $query->orWhere('medium_info.hold_until', '<=', DB::raw('NOW()'));
             $query->orWhereNull('medium_info.hold_until');
@@ -163,7 +175,13 @@ class GiftcodeService
             $query->orderBy($orders['column'], $orders['direction']);
         }
 
-		//throw new \Exception ($query->toSql());
+		/*
+		$sql = $query->toSql();
+        $bindings = $query->getBindings();
+
+        $interpolatedSql = DB::raw(vsprintf($sql, $bindings));
+        //throw new \Exception (print_r($bindings,true));
+		*/
 
 		return $query->get();
 	}

@@ -8,23 +8,25 @@ use App\Models\Giftcode;
 use App\Services\GiftcodeService;
 Use Exception;
 use Illuminate\Http\Request;
+use App\Models\User;
 
 class GiftcodeController extends Controller
 {
-    public function purchaseFromV2( GiftcodePurchaseRequest $request, GiftcodeService $giftcodeService)
+    public function purchaseFromV2( GiftcodePurchaseRequest $request, GiftcodeService $giftcodeService, User $user)
     {
         $result['success'] = false;
-
         try {
             if (env('V2_GIFTCODE_SYNC_ENABLE')) {
+                $v2_medium_info_id = $request->get('v2_medium_info_id');
                 $code = $request->get('code');
-                $giftcode = Giftcode::getByCode($code);
+                $redeemed_merchant_id = $request->get('redeemed_merchant_id');
 
+                $giftcode = Giftcode::getByCode($code);
+                $result = $giftcodeService->purchaseFromV2($giftcode, $user, $v2_medium_info_id, $redeemed_merchant_id);
                 $result['gift_code'] = $giftcode;
-                $result['success'] = $giftcodeService->purchaseFromV2($giftcode);
             }
         } catch (\Exception $exception){
-            $result['data'] = $exception->getMessage();
+            $result['error'] = $exception->getMessage();
         }
 
         return response( $result );

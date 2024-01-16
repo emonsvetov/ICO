@@ -90,16 +90,34 @@ class ReportCashDepositService extends ReportServiceAbstract
                     LIMIT 1
                 ) as 'Credit Card Convenience Fee'
                 "),
+                DB::raw("
+                (
+                    SELECT
+                        ( CAST(p_subselect.qty AS UNSIGNED)  * p_subselect.posting_amount) AS amount
+                        #jet_subselect.`type`
+                    FROM
+                        `postings` p_subselect
+                        INNER JOIN `journal_events` je_subselect on je_subselect.`id` = p_subselect.`journal_event_id`
+                        INNER JOIN `journal_event_types` jet_subselect on jet_subselect.`id` = je_subselect.`journal_event_type_id`
+                    WHERE
+                        je_subselect.id = `postings`.`journal_event_id`
+                        AND jet_subselect.type = 'Program pays for points'
+                    LIMIT 1
+                ) as 'Program pays for points'
+                "),
+
+
             ]);
             //$subQuery->where('account_types.name', '=',  AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER);
             $subQuery->whereIn('journal_event_types.type', [
+                JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS,
                 JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING,
                 JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE,
                 JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE,
             ]);
             $subQuery->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
             $subQuery->whereNull('reversals.id');
-            $subQuery->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+            $subQuery->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         }, 'subQuery')
             ->select(
                 DB::raw("
@@ -124,7 +142,12 @@ class ReportCashDepositService extends ReportServiceAbstract
                     CASE
                         WHEN max(`Credit Card Convenience Fee`) IS NULL THEN 0
                         ELSE max(`Credit Card Convenience Fee`)
+                    END +
+                    CASE
+                        WHEN max(`Program pays for points`) IS NULL THEN 0
+                        ELSE max(`Program pays for points`)
                     END
+
                 ) as 'total_amount_received',
                 max(`Funding Deposit`) as 'funding_deposit',
                 max(`Deposit fee`) as 'deposit_fee',

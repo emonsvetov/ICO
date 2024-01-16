@@ -84,7 +84,7 @@ trait ProgramPaymentReversalTrait {
         //create JouralEvent
         $journal_event_id = JournalEvent::insertGetId([
             'journal_event_type_id' => $journal_event_type_id,
-            'parent_id' => $parent_journal_event_id,
+            'parent_journal_event_id' => $parent_journal_event_id,
             'notes' => $notes,
             'prime_account_holder_id' => $user_account_holder_id,
             'created_at' => now()
@@ -126,22 +126,22 @@ trait ProgramPaymentReversalTrait {
 
     public function reversal_program_pays_for_setup_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id)   {
         return $this->reversal_program_pays_for('Reversal program pays for setup fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);
-    }    
-    
+    }
+
     public function reversal_program_pays_for_admin_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id )   {
-        return $this->reversal_program_pays_for('Reversal program pays for admin fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);    
+        return $this->reversal_program_pays_for('Reversal program pays for admin fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);
     }
 
     public function reversal_program_pays_for_usage_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id )   {
-        return $this->reversal_program_pays_for('Reversal program pays for monthly usage fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);    
+        return $this->reversal_program_pays_for('Reversal program pays for monthly usage fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);
     }
-    
+
     public function reversal_program_pays_for_deposit_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id )   {
-        return $this->reversal_program_pays_for('Reversal program pays for deposit fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);    
-    }    
-    
+        return $this->reversal_program_pays_for('Reversal program pays for deposit fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);
+    }
+
     public function reversal_program_pays_for_fixed_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id )   {
-        return $this->reversal_program_pays_for('Reversal program pays for fixed fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);    
+        return $this->reversal_program_pays_for('Reversal program pays for fixed fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);
     }
 
     public function reversal_program_pays_for_convenience_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id )   {
@@ -165,7 +165,7 @@ trait ProgramPaymentReversalTrait {
         //create JouralEvent
         $journal_event_id = JournalEvent::insertGetId([
             'journal_event_type_id' => $journal_event_type_id,
-            'parent_id' => $parent_journal_event_id,
+            'parent_journal_event_id' => $parent_journal_event_id,
             'notes' => $notes,
             'prime_account_holder_id' => $user_account_holder_id,
             'created_at' => now()
@@ -216,6 +216,6 @@ trait ProgramPaymentReversalTrait {
     }
 
     public function reversal_program_pays_for_points_transaction_fee($user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id )   {
-        return $this->reversal_program_pays_for('Reversal program pays for points transaction fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);    
+        return $this->reversal_program_pays_for('Reversal program pays for points transaction fee', $user_account_holder_id, $program_account_holder_id, $amount, $notes, $invoice_id, $parent_journal_event_id);
     }
 }

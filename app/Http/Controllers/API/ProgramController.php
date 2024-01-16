@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Mail\templates\WelcomeEmail;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\ProgramPaymentReverseRequest;
@@ -28,9 +29,22 @@ use App\Models\Posting;
 use App\Models\Invoice;
 use App\Models\Event;
 use App\Models\User;
+use App\Models\ProgramReports;
+use Illuminate\Support\Facades\Mail;
 
 class ProgramController extends Controller
 {
+    public function getReportPrograms(Program $program, ProgramService $programService, Request $request)
+    {
+        $programs = $programService->getReportPrograms($program, $request->all());
+
+        if ($programs->isNotEmpty()) {
+            return response($programs);
+        }
+
+        return response([]);
+    }
+
     public function index(Organization $organization, ProgramService $programService, Request $request)
     {
         $programs = $programService->index($organization, $request->all());
@@ -42,13 +56,33 @@ class ProgramController extends Controller
         return response([]);
     }
 
+    public function all(ProgramService $programService, Request $request)
+    {
+        $params = $request->all();
+        $programId = $request->get('programId');
+        if ($programId){
+            $program = Program::find($programId);
+            $hierarchy = $program->descendantsAndSelf()->get()->pluck('id')->toArray();
+            $params['programsId'] = implode(',', $hierarchy);
+        }
+        $programs = $programService->index(null, $params);
+
+        if ($programs->isNotEmpty()) {
+            $result['data'] = _flatten($programs);
+            return response($result);
+//            return response($programs);
+        }
+
+        return response([]);
+    }
+
     public function store(ProgramRequest $request, Organization $organization, ProgramService $programService)
     {
         if ($organization) {
 
-            if($request->get('account_holder_id')){
-                $exists = Program::where('account_holder_id', $request->get('account_holder_id'))->first();
-                if ($exists){
+            if($request->get('v2_account_holder_id')){
+                $exists = Program::where('v2_account_holder_id', $request->get('v2_account_holder_id'))->first();
+                if ( $exists ) {
                     return response([ 'program' => $exists ]);
                 }
             }
@@ -170,6 +204,15 @@ class ProgramController extends Controller
         return response($balance);
     }
 
+    public function getBalanceInformation(Organization $organization, Program $program, AccountService $accountService)
+    {
+        $total_financial_balance = $accountService->readAvailableBalanceForProgram($program);
+        $financial_detail = $accountService->readAvailableBalanceForOwner($program);
+        return response(
+            ["financial_detail" => $total_financial_balance, "total_financial_balance" => $total_financial_balance]
+        );
+    }
+
     public function prepareLiveMode(Organization $organization, Program $program, ProgramService $programService, AwardService $awardService)
     {
         try {
@@ -288,6 +331,20 @@ class ProgramController extends Controller
 
         return response($result);
     }
+
+    public function hierarchyReport(Program $program, ProgramService $programService, Request $request)
+    {
+        $result = $programService->getHierarchyReport($program)->toArray();
+
+        return response($result);
+    }
+
+
+    public function hierarchyByProgram(Organization $organization, Program $program, ProgramService $programService, Request $request)
+    {
+        return response($programService->getHierarchyByProgramId($organization, $program->id)->toArray());
+    }
+
     public function downloadMoneyTranferTemplate(Organization $organization, Program $program, ProgramService $programService)
     {
         return response()->stream( ...($programService->getTransferTemplateCSV($program)) );
@@ -307,4 +364,21 @@ class ProgramController extends Controller
     public function getLedgerCodes(Organization $organization, Program $program, ProgramService $programService)    {
         return $programService->getLedgerCodes($program);
     }
+
+    public function saveSelectedReports(Request $request, $organization, $programId)
+    {
+        $program = Program::where('organization_id', $organization)->findOrFail($programId);
+        $selectedReports = $request->input('selected_reports', []);
+
+        DB::transaction(function () use ($program, $selectedReports) {
+            $program->selected_reports()->detach();
+
+            if (!empty($selectedReports)) {
+                $program->selected_reports()->attach($selectedReports);
+            }
+        });
+
+        return response()->json(['message' => 'Selected reports saved successfully'], 200);
+    }
+
 }

@@ -11,9 +11,14 @@ abstract class ReportServiceAbstract
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
     const YEAR = 'year';
-    const DATE_BEGIN = self::DATE_FROM;
-    const DATE_END = self::DATE_TO;
-
+    const MONTH = 'month';
+    const CODES = 'codes';
+    const INVENTORY_TYPE = 'inventoryType';
+    const ORDER_STATUS = 'orderStatus';
+    const PURCHASE_BY_V2 = 'purchaseByV2';
+    const KEYWORD = 'keyword';
+    const DATE_BEGIN = 'from';
+    const DATE_END = "to";
     const SQL_LIMIT = 'limit';
     const SQL_OFFSET = 'offset';
     const SQL_GROUP_BY = 'group';
@@ -22,10 +27,11 @@ abstract class ReportServiceAbstract
     const FIELD_VALUE = "value";
     const FIELD_MONTH = "month";
     const FIELD_JOURNAL_EVENT_TYPE = "journal_event_type";
-
+    const FIELD_COUNT = "count";
     const PROGRAM_ID = 'programId';
+    const PROGRAM_ACCOUNT_HOLDER_ID = 'program_account_holder_id';
     const CREATED_ONLY = 'createdOnly';
-    const PROGRAMS = 'program_account_holder_ids';
+    const PROGRAMS = 'programs';
     const PROGRAM_IDS = 'program_ids';
     const PROGRAM_ACCOUNT_HOLDER_IDS = 'program_account_holder_ids';
     const AWARD_LEVEL_NAMES = "award_level_names";
@@ -38,17 +44,43 @@ abstract class ReportServiceAbstract
     const JOURNAL_EVENT_TYPES = "journal_event_types";
     const FIELD_ACCOUNT_TYPE = "account_type_name";
     const ACCOUNT_HOLDER_IDS = "account_holder_ids";
+    const USER_ACCOUNT_HOLDER_ID = "user_account_holder_id";
+    const USER_ID = "user_id";
     const ACCOUNT_TYPES = "account_types";
     const SERVER = "server";
-
     const SQL_WHERE = 'where';
     const SQL_ORDER_BY_DIR = 'dir';
 
+    const FIELD_TOTAL = "total";
+    const ACCOUNT_TYPE_MONIES_DUE_TO_OWNER = "Monies Due to Owner";
+    const ACCOUNT_TYPE_MONIES_AVAILABLE = "Monies Available";
+    const ACCOUNT_TYPE_POINTS_REDEEMED = "Points Redeemed";
+    const ACCOUNT_TYPE_MONIES_REDEEMED = "Monies Redeemed";
+    const ACCOUNT_TYPE_MONIES_EXPIRED = 'Monies Expired';
+    const ACCOUNT_TYPE_POINTS_EXPIRED = "Points Expired";
+
+    const JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT = "Award points to recipient";
+    const JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT = "Award monies to recipient";
+    const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS = 'Program pays for points';
+    const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING = "Program pays for monies pending";
+    const JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES = "Redeem points for gift codes";
+    const JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING = "Redeem points for international shopping";
+    const JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES = "Redeem monies for gift codes";
+    const JOURNAL_EVENT_TYPES_EXPIRE_POINTS = "Expire points";
+    const JOURNAL_EVENT_TYPES_EXPIRE_MONIES = "Expire monies";
+    const JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS = "Deactivate points";
+    const JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES = "Deactivate monies";
+    const JOURNAL_EVENT_TYPES_RECLAIM_POINTS = "Reclaim points";
+    const JOURNAL_EVENT_TYPES_RECLAIM_MONIES = "Reclaim monies";
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS = "Reversal program pays for points";
+    const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING = "Reversal program pays for monies pending";
+    const ACCOUNT_TYPE_POINTS_AWARDED = "Points Awarded";
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;
     protected $query = null;
     const PAGINATE = 'paginate';
+    const IS_CREDIT = "is_credit";
 
     /**
      * @var ReportHelper|null
@@ -60,23 +92,71 @@ abstract class ReportServiceAbstract
         DB::statement("SET SQL_MODE=''"); //TODO - To be removed, correct query instead
 
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
+        $this->params[self::DATE_BEGIN] =   $this->convertDate($params[self::DATE_BEGIN] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
+        $this->params[self::DATE_END] =   $this->convertDate($params[self::DATE_END] ?? '');
         $this->params[self::SQL_LIMIT] = $params[self::SQL_LIMIT] ?? null;
         $this->params[self::SQL_OFFSET] = $params[self::SQL_OFFSET] ?? null;
         $this->params[self::EXPORT_CSV] = $params[self::EXPORT_CSV] ?? null;
         $this->params[self::MERCHANTS] = isset($params[self::MERCHANTS]) && is_array($params[self::MERCHANTS]) ? $params[self::MERCHANTS] : [];
         $this->params[self::MERCHANTS_ACTIVE] = $params[self::MERCHANTS_ACTIVE] ?? null;
         $this->params[self::FIELD_REPORT_KEY] = $params[self::FIELD_REPORT_KEY] ?? null;
+        $this->params[self::USER_ID] = $params[self::USER_ID] ?? null;
         $this->params[self::PROGRAM_ID] = $params[self::PROGRAM_ID] ?? null;
+        $this->params[self::PROGRAM_ACCOUNT_HOLDER_ID] = $params[self::PROGRAM_ACCOUNT_HOLDER_ID] ?? null;
+        $this->params[self::USER_ACCOUNT_HOLDER_ID] = $params[self::USER_ACCOUNT_HOLDER_ID] ?? null;
         $this->params[self::CREATED_ONLY] = $params[self::CREATED_ONLY] ?? null;
         $this->params[self::SQL_GROUP_BY] = $params[self::SQL_GROUP_BY] ?? null;
+        $this->params[self::SQL_ORDER_BY_DIR] = $params[self::SQL_ORDER_BY_DIR] ?? null;
         $this->params[self::SQL_ORDER_BY] = $params[self::SQL_ORDER_BY] ?? null;
         $this->params[self::PAGINATE] = $params[self::PAGINATE] ?? null;
         $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];
+        $this->params[self::PROGRAM_ACCOUNT_HOLDER_IDS] =  $this->params[self::PROGRAMS];
         $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
         $this->params[self::SERVER] = $params[self::SERVER] ?? null;
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
+        $this->params[self::MONTH] = $params[self::MONTH] ?? null;
+        $this->params[self::CODES] = $params[self::CODES] ?? null;
+        if (isset($params[self::ACCOUNT_TYPES])) {
+            $temp = array();
+            foreach( $params[self::ACCOUNT_TYPES] as $param) {
+                array_push($temp, $param[0]);
+            }
+            $this->params[self::ACCOUNT_TYPES] = $temp;
+        }
+        else {
+            $this->params[self::ACCOUNT_TYPES] = null;
+        }
+        // $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
+        //     is_array ( $params[self::ACCOUNT_TYPES] ) ?
+        //     foreach( $params[self::ACCOUNT_TYPES] as $param) {
+        //         array_push($temp, $param[0]);
+        //     }
+        //     :
+        //     array (
+        //         $params[self::ACCOUNT_TYPES]
+        //     )
+        // ) : null;
+        if (isset($params[self::JOURNAL_EVENT_TYPES])) {
+            $temp = array();
+            foreach( $params[self::JOURNAL_EVENT_TYPES] as $param) {
+                array_push($temp, $param[0]);
+            }
+            $this->params[self::JOURNAL_EVENT_TYPES] = $temp;
+        }
+        else {
+            $this->params[self::JOURNAL_EVENT_TYPES] = null;
+        }
+        // $this->params[self::JOURNAL_EVENT_TYPES] = isset($params[self::JOURNAL_EVENT_TYPES]) ? (
+        //     is_array ( $params[self::JOURNAL_EVENT_TYPES] ) ? $params[self::JOURNAL_EVENT_TYPES] : array (
+        //         $params[self::JOURNAL_EVENT_TYPES]
+        //     )
+        // ) : null;
 
+        $this->params[self::INVENTORY_TYPE] = $params[self::INVENTORY_TYPE] ?? null;
+        $this->params[self::KEYWORD] = $params[self::KEYWORD] ?? null;
+        $this->params[self::ORDER_STATUS] = $params[self::ORDER_STATUS] ?? null;
+        $this->params[self::PURCHASE_BY_V2] = $params[self::PURCHASE_BY_V2] ?? null;
         $this->reportHelper = new ReportHelper() ?? null;
     }
 
@@ -135,8 +215,7 @@ abstract class ReportServiceAbstract
         if (empty($this->table)) {
             $this->calc();
         }
-        // pr($this->table);
-        // pr($this->params[self::PAGINATE]);
+
         if( $this->params[self::PAGINATE] )
         {
             if( isset($this->table['data']) && isset($this->table['total']))    {
@@ -165,6 +244,7 @@ abstract class ReportServiceAbstract
     /** Calculate data by date range (timestampFrom|To) */
     protected function getDataDateRange() {
         $data = $this->calcByDateRange ( $this->getParams() );
+        // pr($data);
         if (count ( $data ) > 0) {
 			foreach ( $data as $row ) {
 				foreach ( $row as $key => $val ) {
@@ -187,7 +267,7 @@ abstract class ReportServiceAbstract
             $query = $this->setWhereFilters($query);
             $query = $this->setGroupBy($query);
             try {
-                // $this->table['total'] = $query->count();
+                // pr($query->count());
                 $query = $this->setOrderBy($query);
                 $query = $this->setLimit($query);
                 $this->table = $query->get()->toArray();
@@ -200,6 +280,7 @@ abstract class ReportServiceAbstract
         {
             // $this->table['total'] = count($query);
             // $this->table['data'] = $query;
+            // pr($query);
             $this->table = $query;
         }
         // pr(get_class($this));
@@ -242,7 +323,7 @@ abstract class ReportServiceAbstract
     protected function setOrderBy(Builder $query): Builder
     {
         if ($this->params[self::SQL_ORDER_BY]){
-            $query->orderBy($this->params[self::SQL_ORDER_BY]);
+            $query->orderBy($this->params[self::SQL_ORDER_BY], $this->params[self::SQL_ORDER_BY_DIR]);
         }
         return $query;
     }
@@ -285,10 +366,11 @@ abstract class ReportServiceAbstract
         if( $sql != "")
         {
             $sql = $this->addSqlFilters($sql);
+            // pr($sql);
             return DB::select( DB::raw($sql), []);
         }
 
-        DB::table( '' );
+        return DB::table( '' );
     }
 
 	public function getParams() {
@@ -324,4 +406,8 @@ abstract class ReportServiceAbstract
 	protected function getWhereFilters() {
 		return array ();
 	}
+
+    public function amountFormat($value){
+        return number_format((float)$value, 2, '.', '');
+    }
 }

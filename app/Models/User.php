@@ -36,6 +36,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     const STATUS_PENDING_ACTIVATION = 'Pending Activation';
     const STATUS_DELETED = 'Deleted';
     const STATUS_PENDING_DEACTIVATION = 'Pending Deactivation';
+    const TERMINATED = 'Terminated';
     const STATUS_DEACTIVATED = 'Deactivated';
     const STATUS_LOCKED = 'Locked';
     const STATUS_NEW = 'New';
@@ -81,6 +82,9 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'updated_at',
         'avatar',
         'join_reminder_at',
+        'v2_parent_program_id',
+        'v2_account_holder_id',
+        'hire_date',
         'sso_token',
         'external_id',
     ];
@@ -253,6 +257,26 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return self::getStatusNew()->id;
     }
 
+    public static function getStatusPendingDeactivation()
+    {
+        return self::getStatusByName(self::STATUS_PENDING_DEACTIVATION);
+    }
+
+    public static function getIdStatusPendingDeactivation()
+    {
+        return self::getStatusPendingDeactivation()->id;
+    }
+
+    public static function getStatusPendingActivation()
+    {
+        return self::getStatusByName(self::STATUS_PENDING_ACTIVATION);
+    }
+
+    public static function getIdStatusPendingActivation()
+    {
+        return self::getStatusPendingActivation()->id;
+    }
+
     /**
      * @inheritDoc
      */
@@ -347,5 +371,10 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
             $query->where('model_has_roles.model_id', '=', $userId);
             $query->where('model_has_roles.program_id', '=', $programId);
         })->first();
+    }
+
+    public function v2_users()
+    {
+        return $this->hasMany(UserV2User::class);
     }
 }

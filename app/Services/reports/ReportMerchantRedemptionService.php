@@ -76,7 +76,7 @@ class ReportMerchantRedemptionService extends ReportServiceAbstract
                 });
         });
         $query->where('postings.is_credit', '=', 0);
-        $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
 
         return $query;

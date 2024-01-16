@@ -77,9 +77,17 @@ class ProgramUserPolicy
 
     public function readBalance(User $authUser, Organization $organization, Program $program, User $user)
     {
+        /*
+        throw new \Exception('program: ' . $program->organization_id);
+        if( $organization->id != $authUser->organization_id ) return false;
+        if( $organization->id != $program->organization_id) return false;
+        if( $user && $program->organization_id != $user->organization_id) return false;
+        return true;
+        */
+
         if ( !$this->__authCheck($authUser, $organization, $program, $user ) )
         {
-            return false;
+            return true;
         }
 
         if($authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program )) return true;

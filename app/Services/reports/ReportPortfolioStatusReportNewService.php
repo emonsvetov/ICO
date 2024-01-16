@@ -38,7 +38,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->join('roles', 'model_has_roles.role_id', '=', 'roles.id');
                 $query->where('roles.name', 'LIKE', config('roles.participant'));
                 $query->where('model_has_roles.program_id', '=', DB::raw('programs.id'));
-                $query->whereBetween('users.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('users.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             }]);
 
             $query->addSelect(['count_active_user' => function ($query) {
@@ -58,7 +58,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->where('roles.name', 'LIKE', config('roles.participant'));
                 $query->where('statuses.status', 'LIKE', config('global.user_status_active'));
                 $query->where('model_has_roles.program_id', '=', DB::raw('programs.id'));
-                $query->whereBetween('users.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('users.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             }]);
 
             $query->addSelect(['count_email' => function ($query) {
@@ -76,14 +76,14 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->join('roles', 'model_has_roles.role_id', '=', 'roles.id');
                 $query->where('roles.name', 'LIKE', config('roles.participant'));
                 $query->where('model_has_roles.program_id', '=', DB::raw('programs.id'));
-                $query->whereBetween('users.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('users.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             }]);
 
             $query->addSelect(['count_award' => function ($query) {
                 $query->from('users');
-                $query->select(DB::raw("COUNT(0)"));
+                $query->select(DB::raw("COUNT(*)"));
 
-                $query->join('accounts', 'accounts.id', '=', 'users.account_holder_id');
+                $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
                 $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
                 $query->join('postings', 'postings.account_id', '=', 'accounts.id');
                 $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
@@ -111,7 +111,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                         ->orWhere('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT);
                 });
                 $query->where('postings.is_credit', '=', 1);
-                $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
                 $query->where('p.id', '=', DB::raw('programs.id'));
             }]);
 
@@ -119,7 +119,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->from('users');
                 $query->select(DB::raw("SUM(postings.posting_amount)"));
 
-                $query->join('accounts', 'accounts.id', '=', 'users.account_holder_id');
+                $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
                 $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
                 $query->join('postings', 'postings.account_id', '=', 'accounts.id');
                 $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
@@ -147,7 +147,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                         ->orWhere('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT);
                 });
                 $query->where('postings.is_credit', '=', 1);
-                $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
                 $query->where('p.id', '=', DB::raw('programs.id'));
             }]);
 
@@ -155,7 +155,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $query->from('users');
                 $query->select(DB::raw("AVG(postings.posting_amount)"));
 
-                $query->join('accounts', 'accounts.id', '=', 'users.account_holder_id');
+                $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
                 $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
                 $query->join('postings', 'postings.account_id', '=', 'accounts.id');
                 $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
@@ -183,7 +183,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                         ->orWhere('journal_event_types.type', '=', JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT);
                 });
                 $query->where('postings.is_credit', '=', 1);
-                $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+                $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
                 $query->where('p.id', '=', DB::raw('programs.id'));
             }]);
 
@@ -194,7 +194,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
             $subQuery1->where('accounts.account_holder_id', '=', DB::raw('programs.account_holder_id'));
             $subQuery1->where('account_types.name', '=', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
             $subQuery1->where('postings.is_credit', '=', 1);
-            $subQuery1->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+            $subQuery1->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
 
             $subQuery2 = DB::table('accounts');
             $subQuery2->select(DB::raw("sum(postings.posting_amount * postings.qty)"));
@@ -203,7 +203,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
             $subQuery2->where('accounts.account_holder_id', '=', DB::raw('programs.account_holder_id'));
             $subQuery2->where('account_types.name', '=', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
             $subQuery2->where('postings.is_credit', '=', 0);
-            $subQuery2->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+            $subQuery2->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
             $query->addSelect([
                 DB::raw("
                 (CASE
@@ -231,9 +231,18 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 count_active_user,
                 count_email,
                 count_award,
-                sum_posting_amount,
-                avg_posting_amount,
-                deposit_balance,
+                CAST(
+                    sum_posting_amount
+                    AS DECIMAL(10, 2)
+                ) as sum_posting_amount,
+                CAST(
+                    avg_posting_amount
+                    AS DECIMAL(10, 2)
+                ) as avg_posting_amount,
+                CAST(
+                    deposit_balance
+                    AS DECIMAL(10, 2)
+                ) as deposit_balance,
                 (CASE
                     WHEN count_users > 0 THEN cast((count_email/count_users*100) as decimal(9,1))
                     ELSE 0
@@ -285,6 +294,16 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
     protected function setOrderBy(Builder $query): Builder
     {
         return $query;
+    }
+
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data = $this->getTable();
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
     }
 
     public function getCsvHeaders(): array

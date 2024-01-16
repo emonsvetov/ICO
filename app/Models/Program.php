@@ -18,6 +18,7 @@ use App\Models\BaseModel;
 use App\Models\Currency;
 use App\Models\Account;
 use App\Models\Owner;
+use App\Models\ProgramReports;
 
 /**
  * @property int $account_holder_id
@@ -60,12 +61,12 @@ class Program extends BaseModel
 
     public function children()
     {
-        return $this->hasMany(Program::class, 'parent_id')->with(['children']);
+        return $this->hasMany(Program::class, 'parent_id')->with(['children', 'status']);
     }
 
     public function childrenMinimal()
     {
-        return $this->hasMany(Program::class, 'parent_id')->select(self::MIN_FIELDS)->with(['childrenMinimal']);
+        return $this->hasMany(Program::class, 'parent_id')->select(self::MIN_FIELDS)->with(['childrenMinimal', 'status']);
     }
 
     public function events()
@@ -138,11 +139,7 @@ class Program extends BaseModel
 
     public static function createAccount( $data )    {
 
-        if(isset($data['account_holder_id'])){
-            $program_account_holder_id = $data['account_holder_id'];
-        }else{
-            $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
-        }
+        $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
 
         if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
             $data['allow_creditcard_deposits'] = 1;
@@ -214,12 +211,14 @@ class Program extends BaseModel
         return $program;
     }
 
-    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false)  {
+    public static function read_programs(array $programAccountHolderIds = [], bool $with_rank = false, $offset = 0, $limit =99999)  {
         if( !$programAccountHolderIds ) return;
+        // pr($programAccountHolderIds);
         if( $with_rank )    {
-            //TODO
+            $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+            return $programs;
         }
-        return self::whereIn('account_holder_id', $programAccountHolderIds)->get();
+        return self::whereIn('account_holder_id', $programAccountHolderIds)->offset((int)$offset)->limit((int)$limit)->get();
     }
 
     public function create_setup_fee_account()   {
@@ -424,7 +423,7 @@ class Program extends BaseModel
 
     public function getPointsExpirationDateSql()
     {
-        $end_date_sql = '';
+        $end_date_sql = "date_format(date_add(postings.created_at, interval 1 year), '%Y-12-31')";
         // use the end date of the active goal plan and the expiration rule to set the end date for the future goal goal
 		if ($this->expiration_rule_id == 1){
             // use the annual month and day parameters
@@ -465,4 +464,18 @@ class Program extends BaseModel
         return $root     ? EmailTemplateSender::where('program_id', $root->id)->first() : null;
     }
 
+    public function get_top_level_program_id($id = 0)
+    {
+        $program = self::where('id', $id)->first();
+        if (!$program->parent_id)
+            return $id;
+        else
+            self::get_top_level_program_id($program->parent_id);
+    }
+
+    public function selected_reports()
+    {
+        return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
+
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Services\reports;
 use App\Models\MediumInfo;
 use App\Models\Merchant;
 use App\Models\OptimalValue;
+use App\Models\ProgramMerchant;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\Cast\Object_;
@@ -12,58 +13,31 @@ use stdClass;
 
 class ReportSupplierRedemptionService extends ReportServiceAbstract
 {
-    const FIELD_TOTAL_DOLLAR_COST_BASIS = 'total_cost_basis';
-
-    const FIELD_TOTAL_DOLLAR_PREMIUM = 'total_premium';
-
-    const FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE = 'total_redemption_value';
-
-    const FIELD_AVG_DISCOUNT_PERCENT = 'avg_discount_percent';
-
-    const FIELD_PERCENT_TOTAL_REDEMPTION_VALUE = 'percent_total_redemption_value';
-
-    const FIELD_PERCENT_TOTAL_COST = 'percent_total_cost';
-
-    const FIELD_REDEMPTIONS = 'redemptions';
-
     const FIELD_REDEMPTION_VALUE = 'redemption_value';
 
-    const FIELD_SKU_VALUE = 'sku_value';
-
     private $total = [];
+    public $cardSum = [];
 
+    protected function calc()
+    {
+        $this->table = [];
+        $query = $this->getBaseQuery();
+        $query = $this->setWhereFilters($query);
+        $this->table['data'] = $query->get()->toArray();
+    }
 
     protected function getBaseQuery(): Builder
     {
-        $report_key = $this->params[self::FIELD_REPORT_KEY] ?? self::FIELD_REDEMPTION_VALUE;
-
         $query = DB::table('merchants');
         $query->join('medium_info', 'medium_info.merchant_id', '=', 'merchants.id');
         $query->addSelect(
             DB::raw("
-                COUNT(*) as count,
-                SUM(cost_basis) as 'total_cost_basis',
-                SUM(redemption_value - sku_value) as 'total_premium',
+                merchants.name,
+                cost_basis,
                 sku_value,
                 redemption_value,
-                merchant_id as id
-            "),
+                merchant_id as id"),
         );
-
-        if ($report_key == self::FIELD_REDEMPTION_VALUE) {
-            $query->addSelect(
-                DB::raw("
-                    SUM(redemption_value) as 'total_redemption_value'
-            "),
-            );
-        } else {
-            $query->addSelect(
-                DB::raw("
-                    SUM(sku_value) as 'total_redemption_value'
-            "),
-            );
-        }
-
         return $query;
     }
 
@@ -73,12 +47,35 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
     protected function setWhereFilters(Builder $query): Builder
     {
         $query->whereNotNull('medium_info.redemption_date');
-        $query->whereIn('merchants.id', $this->params[self::MERCHANTS]);
-        if ($this->params [self::MERCHANTS_ACTIVE]) {
-            $query->where('merchants.status', '=', 1);
+        if ($this->params['programId']){
+            $merchantIds = ProgramMerchant::where('program_id', $this->params['programId'])->pluck('merchant_id')->toArray();
+            $query->whereIn('merchants.id', $merchantIds);
         }
-        $query->whereBetween('medium_info.redemption_date',
-            [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+
+
+        if (!empty($this->params['merchants'])) {
+            $query->whereIn('merchants.id', $this->params['merchants']);
+        }
+
+        if (!empty($this->params['active'])) {
+            $query->where('merchants.status', $this->params['active']);
+        }
+
+        if (!empty($this->params['codes'])) {
+            $query->where('medium_info.virtual_inventory', $this->params['codes']);
+        }
+
+        if (!empty($this->params['from'])) {
+            $query->where('medium_info.redemption_datetime', '>=', $this->params['from']);
+        }
+
+        if (!empty($this->params['to'])) {
+            $toDateTime = \DateTime::createFromFormat('Y-m-d H:i:s', $this->params['to']);
+            $toDateTime->setTime(23, 59, 59);
+            $toDateTimeFormatted = $toDateTime->format('Y-m-d H:i:s');
+            $query->where('medium_info.redemption_datetime', '<=', $toDateTimeFormatted);
+        }
+
         return $query;
     }
 
@@ -95,164 +92,225 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
     {
         parent::getTable();
 
-        $data = $this->table['data'];
-
-        $table['merchants'] = [];
         $report_key = $this->params[self::FIELD_REPORT_KEY] ?? self::FIELD_REDEMPTION_VALUE;
-        $merchants = Merchant::getFlatTree();
-
-        $total_row = (object)[];
-        $total_row->{self::FIELD_TOTAL_DOLLAR_COST_BASIS} = 0;
-        $total_row->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE} = 0;
-        $total_row->{self::FIELD_AVG_DISCOUNT_PERCENT} = 0;
-        $total_row->{self::FIELD_PERCENT_TOTAL_REDEMPTION_VALUE} = 0;
-        $total_row->{self::FIELD_TOTAL_DOLLAR_PREMIUM} = 0;
-        $total_row->{self::FIELD_PERCENT_TOTAL_COST} = 0;
-        $total_row->{self::FIELD_REDEMPTIONS} = [];
-
-        $neededIds = array_column($data, 'id');
-        foreach ($merchants as $merchant) {
-            if (in_array($merchant->id, $neededIds)) {
-                $merchant = (object)['id' => $merchant->id, 'name' => $merchant->name];
-                $merchant->{self::FIELD_TOTAL_DOLLAR_COST_BASIS} = 0;
-                $merchant->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE} = 0;
-                $merchant->{self::FIELD_AVG_DISCOUNT_PERCENT} = 0;
-                $merchant->{self::FIELD_TOTAL_DOLLAR_PREMIUM} = 0;
-                $merchant->{self::FIELD_PERCENT_TOTAL_REDEMPTION_VALUE} = 0;
-                $merchant->{self::FIELD_PERCENT_TOTAL_COST} = 0;
-                $merchant->{self::FIELD_REDEMPTIONS} = [];
-                $table['merchants'][$merchant->id] = $merchant;
+        $data = $this->table['data'];
+        $bodyReference = [];
+        foreach ($data as $val) {
+            if (!isset($bodyReference[$val->id]['total_cost_basis'])) {
+                $bodyReference[$val->id]['total_cost_basis'] = 0;
             }
-        }
+            $bodyReference[$val->id]['total_cost_basis'] += round($val->cost_basis);
 
-        if (is_array($data) && count($data) > 0) {
-            // create the starting table and prime with 0's
-            foreach ($data as $row) {
-                if ( ! isset ($table['merchants'][$row->id])) {
-                    continue;
-                }
-
-                $table['merchants'][$row->id]->{self::FIELD_TOTAL_DOLLAR_COST_BASIS} += $row->{self::FIELD_TOTAL_DOLLAR_COST_BASIS};
-                $table['merchants'][$row->id]->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE} += $row->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE};
-                $table['merchants'][$row->id]->{self::FIELD_TOTAL_DOLLAR_PREMIUM} += $row->{self::FIELD_TOTAL_DOLLAR_PREMIUM};
-                if ( ! isset ($table['merchants'][$row->id]->{self::FIELD_REDEMPTIONS}[( float )$row->$report_key])) {
-                    $table['merchants'][$row->id]->{self::FIELD_REDEMPTIONS}[( float )$row->$report_key] = 0;
-                }
-                $table['merchants'][$row->id]->{self::FIELD_REDEMPTIONS}[( float )$row->$report_key] += $row->count;
-
-
-                // Add to the total row
-                $total_row->{self::FIELD_TOTAL_DOLLAR_COST_BASIS} += $row->{self::FIELD_TOTAL_DOLLAR_COST_BASIS};
-                $total_row->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE} += $row->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE};
-                $total_row->{self::FIELD_TOTAL_DOLLAR_PREMIUM} += $row->{self::FIELD_TOTAL_DOLLAR_PREMIUM};
-                if ( ! isset ($total_row->{self::FIELD_REDEMPTIONS}[( float )$row->$report_key])) {
-                    $total_row->{self::FIELD_REDEMPTIONS}[( float )$row->$report_key] = 0;
-                }
-                $total_row->{self::FIELD_REDEMPTIONS}[( float )$row->$report_key] += $row->count;
+            if (!isset($bodyReference[$val->id]['c' . round($val->$report_key)])) {
+                $bodyReference[$val->id]['c' . round($val->$report_key)] = 0;
             }
-        }
 
-        foreach ($table['merchants'] as $id => $merchant) {
-            $merchants_redemption_totals = [];
-            foreach ($merchant->{self::FIELD_REDEMPTIONS} as $merchant_redemption_value => $merchant_redemption_count) {
-                $merchants_redemption_totals[] = [
-                    'value' => $merchant_redemption_value,
-                    'count' => $merchant_redemption_count
-                ];
+            $bodyReference[$val->id]['c' . round($val->$report_key)] += 1;
+            $bodyReference[$val->id]['key'] = $val->id;
+            if (!isset($bodyReference[$val->id]['total_redemption_value'])) {
+                $bodyReference[$val->id]['total_redemption_value'] = 0;
             }
-            $table['merchants'][$id]->{self::FIELD_REDEMPTIONS} = $merchants_redemption_totals;
-        }
+            $bodyReference[$val->id]['total_redemption_value'] += round($val->$report_key, 2);
 
-        $redemption_totals = [];
-        foreach ($total_row->{self::FIELD_REDEMPTIONS} as $key_value => $redemption_count) {
-            $redemption_totals[] = [
-                'value' => $key_value,
-                'count' => $redemption_count
-            ];
-        }
-        $total_row->{self::FIELD_REDEMPTIONS} = $redemption_totals;
 
-        // Calculate the total cost and redemption percents
-        if (count($table['merchants']) > 0) {
-            foreach ($table['merchants'] as $merchant_row) {
-                if ($total_row->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE} !== 0) {
-                    $merchant_row->{self::FIELD_PERCENT_TOTAL_REDEMPTION_VALUE} = $merchant_row->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE} / $total_row->{self::FIELD_TOTAL_DOLLAR_REDEMPTION_VALUE} * 100;
-                } else {
-                    $merchant_row->{self::FIELD_PERCENT_TOTAL_REDEMPTION_VALUE} = 0;
-                }
-                if ($total_row->{self::FIELD_TOTAL_DOLLAR_COST_BASIS} !== 0) {
-                    $merchant_row->{self::FIELD_PERCENT_TOTAL_COST} = $merchant_row->{self::FIELD_TOTAL_DOLLAR_COST_BASIS} / $total_row->{self::FIELD_TOTAL_DOLLAR_COST_BASIS} * 100;
-                } else {
-                    $merchant_row->{self::FIELD_PERCENT_TOTAL_COST} = 0;
-                }
-                $total_row->{self::FIELD_PERCENT_TOTAL_COST} += $merchant_row->{self::FIELD_PERCENT_TOTAL_COST};
-                $total_row->{self::FIELD_PERCENT_TOTAL_REDEMPTION_VALUE} += $merchant_row->{self::FIELD_PERCENT_TOTAL_REDEMPTION_VALUE};
-                $params = $this->params;
-                $params[self::MERCHANTS] = [$merchant_row->id];
-                $average_discount_report = new ReportSupplierRedemptionTotalAverageService($params);
-                $average_discount_report = $average_discount_report->getTable()['data'];
-                $average_discount_report = $average_discount_report ? array_shift($average_discount_report)->avg_discount_percent : 0;
-                $merchant_row->{self::FIELD_AVG_DISCOUNT_PERCENT} = $average_discount_report;
-                $total_row->{self::FIELD_AVG_DISCOUNT_PERCENT} += $merchant_row->{self::FIELD_AVG_DISCOUNT_PERCENT};
+            if (!isset($bodyReference[$val->id]['total_premium'])) {
+                $bodyReference[$val->id]['total_premium'] = 0;
             }
+            $bodyReference[$val->id]['total_premium'] = $val->redemption_value - $val->sku_value;
+
+            $bodyReference[$val->id]['percent_total_redemption_value'] = 0;
+
+            $bodyReference[$val->id]['percent_total_cost'] = 0;
+
+            $bodyReference[$val->id]['avg_discount_percent'] = round((($val->redemption_value - $val->cost_basis) / $val->redemption_value) * 100, 2);
+            $bodyReference[$val->id]['name'] = $val->name;
+            if (!isset($this->cardSum[round($val->$report_key)])) {
+                $this->cardSum[round($val->$report_key)] = 0;
+            }
+            $this->cardSum[round($val->$report_key)] += 1;
+
         }
 
-        $this->total = $total_row;
-        return ['data' => $table['merchants'], 'count' => count($table['merchants'])];
+        foreach ($bodyReference as $key => $val) {
+
+            if (!isset($this->total['total_redemption_value'])) {
+                $this->total['total_redemption_value'] = 0;
+            }
+            $this->total['total_redemption_value'] += $val['total_redemption_value'];
+
+            if (!isset($this->total['total_premium'])) {
+                $this->total['total_premium'] = 0;
+            }
+            $this->total['total_premium'] += $val['total_premium'];
+
+            if (!isset($this->total['total_cost_basis'])) {
+                $this->total['total_cost_basis'] = 0;
+            }
+            $this->total['total_cost_basis'] += $val['total_cost_basis'];
+
+            if (!isset($this->total['avg_discount_percent'])) {
+                $this->total['avg_discount_percent'] = 0;
+            }
+            $this->total['avg_discount_percent'] += $val['avg_discount_percent'];
+        }
+        if (isset($this->total['avg_discount_percent'])) {
+            $this->total['avg_discount_percent'] = round($this->total['avg_discount_percent'] / count($bodyReference), 2);
+        } else {
+            $this->total['avg_discount_percent'] = 0;
+        }
+
+
+        foreach ($bodyReference as $key => $val) {
+            $bodyReference[$key]['percent_total_redemption_value'] = round(($val['total_redemption_value'] * 100) / $this->total['total_redemption_value'], 2);
+            $bodyReference[$key]['percent_total_cost'] = round(($val['total_cost_basis'] * 100) / $this->total['total_cost_basis'], 2);
+        }
+
+        foreach ($bodyReference as $key => $val) {
+            if (!isset($this->total['percent_total_redemption_value'])) {
+                $this->total['percent_total_redemption_value'] = 0;
+            }
+            $this->total['percent_total_redemption_value'] += $val['percent_total_redemption_value'];
+
+            if (!isset($this->total['percent_total_cost'])) {
+                $this->total['percent_total_cost'] = 0;
+            }
+            $this->total['percent_total_cost'] += $val['percent_total_cost'];
+        }
+
+        $colCard = [];
+        foreach ($this->cardSum as $key => $val) {
+            $colCard['c'.$key] = $val;
+        }
+
+        $total = array_merge($colCard, $this->total,['key'=>'total']);
+
+        if (isset($total['percent_total_cost'])) {
+            $total['percent_total_cost'] = round($total['percent_total_cost']);
+        }
+
+        if (isset($total['percent_total_cost'])) {
+            $total['percent_total_redemption_value'] = round($total['percent_total_cost']);
+        }
+
+        return [
+            'data' => $bodyReference,
+            'total' => count($bodyReference),
+            'config' => [
+                'columns' => $this->getHeaders(),
+                'total' => $total
+            ]
+        ];
     }
 
     protected function getReportForCSV(): array
     {
-        $this->isExport = true;
-        $this->params[self::SQL_LIMIT] = null;
-        $this->params[self::SQL_OFFSET] = null;
-        $data = $this->getTable();
-        sort($data['data']);
-        $data['data'][] = [
-            'name' => 'Total',
-            'total_redemption_value' => $this->total->total_redemption_value,
-            'total_premium' => $this->total->total_premium,
-            'percent_total_redemption_value' => $this->total->percent_total_redemption_value,
-            'total_cost_basis' => $this->total->total_cost_basis,
-            'percent_total_cost' => $this->total->percent_total_cost,
-            'avg_discount_percent' => $this->total->avg_discount_percent,
-        ];
-        $data['headers'] = $this->getCsvHeaders();
-        return $data;
+        return [];
     }
 
-    public function getCsvHeaders(): array
+    public function getHeaders(): array
     {
-        return [
-            [
-                'label' => 'Merchant',
-                'key' => 'name'
-            ],
-            [
-                'label' => 'Total Redemption Value',
-                'key' => 'total_redemption_value'
-            ],
-            [
-                'label' => 'Total Premium',
-                'key' => 'total_premium'
-            ],
-            [
-                'label' => 'Percent Total Redemption Value',
-                'key' => 'percent_total_redemption_value'
-            ],
-            [
-                'label' => 'Total Cost',
-                'key' => 'total_cost_basis'
-            ],
-            [
-                'label' => 'Percent Total Cost',
-                'key' => 'percent_total_cost'
-            ],
-            [
-                'label' => 'Average Discount',
-                'key' => 'avg_discount_percent'
-            ],
+        $cardSum = $this->cardSum;
+        $headers = [];
+        $headers[] = [
+            'label' => 'Merchant',
+            'fixed' => true,
+            'key' => 'name',
+            'dataIndex' => 'name',
+            'footer' => "Total",
+            'width' => 200,
+            'prefix' => "",
+            'suffix' => "",
+            'type' => "string",
+            'title' => "Merchant",
         ];
-    }
+        ksort($cardSum);
+        foreach ($cardSum as $key => $val) {
+            $headers[] = [
+                'label' => "$key",
+                'key' => "c$key",
+                'dataIndex' => "c$key",
+                'title' => "$key",
+                'fixed' => false,
+                'footer' => "$val",
+                'width' => 50,
+                'prefix' => "",
+                'suffix' => "",
+                'type' => "integer",
+            ];
+        }
+        $headers[] = [
+            'label' => 'Total Redemption Value ($)',
+            'key' => 'total_redemption_value',
+            'dataIndex' => 'total_redemption_value',
+            'title' => "Total Redemption Value ($)",
+            'fixed' => false,
+            'footer' => $this->total['total_redemption_value'] ?? '0',
+            'width' => 200,
+            'prefix' => "$",
+            'suffix' => "",
+            'type' => "float",
+        ];
+        $headers[] = [
+            'label' => 'Total Premium ($)',
+            'key' => 'total_premium',
+            'dataIndex' => 'total_premium',
+            'title' => "Total Premium ($)",
+            'fixed' => false,
+            'footer' => $this->total['total_premium'] ?? '0',
+            'width' => 180,
+            'prefix' => "$",
+            'suffix' => "",
+            'type' => "float",
+        ];
+        $headers[] = [
+            'label' => 'Percent Total Redemption Value (%)',
+            'key' => 'percent_total_redemption_value',
+            'dataIndex' => 'percent_total_redemption_value',
+            'title' => "Percent Total Redemption Value (%)",
+            'fixed' => false,
+            'footer' => round($this->total['percent_total_redemption_value'] ?? 0),
+            'width' => 250,
+            'prefix' => '%',
+            'suffix' => "%",
+            'type' => "float",
+        ];
+        $headers[] = [
+            'label' => 'Total Cost ($)',
+            'key' => 'total_cost_basis',
+            'dataIndex' => 'total_cost_basis',
+            'title' => "Total Cost ($)",
+            'fixed' => false,
+            'footer' => $this->total['total_cost_basis'] ?? '0',
+            'width' => 180,
+            'prefix' => "$",
+            'suffix' => "",
+            'type' => "float",
+        ];
+        $headers[] = [
+            'label' => 'Percent Total Cost (%)',
+            'title' => 'Percent Total Cost (%)',
+            'key' => 'percent_total_cost',
+            'dataIndex' => 'percent_total_cost',
+            'fixed' => false,
+            'footer' => round($this->total['percent_total_cost'] ?? 0),
+            'width' => 180,
+            'prefix' => "",
+            'suffix' => "%",
+            'type' => "float",
+        ];
+        $headers[] = [
+            'label' => 'Average Discount (%)',
+            'title' => 'Average Discount (%)',
+            'key' => 'avg_discount_percent',
+            'dataIndex' => 'avg_discount_percent',
+            'fixed' => false,
+            'footer' => $this->total['avg_discount_percent'] ?? 0,
+            'width' => 180,
+            'prefix' => "",
+            'suffix' => "%",
+            'type' => "float",
+        ];
 
+        return $headers;
+    }
 }

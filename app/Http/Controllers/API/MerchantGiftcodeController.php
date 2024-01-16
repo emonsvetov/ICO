@@ -27,6 +27,8 @@ class MerchantGiftcodeController extends Controller
         $from = request()->get('from', null);
         $virtual = request()->get('virtual', null);
         $type = request()->get('type', '');
+        $sku = request()->get('sku', null);
+
 
         $fromDate = '';
         if($from){
@@ -52,6 +54,10 @@ class MerchantGiftcodeController extends Controller
         }
 
         $query = Giftcode::select( 'medium_info.*' )->where($where);
+
+        if ($sku) {
+            $query->where('sku_value', '=', $sku);
+        }
 
         if($type == 'redeemed'){
             $query->leftJoin('users', 'users.id', '=', 'medium_info.redeemed_user_id');
@@ -83,13 +89,18 @@ class MerchantGiftcodeController extends Controller
                 $q->whereNull('redemption_datetime');
                 $q->where('purchased_by_v2', '=' , 0);
                 $q->where('virtual_inventory', '=' , 1);
-                if(env('APP_ENV') != 'production'){
+                if(env('APP_ENV') == 'production'){
+                    $q->where('medium_info_is_test', '=' , 0);
+                }else{
                     $q->where('medium_info_is_test', '=' , 1);
                 }
             });
         }elseif($type == 'test'){
             $query->where(function ($q) {
                 $q->where('medium_info_is_test', '=' , 1);
+                $q->whereNull('redemption_datetime');
+                $q->where('purchased_by_v2', '=' , 0);
+                $q->where('virtual_inventory', '=' , 0);
             });
         }
 
@@ -102,16 +113,17 @@ class MerchantGiftcodeController extends Controller
         }
 
         // obfuscation
+        /*
         $query->addSelect(
             DB::raw("upper(substring(MD5(RAND()), 1, 20)) as `code`")
-        );
+        );*/
 
         $query = $query->orderByRaw($orderByRaw);
 
-        if ( request()->has('minimal') )
-        {
-            $giftcodes = $query->select('id', 'code')
-            ->get();
+        if (request()->has('minimal')) {
+            $giftcodes = $query->select('id', 'code')->get();
+        } elseif (request()->has('allmerch')) {
+            $giftcodes = $query->get();
         } else {
             $giftcodes = $query->paginate(request()->get('limit', config('global.paginate_limit')));
         }

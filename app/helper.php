@@ -21,6 +21,25 @@ defined ( 'MERCHANTS' ) or define ( 'MERCHANTS', 'merchants' );
 defined ( 'PROGRAMS' ) or define ( 'PROGRAMS', 'programs' );
 defined ( 'PROGRAM_MERCHANT' ) or define ( 'PROGRAM_MERCHANT', 'program_merchant' );
 
+defined ( 'PROGRAM_PATHS' ) or define ( 'PROGRAM_PATHS', 'program_paths' );
+defined ( 'PROGRAMS_EXTRA' ) or define ( 'PROGRAMS_EXTRA', 'programs_extra' );
+defined ( 'PROGRAM_TYPES_TBL' ) or define ( 'PROGRAM_TYPES_TBL', 'program_types' );
+defined ( 'STATE_TYPES_TBL' ) or define ( 'STATE_TYPES_TBL', 'state_types' );
+defined ( 'TOKENS' ) or define ( 'TOKENS', 'tokens' );
+defined ( 'TOKEN_TYPES' ) or define ( 'TOKEN_TYPES', 'token_types' );
+defined ( 'PROGRAM_STATE_DELETED' ) or define ( 'PROGRAM_STATE_DELETED', 'Deleted' );
+defined ( 'TOKEN_TYPE_SIGNUP' ) or define ( 'TOKEN_TYPE_SIGNUP', 'signup' );
+
+defined ( 'CONFIG_FIELDS' ) or define ( 'CONFIG_FIELDS', 'config_fields' );
+defined ( 'CUSTOM_FIELD_TYPES' ) or define ( 'CUSTOM_FIELD_TYPES', 'custom_field_types' );
+defined ( 'CONFIG_FIELDS_HAS_RULES' ) or define ( 'CONFIG_FIELDS_HAS_RULES', 'config_fields_has_rules' );
+defined ( 'CUSTOM_FIELD_RULES' ) or define ( 'CUSTOM_FIELD_RULES', 'custom_field_rules' );
+defined ( 'PROGRAMS_CONFIG_FIELDS' ) or define ( 'PROGRAMS_CONFIG_FIELDS', 'programs_config_fields' );
+defined ( 'DOMAINS' ) or define ( 'DOMAINS', 'domains' );
+defined ( 'ACCOUNT_HOLDERS' ) or define ( 'ACCOUNT_HOLDERS', 'account_holders' );
+defined ( 'DOMAINS_HAS_PROGRAMS' ) or define ( 'DOMAINS_HAS_PROGRAMS', 'domains_has_programs' );
+
+
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING', 'Reversal program pays for monies pending' );
 defined ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE' ) or define ( 'JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE', 'Reversal program pays for deposit fee' );
 defined ( 'ALLOWED_HTML_TAGS' ) or define ( 'ALLOWED_HTML_TAGS', '<strong><b><p><br>' );
@@ -36,6 +55,7 @@ defined ( 'TBL_MERCHANTS' ) or define ('TBL_MERCHANTS', 'merchants' );
 defined ( 'TBL_STATE_TYPES' ) or define ('TBL_STATE_TYPES', 'statuses' );
 defined ( 'TBL_USERS' ) or define ('TBL_USERS', 'users' );
 
+defined ( 'MERCHANT_PATHS' ) or define ('MERCHANT_PATHS', 'merchant_paths' );
 
 if(!function_exists('pr'))  {
     function pr($d)    {
@@ -118,6 +138,36 @@ if(!function_exists('_flatten'))  {
 		return $newCollection;
     }
 }
+
+if(!function_exists('_tree_flatten'))  {
+    function _tree_flatten($collection, $depth = 0, $path = 0)
+    {
+        if(!isset($newCollection)) $newCollection = collect();
+        $depth++;
+        foreach( $collection as $key => $model ) {
+            $children = clone $model->children;
+            unset($model->children);
+            $tmpPath = $path ? explode(',', $path) : [];
+            $tmpPath[] = $model->parent_id;
+            $model->dinamicPath = implode(',', $tmpPath);
+
+            $search = $newCollection->search(function ($item) use ($model) {
+                return $item->id === $model->id;
+            });
+
+            if ($search === false){
+                $model->dinamicDepth = $depth;
+                $newCollection = $newCollection->push($model);
+            }
+
+            if (!$children->isEmpty()) {
+                $newCollection = $newCollection->merge(_tree_flatten($children, $depth, $model->dinamicPath));
+            }
+        }
+        return $newCollection;
+    }
+}
+
 if(!function_exists('collectIdsInATree'))  {
     function collectIdsInATree($treeNodes, &$ids)
     {
@@ -307,6 +357,80 @@ function childrenizeModel( $model )
     return $model;
 }
 
+if (! function_exists ( "cast_fieldtypes" )) {
+	function cast_fieldtypes($record, $fieldTypes) {
+		foreach ( $record as $fieldName => $value ) {
+			if (isset ( $fieldTypes [$fieldName] )) {
+				$type = $fieldTypes [$fieldName];
+				$value = $record->$fieldName;
+				switch ($type) {
+					case 'boolean' :
+					case 'bool' :
+						$value = ( bool ) $value;
+						break;
+					case 'integer' :
+					case 'int' :
+						$value = ( int ) $value;
+						break;
+					case 'float' :
+						$value = ( float ) $value;
+						break;
+					case 'string' :
+						$value = ( string ) $value;
+						break;
+					default :
+						break;
+				}
+				$record->$fieldName = $value;
+			}
+		}
+		return $record;
+	}
+}
+
+if (! function_exists ( 'sort_programs_by_rank_for_view' )) {
+	function sort_programs_by_rank_for_view(&$sorted_programs, $programs) {
+		foreach ( $programs as $program ) {
+			$path = explode ( ',', $program->rank );
+			if (count ( $path ) > 1) {
+				$index = array_shift ( $path );
+				$program->path = count($path);
+				$program->rank = implode ( ',', $path );
+				if (! isset ( $sorted_programs [$index] ['sub_programs'] )) {
+					$sorted_programs [$index] ['sub_programs'] = array ();
+				}
+				$sub_program_array = sort_programs_by_rank_for_view ( $sorted_programs [$index] ['sub_programs'], array (
+						$program
+				) );
+			} else {
+				$sorted_programs [$path [0]] ['program'] = $program;
+			}
+		}
+		return $sorted_programs;
+	}
+}
+
+if (! function_exists ( 'sort_result_by_rank' )) {
+	function sort_result_by_rank(&$sorted_result, $result, $keyName = 'items') {
+		foreach ( $result as $row ) {
+			$path = explode ( ',', $row->rank );
+			if (count ( $path ) > 1) {
+				$index = array_shift ( $path );
+				$row->path = count($path);
+				$row->rank = implode ( ',', $path );
+				if (! isset ( $sorted_result[$index]['sub_'.$keyName])) {
+					$sorted_result[$index]['sub_'.$keyName] = [];
+				}
+				$sub_program_array = sort_result_by_rank ( $sorted_result[$index]['sub_' . $keyName], array (
+					$row
+                ), $keyName );
+			} else {
+				$sorted_result[$path[0]][$keyName] = $row;
+			}
+		}
+		return $sorted_result;
+	}
+}
 function compute_program_fee_by_type($key, $program, $amount) {
     if( !isset($program[$key]) || (float) $program[$key] <= 0 ) return 0;
     $v_fee = $program[$key] / 100.0;
@@ -352,5 +476,21 @@ if (! function_exists('getMilestoneOptions')) {
             $options[$i] = "$i Year" . ($i > 1 ? 's' : '');
         }
         return $options;
+    }
+}
+
+if (! function_exists ( 'filterNonPrintable' ))
+{
+    /**
+     * @desc Codes 32-127 are common for all the different variations of the ASCII table, they are called printable characters
+     *       FILTER_FLAG_STRIP_LOW - Strip characters with ASCII value below 32
+     *       FILTER_FLAG_STRIP_HIGH - Strip characters with ASCII value above 127
+     * @param $string
+     * @return string
+     */
+    function filterNonPrintable($string)
+    {
+        $string = filter_var($string, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW|FILTER_FLAG_STRIP_HIGH);
+        return $string;
     }
 }
