@@ -49,7 +49,7 @@ class ReportTrialBalanceService extends ReportServiceAbstract
 				is_credit,
 				account_holder
             ")
-            ->whereBetween('created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]])
+            ->whereBetween('created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]])
             ->groupBy(['account_type_name', 'finance_type_name', 'is_credit', 'account_holder']);
         return $query;
     }
