@@ -661,5 +661,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Manager > Manage Account
     Route::get('/v1/organization/{organization}/program/{program}/monies-available-postings',[App\Http\Controllers\API\ManagerController::class, 'getMoniesAvailablePostings'])->middleware('can:transferMonies,App\Program,organization,program');
 
+    // v2 Routes
+    Route::get('/v1/v2-deprecated/program', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'index'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate/{account_holder_id}', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'migrate'])->middleware('can:viewAny,App\V2Deprecated');
+
 });
 
