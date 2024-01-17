@@ -34,9 +34,9 @@ class ReportGoalProgressSummaryService extends ReportServiceAbstract
     {
         $query = DB::table('goal_plans');
         $query->join('programs', 'programs.id', '=', 'goal_plans.program_id');
-        $query->join('user_goals', 'user_goals.goal_plan_id', '=', 'goal_plans.id');      
-        $query->join('user_goal_progress', 'user_goal_progress.user_goal_id', '=', 'user_goals.id');  
-        $query->join('users', 'users.account_holder_id', '=', 'user_goals.user_id'); 
+        $query->join('user_goals', 'user_goals.goal_plan_id', '=', 'goal_plans.id');
+        $query->join('user_goal_progress', 'user_goal_progress.user_goal_id', '=', 'user_goals.id');
+        $query->join('users', 'users.account_holder_id', '=', 'user_goals.user_id');
         $query->selectRaw("
             programs.name as program_name,
             goal_plans.name as goal_plan_name,
@@ -47,7 +47,7 @@ class ReportGoalProgressSummaryService extends ReportServiceAbstract
             max(user_goal_progress.created_at) as created
         ");
         $query->where('goal_plans.program_id', $this->params[self::PROGRAM_ID]);
-        $query->whereBetween("user_goal_progress.created_at",[$this->params[self::DATE_FROM], $this->params[self::DATE_TO]] );
+        $query->whereBetween("user_goal_progress.created_at",[$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]] );
         $query->orderBy('goal_plans.created_at', 'DESC');
         $table = $query->get();
         $this->table['data'] = $table;

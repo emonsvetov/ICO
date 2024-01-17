@@ -1,5 +1,5 @@
 <?php
-namespace App\Services\Report;
+namespace App\Services\reports;
 
 use Illuminate\Support\Facades\DB;
 use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
@@ -25,10 +25,10 @@ class ReportServiceSumByAccountAndJournalEvent extends ReportServiceAbstractBase
 			$this->params [self::SQL_GROUP_BY] = array (
 					'a.account_holder_id',
 					'atypes.id',
-					'jet.id' 
+					'jet.id'
 			);
 		}
-	
+
 	}
 
 	/** Calculate data by date range (timestampFrom|To) */
@@ -44,7 +44,7 @@ class ReportServiceSumByAccountAndJournalEvent extends ReportServiceAbstractBase
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
 			}
 		}
-	
+
 	}
 
 	/** basic sql without any filters */
@@ -58,17 +58,17 @@ class ReportServiceSumByAccountAndJournalEvent extends ReportServiceAbstractBase
                     atypes.name AS " . self::FIELD_ACCOUNT_TYPE . ",
                     MONTH(`posts`.created_at) as " . self::FIELD_MONTH . "
                 FROM
-                    " . ACCOUNTS . " a 
+                    " . ACCOUNTS . " a
                     INNER JOIN " . ACCOUNT_TYPES . " atypes ON atypes.id = a.account_type_id
                     INNER JOIN " . POSTINGS . " posts ON posts.account_id = a.id
                     INNER JOIN " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
                     INNER JOIN " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id";
 		return $sql;
-	
+
 	}
 
 	/** get sql where filter
-	 * 
+	 *
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
@@ -87,6 +87,6 @@ class ReportServiceSumByAccountAndJournalEvent extends ReportServiceAbstractBase
 			$where [] = "jet.type IN ('" . implode ( "','", $this->params [self::JOURNAL_EVENT_TYPES] ) . "')";
 		}
 		return $where;
-	
+
 	}
 }

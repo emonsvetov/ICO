@@ -147,4 +147,21 @@ class Merchant extends Model
         $this->{$propertyName} = (new \App\Services\GiftcodeService)->getRedeemedCountByMerchant($this, $args);
     }
 
+    public static function notInHierarchy(Merchant $merchant)
+    {
+        $query = self::whereNull('parent_id');
+        $query->where('id', '<>', $merchant->id);
+
+        return $query->doesntHave('children')->get();
+    }
+
+    public static function inHierarchy(Merchant $merchant)
+    {
+        $query = self::where('parent_id', $merchant->id);
+
+        return $query->select('id', 'name')->with(['children' => function($query){
+            return $query->select('id', 'name', 'parent_id');
+        }])->get();
+    }
+
 }

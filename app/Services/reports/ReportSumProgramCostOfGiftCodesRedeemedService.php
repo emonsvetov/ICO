@@ -1,9 +1,7 @@
 <?php
-namespace App\Services\Report;
-// use App\Services\Report\ReportServiceAbstractBase;
-use App\Services\reports\ReportServiceAbstract as ReportServiceAbstractBase;
+namespace App\Services\reports;
 
-class ReportServiceSumProgramCostOfGiftCodesRedeemed extends ReportServiceAbstractBase
+class ReportSumProgramCostOfGiftCodesRedeemedService extends ReportServiceAbstract
 {
 	const FIELD_COST_BASIS = "cost_basis";
 

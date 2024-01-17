@@ -152,6 +152,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/user', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User');
     Route::put('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'update'])->middleware('can:update,App\User,organization,user');
     Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User,organization');
+    Route::get('/v1/organization/{organization}/user/{user}/history', [App\Http\Controllers\API\UserController::class, 'history'])->middleware('can:view,App\User,organization,user');
+    Route::get('/v1/organization/{organization}/user/{user}/gift-codes-redeemed', [App\Http\Controllers\API\UserController::class, 'giftCodesRedeemed'])->middleware('can:view,App\User,organization,user');
+    Route::get('/v1/organization/{organization}/user/{user}/change-logs', [App\Http\Controllers\API\UserController::class, 'changeLogs'])->middleware('can:view,App\User,organization,user');
     //Route::delete('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'destroy'])->name('api.v1.organization.user.destroy')->middleware('can:delete,user');
 
     // User Status
@@ -226,6 +229,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/merchant/{merchant}/toa/{toa}', [App\Http\Controllers\API\MerchantController::class, 'updateToa'])->middleware('can:udpate,merchant');
 
     //Submerchant Routes
+    Route::get('/v1/merchant/{merchant}/not-in-hierarchy', [App\Http\Controllers\API\SubmerchantController::class, 'notInHierarchy'])->middleware('can:view,merchant');
+    Route::get('/v1/merchant/{merchant}/in-hierarchy', [App\Http\Controllers\API\SubmerchantController::class, 'inHierarchy'])->middleware('can:view,merchant');
     Route::get('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'index'])->middleware('can:viewAny,App\Submerchant,merchant');
     Route::post('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'store'])->middleware('can:add,App\Submerchant,merchant');
     Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:remove,App\Submerchant,merchant');
@@ -244,6 +249,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/program/{program}', [App\Http\Controllers\API\ProgramController::class, 'delete'])->middleware('can:delete,App\Program,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/prepare-live-mode', [App\Http\Controllers\API\ProgramController::class, 'prepareLiveMode'])->middleware('can:liveMode,App\Program,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/live-mode', [App\Http\Controllers\API\ProgramController::class, 'liveMode'])->middleware('can:liveMode,App\Program,organization,program');
+    Route::put('/v1/organization/{organization}/program/{program}/save-selected-reports', [App\Http\Controllers\API\ProgramController::class, 'saveSelectedReports']);
+    Route::get('/v1/reports', [App\Http\Controllers\API\ReportsController::class, 'getAllReports'])->middleware('auth:api');
+    Route::get('/v1/reports/{program}', [App\Http\Controllers\API\ReportsController::class, 'getReportsByProgramId'])->middleware(['auth:api', 'reports.available']);
+    Route::get('/v1/reports/{program}/selected', [App\Http\Controllers\API\ReportsController::class, 'getSelectedReportsByProgramId'])->middleware('auth:api');
 
     // Subprogram Routes
     Route::get('/v1/organization/{organization}/program/{program}/subprogram', [App\Http\Controllers\API\SubprogramController::class, 'index'])->middleware('can:viewAny,App\Subprogram,organization,program');
@@ -278,8 +287,27 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         [App\Http\Controllers\API\ProgramMediaTypeController::class, 'store']
     )->middleware('can:add,App\ProgramMediaType,organization,program');
 
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type-iframe',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
+    Route::post(
+        '/v1/organization/{organization}/program/{program}/digital-media-type-url-delete',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
+    Route::put(
+        '/v1/organization/{organization}/program/{program}/digital-media-type',
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+    )->middleware('can:add,App\ProgramMediaType,organization,program');
+
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
+
+
+    Route::delete('/v1/organization/{organization}/program/{program}/digital-media-type/{programMediaType}',
+    [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete'])->middleware('can:remove,App\ProgramMediaType,organization,program');
 //
 //    Route::get('/v1/organization/{organization}/program/{program}/merchant/{merchant}',
 //        [App\Http\Controllers\API\ProgramMerchantController::class, 'view'])->name('api.v1.program.merchant.view')->middleware('can:view,App\ProgramMerchant,organization,program,merchant');
@@ -333,6 +361,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Route::get('/v1/organization/{organization}/reports/{type}',[App\Http\Controllers\API\ReportController::class, 'index'])->middleware('can:viewAny,App\Report');
     Route::get('/v1/organization/{organization}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
     Route::get('/v1/program/{program}/report/{title}',[App\Http\Controllers\API\ReportController::class, 'show'])->middleware('can:viewAny,App\Report');
+
+    Route::get('/v1/organization/{organization}/report/order/{order}',[App\Http\Controllers\API\ReportOrderController::class, 'show'])->middleware('can:viewAny,App\Report');
 
     //MerchantGiftcodes
 

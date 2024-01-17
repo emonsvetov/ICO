@@ -35,8 +35,22 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
     protected function setWhereFilters(Builder $query): Builder
     {
         $query->where('medium_info.redeemed_user_id', '=', $this->params[self::USER_ID]);
-        $query->where('medium_info.redeemed_program_id', '=', $this->params[self::PROGRAM_ID]);
+
+        if (blank($this->params[self::PROGRAMS])) {
+            $programs = blank($this->params[self::PROGRAM_ID]) ? [] : [$this->params[self::PROGRAM_ID]];
+        }
+        else {
+            $programIDs = explode(',', $this->params[self::PROGRAMS]);
+            $programs = Program::whereIn('account_holder_id', $programIDs)->get()->pluck('id')->toArray();
+        }
+
+        $query->whereIn('medium_info.redeemed_program_id', $programs);
         return $query;
+    }
+
+    protected function setDefaultParams() {
+        parent::setDefaultParams ();
+        $this->params[self::PROGRAMS] = request()->get('programs');
     }
 
 }

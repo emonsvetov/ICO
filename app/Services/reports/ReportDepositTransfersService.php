@@ -35,7 +35,7 @@ class ReportDepositTransfersService extends ReportServiceAbstract
             from_program.account_holder_id as from_program_account_holder_id,
             to_program.name as to_program_name,
             to_program.account_holder_id as to_program_account_holder_id,
-            postings.posting_amount,
+            cast(postings.posting_amount as float) as posting_amount,
             users.account_holder_id as user_id,
             users.first_name,
             users.last_name,
@@ -57,7 +57,7 @@ class ReportDepositTransfersService extends ReportServiceAbstract
         $query->where('account_types.name', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
         $query->where('to_account_types.name', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
         $query->where('postings.is_credit', 0);
-        $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->where(function ($q) {
             $q->whereIn('from_program.account_holder_id', $this->params[self::PROGRAMS]);
             $q->orWhereIn('to_program.account_holder_id', $this->params[self::PROGRAMS]);

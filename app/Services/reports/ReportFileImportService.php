@@ -31,7 +31,7 @@ class ReportFileImportService extends ReportServiceAbstract
     // protected function setWhereFilters(Builder $query): Builder
     // {
     //     $query->whereIn('program_id', $this->params[self::PROGRAMS]);
-        
+
     //     return $query;
     // }
 
@@ -53,7 +53,7 @@ class ReportFileImportService extends ReportServiceAbstract
     {
         $query = DB::table('csv_imports');
         $programs = Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray();
-        $query->whereBetween('created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        $query->whereBetween('created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->selectRaw("
             name,
             path,

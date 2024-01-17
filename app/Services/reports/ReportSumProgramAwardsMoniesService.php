@@ -1,9 +1,7 @@
 <?php
-namespace App\Services\Report;
+namespace App\Services\reports;
 
-use App\Services\Report\ReportServiceSumProgramAwardsPoints;
-
-class ReportServiceSumProgramAwardsMonies extends ReportServiceSumProgramAwardsPoints
+class ReportSumProgramAwardsMoniesService extends ReportSumProgramAwardsPointsService
 {
 	/** get sql where filter
 	 *

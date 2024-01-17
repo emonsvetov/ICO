@@ -64,6 +64,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
             foreach ($extras['extra'] as $extra) {
                 if ($extra->program_id == $programID) {
                     $programsArray[$programID]['name'] = $extra->name;
+                    $programsArray[$programID]['programID'] = $extra->id;
                     if (($extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_PAYS_FOR_MONIES_PENDING && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE)
                         or ($extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE)) {
                         $depositTotal += $extra->posting_amount;
@@ -134,6 +135,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
 
         $query->selectRaw("
             p.name,
+            p.id,
             posts.posting_amount,
             posts.is_credit,
             jet.type as event_type,
@@ -142,7 +144,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
         "
         );
 
-        $query->whereBetween('posts.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        $query->whereBetween('posts.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->whereIn('a.account_holder_id', $this->params[self::PROGRAMS]);
 
         return $query->get();
@@ -200,7 +202,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
 
         $query->whereIn('a.account_holder_id', $this->params[self::PROGRAMS]);
         $query->where('at.name', AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE);
-        $query->where('p.created_at', '<=', $this->params[self::DATE_FROM]);
+        $query->where('p.created_at', '<=', $this->params[self::DATE_BEGIN]);
 
         $query->groupBy(['a.account_holder_id', 'p.is_credit']);
 

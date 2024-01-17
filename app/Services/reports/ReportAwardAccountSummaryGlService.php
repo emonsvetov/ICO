@@ -108,9 +108,6 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
         return $query;
     }
 
-    private function amountFormat($value){
-        return number_format((float)$value, 2, '.', '');
-    }
     public function getTable(): array
     {
         parent::getTable();

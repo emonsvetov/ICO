@@ -13,9 +13,12 @@ abstract class ReportServiceAbstract
     const YEAR = 'year';
     const MONTH = 'month';
     const CODES = 'codes';
-    const DATE_BEGIN = self::DATE_FROM;
-    const DATE_END = self::DATE_TO;
-
+    const INVENTORY_TYPE = 'inventoryType';
+    const ORDER_STATUS = 'orderStatus';
+    const PURCHASE_BY_V2 = 'purchaseByV2';
+    const KEYWORD = 'keyword';
+    const DATE_BEGIN = 'from';
+    const DATE_END = "to";
     const SQL_LIMIT = 'limit';
     const SQL_OFFSET = 'offset';
     const SQL_GROUP_BY = 'group';
@@ -28,7 +31,7 @@ abstract class ReportServiceAbstract
     const PROGRAM_ID = 'programId';
     const PROGRAM_ACCOUNT_HOLDER_ID = 'program_account_holder_id';
     const CREATED_ONLY = 'createdOnly';
-    const PROGRAMS = 'program_account_holder_ids';
+    const PROGRAMS = 'programs';
     const PROGRAM_IDS = 'program_ids';
     const PROGRAM_ACCOUNT_HOLDER_IDS = 'program_account_holder_ids';
     const AWARD_LEVEL_NAMES = "award_level_names";
@@ -77,6 +80,7 @@ abstract class ReportServiceAbstract
     protected bool $isExport = false;
     protected $query = null;
     const PAGINATE = 'paginate';
+    const IS_CREDIT = "is_credit";
 
     /**
      * @var ReportHelper|null
@@ -88,7 +92,9 @@ abstract class ReportServiceAbstract
         DB::statement("SET SQL_MODE=''"); //TODO - To be removed, correct query instead
 
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
+        $this->params[self::DATE_BEGIN] =   $this->convertDate($params[self::DATE_BEGIN] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
+        $this->params[self::DATE_END] =   $this->convertDate($params[self::DATE_END] ?? '', false);
         $this->params[self::SQL_LIMIT] = $params[self::SQL_LIMIT] ?? null;
         $this->params[self::SQL_OFFSET] = $params[self::SQL_OFFSET] ?? null;
         $this->params[self::EXPORT_CSV] = $params[self::EXPORT_CSV] ?? null;
@@ -105,11 +111,52 @@ abstract class ReportServiceAbstract
         $this->params[self::SQL_ORDER_BY] = $params[self::SQL_ORDER_BY] ?? null;
         $this->params[self::PAGINATE] = $params[self::PAGINATE] ?? null;
         $this->params[self::PROGRAMS] = isset($params[self::PROGRAMS]) && is_array($params[self::PROGRAMS]) ? $params[self::PROGRAMS] : [];
+        $this->params[self::PROGRAM_ACCOUNT_HOLDER_IDS] =  $this->params[self::PROGRAMS];
         $this->params[self::PROGRAM_IDS] = $this->params[self::PROGRAMS] ? Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray() : [];
         $this->params[self::SERVER] = $params[self::SERVER] ?? null;
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
         $this->params[self::MONTH] = $params[self::MONTH] ?? null;
         $this->params[self::CODES] = $params[self::CODES] ?? null;
+        if (isset($params[self::ACCOUNT_TYPES])) {
+            $temp = array();
+            foreach( $params[self::ACCOUNT_TYPES] as $param) {
+                array_push($temp, $param[0]);
+            }
+            $this->params[self::ACCOUNT_TYPES] = $temp;
+        }
+        else {
+            $this->params[self::ACCOUNT_TYPES] = null;
+        }
+        // $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
+        //     is_array ( $params[self::ACCOUNT_TYPES] ) ?
+        //     foreach( $params[self::ACCOUNT_TYPES] as $param) {
+        //         array_push($temp, $param[0]);
+        //     }
+        //     :
+        //     array (
+        //         $params[self::ACCOUNT_TYPES]
+        //     )
+        // ) : null;
+        if (isset($params[self::JOURNAL_EVENT_TYPES])) {
+            $temp = array();
+            foreach( $params[self::JOURNAL_EVENT_TYPES] as $param) {
+                array_push($temp, $param[0]);
+            }
+            $this->params[self::JOURNAL_EVENT_TYPES] = $temp;
+        }
+        else {
+            $this->params[self::JOURNAL_EVENT_TYPES] = null;
+        }
+        // $this->params[self::JOURNAL_EVENT_TYPES] = isset($params[self::JOURNAL_EVENT_TYPES]) ? (
+        //     is_array ( $params[self::JOURNAL_EVENT_TYPES] ) ? $params[self::JOURNAL_EVENT_TYPES] : array (
+        //         $params[self::JOURNAL_EVENT_TYPES]
+        //     )
+        // ) : null;
+
+        $this->params[self::INVENTORY_TYPE] = $params[self::INVENTORY_TYPE] ?? null;
+        $this->params[self::KEYWORD] = $params[self::KEYWORD] ?? null;
+        $this->params[self::ORDER_STATUS] = $params[self::ORDER_STATUS] ?? null;
+        $this->params[self::PURCHASE_BY_V2] = $params[self::PURCHASE_BY_V2] ?? null;
         $this->reportHelper = new ReportHelper() ?? null;
     }
 
@@ -197,6 +244,7 @@ abstract class ReportServiceAbstract
     /** Calculate data by date range (timestampFrom|To) */
     protected function getDataDateRange() {
         $data = $this->calcByDateRange ( $this->getParams() );
+        // pr($data);
         if (count ( $data ) > 0) {
 			foreach ( $data as $row ) {
 				foreach ( $row as $key => $val ) {
@@ -219,7 +267,7 @@ abstract class ReportServiceAbstract
             $query = $this->setWhereFilters($query);
             $query = $this->setGroupBy($query);
             try {
-                // $this->table['total'] = $query->count();
+                // pr($query->count());
                 $query = $this->setOrderBy($query);
                 $query = $this->setLimit($query);
                 $this->table = $query->get()->toArray();
@@ -232,6 +280,7 @@ abstract class ReportServiceAbstract
         {
             // $this->table['total'] = count($query);
             // $this->table['data'] = $query;
+            // pr($query);
             $this->table = $query;
         }
         // pr(get_class($this));
@@ -317,10 +366,11 @@ abstract class ReportServiceAbstract
         if( $sql != "")
         {
             $sql = $this->addSqlFilters($sql);
+            // pr($sql);
             return DB::select( DB::raw($sql), []);
         }
 
-        DB::table( '' );
+        return DB::table( '' );
     }
 
 	public function getParams() {
@@ -356,4 +406,8 @@ abstract class ReportServiceAbstract
 	protected function getWhereFilters() {
 		return array ();
 	}
+
+    public function amountFormat($value){
+        return number_format((float)$value, 2, '.', '');
+    }
 }

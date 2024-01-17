@@ -158,7 +158,7 @@ class MigrateAccountsService extends MigrationService
                      */
                     $accountV2account = AccountV2account::where('v2_account_id', $v2Account->id)->first();
                     if( $accountV2account ) {
-                        $v3Account = $accountV2account->user();
+                        $v3Account = $accountV2account->account();
                         $createNewAccount = false;
                         $this->printf("Account found by '\$AccountV2account->v2_account_id'.\n");
                         if( !$v2Account->v3_account_id ) {
