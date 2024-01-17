@@ -94,7 +94,7 @@ abstract class ReportServiceAbstract
         $this->params[self::DATE_FROM] = $this->convertDate($params[self::DATE_FROM] ?? '');
         $this->params[self::DATE_BEGIN] =   $this->convertDate($params[self::DATE_BEGIN] ?? '');
         $this->params[self::DATE_TO] = $this->convertDate($params[self::DATE_TO] ?? '', false);
-        $this->params[self::DATE_END] =   $this->convertDate($params[self::DATE_END] ?? '');
+        $this->params[self::DATE_END] =   $this->convertDate($params[self::DATE_END] ?? '', false);
         $this->params[self::SQL_LIMIT] = $params[self::SQL_LIMIT] ?? null;
         $this->params[self::SQL_OFFSET] = $params[self::SQL_OFFSET] ?? null;
         $this->params[self::EXPORT_CSV] = $params[self::EXPORT_CSV] ?? null;
