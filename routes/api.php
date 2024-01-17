@@ -229,6 +229,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/merchant/{merchant}/toa/{toa}', [App\Http\Controllers\API\MerchantController::class, 'updateToa'])->middleware('can:udpate,merchant');
 
     //Submerchant Routes
+    Route::get('/v1/merchant/{merchant}/not-in-hierarchy', [App\Http\Controllers\API\SubmerchantController::class, 'notInHierarchy'])->middleware('can:view,merchant');
+    Route::get('/v1/merchant/{merchant}/in-hierarchy', [App\Http\Controllers\API\SubmerchantController::class, 'inHierarchy'])->middleware('can:view,merchant');
     Route::get('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'index'])->middleware('can:viewAny,App\Submerchant,merchant');
     Route::post('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'store'])->middleware('can:add,App\Submerchant,merchant');
     Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:remove,App\Submerchant,merchant');
