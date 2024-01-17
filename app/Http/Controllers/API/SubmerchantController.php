@@ -13,8 +13,8 @@ class SubmerchantController extends Controller
 {
     public function index( Merchant $merchant )
     {
-        if ( ! $merchant->exists ) 
-        { 
+        if ( ! $merchant->exists )
+        {
             return response(['errors' => 'Merchant Not Found'], 404);
         }
 
@@ -30,8 +30,8 @@ class SubmerchantController extends Controller
             $merchants = $query->with('children')->paginate(request()->get('limit', 100));
         }
 
-        if ( $merchants->isNotEmpty() ) 
-        { 
+        if ( $merchants->isNotEmpty() )
+        {
             return response( $merchants );
         }
 
@@ -63,7 +63,7 @@ class SubmerchantController extends Controller
             $subMerchant->update( ['parent_id' => $anscestor->id]);
             return response([ 'success' => true ]);
         }
-        
+
         $subMerchant->update( ['parent_id' => $merchant->id]);
         return response([ 'success' => true ]);
     }
@@ -87,5 +87,29 @@ class SubmerchantController extends Controller
             $submerchant->update( ['parent_id' => null]);
         }
         return response(['success' => true]);
+    }
+
+    public function notInHierarchy(Merchant $merchant)
+    {
+        if ( ! $merchant->exists )
+        {
+            return response(['errors' => 'Merchant Not Found'], 404);
+        }
+
+        $merchants = Merchant::notInHierarchy($merchant);
+
+        return response( $merchants );
+    }
+
+    public function inHierarchy(Merchant $merchant)
+    {
+        if ( ! $merchant->exists )
+        {
+            return response(['errors' => 'Merchant Not Found'], 404);
+        }
+
+        $merchants = Merchant::inHierarchy($merchant);
+
+        return response( $merchants );
     }
 }
