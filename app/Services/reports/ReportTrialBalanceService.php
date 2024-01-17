@@ -50,7 +50,12 @@ class ReportTrialBalanceService extends ReportServiceAbstract
 				account_holder
             ")
             ->whereBetween('created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]])
-            ->groupBy(['account_type_name', 'finance_type_name', 'is_credit', 'account_holder']);
+            ->groupBy(['account_type_name', 'finance_type_name', 'is_credit', 'account_holder'])
+            ->orderBy('account_type_name', 'ASC')
+            ->orderBy('is_credit', 'ASC')
+            ->orderBy('finance_type_name', 'ASC')
+            ->orderBy('account_holder', 'ASC');
+
         return $query;
     }
 
