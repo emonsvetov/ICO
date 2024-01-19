@@ -172,8 +172,11 @@ class MigrateProgramsService extends MigrationService
     }
 
     public function read_list_all_root_program_ids($arguments = array()) {
+
         $query = "
-        SELECT `" . PROGRAMS . "`.account_holder_id
+        SELECT
+            `" . PROGRAMS . "`.account_holder_id,
+            `" . PROGRAMS . "`.name
             FROM `" . PROGRAMS . "`
         WHERE
             ( SELECT
@@ -186,6 +189,9 @@ class MigrateProgramsService extends MigrationService
             ) = 0";
         if(isset($arguments['label']) && $arguments['label'] != '') {
             $query .= " AND ". PROGRAMS .".label = '" . $arguments['label'] . "'";
+        }
+        if(isset($arguments['name']) && $arguments['name'] != '') {
+            $query .= " AND ". PROGRAMS .".name LIKE '%" . $arguments['name'] . "%'";
         }
         if(isset($arguments['program']) && !empty($arguments['program']) ) {
             $program_account_holder_ids = [];
