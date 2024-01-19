@@ -184,7 +184,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->executeV2SQL();
             $this->executeV3SQL();
         } catch(Exception $e)    {
-            // pr($v3Program);
             // throw new Exception( sprintf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
             $this->printf("Error creating v3 program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage());
             return;
