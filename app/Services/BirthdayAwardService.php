@@ -23,12 +23,24 @@ class BirthdayAwardService extends AwardService {
                 $participants = $this->getBirthdayAwardeesByEvent( $event );
                 if( $participants ) {
                     foreach( $participants as $participant )   {
+
                         if ( !$programService->canProgramPayForAwards($event->program, $event, [$participant->id], $event->max_awardable_amount) ) {
                             cronlog ("Program cannot pay for award. UserId:{$participant->id} ProgramID:{$event->program->id}" );
                             continue;
                         }
+
                         cronlog (sprintf("going to award %d to UserID:%d",$event->max_awardable_amount, $participant->id));
-                        $this->awardUser($event, $participant, $participant);
+
+                        $data = [
+                            'event_id' => $event->id,
+                            'message' => $event->message
+                        ];
+
+                        $managers = $event->program->getManagers();
+                        $manager = $managers[0] ?? null;
+                        $manager = $manager ?? $participant;
+
+                        $this->awardUser($event, $participant, $manager, (object)$data);
                     }
                 }
             }
@@ -51,6 +63,7 @@ class BirthdayAwardService extends AwardService {
         }   catch (Exception $e) {
             throw new Exception("Error: ". $e->getMessage());
         }
+
         $eligibleParticipants = collect([]);
         if( $participants->isNotEmpty() )  {
             foreach($participants as $participant)   {
@@ -62,6 +75,11 @@ class BirthdayAwardService extends AwardService {
 
                 if( $userBirthDate )    {
                     $dateObject = \Carbon\Carbon::parse($userBirthDate);
+
+                    // for test
+//                    if($participant->email === 'olegganshonkov@gmail.com'){
+//                        $eligibleParticipants->add($participant);
+//                    }
 
                     if($dateObject->isBirthday())  {
                         $eligibleParticipants->add($participant);
