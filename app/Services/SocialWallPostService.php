@@ -33,7 +33,7 @@ class SocialWallPostService
     {
         // print_r($request['id']);
         $post = SocialWallPost::find($request['id']);
-        $like = $post->like;
+        $like = json_decode($post->like);
         if ($like == null)
             $like = [];
         if (in_array($user->id, $like)) {
@@ -43,9 +43,8 @@ class SocialWallPostService
             $like[] = $user->id;
         }
         $post->like = $like;
-        print_r($like);
         $post->likesCount = count($like);
-        $post->save();
+        return $post->save();
     }
 
     public function getIndexData(Organization $organization, Program $program, $user, array $request): array

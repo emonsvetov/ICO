@@ -50,7 +50,7 @@ class SocialWallPostController extends Controller
     public function like(Organization $organization, Program $program, Request $request)
     {
         $user = auth()->guard('api')->user();
-        return $this->socialWallPostService->like($organization, $program, $user, $request->all());
+        return response($this->socialWallPostService->like($organization, $program, $user, $request->all()));
     }
 
     public function delete(Organization $organization, Program $program, SocialWallPost $socialWallPost)
