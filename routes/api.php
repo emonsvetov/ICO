@@ -232,8 +232,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/merchant/{merchant}/toa/{toa}', [App\Http\Controllers\API\MerchantController::class, 'updateToa'])->middleware('can:udpate,merchant');
 
     //Submerchant Routes
-    Route::get('/v1/merchant/{merchant}/not-in-hierarchy', [App\Http\Controllers\API\SubmerchantController::class, 'notInHierarchy'])->middleware('can:view,merchant');
-    Route::get('/v1/merchant/{merchant}/in-hierarchy', [App\Http\Controllers\API\SubmerchantController::class, 'inHierarchy'])->middleware('can:view,merchant');
     Route::get('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'index'])->middleware('can:viewAny,App\Submerchant,merchant');
     Route::post('/v1/merchant/{merchant}/submerchant', [App\Http\Controllers\API\SubmerchantController::class, 'store'])->middleware('can:add,App\Submerchant,merchant');
     Route::delete('/v1/merchant/{merchant}/submerchant/{submerchant}', [App\Http\Controllers\API\SubmerchantController::class, 'delete'])->middleware('can:remove,App\Submerchant,merchant');
@@ -584,6 +582,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Goal plans
      Route::get('/v1/organization/{organization}/program/{program}/read-active-goalplans-by-program', [App\Http\Controllers\API\GoalPlanController::class, 'readActiveByProgram'])->name('api.v1.organization.program.goalplan.readActiveByProgram')->middleware('can:readActiveByProgram,App\GoalPlan,organization,program');
+
      //Referrals
      Route::post('/v1/organization/{organization}/program/{program}/referral-notification-recipient', [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'store'])->middleware('can:create,App\ReferralNotificationRecipient,organization,program');
 
@@ -598,6 +597,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
      Route::delete('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'delete'])->name('api.v1.referralNotificationRecipient.delete')->middleware('can:delete,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
+
+     Route::post('/v1/organization/{organization}/program/{program}/refer', [App\Http\Controllers\API\ReferralController::class, 'store'])->middleware('can:refer,App\Referral,organization,program');
 
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');
@@ -665,10 +666,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Manager > Manage Account
     Route::get('/v1/organization/{organization}/program/{program}/monies-available-postings',[App\Http\Controllers\API\ManagerController::class, 'getMoniesAvailablePostings'])->middleware('can:transferMonies,App\Program,organization,program');
-
-    // v2 Routes
-    Route::get('/v1/v2-deprecated/program', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'index'])->middleware('can:viewAny,App\V2Deprecated');
-    Route::get('/v1/v2-deprecated/migrate/{account_holder_id}', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'migrate'])->middleware('can:viewAny,App\V2Deprecated');
 
 });
 
