@@ -5,9 +5,9 @@ namespace App\Mail\templates;
 use App\Mail\SendgridEmail;
 use App\Models\EmailTemplate;
 
-class AwardEmail extends SendgridEmail
+class BirthdayBadgeEmail extends SendgridEmail
 {
-    public string $type = 'emails.award';
+    public string $type = 'emails.birthdayBadge';
     public $subject = 'You have a new reward!';
 
     /**
@@ -18,7 +18,6 @@ class AwardEmail extends SendgridEmail
      */
     public function __construct(
         string $contactFirstName,
-        int $awardPoints,
         string $awardNotificationBody,
         $program
     ) {
