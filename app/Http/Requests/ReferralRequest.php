@@ -32,7 +32,10 @@ class ReferralRequest extends FormRequest
                 "email:filter"
             ],
             'recipient_area_code' => 'required|string',
-            'recipient_phone' => 'required|string',
+            'recipient_phone' => [
+                "required",
+                'regex:/^[\w-]*$/'
+            ],
             'message' => 'required|string'
         ];
     }

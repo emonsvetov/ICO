@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 use App\Http\Requests\ReferralRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
-use App\Models\Referral;
 use App\Models\Program;
 
 class ReferralController extends Controller
@@ -12,7 +11,7 @@ class ReferralController extends Controller
     public function store(ReferralRequest $request, Organization $organization, Program $program )
     {
         $data = $request->validated();
-        $newReferral = Referral::create(
+        $newReferral = (new \App\Services\ReferralService)->refer($program,
             $data +
             [
                 'organization_id' => $organization->id,
@@ -24,6 +23,7 @@ class ReferralController extends Controller
         {
             return response(['errors' => 'Referral creation failed'], 422);
         }
+
         return response([ 'referral' => $newReferral ]);
     }
 }

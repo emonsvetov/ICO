@@ -303,4 +303,11 @@ trait HasProgramRoles
             $this->roles()->attach( $newRoles );
         }
     }
+    public function getManagers()   {
+        die;
+        if( $this->id ) {
+            pr($this->id);
+            return $this->id;
+        }
+    }
 }

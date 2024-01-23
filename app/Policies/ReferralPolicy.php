@@ -18,7 +18,7 @@ class ReferralPolicy
         if( $organization->id != $program->organization_id) return false;
         return true;
     }
-	public function refer(User $user, Organization $organization, Program $program)
+	public function create(User $user, Organization $organization, Program $program)
     {
         if ( !$this->__authCheck($user, $organization, $program ) )
         {

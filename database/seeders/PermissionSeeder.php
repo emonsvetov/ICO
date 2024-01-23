@@ -173,6 +173,7 @@ class PermissionSeeder extends Seeder
             'user-goal-list',
             'user-goal-view',
             'user-goal-progress-view',
+            'can-refer',
         ];
 
         foreach ($permissions as $permission) {

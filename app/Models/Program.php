@@ -261,7 +261,7 @@ class Program extends BaseModel
 
     public function getManagers( $count = false )
     {
-        $excludeStatus = [
+        $includeStatus = [
             'Active',
             'Pending Deactivation',
             'Locked'
@@ -273,9 +273,9 @@ class Program extends BaseModel
         })
         ->join('statuses', 'statuses.id', '=', 'users.user_status_id')
         ->where('statuses.context', '=',  'Users')
-        ->where(function ($query) use($excludeStatus) {
-            for ($i = 0; $i < count($excludeStatus); $i++){
-               $query->orwhere('statuses.status', '=',  $excludeStatus[$i]);
+        ->where(function ($query) use($includeStatus) {
+            for ($i = 0; $i < count($includeStatus); $i++){
+               $query->orwhere('statuses.status', 'LIKE',  $includeStatus[$i]);
             }
        });
        if( $count ) {

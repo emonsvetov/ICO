@@ -17,6 +17,7 @@ class CreateReferralsTable extends Migration
             $table->id();
             $table->unsignedBigInteger('organization_id');
             $table->unsignedBigInteger('program_id');
+            $table->unsignedBigInteger('sender_id');
             $table->string('recipient_first_name');
             $table->string('recipient_last_name');
             $table->string('recipient_email');
