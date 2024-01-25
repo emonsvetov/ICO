@@ -344,6 +344,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::patch('/v1/organization/{organization}/program/{program}/user/{user}/assignRole', [App\Http\Controllers\API\ProgramUserController::class, 'assignRole'])->middleware('can:assignRole,App\ProgramUser,organization,program,user');
 
+    Route::post('/v1/program-user', [App\Http\Controllers\API\ProgramUserController::class, 'storeRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::put('/v1/program-user', [App\Http\Controllers\API\ProgramUserController::class, 'updateRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::patch('/v1/program-user/status', [App\Http\Controllers\API\ProgramUserController::class, 'changeStatusRaw'])->middleware('can:manage,App\ProgramUser');
+
     //UserProgram routes
 
     Route::get('/v1/organization/{organization}/user/{user}/program', [App\Http\Controllers\API\UserProgramController::class, 'index'])->middleware('can:viewAny,App\UserProgram,organization,user');
