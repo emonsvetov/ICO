@@ -11,7 +11,7 @@ class ProgramTemplate extends BaseModel
 
     const IMAGE_FIELDS = ['small_logo', 'big_logo', 'hero_banner', 'slider_01', 'slider_02', 'slider_03'];
     const DEFAULT_TEMPLATE = [
-        'name' => 'Default',
+        'name' => 'Clear',
         'font_family' => 'Roboto',
         'button_bg_color' => '#42B0FF',
         'button_color' => '#FCFCFF',
