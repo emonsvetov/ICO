@@ -115,4 +115,14 @@ class ProgramUserPolicy
         if($authUser->isAdmin()) return true;
         return $user->can('program-user-assign-role');
     }
+
+    public function manage(User $user)
+    {
+        if ($user->isAdmin()) return true;
+        $program = Program::where('id', request()->get('program_id'))->first();
+        if ($program){
+            if ($user->isManagerToProgram($program)) return true;
+        }
+    }
+
 }

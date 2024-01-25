@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\Role;
 use App\Services\reports\User\ReportServiceUserHistory;
 use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
 use App\Services\reports\User\ReportServiceUserChangeLogs;
@@ -20,6 +21,7 @@ use App\Services\UserService;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
 
 class ProgramUserController extends Controller
 {
@@ -277,6 +279,72 @@ class ProgramUserController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return response(['errors' => 'Program User Role assignment failed', 'e' => $e->getMessage()], 422);
+        }
+    }
+
+    public function storeRaw(UserRequest $request, ProgramUserService $programUserService)
+    {
+        DB::beginTransaction();
+        try{
+            $program = Program::where('id', $request->get('program_id'))->first();
+            $validated = $request->validated();
+            if( !empty($validated['role']))
+            {
+                $roles[] = Role::getIdByName($validated['role']);
+                $validated['roles'] = $roles;
+            }
+            $user = $programUserService->create($program, $validated);
+            DB::commit();
+            return response(['user' => $user]);
+        } catch (\Exception $e )    {
+            DB::rollBack();
+            return response(['errors' => $e->getMessage()], 422);
+        }
+    }
+
+    public function updateRaw(Request $request)
+    {
+        DB::beginTransaction();
+        try {
+            $user = User::where('external_id', $request->get('external_id'))->first();
+            $program = Program::where('id', $request->get('program_id'))->first();
+            $userRequest = UserRequest::createFrom($request);
+            $userRequest->user = $user;
+            $validator = Validator::make($userRequest->all(), $userRequest->rules());
+            $userRequest->setValidator($validator);
+            $validated = $userRequest->validated();
+            if (!empty($validated['role'])) {
+                $roles[] = Role::getIdByName($validated['role']);
+                $validated['roles'] = $roles;
+            }
+            $user->update($validated);
+            if (!empty($validated['roles'])) {
+                $user->syncProgramRoles($program->id, $validated['roles']);
+            }
+
+            DB::commit();
+            return response(['user' => $user]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['errors' => $e->getMessage()], 422);
+        }
+    }
+
+    public function changeStatusRaw(Request $request )
+    {
+        DB::beginTransaction();
+        try {
+            $user = User::where('external_id', $request->get('external_id'))->first();
+            $status = User::getStatusByName($request->get('status'));
+            if( !$status->exists() ) {
+                throw new \Exception('Status does not exists');
+            }
+            $user->update(['user_status_id' => $status->id]);
+            DB::commit();
+            return response(['user' => $user]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['errors' => $e->getMessage()], 422);
         }
     }
 }
