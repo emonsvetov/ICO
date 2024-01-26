@@ -494,3 +494,18 @@ if (! function_exists ( 'filterNonPrintable' ))
         return $string;
     }
 }
+
+if (! function_exists ( 'RawSql' ))
+{
+    /**
+     * Get Raw $query.
+     *
+     * @param $query
+     * @return string
+     */
+    function RawSql($query)
+    {
+        return vsprintf(str_replace(['?'], ['\'%s\''], $query->toSql()), $query->getBindings());
+    }
+}
+

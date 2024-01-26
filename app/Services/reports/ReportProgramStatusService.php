@@ -49,6 +49,7 @@ class ReportProgramStatusService extends ReportServiceAbstract
         }
 
         $userStatuses = [
+            config('global.user_status_active'),
             config('global.user_status_pending_activation'),
             config('global.user_status_locked'),
             config('global.user_status_pending_deactivation'),
@@ -56,9 +57,6 @@ class ReportProgramStatusService extends ReportServiceAbstract
         ];
         $countParticipants = $this->reportHelper->countParticipantsByUserStatuses($userStatuses, $dateBegin2000, $dateEnd);
         foreach ($countParticipants as $program_id => $participant_count) {
-            if (!in_array($program->account_holder_id, $programIds)){
-                continue;
-            }
             if (isset($table[$program_id])){
                 $table[$program_id]->participants_count = $participant_count;
             }
