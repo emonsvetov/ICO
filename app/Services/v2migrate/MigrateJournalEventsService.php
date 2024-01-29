@@ -58,14 +58,14 @@ class MigrateJournalEventsService extends MigrationService
         $selectColumns = "postings.*, users.account_holder_id AS user_account_holder_id, users.v3_user_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id";
         $sql = sprintf("SELECT %s FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id=%d AND accounts.id=%d AND je.prime_account_holder_id IN(%s) ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC;", $selectColumns, $v2_account_holder_id, $v2_account_id,  implode(',', $account_holder_ids));
         // pr($sql);
-        // exit;
+        //
         return $sql;
     }
 
     public function migrateMerchantsJournalEvents() {
         $v3MerchantAccounts = Account::join('merchants', 'merchants.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'merchants.id AS merchant_id', 'merchants.v2_account_holder_id AS v2_merchant_account_holder_id'])->get();
         // pr(count($v3MerchantAccounts));
-        // exit;
+        //
         if(count($v3MerchantAccounts)) {
             foreach($v3MerchantAccounts as $v3MerchantAccount)  {
                 // $v3Merchant = new \App\Models\Merchant([
@@ -85,7 +85,7 @@ class MigrateJournalEventsService extends MigrationService
         $v3ProgramAccounts = Account::join('programs', 'programs.account_holder_id', '=', 'accounts.account_holder_id')->whereNotNull('accounts.v2_account_id')->select(["accounts.*", 'programs.id AS program_id', 'programs.v2_account_holder_id AS v2_program_account_holder_id'])->get();
         // pr(count($v3ProgramAccounts));
         // pr($v3ProgramAccounts->toArray());
-        // exit;
+        //
         if(count($v3ProgramAccounts)) {
             foreach($v3ProgramAccounts as $v3ProgramAccount)  {
                 // $v3Program = new \App\Models\Program([
@@ -115,7 +115,7 @@ class MigrateJournalEventsService extends MigrationService
         // // pr(count($v3UserAccounts));
         // pr($v3UserAccounts->toArray());
         // // pr("Hell");
-        // exit;
+        //
         if(count($v3UserAccounts)) {
             foreach($v3UserAccounts as $v3UserAccount)  {
                 // $v3User = new \App\Models\User([
@@ -194,7 +194,7 @@ class MigrateJournalEventsService extends MigrationService
         // pr($v3Model->toArray());
         // pr($v3Model->toArray());
         // pr($v3Model instanceof Merchant);
-        // exit;buildMerchantQuery
+        // buildMerchantQuery
 
         if( $v3Model instanceof User)   {
             $v2_users = $v3Model->v2_users()->pluck('v2_user_account_holder_id');
@@ -257,7 +257,7 @@ class MigrateJournalEventsService extends MigrationService
                 $in__v2_account_holder_id = implode(',', $in__v2_account_holder_id_col->toArray());
                 pr($in__v2_account_holder_id);
                 // pr($in__v2_account_holder_id->toArray());
-                // exit;
+                //
                 $query = Account::join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id')->join('user_v2_users', 'user_v2_users.user_id', '=', 'users.id')->join('account_v2_accounts AS a2a', 'a2a.account_id', '=', 'accounts.id')->select(['accounts.*', 'users.id AS user_id', 'user_v2_users.v2_user_account_holder_id', 'a2a.v2_account_id as a2a_v2_account_id']);
                 $query->where('users.id', $v3Model->id);
                 $query->groupBy('a2a_v2_account_id');
@@ -280,21 +280,21 @@ class MigrateJournalEventsService extends MigrationService
             }
 
             // pr($in__v2_account_holder_id);
-            // exit;
+            //
 
             //Get a few fields only. Keeping above for debugging.
             $sql = "SELECT postings.id AS posting_id, postings.journal_event_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id IN ($in__v2_account_holder_id) AND accounts.id IN ($in__v2_account_id) ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC";
 
             $this->printf(" - Fetching journal_events+postings for model %s:\"%s\"\n", $this->modelName, $v3Model->id);
             $this->printSql($sql . "\n\n");
-            // exit;
+            //
             $results = $this->v2db->select($sql);
 
             // $this->printf($sql . "\n\n");
 
             if( $results )  {
                 // pr(count($results));
-                // exit;
+                //
                 $this->printf("%d journal_events+postings found.\n", count($results));
                 $this->countPostings += count($results);
                 foreach( $results as $row) {

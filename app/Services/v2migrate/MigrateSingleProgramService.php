@@ -144,7 +144,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 $programs_tree = array ();
                 if ( $children_heirarchy_list ) {
                     // pr($children_heirarchy_list);
-                    // exit;
+                    //
                     $this->printf("Arranging childen tree for v2 program:%d..\n", $v2Program->account_holder_id);
                     $programs_tree = sort_programs_by_rank_for_view($programs_tree, $children_heirarchy_list);
                     if( $programs_tree && sizeof($programs_tree) > 0 ) {
@@ -443,15 +443,15 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
         // if( !$v2ProgramUsersTotalCount ) $v2ProgramUsersTotalCount = [];
         // // pr($v2Program);
-        // // exit;
+        // //
         // $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
         // $v2users = $migrateUserService->v2_read_list_by_program($v2Program->account_holder_id);
 
         // // pr(count($v2users));
-        // // exit;
+        // //
         // // pr($v2Program->account_holder_id);
         // // pr(collect($v2users)->pluck('account_holder_id'));
-        // // exit;
+        // //
         // $migrateUserService->setv2pid($v2Program->account_holder_id);
         // $migrateUserService->setv3pid($v3Program->id);
         // foreach( $v2users as $v2user)   {
@@ -464,9 +464,9 @@ class MigrateSingleProgramService extends MigrateProgramsService
         //     // continue;
         //     // if( $v2user->account_holder_id == 719107)   {
         //         // pr($v2user->account_holder_id);
-        //         // exit;
+        //         //
         //         // $this->importMap['program'][$v2Program->account_holder_id]['users'][] = $migrateUserService->migrateSingleUserByV2Program($v2user, $v2Program);
-        //         // exit;
+        //         //
         //     // }
         // }
     }
@@ -734,11 +734,11 @@ class MigrateSingleProgramService extends MigrateProgramsService
             foreach( $result as $row) {
                 if( !$row->v3_merchant_id ) {
                     throw new Exception(sprintf("Null v2merchant:v3_merchant_id found for v2Program:%s. Please run `php artisan v2migrate:merchants` before running program migration for this program.\n\n", $v2Program->account_holder_id));
-                    exit;
+//
                 }
                 if( !$row->v3_program_id ) {
                     throw new Exception("Null v2program:v3_program_id found. Please run `php artisan v2migrate:programs [ID]` before running this migration.\n\n");
-                    exit;
+//
                 }
                 $programMerchants[$row->v3_merchant_id] = [
                     'featured' => $row->featured,

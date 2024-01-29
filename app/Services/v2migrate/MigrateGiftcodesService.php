@@ -52,7 +52,7 @@ class MigrateGiftcodesService extends MigrationService
         if( !$v3MerchantIds )    {
             //No v2 merchants found. Existing.
             throw new Exception("No v2:merchant found. Aborting migration.\n");
-            exit;
+
         }
         $this->v2db->statement("SET SQL_MODE=''");
         $this->minimalSync();
@@ -89,7 +89,7 @@ class MigrateGiftcodesService extends MigrationService
         $baseSql .= " LIMIT {$this->offset}, {$this->limit}";
 
         // pr($baseSql);
-        // exit;
+        //
 
         $this->printf("Synce iteration %d started for %d codes\n", $this->iteration, $this->limit);
         $results = $this->v2db->select($baseSql);
@@ -180,7 +180,7 @@ class MigrateGiftcodesService extends MigrationService
                         }
                         // $this->addV2SQL("UPDATE `medium_info` SET `v3_medium_info_id` = {$newGiftcodeId} WHERE `id` = {$row->id}");
 
-                        // if( $this->count >= 3) exit;
+                        // if( $this->count >= 3)
                     }
                 }
 
@@ -272,7 +272,7 @@ class MigrateGiftcodesService extends MigrationService
             $this->executeV2SQL();
             if( count($results) >= $this->limit) {
                 $this->offset = $this->offset + $this->limit;
-                // if( $this->count >= 200 ) exit;
+                // if( $this->count >= 200 )
                 $this->minimalSync();
             }
         } catch(Exception $e)    {

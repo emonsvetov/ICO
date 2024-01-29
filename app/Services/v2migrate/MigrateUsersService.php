@@ -41,14 +41,14 @@ class MigrateUsersService extends MigrationService
             foreach( $v2programs as $v2program_account_holder_id) {
                 $v3RootProgram = Program::where('v2_account_holder_id', $v2program_account_holder_id)->select('id', 'name')->first();
                 // pr($v3Program->getFlatTree()->toArray());
-                // exit;
+                //
                 if( $v3RootProgram ) {
                     $v3Programs = Program::find($v3RootProgram->id)->descendantsAndSelf()->select('id', 'name', 'parent_id', 'path', 'v2_account_holder_id')->depthFirst()->get()->toTree();
                     // pr( $v3Programs->toArray() );
                     $this->recursivelyMigrateUsersByV3Programs($v3Programs);
                 }
             }
-            // exit;
+            //
             // $v3Programs = Program::whereIn('v2_account_holder_id', $v2programs)->get()->toTree();
             // $program->descendantsAndSelf()->get()->toTree()
             /**
@@ -76,7 +76,7 @@ class MigrateUsersService extends MigrationService
 
     public function recursivelyMigrateUsersByV3Programs( $v3Programs ) {
         // pr( $v3Programs->toArray() );
-        // exit;
+        //
         foreach( $v3Programs as $v3Program) {
             if( isset( $this->v3ProgramCache[$v3Program->v2_account_holder_id])) {
                 continue;
@@ -241,7 +241,7 @@ class MigrateUsersService extends MigrationService
 
             //Migration Journal events, postings, xml_event_data in this step. This step will work perfectly only if the Accounts are imported by calling "MigrateAccountsService" before running this "MigrateJournalEventsService"
             // pr($v3User->id);
-            // exit;
+            //
             //## (new \App\Services\v2migrate\MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3User); //NOT PULLING HERE. Rather pull using separate command.
 
             // $this->executeV2SQL(); //run for any missing run!

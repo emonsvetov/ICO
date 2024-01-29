@@ -53,7 +53,7 @@ class MigrateEventXmlDataService extends MigrationService
     //     }
     //     $this->executeV2SQL();
     //     $this->executeV3SQL();
-    //     if( $this->iteration > 1 ) exit;
+    //     if( $this->iteration > 1 )
     //     if( count($eventXmlData) >= $this->limit ) {
     //         $this->offset = $this->offset + $this->limit;
     //         $this->migrateEventXmlData();
@@ -93,7 +93,7 @@ class MigrateEventXmlDataService extends MigrationService
         if( $createEventXmlData )   {
             $this->printf(" -  - Preparing to create EventXmlData for  v2_id:%s..\n", $v2EventXmlDataRow->id);
             // pr($v2EventXmlDataRow);
-            // exit;
+            //
             $awarder_accout_holder_id = $v2EventXmlDataRow->v3_user_id ?: $this->idPrefix . $v2EventXmlDataRow->v2_user_account_holder_id;
             $v3Id = EventXmlData::insertGetId([
                 'v2_id' => $v2EventXmlDataRow->id,
