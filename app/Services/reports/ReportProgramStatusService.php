@@ -307,22 +307,32 @@ class ReportProgramStatusService extends ReportServiceAbstract
                         $table[$tableKey]->new_participants_count += $data->new_participants_count;
                         $table[$tableKey]->awards_count += $data->awards_count;
                         $table[$tableKey]->awards_value += $data->awards_value;
-                        $table[$tableKey]->transaction_fees += $data->transaction_fees;
                         $table[$tableKey]->ytd_awards_count += $data->ytd_awards_count;
                         $table[$tableKey]->ytd_awards_value += $data->ytd_awards_value;
-                        $table[$tableKey]->ytd_transaction_fees += $data->ytd_transaction_fees;
                         $table[$tableKey]->mtd_awards_count += $data->mtd_awards_count;
                         $table[$tableKey]->mtd_awards_value += $data->mtd_awards_value;
-                        $table[$tableKey]->mtd_transaction_fees += $data->mtd_transaction_fees;
                     }
                 }
             }
+        }
+
+        foreach ($table as $key => $data) {
+            $data->transaction_fees = self::averageFormat($data->awards_value, $data->awards_count);
+            $data->ytd_transaction_fees = self::averageFormat($data->ytd_awards_value, $data->ytd_awards_count);
+            $data->mtd_transaction_fees = self::averageFormat($data->mtd_awards_value, $data->mtd_awards_count);
+            $table[$key] = $data;
         }
 
         $this->table['data']['report'] = array_values($table);
         $this->table['total'] = count($table);
 
         return $this->table;
+    }
+
+    public static function averageFormat($value, $count)
+    {
+        $average = (int) $count ? $value / $count : 0;
+        return (int) $average == $average ? $average : number_format($average, 2, '.', '');
     }
 
     public function getCsvHeaders(): array
