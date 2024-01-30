@@ -4,6 +4,8 @@ namespace App\Services;
 
 class LoginService
 {
+    public bool $isCheckRole = true;
+    public bool $newPassword = false;
     public function mobileAppLogin( $validated )
     {
         // return $validated;
@@ -51,9 +53,12 @@ class LoginService
                             $data['user_status_id'] = $activeUserStatusId;
                         }
                         $user->forceFill($data)->save();
-
-                        return $this->__login($user->email, $data['password'], true);
+                        $this->newPassword = true;
+                        return $this->__login($user->email, $data['password']);
                     }
+                break;
+                case 'programLogin':
+                    return $this->loginToProgram($validated['email'], $validated['password'], $validated['program_id']);
                 break;
                 default:
 
@@ -65,7 +70,7 @@ class LoginService
         ], 404);
     }
 
-    private function __login($email, $password, $newPassword = false)  {
+    private function __login($email, $password)  {
         if (!auth()->guard('web')->attempt( ['email' => $email, 'password' => $password] )) {
             return response(['error' => 'Invalid Credentials'], 422);
         }
@@ -79,41 +84,65 @@ class LoginService
             if( !$user->programRoles )  {
                 return response(['error' => 'No role found in program'], 422);
             }
-            $programId = null;
+            $programIds = [];
             foreach($user->programRoles as $programRole) {
                 if( $programRole->name !== \App\Models\Role::ROLE_PARTICIPANT ) {
                     //For now, we only support "Participant" login to MobileApps
                     continue;
                 }
-                $programId = $programRole->pivot->program_id;
-                if( $programId ) break;
+                // pr($programRole->toArray());
+                array_push($programIds, $programRole->pivot->program_id);
             }
-            if( !$programId )   {
+            if( !$programIds )   {
                 return response(['error' => 'Cannot login as participant to program'], 422);
             }
 
-            // $user->load(['organization']);
-            $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
-
-            $program = \App\Models\Program::select('id', 'name', 'organization_id', 'factor_valuation')->with(['template' => function ($query) {
-                // $query->select(['id', 'small_logo', 'big_logo', 'name']);
-            }])->find($programId);
-
-            $amount_balance = $user->readAvailableBalance($program, $user);
-            $factor_valuation = $program->factor_valuation;
-            $points_balance = $amount_balance * $program->factor_valuation;
-
-            $user->balance = $amount_balance;
-            $user->points_balance = $points_balance;
-            $user->factor_valuation = $factor_valuation;
-
-            return response([
-                    'program' => $program,
-                    'user' => $user,
-                    'access_token' => $accessToken
-                ] +
-                ($newPassword ? ['password_changed' => true] : [])
-            );
+            if(sizeof($programIds) > 1)   {
+                $programs = (new \App\Models\Program)->whereIn('id', $programIds)->select(['id', 'name'])->get();
+                // pr($programs->toArray());
+                return response(['programs' => $programs]);
+            }   else {
+                $this->isCheckRole = false;
+                return $this->loginToProgram($email, $password, $programIds[0]);
+            }
         }
+    }
+
+    private function loginToProgram($email, $password, $programId)   {
+
+        if (!auth()->guard('web')->attempt( ['email' => $email, 'password' => $password] )) {
+            return response(['error' => 'Invalid Credentials'], 422);
+        }
+        $user = auth()->guard('web')->user();
+
+        $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
+
+        $program = \App\Models\Program::select('id', 'name', 'organization_id', 'factor_valuation')->with(['template' => function ($query) {
+            // $query->select(['id', 'small_logo', 'big_logo', 'name']);
+        }])->find($programId);
+
+        if( !$program ) {
+            return response(['error' => 'Invalid program'], 422);
+        }
+
+        if($this->isCheckRole && !$user->isParticipantToProgram($program)) {
+            return response(['error' => 'No participant role found in program'], 422);
+        }
+
+        $amount_balance = $user->readAvailableBalance($program, $user);
+        $factor_valuation = $program->factor_valuation;
+        $points_balance = $amount_balance * $program->factor_valuation;
+
+        $user->balance = $amount_balance;
+        $user->points_balance = $points_balance;
+        $user->factor_valuation = $factor_valuation;
+
+        return response([
+                'program' => $program,
+                'user' => $user,
+                'access_token' => $accessToken
+            ] +
+            ($this->newPassword ? ['password_changed' => true] : [])
+        );
     }
 }

@@ -30,10 +30,16 @@ class MobileLoginRequest extends FormRequest
         $validationFactory->extend(
             'step_validation',
             function ($attribute, $value, $parameters) {
-                if( !in_array($value, ['email', 'password', 'createpassword']) ) return false;
+                if( !in_array($value, ['email', 'password', 'createpassword', 'programLogin']) ) return false;
                 $request = $this->all();
                 if( $value === 'password' && empty($request['password']) ) {
                     return false;
+                }
+                if( $value === 'programLogin') {
+                    if(empty($request['program_id']) ) {
+                        return false;
+                    }
+                    return \App\Models\Program::where('id', $request['program_id'])->count() > 0;
                 }
                 return true;
             },
@@ -82,6 +88,7 @@ class MobileLoginRequest extends FormRequest
             'email' => 'required|email',
             'password' => 'password_validation',
             'domainKey' => 'sometimes|string',
+            'program_id' => 'nullable|integer',
             'step' => 'step_validation',
         ];
     }
