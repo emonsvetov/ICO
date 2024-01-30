@@ -42,14 +42,12 @@ class MigrateOwnersService extends MigrationService
 
         if( !$owner ) {
             throw new Exception("Owner with id:1 does not exist");
-            exit;
         }
 
         if( $owner ) {
             $accounts = \App\Models\Account::where('account_holder_id', $owner->account_holder_id)->get();
             if( !$accounts || count($accounts) < 2 )    {
                 throw new Exception("Owner accounts do not exist. Please run `php artisan db:seed --class=OwnerSeeder` and try again.");
-                exit;
             }
         }
     }
@@ -80,8 +78,6 @@ class MigrateOwnersService extends MigrationService
         // $v2User = $migrateUsersService->getV2UserById( 288496 );
         // $newUser = $migrateUsersService->migrateSingleUser( $v2User );
         // pr($v2User);
-        // exit;
         // $migrateUsersService->migrateUserJournalEvents($v2User, $v3User);
-        // exit;
     }
 }

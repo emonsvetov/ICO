@@ -101,7 +101,7 @@ class MigrateInvoiceJournalEventsService extends MigrationService
             // DB::commit();
             // $this->v2db->commit();
             if( $countV2InvoiceJournalEvents >= $this->limit) {
-                if( $this->count >= 20 ) exit;
+                if( $this->count >= 20 ) { throw new Exception('count > 20'); }
                 $this->offset = $this->offset + $this->limit;
                 $this->migrateInvoiceJournalEvents();
             }

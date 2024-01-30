@@ -28,7 +28,17 @@ class MilestoneAwardService extends AwardService {
                             continue;
                         }
                         cronlog (sprintf("going to award %d to UserID:%d",$event->max_awardable_amount, $participant->id));
-                        $this->awardUser($event, $participant, $participant);
+
+                        $data = [
+                            'event_id' => $event->id,
+                            'message' => $event->message
+                        ];
+
+                        $managers = $event->program->getManagers();
+                        $manager = $managers[0] ?? null;
+                        $manager = $manager ?? $participant;
+
+                        $this->awardUser($event, $participant, $manager, (object)$data);
                     }
                 }
             }

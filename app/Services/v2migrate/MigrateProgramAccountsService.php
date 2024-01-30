@@ -49,7 +49,7 @@ class MigrateProgramAccountsService extends MigrationService
                 printf("Found %d accounts for program: \"%s\"\n", $countV2Accounts, $program->name);
                 // $v2AccountIds = collect($v2Accounts)->pluck('id');
                 // pr(implode(",", $v2AccountIds->toArray()));
-                // exit;
+                //
                 foreach( $v2Accounts as $v2Account) {
                     $createNewAccount = true;
                     $newAccountCreated = false;
@@ -91,7 +91,7 @@ class MigrateProgramAccountsService extends MigrationService
                         // pr($sql);
                         // pr($v2Account->id);
                         // pr(count($results));
-                        // exit;
+                        //
                         if( ($countJEAndPostings = sizeof($results)) > 0 ) {
                             printf(" - Found %d journal_events+postings for program:\"%s\" & account:\"%s\". Processing...\n",$countJEAndPostings, $program->name, $v2Account->id);
                             foreach( $results as $row) {
@@ -180,7 +180,7 @@ class MigrateProgramAccountsService extends MigrationService
     //         $this->migrateAccounts( $v2Program );
     //     }
     //     $this->offset = $this->offset + $this->limit;
-    //     // if( $this->count >= 20 ) exit;
+    //     // if( $this->count >= 20 )
     //     if( $countV3Programs >= $this->limit) {
     //         $this->migrate();
     //     }

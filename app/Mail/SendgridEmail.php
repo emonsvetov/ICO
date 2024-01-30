@@ -88,8 +88,10 @@ class SendgridEmail extends Mailable
     protected function customEmailTemplate(Program $program, ReflectionClass $reflectionClass)
     {
         $emailTemplateTypeName = str_replace('Email', '', $reflectionClass->getShortName());
+        $chunks = preg_split('/(?=[A-Z])/', $emailTemplateTypeName, -1, PREG_SPLIT_NO_EMPTY);
+        $emailTemplateTypeName = implode(' ', $chunks);
         $emailTemplateTypeId = EmailTemplateType::getIdByType($emailTemplateTypeName);
-        $emailTemplateTypeDir = lcfirst($emailTemplateTypeName);
+        $emailTemplateTypeDir = lcfirst(str_replace(' ', '', $emailTemplateTypeName));
 
         $programId = $program->id;
 //        $programId = 217;
