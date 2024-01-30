@@ -26,4 +26,13 @@ class ParticipantPolicy
         if( $authUser->isParticipantToProgram( $program ) && ($authUser->id == $user->id ) ) return true;
         return $authUser->can('user-read-points');
     }
+
+    public function markNotificationRead(User $authUser, Organization $organization, Program $program, User $user)
+    {
+        if( !$this->__preAuthCheck($authUser, $organization, $program, $user) ) return false;
+        if( $authUser->isAdmin() ) return true;
+        if( $authUser->isManagerToProgram( $program ) ) return true;
+        if( $authUser->isParticipantToProgram( $program ) && ($authUser->id == $user->id ) ) return true;
+        return $authUser->can('mark-notifications-read');
+    }
 }

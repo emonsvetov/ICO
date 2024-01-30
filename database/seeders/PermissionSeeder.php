@@ -154,11 +154,11 @@ class PermissionSeeder extends Seeder
             'program-list-status',
             'program-update-status',
             'program-email-template-list',
-             'team-create',
-             'team-list',
-             'team-delete',
-             'team-update',
-             'team-view',
+            'team-create',
+            'team-list',
+            'team-delete',
+            'team-update',
+            'team-view',
             'user-read-points',
             'goal-plan-read-active-by-program',
             'program-user-read-reclaimable-peer-points',
@@ -174,6 +174,7 @@ class PermissionSeeder extends Seeder
             'user-goal-view',
             'user-goal-progress-view',
             'can-refer',
+            'mark-notifications-read',
         ];
 
         foreach ($permissions as $permission) {

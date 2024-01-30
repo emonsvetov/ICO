@@ -435,6 +435,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/point-history',[App\Http\Controllers\API\ParticipantController::class, 'pointHistory'])->middleware('can:readPoints,App\Participant,organization,program,user');
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/unread-notifications-count',[App\Http\Controllers\API\ParticipantController::class, 'unreadNotificationCount'])->middleware('can:readPoints,App\Participant,organization,program,user');
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mark-notifications-read',[App\Http\Controllers\API\ParticipantController::class, 'markNotificationsRead'])->middleware('can:markNotificationRead,App\Participant,organization,program,user');
+
     // Giftcodes
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/gift-codes',[App\Http\Controllers\API\ProgramParticipantGiftCodeController::class, 'index'])->middleware('can:viewAny,App\ProgramParticipantGiftCode,organization,program,user');
 
