@@ -113,9 +113,11 @@ class MigrationService
 
     protected function printf($string) {
         $argv = func_get_args();
-        $format = array_shift( $argv );
-        vprintf( $format, $argv );
-        \Illuminate\Support\Facades\Log::channel('v2migration')->info(rtrim(vsprintf( $format, $argv )));
+        print_r($argv);
+        \Illuminate\Support\Facades\Log::channel('v2migration')->info(print_r($argv, true));
+//        $format = array_shift( $argv );
+//        vprintf( $format, $argv );
+//        \Illuminate\Support\Facades\Log::channel('v2migration')->info(rtrim(vsprintf( $format, $argv )));
     }
 
     protected  function prepareSQL($sql) {

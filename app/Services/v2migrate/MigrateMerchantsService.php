@@ -40,7 +40,7 @@ class MigrateMerchantsService extends MigrationService
         }
         // pr(count($v2MerchantHierarchy));
         // inilog($v2MerchantHierarchy);
-        // exit;
+        //
         if( $v2MerchantHierarchy ) {
             // DB::beginTransaction();
             // $this->v2db->beginTransaction();
@@ -53,12 +53,12 @@ class MigrateMerchantsService extends MigrationService
                     // if( $v2MerchantNode['merchant']->account_holder_id == 326675 ) {
                         // pr($v2MerchantNode);
                         $this->migrateMerchant($v2MerchantNode);
-                        // exit;
+                        //
                     // }
-                    // exit;
-                    // if( $i++ > 2) exit;
+                    //
+                    // if( $i++ > 2)
                     $this->executeV2SQL();
-                    // if( $this->importedCount > 3 ) exit;
+                    // if( $this->importedCount > 3 )
                 }
                 // pr($this->programMerchants);
 
@@ -90,7 +90,7 @@ class MigrateMerchantsService extends MigrationService
             $v2Merchant = $v2MerchantNode['merchant'];
             if( !property_exists($v2Merchant, "v3_merchant_id") ) {
                 throw new Exception( "The `v3_merchant_id` field is required in v2 `merchants` table to sync properly.\n(Did your run migrations?)\nTermininating!");
-                exit;
+
             }
             $create = true;
 
@@ -274,13 +274,13 @@ class MigrateMerchantsService extends MigrationService
             *,
 	       (SELECT
                 COALESCE(GROUP_CONCAT(DISTINCT ranking_merchant.account_holder_id
-                    ORDER BY `" . MERCHANT_PATHS . "`.path_length DESC), `" . MERCHANTS . "`.account_holder_id ) AS rank
+                    ORDER BY `" . MERCHANT_PATHS . "`.path_length DESC), `" . MERCHANTS . "`.account_holder_id ) AS 'rank'
             FROM
                 merchant_paths
             LEFT JOIN
                 `" . MERCHANTS . "` AS ranking_merchant ON `" . MERCHANT_PATHS . "`.ancestor = ranking_merchant.account_holder_id
             WHERE `" . MERCHANT_PATHS . "`.descendant = `" . MERCHANTS . "`.account_holder_id
-                ) as rank
+                ) as 'rank'
         , ( SELECT
             MAX(COALESCE(`ranking_path_length`.path_length, 0)) as path_length
         FROM

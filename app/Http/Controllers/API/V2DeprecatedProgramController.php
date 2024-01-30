@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
+use App\Services\v2migrate\MigrateMerchantsService;
 use App\Services\v2migrate\MigrateProgramsService;
 use Illuminate\Http\Request;
 
@@ -42,8 +43,10 @@ class V2DeprecatedProgramController extends Controller
         return response([]);
     }
 
-    public function migrate(Request $request, $account_holder_id, MigrateProgramsService $migrateProgramsService)
+    public function migrate(Request $request, $account_holder_id, MigrateProgramsService $migrateProgramsService, MigrateMerchantsService $migrateMerchantsService)
     {
+        $migrateMerchantsService->migrate();
+
         $args = [];
         $args['program'] = $account_holder_id;
         $migrateProgramsService->migrate($args);

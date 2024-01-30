@@ -34,7 +34,6 @@ class MigrateAccountsService extends MigrationService
 
         if( !$owner ) {
             throw new Exception("Owner with id:1 does not exist");
-            exit;
         }
 
         if( $owner ) {
@@ -43,7 +42,7 @@ class MigrateAccountsService extends MigrationService
             $accounts = \App\Models\Account::where('account_holder_id', $owner->account_holder_id)->get();
             if( !$accounts || count($accounts) < 2 )    {
                 throw new Exception("Owner accounts do not exist. Please check and try again.");
-                exit;
+
             }
             $this->printf("v3- %d accounts found for Owner:%d\n", count($accounts), $owner->id);
             $pullOwnerAccounts = false;
@@ -105,7 +104,7 @@ class MigrateAccountsService extends MigrationService
                 printf("Found %d accounts for %s: \"%s\"\n", $countV2Accounts, $modelName, $model->id);
                 // $v2AccountIds = collect($v2Accounts)->pluck('id');
                 // pr(implode(",", $v2AccountIds->toArray()));
-                // exit;
+                //
                 foreach( $v2Accounts as $v2Account) {
                     $this->migrateSingleAccount($v2Account, $model->account_holder_id);
                 }
@@ -129,7 +128,7 @@ class MigrateAccountsService extends MigrationService
 
     public function migrateSingleAccount( $v2Account, $v3_account_holder_id ) {
         // pr($this->modelName);
-        // exit;
+        //
         $createNewAccount = true;
         $newAccountCreated = true;
         if( $v2Account->v3_account_id ) {
@@ -251,7 +250,7 @@ class MigrateAccountsService extends MigrationService
     //         $this->migrateAccounts( $v2Program );
     //     }
     //     $this->offset = $this->offset + $this->limit;
-    //     // if( $this->count >= 20 ) exit;
+    //     // if( $this->count >= 20 )
     //     if( $countV3Programs >= $this->limit) {
     //         $this->migrate();
     //     }
