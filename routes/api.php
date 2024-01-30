@@ -127,6 +127,8 @@ Route::group(['middleware' => ['json.response']], function () {
 
     Route::post('/v1/password/forgot', [App\Http\Controllers\API\PasswordController::class, 'forgotPassword']);
     Route::post('/v1/password/reset', [App\Http\Controllers\API\PasswordController::class, 'reset']);
+    Route::post('/v1/forgot/code', [App\Http\Controllers\API\PasswordController::class, 'sendResetCode']);
+    Route::post('/v1/forgot/verify-code', [App\Http\Controllers\API\PasswordController::class, 'verifyResetCode']);
 
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
