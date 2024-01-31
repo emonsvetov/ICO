@@ -21,13 +21,13 @@ class ReportJournalDetailedService extends ReportServiceAbstract
             // dd($this->params [self::PROGRAMS]);
             $total_programs = Program::read_programs($this->params [self::PROGRAMS], false);
             if ($this->params[self::SQL_OFFSET] && $this->params[self::SQL_LIMIT]) {
-                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]);
+                $programs = Program::read_programs($this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]);
             } else {
-                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false);
+                $programs = Program::read_programs($this->params [self::PROGRAMS], false);
             }
             // dd($ranked_programs->pluck('account_holder_id'));
 
-            if ($ranked_programs->isNotEmpty()) {
+            if ($programs->isNotEmpty()) {
                 $account_holder_ids = [];
                 $defaultValues = [
                     'fixed_fee' => 0,
@@ -57,16 +57,17 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                     'premium_fee' => 0,
                     'net_points_purchased' => 0,
                     'program_funds_net_transfers' => 0,
-                    'program_refunds_for_monies_pending' => 0
                 ];
-                foreach ($ranked_programs as $program) {
-                    array_push($account_holder_ids, $program->account_holder_id);
+                foreach ($programs as $program) {
+                    $program = (object)$program->toArray();
                     $this->table[$program->account_holder_id] = $program;
                     foreach ($defaultValues as $key => $value) {
-                        $this->table[$program->account_holder_id]->setAttribute($key, $value);
+                        $this->table[$program->account_holder_id]->$key = $value;
                     }
+                  
+                    array_push($account_holder_ids, $program->account_holder_id);
+                  
                 }
-
                 // Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
                 $subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
                 $subreport_params [self::PROGRAMS] = $account_holder_ids;
@@ -489,13 +490,28 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 
         //Calculate and add "net_points_purchased"
         //$this->table = array_values($this->table);
-        $tempArray = [];
         foreach ($this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
-            array_push($tempArray, $this->table[$i]);
+        }
+
+        $newTable = [];
+        foreach ($this->table as $key => $item) {
+            if (empty($item->dinamicPath)) {
+                $newTable[$item->id] = clone $item;
+            } else {
+                $tmpPath = explode(',', $item->dinamicPath);
+                if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
+                    $clone = clone $newTable[$tmpPath[0]];
+                    $clone->dinamicDepth = 0;
+                    $newTable[$tmpPath[0]]->subRows[] = $clone;
+                }
+                if (isset($newTable[$tmpPath[0]])) {
+                    $newTable[$tmpPath[0]]->subRows[] = $item;
+                }
+            }
         }
         $this->table = [];
-        $this->table['data'] = $tempArray;
+        $this->table['data'] = array_values($newTable);
         $this->table['total'] = count($total_programs);
         // sort($this->table); //not sure about this whether we need this
         return $this->table;

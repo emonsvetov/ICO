@@ -216,9 +216,12 @@ class Program extends BaseModel
         // pr($programAccountHolderIds);
         if( $with_rank )    {
             $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+            $programs = _tree_flatten($programs);
             return $programs;
         }
-        return self::whereIn('account_holder_id', $programAccountHolderIds)->offset((int)$offset)->limit((int)$limit)->get();
+        $programs = self::whereIn('account_holder_id', $programAccountHolderIds)->offset((int)$offset)->limit((int)$limit)->get()->toTree();
+        $programs = _tree_flatten($programs);
+        return $programs;
     }
 
     public function create_setup_fee_account()   {
