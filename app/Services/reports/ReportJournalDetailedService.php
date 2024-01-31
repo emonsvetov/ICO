@@ -530,6 +530,39 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'name'
             ],
             [
+                'label' => 'Deposits',
+                'key' => 'deposits'
+            ],
+            [
+                'label' => 'Deposit Reversal',
+                'key' => 'deposit_reversal'
+            ],
+            [
+                'label' => 'Points Purchased',
+                'key' => 'points_purchased'
+            ],
+            [
+                'label' => 'Points Reclaimed"',
+                'key' => 'reclaims'
+            ],
+            [
+                'label' => 'Award Credit Reclaimed',
+                'key' => 'award_credit_reclaims'
+            ],
+            [
+                'label' => 'Net Points purchased',
+                'key' => 'net_points_purchased'
+            ],
+            [
+                'label' => 'Points Redeemed',
+                'key' => 'points_redeemed'
+            ],
+            [
+                'label' => 'Total Spend Rebate',
+                'key' => 'total_spend_rebate'
+            ],
+
+            [
                 'label' => 'Setup Fee',
                 'key' => 'setup_fee'
             ],
@@ -546,8 +579,12 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'usage_fee'
             ],
             [
-                'label' => 'Deposit Fee',
-                'key' => 'deposit_fee'
+                'label' => 'Deposit Fee Reversal',
+                'key' => 'deposit_fee_reversal'
+            ],
+            [
+                'label' => 'Convenience Fees',
+                'key' => 'convenience_fees'
             ],
             [
                 'label' => 'Transaction Fees',
@@ -558,52 +595,25 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'refunded_transaction_fee'
             ],
             [
-                'label' => 'Deposits',
-                'key' => 'deposits'
-            ],
-            [
-                'label' => 'Points Purchased',
-                'key' => 'points_purchased'
-            ],
-            [
-                'label' => 'Reclaims',
-                'key' => 'reclaims'
-            ],
-            [
-                'label' => 'Award Credit Reclaimed',
-                'key' => 'award_credit_reclaims'
-            ],
-            [
-                'label' => 'Points Redeemed',
-                'key' => 'points_redeemed'
-            ],
-            [
-                'label' => 'Discount Rebate Credited to Program',
-                'key' => 'discount_rebate_credited_to_program'
-            ],
-            [
-                'label' => 'Total Spend Rebate Credited to Program',
-                'key' => 'total_spend_rebate'
-            ],
-            [
-                'label' => 'Expiration Rebate Credited to Program',
-                'key' => 'expiration_rebate_credited_to_program'
+                'label' => 'Premium Fee',
+                'key' => 'premium_fee'
             ],
             [
                 'label' => 'Premium From Codes Redeemed',
                 'key' => 'codes_redeemed_premium'
             ],
             [
-                'label' => 'Premium Fee',
-                'key' => 'premium_fee'
-            ],
-            [
                 'label' => 'Cost of Codes Redeemed',
                 'key' => 'codes_redeemed_cost'
             ],
+        
             [
-                'label' => 'Convenience Fees',
-                'key' => 'convenience_fees'
+                'label' => 'Program Funds net transfers',
+                'key' => 'program_funds_net_transfers'
+            ],
+            [
+                'label' => 'Program refunds for monies pending',
+                'key' => 'program_refunds_for_monies_pending'
             ],
 
         ];
