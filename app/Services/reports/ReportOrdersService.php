@@ -20,7 +20,7 @@ class ReportOrdersService extends ReportServiceAbstract
 
         $query->selectRaw("
             medium_info.*,
-            CONCAT(users.first_name, ' ', users.last_name) as redeemed_by
+            CONCAT(users.email) as redeemed_by
         ");
 
         return $query;
@@ -64,7 +64,7 @@ class ReportOrdersService extends ReportServiceAbstract
         if (!blank($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('code', 'LIKE', "%$search%");
-                $q->orWhereRaw("CONCAT(users.first_name, ' ', users.last_name) LIKE ?", ["%" . $search . "%"]);
+                $q->orWhereRaw("CONCAT(users.email) LIKE ?", ["%" . $search . "%"]);
                 $q->orWhere('sku_value', '=', $search);
                 foreach ([
                     'pin',
