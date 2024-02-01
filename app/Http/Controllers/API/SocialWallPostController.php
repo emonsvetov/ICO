@@ -8,6 +8,8 @@ use App\Models\Program;
 use App\Models\SocialWallPost;
 use App\Services\SocialWallPostService;
 use App\Http\Controllers\Controller;
+use App\Events\CommentsCreated;
+use App\Services\CommentService;
 use Illuminate\Http\Request;
 
 class SocialWallPostController extends Controller
@@ -51,6 +53,17 @@ class SocialWallPostController extends Controller
     {
         $user = auth()->guard('api')->user();
         return $this->socialWallPostService->like($organization, $program, $user, $request->all());
+    }
+
+    public function mentions(Organization $organization, Program $program, CommentService $commentService, Request $request)
+    {
+        $recepients = $request->all()['mentionedUser'];
+        $receivers = [];
+        foreach ($recepients as $recepient) {
+            array_push($receivers,$recepient["user_id"]);
+        }
+        $comment = $request->all()['comment'];
+        $value= $commentService->commentMany($program, $organization, $receivers, $comment);
     }
 
     public function delete(Organization $organization, Program $program, SocialWallPost $socialWallPost)

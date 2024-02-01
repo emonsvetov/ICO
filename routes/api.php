@@ -639,6 +639,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
             Route::post('create', [SocialWallPostController::class,'store']);
             Route::post('uploadImage', [SocialWallPostController::class,'uploadImage']);
             Route::post('like',[SocialWallPostController::class, 'like']);
+            Route::post('mentions',[SocialWallPostController::class, 'mentions']);
             Route::delete('{socialWallPost}',[App\Http\Controllers\API\SocialWallPostController::class, 'delete'])
                 ->middleware('can:delete, App\SocialWallPost,organization,program,socialWallPost');
         });
