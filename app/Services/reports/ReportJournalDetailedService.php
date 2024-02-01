@@ -39,8 +39,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                     'deposit_fee_reversal' => 0,
                     'transaction_fee' => 0,
                     'refunded_transaction_fee' => 0,
-                    'deposit_reversal' => 0,
-                    'deposit_fee_reversal' => 0,
+                    'program_pays_for_saas_fees' => 0,
+                    'reversal_program_pays_for_saas_fees' => 0,
                     'program_funds_net_transfers' => 0,
                     'program_refunds_for_monies_pending' => 0,
                     'deposits' => 0,
@@ -162,6 +162,12 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                                                 break;
                                             case AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER :
                                                 switch ($journal_event_type) {
+                                                    case JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SAAS_FEES :
+                                                        $this->table [( int ) $program->account_holder_id]->program_pays_for_saas_fees = $amount;
+                                                        break;
+                                                    case JOURNAL_EVENT_TYPES_CHARGE_SAAS_FEES :
+                                                        $this->table [( int ) $program->account_holder_id]->charge_program_for_saas_fees = $amount;
+                                                        break;
                                                     case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE :
                                                         $this->table[$program->account_holder_id]->deposit_fee = $amount;
                                                         break;
@@ -530,6 +536,10 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'name'
             ],
             [
+                'label' => 'Program ID',
+                'key' => 'account_holder_id'
+            ],
+            [
                 'label' => 'Deposits',
                 'key' => 'deposits'
             ],
@@ -557,10 +567,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'label' => 'Points Redeemed',
                 'key' => 'points_redeemed'
             ],
-            [
-                'label' => 'Total Spend Rebate',
-                'key' => 'total_spend_rebate'
-            ],
 
             [
                 'label' => 'Setup Fee',
@@ -571,32 +577,24 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'fixed_fee'
             ],
             [
-                'label' => 'Admin Fee',
-                'key' => 'admin_fee'
-            ],
-            [
                 'label' => 'Usage Fee',
                 'key' => 'usage_fee'
             ],
             [
-                'label' => 'Deposit Fee Reversal',
-                'key' => 'deposit_fee_reversal'
+                'label' => 'Deposit Fee',
+                'key' => 'deposit_fee'
             ],
             [
                 'label' => 'Convenience Fees',
                 'key' => 'convenience_fees'
             ],
             [
-                'label' => 'Transaction Fees',
-                'key' => 'transaction_fee'
-            ],
-            [
-                'label' => 'Refunded Transaction Fees',
-                'key' => 'refunded_transaction_fee'
-            ],
-            [
-                'label' => 'Premium Fee',
+                'label' => 'Premium Fee billed To client',
                 'key' => 'premium_fee'
+            ],
+            [
+                'label' => 'License Fee',
+                'key' => 'program_pays_for_saas_fees'
             ],
             [
                 'label' => 'Premium From Codes Redeemed',
@@ -615,7 +613,18 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'label' => 'Program refunds for monies pending',
                 'key' => 'program_refunds_for_monies_pending'
             ],
-
+            [
+                'label' => 'Total Spend Rebate',
+                'key' => 'total_spend_rebate'
+            ],
+            [
+                'label' => 'Discount Rebate',
+                'key' => 'discount_rebate_credited_to_program'
+            ],
+            [
+                'label' => 'Expiration Rebate',
+                'key' => 'expiration_rebate_credited_to_program'
+            ]
         ];
     }
 	protected function getReportForCSV(): array
