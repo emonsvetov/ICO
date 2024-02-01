@@ -153,6 +153,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'update'])->middleware('can:update,App\User,organization,user');
     Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User,organization');
     Route::get('/v1/organization/{organization}/user/{user}/history', [App\Http\Controllers\API\UserController::class, 'history'])->middleware('can:view,App\User,organization,user');
+    Route::get('/v1/organization/{organization}/user/{user}/{program}/reclaim-items', [App\Http\Controllers\API\UserController::class, 'reclaimItems'])->middleware('can:view,App\User,organization,user');
+    Route::post('/v1/organization/{organization}/user/reclaim', [App\Http\Controllers\API\UserController::class, 'reclaim'])->middleware('can:view,App\User,organization,user');
     Route::get('/v1/organization/{organization}/user/{user}/gift-codes-redeemed', [App\Http\Controllers\API\UserController::class, 'giftCodesRedeemed'])->middleware('can:view,App\User,organization,user');
     Route::get('/v1/organization/{organization}/user/{user}/change-logs', [App\Http\Controllers\API\UserController::class, 'changeLogs'])->middleware('can:view,App\User,organization,user');
     //Route::delete('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'destroy'])->name('api.v1.organization.user.destroy')->middleware('can:delete,user');
@@ -436,6 +438,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
 
+    // Participant
     // Participant
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
