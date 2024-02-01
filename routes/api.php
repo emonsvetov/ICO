@@ -379,6 +379,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/giftcode/purchase-from-v2', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseFromV2'])->middleware('can:purchaseFromV2,App\Giftcode');
     Route::post('/v1/giftcode/purchase-codes', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseCodes'])->middleware('can:viewAny,App\Giftcode');
 
+    // Cron Jobs
+    Route::get('/v1/cron-jobs/read-list', [App\Http\Controllers\API\CronJobsController::class, 'readList'])->middleware('can:viewAny');
+    Route::get('/v1/cron-jobs/run/{key}', [App\Http\Controllers\API\CronJobsController::class, 'run'])->middleware('can:viewAny');
+
     //MerchantOptimalValues
 
     Route::get('/v1/merchant/{merchant}/optimalvalue', [App\Http\Controllers\API\MerchantOptimalValueController::class, 'index'])->middleware('can:viewAny,App\MerchantOptimalValue,merchant');
