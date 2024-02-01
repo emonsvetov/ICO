@@ -347,6 +347,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/program-user', [App\Http\Controllers\API\ProgramUserController::class, 'storeRaw'])->middleware('can:manage,App\ProgramUser');
     Route::put('/v1/program-user', [App\Http\Controllers\API\ProgramUserController::class, 'updateRaw'])->middleware('can:manage,App\ProgramUser');
     Route::patch('/v1/program-user/status', [App\Http\Controllers\API\ProgramUserController::class, 'changeStatusRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::post('/v1/program', [App\Http\Controllers\API\ProgramController::class, 'storeRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::post('/v1/award',[App\Http\Controllers\API\AwardController::class, 'storeRaw'])->middleware('can:manage,App\ProgramUser');
 
     //UserProgram routes
 
