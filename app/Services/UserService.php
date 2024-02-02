@@ -318,17 +318,15 @@ class UserService
 
         if ($data->expiration_rule_id == self::EXPIRATION_RULES_TWELVE_MONTHS) {
             $originalDate->modify('+12 months');
-            $newDate = $originalDate->format('Y-m-d H:i:s');
-            if ($newDate > $currentDate) {
-                $res = $newDate->format('Y-m-d H:i:s');;
+            if ($originalDate > $currentDate) {
+                $res = $originalDate->format('Y-m-d H:i:s');;
             } else {
                 $res = false;
             }
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_ONE_OF_MONTH) {
             $originalDate->modify('+1 months');
-            $newDate = $originalDate->format('Y-m-d H:i:s');
-            if ($newDate > $currentDate) {
-                $res = $newDate->format('Y-m-d H:i:s');;
+            if ($originalDate > $currentDate) {
+                $res = $originalDate->format('Y-m-d H:i:s');;
             } else {
                 $res = false;
             }
@@ -374,7 +372,12 @@ class UserService
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_SPECIFIED) {
 
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_TWO_YEARS) {
-
+            $originalDate->modify('+24 months');
+            if ($originalDate > $currentDate) {
+                $res = $originalDate->format('Y-m-d H:i:s');
+            } else {
+                $res = false;
+            }
         }
 
         return $res;
