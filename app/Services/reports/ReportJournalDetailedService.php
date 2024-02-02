@@ -15,7 +15,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         $subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 
 		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
-            // dd($this->params [self::PROGRAMS]);
+
 			$total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
             if ($this->params[self::SQL_OFFSET] && $this->params[self::SQL_LIMIT]) {
                 $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]);
@@ -23,7 +23,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false);
             }
 
-            // dd($ranked_programs->pluck('account_holder_id'));
 			if ( $ranked_programs->isNotEmpty() ) {
 				$account_holder_ids = [];
 				$defaultValues = [
@@ -258,12 +257,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                     JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE,
                     JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_CONVENIENCE_FEE,
 				);
-                // dd("HERE");
 				$debits_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
-                // dd($debits_report);
-
 				$debits_report_table = $debits_report->getTable ();
-                // dd($debits_report_table);
 
 				// Sort the second set of fees
 				if (is_array ( $debits_report_table ) && count ( $debits_report_table ) > 0) {
@@ -427,7 +422,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
 				$points_report = new ReportSumProgramAwardsPointsService ( $subreport_params );
 				$points_report_table = $points_report->getTable ();
-                // dd($points_report_table);
 				// Sort the points awards
 				if (is_array ( $points_report_table ) && count ( $points_report_table ) > 0) {
 					foreach ( $points_report_table as $program_account_holder_id => $programs_points_report_table ) {
@@ -444,8 +438,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
 				$premium_fee = new ReportSumProgramCostOfGiftCodesRedeemedFeeService ( $subreport_params );
 				$premium_fee_report_table = $premium_fee->getTable ();
-				// pr($premium_fee_report_table);
-				//$this->_ci->read_db->query ('INSERT INTO debug SET note = '. json_encode(json_encode($premium_fee_report_table)));
+
 				if (is_array ( $premium_fee_report_table ) && count ( $premium_fee_report_table ) > 0) {
 					foreach ( $premium_fee_report_table as $program_account_holder_id => $programs_points_report_table ) {
 						// Get an easier reference to the program
@@ -459,7 +452,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 		}
 
         //Remove entries with 0 total
-
         foreach($this->table as $program_account_holder_id => $program) {
             $rowTotal = 0;
             foreach($defaultValues as $key => $value) {
@@ -471,7 +463,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         }
 
         //Calculate and add "net_points_purchased"
-        //$this->table = array_values($this->table);
         foreach( $this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
         }
@@ -500,7 +491,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         $this->table = [];
         $this->table['data'] = array_values($newTable);
         $this->table['total'] = count($total_programs);
-        // sort($this->table); //not sure about this whether we need this
         return $this->table;
 	}
 

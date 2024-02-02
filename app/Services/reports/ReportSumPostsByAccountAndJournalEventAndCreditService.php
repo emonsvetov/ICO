@@ -1,10 +1,8 @@
 <?php
 namespace App\Services\reports;
-use Illuminate\Support\Facades\DB;
+
 class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServiceAbstract
 {
-
-	const IS_CREDIT = "is_credit";
 
 	protected $is_credit = 1;
 
@@ -17,7 +15,6 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 
 	/** setup default parameters */
 	protected function setDefaultParams() {
-		parent::setDefaultParams ();
 		$this->params [self::IS_CREDIT] = $this->is_credit;
 		if (! isset ( $this->params [self::SQL_GROUP_BY] ) || ! is_array ( $this->params [self::SQL_GROUP_BY] ) || count ( $this->params [self::SQL_GROUP_BY] ) < 1) {
 			$this->params [self::SQL_GROUP_BY] = array (
@@ -31,6 +28,8 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 	/** Calculate data by date range (timestampFrom|To) */
 	protected function getDataDateRange() {
 		$data = $this->calcByDateRange ( $this->getParams () );
+
+        $this->table = [];
 		if (in_array ( self::FIELD_MONTH, $this->params [self::SQL_GROUP_BY] )) {
 			foreach ( $data as $row ) {
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [$row->{self::FIELD_MONTH}] = $row->{self::FIELD_VALUE};
@@ -41,6 +40,7 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
 			}
 		}
+        return $this->table;
 	}
 
 	/** basic sql without any filters */
@@ -54,14 +54,21 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 					atypes.name AS " . self::FIELD_ACCOUNT_TYPE . ",
 					MONTH(`posts`.created_at) as " . self::FIELD_MONTH . "
 				FROM
-                    " . ACCOUNTS . " a 
-                    INNER JOIN " . ACCOUNT_TYPES . " atypes ON atypes.id = a.account_type_id
-                    INNER JOIN " . POSTINGS . " posts ON posts.account_id = a.id
-                    INNER JOIN " . JOURNAL_EVENTS . " je ON je.id = posts.journal_event_id
-                    INNER JOIN " . JOURNAL_EVENT_TYPES . " jet ON jet.id = je.journal_event_type_id";
+					accounts a
+					INNER JOIN account_types atypes ON atypes.id = a.account_type_id
+					INNER JOIN postings posts ON posts.account_id = a.id
+					INNER JOIN journal_events je ON je.id = posts.journal_event_id
+					INNER JOIN journal_event_types jet ON jet.id = je.journal_event_type_id";
 		return $sql;
 
 	}
+
+    // protected function getBaseQuery(): Builder
+    // {
+    //     $sql = $this->getBaseSql();
+    //     dd($sql);
+    //     return DB::select( $this->getBaseSql() );
+    // }
 
 	/** get sql where filter
 	 *
@@ -82,6 +89,9 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 		}
 		if (isset ( $this->params [self::JOURNAL_EVENT_TYPES] ) && count ( $this->params [self::JOURNAL_EVENT_TYPES] ) > 0) {
 			$where [] = "jet.type IN ('" . implode ( "','", $this->params [self::JOURNAL_EVENT_TYPES] ) . "')";
+		}
+		if (isset ($this->params [self::YEAR]) && $this->params [self::YEAR] > 0) {
+			$where [] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
 		}
 		return $where;
 
