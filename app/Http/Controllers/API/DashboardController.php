@@ -32,10 +32,11 @@ class DashboardController extends Controller
 
         $params = [
             'program_account_holder_ids' => $programAccountHolderIds,
-            'dateFrom' => $dateFrom,
-            'dateTo' => $dateTo,
+            'from' => $dateFrom,
+            'to' => $dateTo,
             'limit' => null,
             'offset' => null,
+            'programs' => $programAccountHolderIds,
         ];
 
         $report = new ReportProgramStatusService($params);
