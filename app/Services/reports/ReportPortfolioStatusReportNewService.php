@@ -271,6 +271,8 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
         $query = $this->setLimit($query);
         $datas = $query->get()->toArray();
         $programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
+        $programs = _tree_flatten($programs);
+
         if ($programs->isNotEmpty()) {
             foreach($programs as $program) {
                 $program_account_id =  ( int ) $program->account_holder_id;
@@ -278,7 +280,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                     return $value->program_id == $program_account_id;
                 });
                 $index = array_keys($filtered_data)[0];
-                $this->table[$program_account_id] = $datas[$index] ? $datas[$index] : array();
+                $this->table[$program_account_id] = $datas[$index];
                 $program = (object)$program->toArray();
                 $this->table [$program_account_id]->program = $program;
                 
@@ -287,7 +289,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
         $newTable = [];
         foreach ($this->table as $key => $item) {
             if (empty($item->program->dinamicPath)) {
-                $newTable[$item->program_id] = clone $item;
+                $newTable[$item->program->id] = clone $item;
             } else {
                 $tmpPath = explode(',', $item->program->dinamicPath);
                 if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
@@ -301,6 +303,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
             }
         }
         $this->table = [];
+        
         $this->table['data'] =  array_values($newTable);
         $this->table['total'] = count($newTable);
         return $this->table;
