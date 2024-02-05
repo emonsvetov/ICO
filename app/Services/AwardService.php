@@ -112,7 +112,7 @@ class AwardService
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach( $users as $user)    {
-                $result[$user->id] = $this->awardUser($event, $user, $user, $award);
+                $result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
             }
 
             // print_r( $journalEventType );

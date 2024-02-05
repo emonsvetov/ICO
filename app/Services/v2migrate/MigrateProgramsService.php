@@ -58,13 +58,12 @@ class MigrateProgramsService extends MigrationService
             $this->printf("%s programs found in iteration %d.\n", count($v2RootPrograms), $this->iteration);
         }
         // pr($v2RootPrograms);
-        // exit;
         $this->printf("Attempting to migratePrograms num:%d in iteration %d.\n", count($v2RootPrograms), $this->iteration);
         $this->migratePrograms($v2RootPrograms);
         // resolve(\App\Services\v2migrate\MigrateJournalEventsService::class)->fixPostingsAccoundIds();
 
         $this->offset = $this->offset + $this->limit;
-        // if( $this->count >= 20 ) exit;
+        // if( $this->count >= 20 )
         if( count($v2RootPrograms) >= $this->limit) {
             $this->migrate( $args );
         }
@@ -172,8 +171,11 @@ class MigrateProgramsService extends MigrationService
     }
 
     public function read_list_all_root_program_ids($arguments = array()) {
+
         $query = "
-        SELECT `" . PROGRAMS . "`.account_holder_id
+        SELECT
+            `" . PROGRAMS . "`.account_holder_id,
+            `" . PROGRAMS . "`.name
             FROM `" . PROGRAMS . "`
         WHERE
             ( SELECT
@@ -186,6 +188,9 @@ class MigrateProgramsService extends MigrationService
             ) = 0";
         if(isset($arguments['label']) && $arguments['label'] != '') {
             $query .= " AND ". PROGRAMS .".label = '" . $arguments['label'] . "'";
+        }
+        if(isset($arguments['name']) && $arguments['name'] != '') {
+            $query .= " AND ". PROGRAMS .".name LIKE '%" . $arguments['name'] . "%'";
         }
         if(isset($arguments['program']) && !empty($arguments['program']) ) {
             $program_account_holder_ids = [];
@@ -649,13 +654,13 @@ class MigrateProgramsService extends MigrationService
 			$statement .= "
                         , (SELECT
                             GROUP_CONCAT(DISTINCT ranking_program.account_holder_id
-                                ORDER BY " . PROGRAM_PATHS . ".path_length DESC) AS rank
+                                ORDER BY " . PROGRAM_PATHS . ".path_length DESC) AS 'rank'
                         FROM
                             " . PROGRAM_PATHS . "
                         LEFT JOIN
                             " . PROGRAMS . " AS ranking_program ON " . PROGRAM_PATHS . ".ancestor = ranking_program.account_holder_id
                         WHERE " . PROGRAM_PATHS . ".descendant = " . PROGRAMS . ".account_holder_id
-                            ) as rank
+                            ) as 'rank'
                         , ( SELECT
                             MAX(COALESCE(`ranking_path_length`.path_length, 0)) as path_length
                         FROM
@@ -696,7 +701,7 @@ class MigrateProgramsService extends MigrationService
                 GROUP BY
                     " . PROGRAMS . ".account_holder_id";
 		if ($with_rank) {
-			$statement .= " ORDER BY rank";
+			$statement .= " ORDER BY 'rank'";
 		}
 		if ($offset > 0) {
 			$statement .= " LIMIT";

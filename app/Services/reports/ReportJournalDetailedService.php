@@ -21,13 +21,13 @@ class ReportJournalDetailedService extends ReportServiceAbstract
             // dd($this->params [self::PROGRAMS]);
             $total_programs = Program::read_programs($this->params [self::PROGRAMS], false);
             if ($this->params[self::SQL_OFFSET] && $this->params[self::SQL_LIMIT]) {
-                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]);
+                $programs = Program::read_programs($this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]);
             } else {
-                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false);
+                $programs = Program::read_programs($this->params [self::PROGRAMS], false);
             }
             // dd($ranked_programs->pluck('account_holder_id'));
 
-            if ($ranked_programs->isNotEmpty()) {
+            if ($programs->isNotEmpty()) {
                 $account_holder_ids = [];
                 $defaultValues = [
                     'fixed_fee' => 0,
@@ -39,8 +39,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                     'deposit_fee_reversal' => 0,
                     'transaction_fee' => 0,
                     'refunded_transaction_fee' => 0,
-                    'deposit_reversal' => 0,
-                    'deposit_fee_reversal' => 0,
+                    'program_pays_for_saas_fees' => 0,
+                    'reversal_program_pays_for_saas_fees' => 0,
                     'program_funds_net_transfers' => 0,
                     'program_refunds_for_monies_pending' => 0,
                     'deposits' => 0,
@@ -57,16 +57,17 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                     'premium_fee' => 0,
                     'net_points_purchased' => 0,
                     'program_funds_net_transfers' => 0,
-                    'program_refunds_for_monies_pending' => 0
                 ];
-                foreach ($ranked_programs as $program) {
-                    array_push($account_holder_ids, $program->account_holder_id);
+                foreach ($programs as $program) {
+                    $program = (object)$program->toArray();
                     $this->table[$program->account_holder_id] = $program;
                     foreach ($defaultValues as $key => $value) {
-                        $this->table[$program->account_holder_id]->setAttribute($key, $value);
+                        $this->table[$program->account_holder_id]->$key = $value;
                     }
+                  
+                    array_push($account_holder_ids, $program->account_holder_id);
+                  
                 }
-
                 // Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
                 $subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
                 $subreport_params [self::PROGRAMS] = $account_holder_ids;
@@ -161,6 +162,12 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                                                 break;
                                             case AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER :
                                                 switch ($journal_event_type) {
+                                                    case JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SAAS_FEES :
+                                                        $this->table [( int ) $program->account_holder_id]->program_pays_for_saas_fees = $amount;
+                                                        break;
+                                                    case JOURNAL_EVENT_TYPES_CHARGE_SAAS_FEES :
+                                                        $this->table [( int ) $program->account_holder_id]->charge_program_for_saas_fees = $amount;
+                                                        break;
                                                     case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE :
                                                         $this->table[$program->account_holder_id]->deposit_fee = $amount;
                                                         break;
@@ -489,13 +496,28 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 
         //Calculate and add "net_points_purchased"
         //$this->table = array_values($this->table);
-        $tempArray = [];
         foreach ($this->table as $i => $program) {
             $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
-            array_push($tempArray, $this->table[$i]);
+        }
+
+        $newTable = [];
+        foreach ($this->table as $key => $item) {
+            if (empty($item->dinamicPath)) {
+                $newTable[$item->id] = clone $item;
+            } else {
+                $tmpPath = explode(',', $item->dinamicPath);
+                if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
+                    $clone = clone $newTable[$tmpPath[0]];
+                    $clone->dinamicDepth = 0;
+                    $newTable[$tmpPath[0]]->subRows[] = $clone;
+                }
+                if (isset($newTable[$tmpPath[0]])) {
+                    $newTable[$tmpPath[0]]->subRows[] = $item;
+                }
+            }
         }
         $this->table = [];
-        $this->table['data'] = $tempArray;
+        $this->table['data'] = array_values($newTable);
         $this->table['total'] = count($total_programs);
         // sort($this->table); //not sure about this whether we need this
         return $this->table;
@@ -514,16 +536,45 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'name'
             ],
             [
+                'label' => 'Program ID',
+                'key' => 'account_holder_id'
+            ],
+            [
+                'label' => 'Deposits',
+                'key' => 'deposits'
+            ],
+            [
+                'label' => 'Deposit Reversal',
+                'key' => 'deposit_reversal'
+            ],
+            [
+                'label' => 'Points Purchased',
+                'key' => 'points_purchased'
+            ],
+            [
+                'label' => 'Points Reclaimed"',
+                'key' => 'reclaims'
+            ],
+            [
+                'label' => 'Award Credit Reclaimed',
+                'key' => 'award_credit_reclaims'
+            ],
+            [
+                'label' => 'Net Points purchased',
+                'key' => 'net_points_purchased'
+            ],
+            [
+                'label' => 'Points Redeemed',
+                'key' => 'points_redeemed'
+            ],
+
+            [
                 'label' => 'Setup Fee',
                 'key' => 'setup_fee'
             ],
             [
                 'label' => 'Fixed Fee',
                 'key' => 'fixed_fee'
-            ],
-            [
-                'label' => 'Admin Fee',
-                'key' => 'admin_fee'
             ],
             [
                 'label' => 'Usage Fee',
@@ -534,62 +585,46 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'deposit_fee'
             ],
             [
-                'label' => 'Transaction Fees',
-                'key' => 'transaction_fee'
+                'label' => 'Convenience Fees',
+                'key' => 'convenience_fees'
             ],
             [
-                'label' => 'Refunded Transaction Fees',
-                'key' => 'refunded_transaction_fee'
+                'label' => 'Premium Fee billed To client',
+                'key' => 'premium_fee'
             ],
             [
-                'label' => 'Deposits',
-                'key' => 'deposits'
-            ],
-            [
-                'label' => 'Points Purchased',
-                'key' => 'points_purchased'
-            ],
-            [
-                'label' => 'Reclaims',
-                'key' => 'reclaims'
-            ],
-            [
-                'label' => 'Award Credit Reclaimed',
-                'key' => 'award_credit_reclaims'
-            ],
-            [
-                'label' => 'Points Redeemed',
-                'key' => 'points_redeemed'
-            ],
-            [
-                'label' => 'Discount Rebate Credited to Program',
-                'key' => 'discount_rebate_credited_to_program'
-            ],
-            [
-                'label' => 'Total Spend Rebate Credited to Program',
-                'key' => 'total_spend_rebate'
-            ],
-            [
-                'label' => 'Expiration Rebate Credited to Program',
-                'key' => 'expiration_rebate_credited_to_program'
+                'label' => 'License Fee',
+                'key' => 'program_pays_for_saas_fees'
             ],
             [
                 'label' => 'Premium From Codes Redeemed',
                 'key' => 'codes_redeemed_premium'
             ],
             [
-                'label' => 'Premium Fee',
-                'key' => 'premium_fee'
-            ],
-            [
                 'label' => 'Cost of Codes Redeemed',
                 'key' => 'codes_redeemed_cost'
             ],
+        
             [
-                'label' => 'Convenience Fees',
-                'key' => 'convenience_fees'
+                'label' => 'Program Funds net transfers',
+                'key' => 'program_funds_net_transfers'
             ],
-
+            [
+                'label' => 'Program refunds for monies pending',
+                'key' => 'program_refunds_for_monies_pending'
+            ],
+            [
+                'label' => 'Total Spend Rebate',
+                'key' => 'total_spend_rebate'
+            ],
+            [
+                'label' => 'Discount Rebate',
+                'key' => 'discount_rebate_credited_to_program'
+            ],
+            [
+                'label' => 'Expiration Rebate',
+                'key' => 'expiration_rebate_credited_to_program'
+            ]
         ];
     }
 	protected function getReportForCSV(): array

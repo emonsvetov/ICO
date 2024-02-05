@@ -153,6 +153,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'update'])->middleware('can:update,App\User,organization,user');
     Route::put('/v1/organization/{organization}/users/create', [App\Http\Controllers\API\UserController::class, 'store'])->middleware('can:create,App\User,organization');
     Route::get('/v1/organization/{organization}/user/{user}/history', [App\Http\Controllers\API\UserController::class, 'history'])->middleware('can:view,App\User,organization,user');
+    Route::get('/v1/organization/{organization}/user/{user}/{program}/reclaim-items', [App\Http\Controllers\API\UserController::class, 'reclaimItems'])->middleware('can:view,App\User,organization,user');
+    Route::post('/v1/organization/{organization}/user/reclaim', [App\Http\Controllers\API\UserController::class, 'reclaim'])->middleware('can:view,App\User,organization,user');
     Route::get('/v1/organization/{organization}/user/{user}/gift-codes-redeemed', [App\Http\Controllers\API\UserController::class, 'giftCodesRedeemed'])->middleware('can:view,App\User,organization,user');
     Route::get('/v1/organization/{organization}/user/{user}/change-logs', [App\Http\Controllers\API\UserController::class, 'changeLogs'])->middleware('can:view,App\User,organization,user');
     //Route::delete('/v1/organization/{organization}/user/{user}', [App\Http\Controllers\API\UserController::class, 'destroy'])->name('api.v1.organization.user.destroy')->middleware('can:delete,user');
@@ -344,6 +346,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::patch('/v1/organization/{organization}/program/{program}/user/{user}/assignRole', [App\Http\Controllers\API\ProgramUserController::class, 'assignRole'])->middleware('can:assignRole,App\ProgramUser,organization,program,user');
 
+    Route::post('/v1/program-user', [App\Http\Controllers\API\ProgramUserController::class, 'storeRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::put('/v1/program-user', [App\Http\Controllers\API\ProgramUserController::class, 'updateRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::patch('/v1/program-user/status', [App\Http\Controllers\API\ProgramUserController::class, 'changeStatusRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::post('/v1/program', [App\Http\Controllers\API\ProgramController::class, 'storeRaw'])->middleware('can:manage,App\ProgramUser');
+    Route::post('/v1/award',[App\Http\Controllers\API\AwardController::class, 'storeRaw'])->middleware('can:manage,App\ProgramUser');
+
     //UserProgram routes
 
     Route::get('/v1/organization/{organization}/user/{user}/program', [App\Http\Controllers\API\UserProgramController::class, 'index'])->middleware('can:viewAny,App\UserProgram,organization,user');
@@ -374,6 +382,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // GiftCode
     Route::post('/v1/giftcode/purchase-from-v2', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseFromV2'])->middleware('can:purchaseFromV2,App\Giftcode');
     Route::post('/v1/giftcode/purchase-codes', [App\Http\Controllers\API\GiftcodeController::class, 'purchaseCodes'])->middleware('can:viewAny,App\Giftcode');
+
+    // Cron Jobs
+    Route::get('/v1/cron-jobs/read-list', [App\Http\Controllers\API\CronJobsController::class, 'readList'])->middleware('can:viewAny');
+    Route::get('/v1/cron-jobs/run/{key}', [App\Http\Controllers\API\CronJobsController::class, 'run'])->middleware('can:viewAny');
 
     //MerchantOptimalValues
 
@@ -430,6 +442,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
 
+    // Participant
     // Participant
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
@@ -662,6 +675,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Manager > Manage Account
     Route::get('/v1/organization/{organization}/program/{program}/monies-available-postings',[App\Http\Controllers\API\ManagerController::class, 'getMoniesAvailablePostings'])->middleware('can:transferMonies,App\Program,organization,program');
+
+    // v2 Routes
+    Route::get('/v1/v2-deprecated/program', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'index'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate/{account_holder_id}', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'migrate'])->middleware('can:viewAny,App\V2Deprecated');
 
 });
 

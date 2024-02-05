@@ -84,7 +84,8 @@ class MigrateUserRoleService extends MigrationService
                     }   else {
                         $v3RoleId = Role::getIdByName($v2RoleName);
                         if( !$v3RoleId ) {
-                            throw new Exception(sprintf(" - Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email));
+                            $this->printf(sprintf(" - Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email));
+                            //throw new Exception(sprintf(" - Role:\"%s\" for user(%s) not found in V3.\n", $v2RoleName, $v2User->email));
                             continue;
                         }
                         $this->rolesCache[$v2UserRole->id] = $v3RoleId;

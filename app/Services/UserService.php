@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Http\Requests\UserRequest;
 use App\Models\AccountType;
+use App\Models\Organization;
+use App\Models\Posting;
 use App\Models\Program;
 use Illuminate\Database\Eloquent\Builder;
 use App\Models\Traits\Filterable;
@@ -18,6 +20,14 @@ class UserService
     use Filterable, UserFilters, MediaUploadTrait;
 
     private AccountService $accountService;
+
+    const EXPIRATION_RULES_TWELVE_MONTHS = 1;        // ,12 Months
+    const EXPIRATION_RULES_ONE_OF_MONTH = 2;          // 1 of Month
+    const EXPIRATION_RULES_END_OF_NEXT_YEAR = 3;      // ,End of Next Year
+    const EXPIRATION_RULES_CUSTOM = 4;                // ,Custom
+    const EXPIRATION_RULES_ANNUAL = 5;                // ,Annual
+    const EXPIRATION_RULES_SPECIFIED = 6;             // ,Specified
+    const EXPIRATION_RULES_TWO_YEARS = 7;             // ,2 Years
 
     public function __construct(AccountService $accountService)
     {
@@ -298,5 +308,174 @@ class UserService
             }
         }
         return $user;
+    }
+
+    public function calculateExpirationDate(\stdClass $data)
+    {
+        $res = false;
+        $originalDate = new \DateTime($data->date_awarded);
+        $currentDate = new \DateTime();
+
+        if ($data->expiration_rule_id == self::EXPIRATION_RULES_TWELVE_MONTHS) {
+            $originalDate->modify('+12 months');
+            if ($originalDate > $currentDate) {
+                $res = $originalDate->format('Y-m-d H:i:s');;
+            } else {
+                $res = false;
+            }
+        } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_ONE_OF_MONTH) {
+            $originalDate->modify('+1 months');
+            if ($originalDate > $currentDate) {
+                $res = $originalDate->format('Y-m-d H:i:s');;
+            } else {
+                $res = false;
+            }
+        } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_END_OF_NEXT_YEAR) {
+            $year = $originalDate->format('Y');
+            $newDate = new \DateTime();
+            $newDate->setDate($year + 1, 1, 1);
+            $newDate->setTime(0, 0, 1);
+            if ($newDate > $currentDate) {
+                $res = $newDate->format('Y-m-d H:i:s');
+            } else {
+                $res = false;
+            }
+        } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_CUSTOM) {
+            if ($data->custom_expire_units == 'YEAR') {
+                $months = $data->custom_expire_offset * 12;
+                $originalDate->modify("+$months months");
+            } elseif ($data->custom_expire_units == 'MONTH') {
+                $months = $data->custom_expire_offset;
+                $originalDate->modify("+$months months");
+            } elseif ($data->custom_expire_units == 'DAY') {
+                $days = $data->custom_expire_offset;
+                $originalDate->modify("+$days days");
+            }
+
+            if ($originalDate > $currentDate) {
+                $res = $originalDate->format('Y-m-d H:i:s');
+            } else {
+                $res = false;
+            }
+
+        } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_ANNUAL) {
+            $year = $originalDate->format('Y');
+            $newDate = new \DateTime();
+            $newDate->setDate($year, $data->annual_expire_month, $data->annual_expire_day);
+            $newDate->setTime(0, 0, 0);
+            if ($newDate > $currentDate) {
+                $res = $newDate->format('Y-m-d H:i:s');
+            } else {
+                $res = false;
+            }
+
+        } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_SPECIFIED) {
+
+        } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_TWO_YEARS) {
+            $originalDate->modify('+24 months');
+            if ($originalDate > $currentDate) {
+                $res = $originalDate->format('Y-m-d H:i:s');
+            } else {
+                $res = false;
+            }
+        }
+
+        return $res;
+    }
+
+    public function reclaimPointItems(int $accountHolderId, int $programId, int $postingId = 0)
+    {
+        $query = DB::table('postings');
+        $query->join('journal_events', 'postings.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts', 'accounts.id', '=', 'postings.account_id');
+        $query->join('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->join('events', 'events.id', '=', 'event_xml_data.event_template_id');
+        $query->join('programs', 'programs.id', '=', 'events.program_id');
+        $query->join('expiration_rules', 'expiration_rules.id', '=', 'programs.expiration_rule_id');
+        $query->where('accounts.account_holder_id', '=', $accountHolderId);
+        $query->where('events.program_id', '=', $programId);
+        $query->whereNull('postings.date_reclaim');
+
+        if ($postingId) {
+            $query->where('postings.id', '=', $postingId);
+        }
+
+        $query->orderByDesc('journal_events.created_at');
+        $query->select(
+            'postings.id as key',
+            'events.id as events_id',
+            'programs.id as programs_id',
+            'event_xml_data.id as event_xml_data_id',
+            'events.organization_id as organization_id',
+            'postings.posting_amount as points_value',
+            'postings.created_at as date_awarded',
+            'event_xml_data.name as event',
+            'programs.expiration_rule_id as expiration_date',
+            'programs.expiration_rule_id as expiration_rule_id',
+            'programs.custom_expire_offset as custom_expire_offset',
+            'programs.custom_expire_units as custom_expire_units',
+            'programs.annual_expire_month as annual_expire_month',
+            'programs.annual_expire_day as annual_expire_day',
+            'expiration_rules.description as expiration_description',
+            DB::raw("'Disabled on Program Level' as award_credit")
+        );
+        $res = $query->get();
+
+        $arrayData = $res->toArray();
+
+        $filteredArrayData = [];
+        foreach ($arrayData as $val) {
+            $expirationDate = $this->calculateExpirationDate($val);
+            if ($expirationDate !== false) {
+                $val->expiration_date = $expirationDate;
+                $filteredArrayData[] = $val;
+            }
+        }
+
+        return $filteredArrayData;
+    }
+
+    public function reclaim($request)
+    {
+        $success = false;
+        $error = "";
+        $errorCode = 0;
+        $errorData = [];
+
+        $user = User::find($request->userId);
+        if (is_object($user)) {
+            $awardService = new AwardService();
+            $item = $this->reclaimPointItems($user->account_holder_id, $request->programId, $request->postingId)[0];
+            $program = Program::find($item->programs_id);
+            $data[] = [
+                'journal_event_id' => $item->event_xml_data_id,
+                'amount' => (float)$item->points_value,
+                'note' => $request->notes,
+            ];
+            $res = $awardService->reclaimPeerPoints($program, $user, $data);
+            if ($res){
+                $posting = Posting::find($item->key);
+                $posting->date_reclaim = now();
+                $posting->save();
+                $success = true;
+                $error = "";
+                $errorCode = 0;
+                $errorData = [];
+            }
+        } else {
+            $success = false;
+            $errorCode = 404;
+            $error = "User not found";
+            $errorData = [
+                'userId' => "User not found"
+            ];
+        }
+
+        return [
+            'success' => $success,
+            'error' => $error,
+            'errorCode' => $errorCode,
+            'errorData' => $errorData,
+        ];
     }
 }

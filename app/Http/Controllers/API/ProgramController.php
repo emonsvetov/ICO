@@ -31,6 +31,7 @@ use App\Models\Event;
 use App\Models\User;
 use App\Models\ProgramReports;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class ProgramController extends Controller
 {
@@ -379,6 +380,35 @@ class ProgramController extends Controller
         });
 
         return response()->json(['message' => 'Selected reports saved successfully'], 200);
+    }
+
+    public function storeRaw(Request $request, ProgramService $programService)
+    {
+        DB::beginTransaction();
+        try {
+            $organization = Organization::where('id', $request->get('organization_id'))->first();
+
+            $programRequest = ProgramRequest::createFrom($request);
+            $validator = Validator::make($programRequest->all(), $programRequest->rules());
+            $programRequest->setValidator($validator);
+            $newProgram = $programService->create(
+                $programRequest->validated() +
+                [
+                    'organization_id' => $organization->id,
+                    'factor_valuation' => 40,
+                    'invoice_for_awards' => 0,
+                    'is_add_default_merchants' => 1,
+                    'is_pay_in_advance' => 1,
+                    'setup_fee' => 0,
+                ]
+            );
+            ProgramCreated::dispatch($newProgram);
+            DB::commit();
+            return response(['program' => $newProgram]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['errors' => $e->getMessage()], 422);
+        }
     }
 
 }

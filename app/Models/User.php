@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\interfaces\ImageInterface;
+use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,6 @@ use Laravel\Passport\HasApiTokens;
 use App\Models\AccountHolder;
 use App\Models\Permission;
 use App\Models\Program;
-use App\Models\Role;
 
 use App\Notifications\ResetPasswordNotification;
 

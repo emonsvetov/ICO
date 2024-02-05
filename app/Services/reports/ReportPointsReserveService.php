@@ -26,13 +26,14 @@ class ReportPointsReserveService extends ReportServiceAbstract
 		$subreport_params[self::DATE_BEGIN] = $this->params[self::DATE_BEGIN];
 		$subreport_params[self::DATE_END] = $this->params[self::DATE_END];
         $total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
-        $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]  );
+        $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
         $subreport_params [self::ACCOUNT_HOLDER_IDS] = array ();
 
         if ($ranked_programs->isNotEmpty()) {
             foreach ( $ranked_programs as $program ) {
            
                 $subreport_params [self::ACCOUNT_HOLDER_IDS] [] = ( int ) $program->account_holder_id;
+                $program = (object)$program->toArray();
 				$this->table [( int ) $program->account_holder_id] = $program;
 				// Prime the programs report with 0's
 				$this->table [( int ) $program->account_holder_id]->value_awarded = 0;
@@ -240,7 +241,6 @@ class ReportPointsReserveService extends ReportServiceAbstract
                 }
             }
         }
-        $temp_array = array();
         if (is_array ( $this->table ) && count ( $this->table ) > 0) {
 			foreach ( $this->table as &$row ) {
 				$row->value_unredeemed = $row->value_awarded - $row->expired - $row->reclaimed - $row->redeemed;
@@ -260,12 +260,26 @@ class ReportPointsReserveService extends ReportServiceAbstract
                 else {
                     $row->reserve_percentage = 0;
                 }
-
-                array_push($temp_array, $row);
 			}
 		}
+        $newTable = [];
+        foreach ($this->table as $key => $item) {
+            if (empty($item->dinamicPath)) {
+                $newTable[$item->id] = clone $item;
+            } else {
+                $tmpPath = explode(',', $item->dinamicPath);
+                if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
+                    $clone = clone $newTable[$tmpPath[0]];
+                    $clone->dinamicDepth = 0;
+                    $newTable[$tmpPath[0]]->subRows[] = $clone;
+                }
+                if (isset($newTable[$tmpPath[0]])) {
+                    $newTable[$tmpPath[0]]->subRows[] = $item;
+                }
+            }
+        }
         $this->table = [];
-        $this->table['data'] = $temp_array;
+        $this->table['data'] =  array_values($newTable);
         $this->table['total'] = count($total_programs);
         return  $this->table;
     }

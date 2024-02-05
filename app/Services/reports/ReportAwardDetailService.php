@@ -63,7 +63,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
                         (-1 * if((`postings`.`posting_amount` is not null), `postings`.`posting_amount`*`programs`.`factor_valuation`, 0))
                 END as `points`
             "),
-            DB::raw("DATE_FORMAT(postings.created_at, '%d/%m/%Y') AS posting_timestamp"),
+            DB::raw("DATE_FORMAT(postings.created_at, '%m/%d/%Y') AS posting_timestamp"),
             "postings.id as posting_id"
         );
         $query->addSelect([

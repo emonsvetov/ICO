@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Models\Program;
+use App\Models\Role;
 use App\Services\reports\ReportServiceAbstract;
 use App\Services\reports\User\ReportServiceUserChangeLogs;
 use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
@@ -16,6 +17,7 @@ use App\Http\Resources\UserResource;
 use App\Http\Requests\UserRequest;
 use App\Models\Organization;
 use App\Models\User;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
@@ -113,4 +115,15 @@ class UserController extends Controller
         return response($report->getReport());
     }
 
+    public function reclaimItems(Request $request, $organization, User $user, $program,UserService $service)
+    {
+        $res = $service->reclaimPointItems($user->account_holder_id, $program);
+        return response(['data'=>$res]);
+    }
+
+    public function reclaim(Request $request, UserService $service)
+    {
+        $res = $service->reclaim($request);
+        return response($res);
+    }
 }

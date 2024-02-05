@@ -2,19 +2,15 @@
 
 namespace App\Services\reports;
 
-use App\Models\AccountType;
-use App\Models\JournalEventType;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
-use RuntimeException;
 
 class ReportDepositsReceivedService extends ReportServiceAbstract
 {
-
     /**
      * @inheritDoc
      */
-    protected function getBaseQuery(): string
+    protected function getBaseQuery(): array
     {
         $POSTINGS = 'postings';
         $ACCOUNTS = 'accounts';
@@ -27,42 +23,62 @@ class ReportDepositsReceivedService extends ReportServiceAbstract
         $INVOICES_TBL = 'invoices';
         $USERS = 'users';
 
-        $journalEventTypes = 'JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING';
-        $accountTypeName = 'Monies Due to Owner';
+        $journalEventTypes = 'Program pays for monies pending';
 
         $select = "$ACCOUNTS.account_holder_id,
-        $PROGRAMS.name,
-        CONCAT($USERS.last_name, ' ', $USERS.first_name) AS admin,
-        $POSTINGS.id AS posting_id,
-        (CAST($POSTINGS.qty AS UNSIGNED) * $POSTINGS.posting_amount) AS amount,
-        $POSTINGS.created_at AS date_paid,
-        $POSTINGS.is_credit,
-        CONCAT($INVOICES_TBL.key, '-', $INVOICES_TBL.seq) AS invoice_number,
-        $INVOICES_TBL.id AS invoice_id,
-        $JOURNAL_EVENT_TYPES.type AS journal_event_type,
-        $JOURNAL_EVENTS.notes";
+            $PROGRAMS.name,
+            CONCAT($USERS.last_name, ' ', $USERS.first_name) AS admin,
+            $POSTINGS.id AS posting_id,
+            (CAST($POSTINGS.qty AS UNSIGNED) * $POSTINGS.posting_amount) AS amount,
+            $POSTINGS.created_at AS date_paid,
+            $POSTINGS.is_credit,
+            CONCAT($INVOICES_TBL.key, '-', $INVOICES_TBL.seq) AS invoice_number,
+            $INVOICES_TBL.id AS invoice_id,
+            '$journalEventTypes' AS journal_event_type,
+            $JOURNAL_EVENTS.notes";
 
-        $orderBy = "ORDER BY date_paid DESC, $ACCOUNTS.account_holder_id, invoice_number";
+        $query = DB::table($POSTINGS)
+            ->join($ACCOUNTS, "$ACCOUNTS.id", "=", "$POSTINGS.account_id")
+            ->join($PROGRAMS, "$PROGRAMS.account_holder_id", "=", "$ACCOUNTS.account_holder_id")
+            ->join($ACCOUNT_TYPES, "$ACCOUNT_TYPES.id", "=", "$ACCOUNTS.account_type_id")
+            ->join($JOURNAL_EVENTS, "$JOURNAL_EVENTS.id", "=", "$POSTINGS.journal_event_id")
+            ->join($JOURNAL_EVENT_TYPES, "$JOURNAL_EVENT_TYPES.id", "=", "$JOURNAL_EVENTS.journal_event_type_id")
+            ->leftJoin($EVENT_XML_DATA, "$JOURNAL_EVENTS.event_xml_data_id", "=", "$EVENT_XML_DATA.id")
+            ->leftJoin($INVOICE_JOURNAL_EVENTS, "$INVOICE_JOURNAL_EVENTS.journal_event_id", "=", "$JOURNAL_EVENTS.id")
+            ->leftJoin($INVOICES_TBL, "$INVOICES_TBL.id", "=", "$INVOICE_JOURNAL_EVENTS.invoice_id")
+            ->leftJoin($USERS, "$USERS.account_holder_id", "=", "$JOURNAL_EVENTS.prime_account_holder_id")
+            ->leftJoin('journal_events AS reversals', "$JOURNAL_EVENTS.id", "=", "reversals.parent_journal_event_id")
+            ->where("$JOURNAL_EVENT_TYPES.type", '=', $journalEventTypes)
+            ->whereNull('reversals.id')
+            ->selectRaw($select);
 
-        return "SELECT $select
-            FROM $POSTINGS
-            INNER JOIN $ACCOUNTS ON $ACCOUNTS.id = $POSTINGS.account_id
-            INNER JOIN $PROGRAMS ON $PROGRAMS.account_holder_id = $ACCOUNTS.account_holder_id
-            INNER JOIN $ACCOUNT_TYPES ON $ACCOUNT_TYPES.id = $ACCOUNTS.account_type_id
-            INNER JOIN $JOURNAL_EVENTS ON $JOURNAL_EVENTS.id = $POSTINGS.journal_event_id
-            INNER JOIN $JOURNAL_EVENT_TYPES ON $JOURNAL_EVENT_TYPES.id = $JOURNAL_EVENTS.journal_event_type_id
-            LEFT JOIN $EVENT_XML_DATA ON $JOURNAL_EVENTS.event_xml_data_id = $EVENT_XML_DATA.id
-            LEFT JOIN $INVOICE_JOURNAL_EVENTS ON $INVOICE_JOURNAL_EVENTS.journal_event_id = $JOURNAL_EVENTS.id
-            LEFT JOIN $INVOICES_TBL ON $INVOICES_TBL.id = $INVOICE_JOURNAL_EVENTS.invoice_id
-            LEFT JOIN $USERS ON $USERS.account_holder_id = $JOURNAL_EVENTS.prime_account_holder_id
-            LEFT JOIN journal_events reversals ON ($JOURNAL_EVENTS.id = reversals.parent_journal_event_id)
-            WHERE
-                $JOURNAL_EVENT_TYPES.type IN ('$journalEventTypes')
-                AND $ACCOUNT_TYPES.name = '$accountTypeName'
-                AND reversals.id IS NULL
-            $orderBy";
+        $result = $query->orderByDesc("$POSTINGS.created_at")
+            ->orderBy("$ACCOUNTS.account_holder_id")
+            ->orderBy("invoice_number")
+            ->get();
+
+        $table = [];
+
+        foreach ($result as $row) {
+            $merchantId = (int)$row->account_holder_id;
+
+            $table[$merchantId] = [
+                'account_holder_id' => $row->account_holder_id,
+                'name' => $row->name,
+                'admin' => $row->admin,
+                'posting_id' => $row->posting_id,
+                'amount' => $row->amount,
+                'date_paid' => $row->date_paid,
+                'is_credit' => $row->is_credit,
+                'invoice_number' => $row->invoice_number,
+                'invoice_id' => $row->invoice_id,
+                'journal_event_type' => $journalEventTypes,
+                'notes' => $row->notes,
+            ];
+        }
+
+        return $table;
     }
-
 
     /**
      * @inheritDoc
@@ -70,50 +86,17 @@ class ReportDepositsReceivedService extends ReportServiceAbstract
     public function getCsvHeaders(): array
     {
         return [
-            [
-                'label' => 'Account Holder ID',
-                'key' => 'account_holder_id',
-            ],
-            [
-                'label' => 'Program Name',
-                'key' => 'name',
-            ],
-            [
-                'label' => 'Administrator',
-                'key' => 'admin',
-            ],
-            [
-                'label' => 'Posting ID',
-                'key' => 'posting_id',
-            ],
-            [
-                'label' => 'Amount',
-                'key' => 'amount',
-            ],
-            [
-                'label' => 'Date Paid',
-                'key' => 'date_paid',
-            ],
-            [
-                'label' => 'Credit Indicator',
-                'key' => 'is_credit',
-            ],
-            [
-                'label' => 'Invoice Number',
-                'key' => 'invoice_number',
-            ],
-            [
-                'label' => 'Invoice ID',
-                'key' => 'invoice_id',
-            ],
-            [
-                'label' => 'Journal Event Type',
-                'key' => 'journal_event_type',
-            ],
-            [
-                'label' => 'Journal Event Notes',
-                'key' => 'notes',
-            ],
+            ['label' => 'Account Holder ID', 'key' => 'account_holder_id'],
+            ['label' => 'Program Name', 'key' => 'name'],
+            ['label' => 'Administrator', 'key' => 'admin'],
+            ['label' => 'Posting ID', 'key' => 'posting_id'],
+            ['label' => 'Amount', 'key' => 'amount'],
+            ['label' => 'Date Paid', 'key' => 'date_paid'],
+            ['label' => 'Credit Indicator', 'key' => 'is_credit'],
+            ['label' => 'Invoice Number', 'key' => 'invoice_number'],
+            ['label' => 'Invoice ID', 'key' => 'invoice_id'],
+            ['label' => 'Journal Event Type', 'key' => 'journal_event_type'],
+            ['label' => 'Journal Event Notes', 'key' => 'notes'],
         ];
     }
 }
