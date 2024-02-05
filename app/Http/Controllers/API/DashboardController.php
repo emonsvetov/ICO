@@ -67,7 +67,7 @@ class DashboardController extends Controller
         $month = date('m', strtotime($dateTo));
         $dateBeginMonth = date('Y', strtotime($dateTo)) . '-' . $month . '-01 00:00:00';
         $params = [
-            'program_account_holder_ids' => $programAccountHolderIds,
+            'programs' => $programAccountHolderIds,
             'dateFrom' => $dateBeginMonth,
             'dateTo' => $dateTo,
             'limit' => null,
@@ -80,7 +80,7 @@ class DashboardController extends Controller
 
         $dateBeginYear = date('Y', strtotime($dateTo)) . '-01-01 00:00:00';
         $params = [
-            'program_account_holder_ids' => $programAccountHolderIds,
+            'programs' => $programAccountHolderIds,
             'dateFrom' => $dateBeginYear,
             'dateTo' => $dateTo,
             'limit' => null,
@@ -175,13 +175,14 @@ class DashboardController extends Controller
 
         $programAccountHolderIds = [$program->account_holder_id];
         $params = [
-            'program_account_holder_ids' => $programAccountHolderIds,
+            'programs' => $programAccountHolderIds,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'limit' => 6,
             'offset' => 0,
             'order' => $unit === 0 ? 'total_dollar_value_redeemed' : 'count',
-            'paginate'=>false
+            'paginate' => false,
+            'group' => ['merchants.id', 'merchants.name'],
         ];
         $report = new ReportSumProgramsSupplierRedemptionService($params);
         $report = $report->getTable();
