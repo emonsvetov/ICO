@@ -481,4 +481,17 @@ class Program extends BaseModel
         return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
 
     }
+
+    public function getParentProgramId($subProgramId)
+    {
+        $hierarchy = null;
+        $program = Program::find($subProgramId);
+        while ($program && $program->parent_id !== null) {
+            $program = Program::find($program->parent_id);
+        }
+        if ($program) {
+            $hierarchy = $program->id;
+        }
+        return $hierarchy;
+    }
 }
