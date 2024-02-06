@@ -231,12 +231,6 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
                 $newTable[$item->id] = clone $item;
             } else {
                 $tmpPath = explode(',', $item->dinamicPath);
-
-                if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
-                    $clone = clone $newTable[$tmpPath[0]];
-                    $clone->dinamicDepth = 0;
-                    $newTable[$tmpPath[0]]->subRows[] = $clone;
-                }
                 if (isset($newTable[$tmpPath[0]])) {
                     $newTable[$tmpPath[0]]->subRows[] = $item;
 
