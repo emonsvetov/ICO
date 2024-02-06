@@ -95,7 +95,6 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
         $report_key = $this->params[self::FIELD_REPORT_KEY] ?? self::FIELD_REDEMPTION_VALUE;
         $data = $this->table['data'];
         $bodyReference = [];
-    
         foreach ($data as $val) {
             if (!isset($bodyReference[$val->id]['total_cost_basis'])) {
                 $bodyReference[$val->id]['total_cost_basis'] = 0;
