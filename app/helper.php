@@ -140,9 +140,10 @@ if(!function_exists('_flatten'))  {
 }
 
 if(!function_exists('_tree_flatten'))  {
-    function _tree_flatten($collection, $depth = 0, $path = 0)
+    function _tree_flatten($collection, $resultCollection = null, $depth = 0, $path = 0)
     {
         if(!isset($newCollection)) $newCollection = collect();
+        if(!$resultCollection) $resultCollection = collect();
         $depth++;
         foreach( $collection as $key => $model ) {
             $children = clone $model->children;
@@ -151,17 +152,18 @@ if(!function_exists('_tree_flatten'))  {
             $tmpPath[] = $model->parent_id;
             $model->dinamicPath = implode(',', $tmpPath);
 
-            $search = $newCollection->search(function ($item) use ($model) {
+            $search = $resultCollection->search(function ($item) use ($model) {
                 return $item->id === $model->id;
             });
 
             if ($search === false){
                 $model->dinamicDepth = $depth;
                 $newCollection = $newCollection->push($model);
+                $resultCollection = $resultCollection->push($model);
             }
 
             if (!$children->isEmpty()) {
-                $newCollection = $newCollection->merge(_tree_flatten($children, $depth, $model->dinamicPath));
+                $newCollection = $newCollection->merge(_tree_flatten($children, $resultCollection, $depth, $model->dinamicPath));
             }
         }
         return $newCollection;
