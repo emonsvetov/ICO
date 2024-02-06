@@ -111,6 +111,60 @@ class MediumInfo extends BaseModel
         return $query->get();
     }
 
+    /**
+     * Reads the list or count of gift codes that are redeemable from the given merchant
+     * Note: If the merchant gets its gift codes from it's parent merchant, this will return the redeemable gift codes
+     * from this merchant's parent.
+     *
+     * @param int $merchantId
+     * @param string $endDate
+     * @return Collection
+     */
+    public static function getRedeemableDenominationsByMerchantInventoryOrderReport(int $merchantId = 0, $endDate = FALSE, $extraArgs = []): Collection
+    {
+
+        // Retrieve merchant details
+        $merchant = Merchant::where('account_holder_id', $merchantId)->first();
+        if ($merchant->get_gift_codes_from_root) {
+            $rootMerchant = $merchant->getRoot();
+            $merchantId = (int)$rootMerchant->id;
+        } else {
+            $merchantId = (int)$merchant->id;
+        }
+
+        $query = MediumInfo::select(
+            'merchant_id as merchant_id',
+            DB::raw('FORMAT(redemption_value, 2) as redemption_value'),
+            DB::raw('FORMAT(sku_value, 2) as sku_value'),
+            'virtual_inventory',
+            DB::raw('COUNT(DISTINCT medium_info.id) as count'),
+            DB::raw('SUM(case when virtual_inventory = 1 then 1 else 0 end) as count_virtual_inventory'),
+            DB::raw('SUM(case when virtual_inventory = 0 then 1 else 0 end) as count_real_inventory')
+        )
+            ->where('merchant_id', $merchantId);
+
+        $inventoryType = $extraArgs['inventoryType'] ?? FALSE;
+        if ($inventoryType) {
+            $query->where('medium_info.virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
+        }
+
+        if (!empty($endDate)) {
+            $query->where('purchase_date', '<=', $endDate)
+                ->where(function ($query) use ($endDate) {
+                    $query->whereNull('redemption_date')
+                        ->orWhere('redemption_date', '>', $endDate);
+                });
+        } else {
+            $query->whereNull('redemption_date');
+        }
+
+        $query->groupBy('sku_value', 'redemption_value')
+            ->orderBy('sku_value', 'ASC')
+            ->orderBy('redemption_value', 'ASC');
+
+        return $query->get();
+    }
+
 
     public static function getListRedeemedByParticipant(int $userId, bool $obfuscate = true, int $offset = 0, int $limit = 10)
     {
