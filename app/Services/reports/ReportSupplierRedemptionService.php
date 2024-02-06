@@ -95,6 +95,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
         $report_key = $this->params[self::FIELD_REPORT_KEY] ?? self::FIELD_REDEMPTION_VALUE;
         $data = $this->table['data'];
         $bodyReference = [];
+    
         foreach ($data as $val) {
             if (!isset($bodyReference[$val->id]['total_cost_basis'])) {
                 $bodyReference[$val->id]['total_cost_basis'] = 0;
@@ -192,9 +193,26 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
             $total['percent_total_redemption_value'] = round($total['percent_total_cost']);
         }
 
+        $merchants = Merchant::get()->toTree();
+        $merchants =  _tree_flatten($merchants);
+
+        $newTable = [];
+        foreach ($merchants as $key => $item) {
+            if (empty($item->dinamicPath) && isset($bodyReference[$item->id])) {
+                $newTable[$item->id] = $bodyReference[$item->id];
+            } else {
+                $tmpPath = explode(',', $item->dinamicPath);
+                if (isset($newTable[$tmpPath[0]]) && isset($bodyReference[$item->id])) {
+                    if (empty($newTable[$tmpPath[0]]['children']))
+                        $newTable[$tmpPath[0]]['children'] = [];
+                    array_push($newTable[$tmpPath[0]]['children'], $bodyReference[$item->id]);
+                }
+            }
+        }
+
         return [
-            'data' => $bodyReference,
-            'total' => count($bodyReference),
+            'data' => $newTable,
+            'total' => count($newTable),
             'config' => [
                 'columns' => $this->getHeaders(),
                 'total' => $total
