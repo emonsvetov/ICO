@@ -24,45 +24,29 @@ class MerchantController extends Controller
      */
     public function index(Organization $organization)
     {
-
         $keyword = request()->get('keyword');
-        $sortby = request()->get('sortby', 'id');
-        $direction = request()->get('direction', 'asc');
         $tree = request()->has('tree') ? true : false;
 
-        $where = [];
+        $query = Merchant::query();
 
-        if( $sortby == "name" )
-        {
-            $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering
-            $orderByRaw = "{$sortby} {$collation} {$direction}";
-        }
-        else
-        {
-            $orderByRaw = "{$sortby} {$direction}";
-        }
-
-        $query = Merchant::where( $where );
-
-        if( $keyword )
-        {
-            $query = $query->where(function($query1) use($keyword) {
+        if ($keyword) {
+            $query->where(function($query1) use($keyword) {
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                ->orWhere('name', 'LIKE', "%{$keyword}%");
+                    ->orWhere('name', 'LIKE', "%{$keyword}%");
             });
         }
 
-        $query = $query->orderByRaw($orderByRaw);
+        // Sort merchants by name in ascending order
+        $query->orderBy('name', 'asc');
 
-        if ( request()->has('minimal') )
-        {
+        if (request()->has('minimal')) {
             $query->select('id', 'name')
-            ->with(['children' => function($query){
-                return $query->select('id','name','parent_id')
                 ->with(['children' => function($query){
-                    return $query->select('id','name','parent_id');
+                    return $query->select('id', 'name', 'parent_id')
+                        ->with(['children' => function($query){
+                            return $query->select('id', 'name', 'parent_id');
+                        }]);
                 }]);
-            }]);
             if ($tree){
                 $query->whereNull('parent_id');
             }
@@ -75,13 +59,13 @@ class MerchantController extends Controller
             $merchants = $query->paginate(request()->get('limit', 50));
         }
 
-        if ( $merchants->isNotEmpty() )
-        {
-            return response( $merchants );
+        if ($merchants->isNotEmpty()) {
+            return response($merchants);
         }
 
-        return response( [] );
+        return response([]);
     }
+
 
     /**
      * Store a newly created resource in storage.
