@@ -27,7 +27,9 @@ class MerchantController extends Controller
         $keyword = request()->get('keyword');
         $tree = request()->has('tree') ? true : false;
 
-        $query = Merchant::query();
+        $where = [];
+
+        $query = Merchant::where($where);
 
         if ($keyword) {
             $query->where(function($query1) use($keyword) {
@@ -36,8 +38,10 @@ class MerchantController extends Controller
             });
         }
 
-        // Sort merchants by name in ascending order
-        $query->orderBy('name', 'asc');
+        // Order by name alphabetically with case-insensitive collation
+        $collation = "COLLATE utf8mb4_unicode_ci";
+        $orderByRaw = "name {$collation} ASC";
+        $query->orderByRaw($orderByRaw);
 
         if (request()->has('minimal')) {
             $query->select('id', 'name')
@@ -65,6 +69,7 @@ class MerchantController extends Controller
 
         return response([]);
     }
+
 
 
     /**
