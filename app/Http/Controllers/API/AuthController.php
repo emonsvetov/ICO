@@ -74,7 +74,7 @@ class AuthController extends Controller
         $data = $request->validated();
         $res = $service->ssoAddToken($data, $request->ip());
         return response([
-            'success' => $res['success'],
+            'success' => $res['success']
         ], $res['code']);
     }
 
@@ -126,7 +126,6 @@ class AuthController extends Controller
         try {
 
             $validated = $request->validated();
-            
             if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                 return response(['message' => 'Invalid Credentials'], 422);
             }
@@ -149,7 +148,7 @@ class AuthController extends Controller
             $response = ['user' => $user, 'access_token' => $accessToken];
 
             $isValidDomain = $domainService->isValidDomain();
- 
+
             if( $isValidDomain )
             {
                 $domain = $domainService->getDomain();
