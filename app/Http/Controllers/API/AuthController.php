@@ -4,9 +4,9 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\SsoAddTokenRequest;
 use App\Http\Requests\SsoLoginRequest;
+use App\Http\Requests\TokenCreationRequest;
 use App\Services\UserService;
 use Illuminate\Support\Facades\DB;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -74,7 +74,7 @@ class AuthController extends Controller
         $data = $request->validated();
         $res = $service->ssoAddToken($data, $request->ip());
         return response([
-            'success' => $res['success']
+            'success' => $res['success'],
         ], $res['code']);
     }
 
@@ -126,6 +126,7 @@ class AuthController extends Controller
         try {
 
             $validated = $request->validated();
+            
             if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                 return response(['message' => 'Invalid Credentials'], 422);
             }
@@ -137,6 +138,10 @@ class AuthController extends Controller
                 return response(['message' => 'Invalid Credentials*'], 422);
             }
 
+            $user->twofa_verified = false;
+
+            $user->save();
+
             $user->load(['organization', 'roles']);
 
             $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
@@ -144,7 +149,7 @@ class AuthController extends Controller
             $response = ['user' => $user, 'access_token' => $accessToken];
 
             $isValidDomain = $domainService->isValidDomain();
-
+ 
             if( $isValidDomain )
             {
                 $domain = $domainService->getDomain();
@@ -177,6 +182,16 @@ class AuthController extends Controller
                 ],
                 422);
         }
+    }
+
+    public function generate2faSecret(TokenCreationRequest $request, UserService $service)
+    {
+        $data = $request->validated();
+        $res = $service->generate2faSecret($data);
+        return response([
+            'success' => $res['success'],
+            'message'=> $res['message'],
+        ], $res['code']);
     }
 
     public function logout (Request $request) {
