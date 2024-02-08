@@ -70,7 +70,7 @@ class UserLoginRequest extends FormRequest
                 'email',
                 Rule::exists(User::class, 'email')->where(function ($query) {
                     $query->where('twofa_verified', true)
-                          ->where('token_2fa', $this->code);
+                          ->whereRaw('BINARY token_2fa = ?', [$this->code]);
                 })
             ],
             'password' => 'required',
