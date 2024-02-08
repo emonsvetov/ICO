@@ -34,7 +34,7 @@ class ReportServiceUserHistory extends ReportServiceAbstractBase
 
             $subQuery->join('account_types', function ($join) use ($account_type) {
                 $join->on('account_types.id', '=', 'accounts.account_type_id');
-                $join->on('account_types.name', '=', DB::raw("'{$account_type}'"));
+               // $join->on('account_types.name', '=', DB::raw("'{$account_type}'"));
             });
             $subQuery->join('postings', function ($join) use ($account_type) {
                 $join->on('postings.account_id', '=', 'accounts.id');

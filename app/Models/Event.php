@@ -76,8 +76,9 @@ class Event extends Model
      */
     public static function getIndexData(Organization $organization, Program $program, array $params)
     {
-        $query = self::where('organization_id', $organization->id)
-            ->where('program_id', $program->id);
+        $query = self::where('organization_id', $organization->id);
+        $parentProgram = (new \App\Models\Program)->getParentProgramId($program->id);
+        $query->whereIn('program_id', [$program->id, $parentProgram]);
 
         $include_disabled = request()->get('disabled', false);
 

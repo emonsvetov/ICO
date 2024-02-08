@@ -71,4 +71,9 @@ class JournalEventType extends BaseModel
     {
         return (int)self::getIdByType(self::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS);
     }
+
+    public static function getIdByTypeReclaimPoints(): int
+    {
+        return (int)self::getIdByType(self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS);
+    }
 }
