@@ -23,7 +23,7 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
             `medium_info`.*
             , `merchants`.name
             , `medium_info`.sku_value as amount
-            , upper(substring(MD5(RAND()), 1, 20)) as `code`
+            , `medium_info`.code as code
         ");
         //  / `medium_info`.factor_valuation
         return $query;

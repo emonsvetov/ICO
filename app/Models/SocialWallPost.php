@@ -68,6 +68,10 @@ class SocialWallPost extends BaseModel
         return $this->sender->first_name . ' ' . $this->sender->last_name;
     }
 
+    public function getFullReceiver()
+    {
+        return $this->receiver->first_name . ' ' . $this->receiver->last_name;
+    }
     public function getContent()
     {
         $content = '';

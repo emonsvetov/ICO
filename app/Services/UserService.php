@@ -333,8 +333,8 @@ class UserService
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_END_OF_NEXT_YEAR) {
             $year = $originalDate->format('Y');
             $newDate = new \DateTime();
-            $newDate->setDate($year + 1, 1, 1);
-            $newDate->setTime(0, 0, 1);
+            $newDate->setDate($year + 1, 12, 31);
+            $newDate->setTime(23, 59, 59);
             if ($newDate > $currentDate) {
                 $res = $newDate->format('Y-m-d H:i:s');
             } else {
@@ -372,9 +372,12 @@ class UserService
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_SPECIFIED) {
 
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_TWO_YEARS) {
-            $originalDate->modify('+24 months');
-            if ($originalDate > $currentDate) {
-                $res = $originalDate->format('Y-m-d H:i:s');
+            $year = $originalDate->format('Y');
+            $newDate = new \DateTime();
+            $newDate->setDate($year + 2, 12, 31);
+            $newDate->setTime(23, 59, 59);
+            if ($newDate > $currentDate) {
+                $res = $newDate->format('Y-m-d H:i:s');
             } else {
                 $res = false;
             }
@@ -394,6 +397,7 @@ class UserService
         $query->join('expiration_rules', 'expiration_rules.id', '=', 'programs.expiration_rule_id');
         $query->where('accounts.account_holder_id', '=', $accountHolderId);
         $query->where('events.program_id', '=', $programId);
+        $query->where('postings.posting_amount', '>', 0);
         $query->whereNull('postings.date_reclaim');
 
         if ($postingId) {
@@ -427,6 +431,7 @@ class UserService
         foreach ($arrayData as $val) {
             $expirationDate = $this->calculateExpirationDate($val);
             if ($expirationDate !== false) {
+                $val->points_value = round($val->points_value, 2);
                 $val->expiration_date = $expirationDate;
                 $filteredArrayData[] = $val;
             }
@@ -447,21 +452,32 @@ class UserService
             $awardService = new AwardService();
             $item = $this->reclaimPointItems($user->account_holder_id, $request->programId, $request->postingId)[0];
             $program = Program::find($item->programs_id);
-            $data[] = [
+            $data = [
                 'journal_event_id' => $item->event_xml_data_id,
                 'amount' => (float)$item->points_value,
                 'note' => $request->notes,
             ];
-            $res = $awardService->reclaimPeerPoints($program, $user, $data);
-            if ($res){
-                $posting = Posting::find($item->key);
-                $posting->date_reclaim = now();
-                $posting->save();
-                $success = true;
-                $error = "";
-                $errorCode = 0;
+
+            $amount_balance = $user->readAvailableBalance($program, $user);
+            $peerBalance = $this->readAvailablePeerBalance($user, $program);
+            $balance = $amount_balance -$peerBalance;
+            if ($balance >= $item->points_value) {
+                $res = $awardService->reclaimPoints($program, $user, $data);
+                if ($res) {
+                    $posting = Posting::find($item->key);
+                    $posting->date_reclaim = now();
+                    $posting->save();
+                    $success = true;
+                    $error = "";
+                    $errorCode = 0;
+                    $errorData = [];
+                }
+            }else{
+                $error = "Insufficient funds in the account";
+                $errorCode = 404;
                 $errorData = [];
             }
+
         } else {
             $success = false;
             $errorCode = 404;

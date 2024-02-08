@@ -22,14 +22,15 @@ class ProgramMerchantController extends Controller
         $this->merchant = $merchant;
     }
 
-    public function index( Organization $organization, Program $program )
+    public function index(Organization $organization, Program $program)
     {
-        if ( $program->merchants->isNotEmpty() )
-        {
-            return response( $program->merchants );
+        $merchants = $program->merchants()->orderBy('name')->get();
+
+        if ($merchants->isNotEmpty()) {
+            return response($merchants);
         }
 
-        return response( [] );
+        return response([]);
     }
 
     public function view( Organization $organization, Program $program, Merchant $merchant )

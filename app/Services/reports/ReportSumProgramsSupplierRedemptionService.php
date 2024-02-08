@@ -80,7 +80,9 @@ class ReportSumProgramsSupplierRedemptionService extends ReportServiceAbstract
 
     protected function setGroupBy(Builder $query): Builder
     {
-        $query->groupBy(['merchants.id', 'merchants.name']);
+        if (isset ( $this->params [self::SQL_GROUP_BY] ) && (count ( $this->params [self::SQL_GROUP_BY] ))) {
+            $query->groupBy($this->params [self::SQL_GROUP_BY]);
+        }
         return $query;
     }
 
