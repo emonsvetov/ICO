@@ -22,7 +22,7 @@ class ReportOrdersService extends ReportServiceAbstract
             medium_info.*,
             CONCAT(users.email) as redeemed_by
         ");
-        
+
         return $query;
     }
 
