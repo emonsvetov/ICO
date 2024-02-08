@@ -35,6 +35,7 @@ class SocialWallPostRequest extends FormRequest
             'awarder_program_id' => 'nullable|integer',
             'sender_user_account_holder_id' => 'required|integer',
             'receiver_user_account_holder_id' => 'required|integer',
+            'mentions_user_ids' => 'nullable|array',
             'comment' => 'nullable|string',
             'updated_by' => 'nullable|integer',
         ];

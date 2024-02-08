@@ -27,9 +27,9 @@ class SocialWallPostController extends Controller
         return $this->socialWallPostService->getIndexData($organization, $program, $user, $request->all());
     }
 
-    public function store(SocialWallPostRequest $request)
+    public function store(Organization $organization, Program $program, SocialWallPostRequest $request)
     {
-        $newSocialWallPost = $this->socialWallPostService->create($request->validated());
+        $newSocialWallPost = $this->socialWallPostService->create($request->validated(), $program);
 
         if ( ! $newSocialWallPost) {
             return response(['errors' => 'Social Wall Post Creation failed'], 422);
@@ -53,17 +53,6 @@ class SocialWallPostController extends Controller
     {
         $user = auth()->guard('api')->user();
         return $this->socialWallPostService->like($organization, $program, $user, $request->all());
-    }
-
-    public function mentions(Organization $organization, Program $program, CommentService $commentService, Request $request)
-    {
-        $recepients = $request->all()['mentionedUser'];
-        $receivers = [];
-        foreach ($recepients as $recepient) {
-            array_push($receivers,$recepient["user_id"]);
-        }
-        $comment = $request->all()['comment'];
-        $value= $commentService->commentMany($program, $organization, $receivers, $comment);
     }
 
     public function delete(Organization $organization, Program $program, SocialWallPost $socialWallPost)
