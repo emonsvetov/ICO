@@ -100,7 +100,8 @@ class LoginService
             if(sizeof($programIds) > 1)   {
                 $programs = (new \App\Models\Program)->whereIn('id', $programIds)->select(['id', 'name'])->get();
                 // pr($programs->toArray());
-                return response(['programs' => $programs]);
+                return response(['programs' => $programs] +
+                ($this->newPassword ? ['password_changed' => true] : []));
             }   else {
                 $this->isCheckRole = false;
                 return $this->loginToProgram($email, $password, $programIds[0]);
