@@ -5,7 +5,6 @@ namespace App\Services\reports;
 use App\Models\MediumInfo;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ReportOrdersService extends ReportServiceAbstract
 {
@@ -23,6 +22,7 @@ class ReportOrdersService extends ReportServiceAbstract
             medium_info.*,
             CONCAT(users.email) as redeemed_by
         ");
+        
         return $query;
     }
 
