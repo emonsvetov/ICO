@@ -32,7 +32,7 @@ class SocialWallPostService
             $template = $program->getTemplate();
             foreach($mentionedUsers as $user_id) {
                 $user = User::where('id',$user_id)->get()->first();
-                $message = new MentionUserEmail($user->name, $template);
+                $message = new MentionUserEmail($user->name, $template, $data['comment']);
                 Mail::to($user->email)->send($message);
             }
         }

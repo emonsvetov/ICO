@@ -18,14 +18,13 @@ border-left:solid 1px;
                     <hr style="border-top: 4px dashed {{ $template['theme_color'] }}; margin:40px;">
                 </div>
                 <p style="margin-left:20px; margin-right:20px;">
-                    Dear {{ $name }}
+                    From {{ $name }}
                 </p>
-                <p style="margin-left:20px; margin-right:20px;">
-                    You are mentioned on the social wall.
-                </p>
-                <p style="margin-left:20px; margin-right:20px;">
-                    Thanks!
-                </p>
+                <div style="margin-left:20px; margin-right:20px;">
+                    {!! $comment !!}
+                </div>
+                
+
             </td>
         </tr>
         <tr>
