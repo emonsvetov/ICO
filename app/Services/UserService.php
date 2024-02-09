@@ -432,12 +432,60 @@ class UserService
             $expirationDate = $this->calculateExpirationDate($val);
             if ($expirationDate !== false) {
                 $val->points_value = round($val->points_value, 2);
+                if (intval($val->points_value) == $val->points_value) {
+                    $val->points_value = number_format($val->points_value, 2);
+                }
                 $val->expiration_date = $expirationDate;
                 $filteredArrayData[] = $val;
             }
         }
 
         return $filteredArrayData;
+    }
+
+    public function getUserBalance($accountHolderId)
+    {
+        $results = DB::table('accounts')
+            ->select('journal_event_types.type', 'event_xml_data.name', 'journal_events.created_at as event_date', 'postings.posting_amount as amount', 'postings.is_credit', 'journal_events.journal_event_type_id')
+            ->join('account_types', 'account_types.id', '=', 'accounts.account_type_id')
+            ->join('postings', 'postings.account_id', '=', 'accounts.id')
+            ->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id')
+            ->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id')
+            ->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id')
+            ->where('accounts.account_holder_id', '=', $accountHolderId)
+            ->get();
+        $awardPointstoRecipient = 0;
+        $redeemPointsForGiftCodes = 0;
+        $reclaimPoints = 0;
+        foreach ($results->toArray() as $value) {
+            if ($value->type == 'Reclaim points') {
+                if ($value->is_credit) {
+                    $reclaimPoints += $value->amount;
+                } else {
+                    $reclaimPoints -= $value->amount;
+                }
+            }
+
+            if ($value->type == 'Award points to recipient') {
+                if ($value->is_credit) {
+                    $awardPointstoRecipient += $value->amount;
+                } else {
+                    $awardPointstoRecipient -= $value->amount;
+                }
+            }
+
+            if ($value->type == 'Redeem points for gift codes') {
+                if ($value->is_credit) {
+                    $redeemPointsForGiftCodes += $value->amount;
+                } else {
+                    $redeemPointsForGiftCodes -= $value->amount;
+                }
+            }
+        }
+        $balance = $reclaimPoints + $awardPointstoRecipient + $redeemPointsForGiftCodes;
+        return [
+            'balance' => $balance
+        ];
     }
 
     public function reclaim($request)
