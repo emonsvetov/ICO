@@ -292,11 +292,6 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $newTable[$item->program->id] = clone $item;
             } else {
                 $tmpPath = explode(',', $item->program->dinamicPath);
-                if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
-                    $clone = clone $newTable[$tmpPath[0]];
-                    $clone->dinamicDepth = 0;
-                    $newTable[$tmpPath[0]]->subRows[] = $clone;
-                }
                 if (isset($newTable[$tmpPath[0]])) {
                     $newTable[$tmpPath[0]]->subRows[] = $item;
                 }
@@ -338,7 +333,18 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
         $this->isExport = true;
         $this->params[self::SQL_LIMIT] = null;
         $this->params[self::SQL_OFFSET] = null;
-        $data = $this->getTable();
+        $table = $this->getTable();
+        $temp = array();
+        foreach ($table['data'] as $key => $item) {
+            array_push($temp, $item);
+
+            if (isset($item->subRows)) {
+                foreach($item->subRows as $sub => $subItem) {
+                    array_push($temp, $subItem);
+                }
+            }
+        }
+        $data['data'] = $temp;
         $data['headers'] = $this->getCsvHeaders();
         return $data;
     }
