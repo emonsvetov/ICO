@@ -22,6 +22,10 @@ class UserLoginRequest extends FormRequest
      */
     public function authorize()
     {
+        if( !$this->domainService->isAdminAppDomain() )
+        {
+            return true;
+        }
         return $this->request->has('code');
     }
 
@@ -64,20 +68,31 @@ class UserLoginRequest extends FormRequest
      */
     public function rules()
     {
-        return [
-            'email' => [
-                'required',
-                'email',
-                Rule::exists(User::class, 'email')->where(function ($query) {
-                    $query->where('twofa_verified', true)
-                          ->whereRaw('BINARY token_2fa = ?', [$this->code]);
-                })
-            ],
-            'password' => 'required',
-            'domainKey' => 'sometimes|string',
-            'code' => [
-                'required',
-            ]
-        ];
+        if( !$this->domainService->isAdminAppDomain() )
+        {
+            return [
+                'email' => 'required|email',
+                'password' => 'required',
+                'domainKey' => 'sometimes|string'
+            ];
+        }
+        else 
+        {
+            return [
+                'email' => [
+                    'required',
+                    'email',
+                    Rule::exists(User::class, 'email')->where(function ($query) {
+                        $query->where('twofa_verified', true)
+                              ->whereRaw('BINARY token_2fa = ?', [$this->code]);
+                    })
+                ],
+                'password' => 'required',
+                'domainKey' => 'sometimes|string',
+                'code' => [
+                    'required',
+                ]
+            ];
+        }
     }
 }
