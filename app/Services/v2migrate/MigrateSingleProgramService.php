@@ -2,6 +2,8 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\Account;
+use App\Models\JournalEvent;
 use Exception;
 
 use App\Services\ProgramService;
@@ -12,6 +14,7 @@ use App\Models\DomainIP;
 use App\Models\Event;
 use App\Models\Invoice;
 use App\Models\Leaderboard;
+use Illuminate\Support\Facades\DB;
 use stdClass;
 
 class MigrateSingleProgramService extends MigrateProgramsService
@@ -136,6 +139,9 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // // Pull Leaderboards
             $this->printf("Migrating program Leaderboards\n");
             $this->migrateProgramLeaderboards($v2Program, $v3Program);
+
+            $this->printf("Migrating program deposit balance\n");
+            $this->migrateProgramDepositBalance($v2Program, $v3Program);
 
             if( !property_exists($v2Program, 'sub_programs') ) { //if root program
                 $this->printf("'sub_programs' property does not exists for v2:%d. Fetching..\n", $v2Program->account_holder_id);
@@ -616,6 +622,71 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 // $MigrateEventXmlDataService->v3Program = $v3Program;
                 // $MigrateEventXmlDataService->migrateEventXmlDataByV2Event($v2Event, $v3Event);
             }
+        }
+    }
+
+    public function migrateProgramDepositBalance($v2Program, $v3Program) {
+        $v2AccountIDs = [];
+        $v2Users = [];
+        $v3PostingsData = [];
+        $v2JournalEventIDs = [];
+
+        $v2Accounts = $this->v2db->select("SELECT a.id from accounts a where a.account_holder_id IN ($v2Program->account_holder_id)");
+        foreach ($v2Accounts as $v2Account) {
+            $v2AccountIDs[] = $v2Account->id;
+        }
+        $v3Accounts = Account::whereIn('v2_account_id', $v2AccountIDs)->get()->keyBy('v2_account_id')->toArray();
+
+        $v2Postings = $this->v2db->select("SELECT p.* from accounts a join postings p on (p.account_id = a.id) where a.account_holder_id IN ($v2Program->account_holder_id)");
+        if ($v2Postings) {
+
+            foreach ($v2Postings as $v2Posting) {
+                $v2JournalEventIDs[] = $v2Posting->journal_event_id;
+            }
+            $v2JournalEventIDsToStr = implode(",", $v2JournalEventIDs);
+            $v2JournalEvents = $this->v2db->select("SELECT jet.type, je.* from journal_events je join journal_event_types jet on jet.id = je.journal_event_type_id where je.id IN ($v2JournalEventIDsToStr)");
+
+            // TODO for prime_account_holder_id.
+            foreach ($v2JournalEvents as $v2JournalEvent) {
+                $v2Users[] = $v2JournalEvent->prime_account_holder_id;
+            }
+
+            $v3JournalEventsData = [];
+            foreach ($v2JournalEvents as $v2JournalEvent) {
+                $v3JournalEventsData[] = [
+                    'prime_account_holder_id' => 0,
+                    'journal_event_type_id' => $v2JournalEvent->journal_event_type_id,
+                    'notes' => $v2JournalEvent->notes,
+                    'event_xml_data_id' => $v2JournalEvent->event_xml_data_id,
+                    'invoice_id' => $v2JournalEvent->invoice_id,
+                    'is_read' => $v2JournalEvent->is_read,
+                    'parent_journal_event_id' => 0,
+                    'v2_journal_event_id' => $v2JournalEvent->id,
+                    'v2_prime_account_holder_id' => $v2JournalEvent->prime_account_holder_id,
+                    'v2_parent_journal_event_id' => $v2JournalEvent->parent_journal_event_id,
+//                    'created_at' => '',
+//                    'updated_at' => '',
+//                    'deleted_at' => '',
+                ];
+            }
+            DB::table('journal_events')->insertOrIgnore($v3JournalEventsData);
+
+            $v3JournalEventIDs = JournalEvent::whereIn('v2_journal_event_id', $v2JournalEventIDs)->get()->keyBy('v2_journal_event_id')->toArray();
+
+            foreach ($v2Postings as $v2Posting) {
+               $v3PostingsData[] = [
+                   'journal_event_id' => $v3JournalEventIDs[$v2Posting->journal_event_id]['id'],
+                   'medium_info_id' => $v2Posting->medium_info_id,
+                   'account_id' => $v3Accounts[$v2Posting->account_id]['id'],
+                   'posting_amount' => $v2Posting->posting_amount,
+                   'qty' => $v2Posting->qty,
+                   'is_credit' => $v2Posting->is_credit,
+                   'v2_posting_id' => $v2Posting->id,
+                   'created_at' => $v2Posting->posting_timestamp,
+               ];
+            }
+
+            DB::table('postings')->insertOrIgnore($v3PostingsData);
         }
     }
 
