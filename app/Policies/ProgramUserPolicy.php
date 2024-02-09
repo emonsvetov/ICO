@@ -33,7 +33,7 @@ class ProgramUserPolicy
         }
         if($user->isAdmin()) return true;
 
-        return $user->isManagerToProgram( $program ) || $user->can('program-user-list');
+        return $user->isManagerToProgram( $program ) || $user->isParticipantToProgram( $program ) || $user->can('program-user-list');
     }
 
     public function view(User $authUser, Organization $organization, Program $program, User $user)
