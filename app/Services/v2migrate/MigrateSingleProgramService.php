@@ -643,6 +643,9 @@ class MigrateSingleProgramService extends MigrateProgramsService
             foreach ($v2Postings as $v2Posting) {
                 $v2JournalEventIDs[] = $v2Posting->journal_event_id;
             }
+
+            $v2JournalEventIDs = array_unique($v2JournalEventIDs);
+
             $v2JournalEventIDsToStr = implode(",", $v2JournalEventIDs);
             $v2JournalEvents = $this->v2db->select("SELECT jet.type, je.* from journal_events je join journal_event_types jet on jet.id = je.journal_event_type_id where je.id IN ($v2JournalEventIDsToStr)");
 
