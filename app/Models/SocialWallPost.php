@@ -106,7 +106,7 @@ class SocialWallPost extends BaseModel
             u.avatar',
             )
             ->where('social_wall_post_id', $parent_id)
-            ->join('users AS u', 'u.account_holder_id', '=', 'social_wall_posts.sender_user_account_holder_id')
+            ->join('users AS u', 'u.account_holder_id', '=', 'social_wall_posts.receiver_user_account_holder_id')
             ->orderBy('social_wall_posts.created_at', 'DESC')
             ->get();
 
