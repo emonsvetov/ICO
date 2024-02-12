@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ProgramExtra;
 use DB;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -353,6 +354,17 @@ class ProgramService
 
     public function update($program, $data)
     {
+        unset($data['administrative_fee_calculation']);
+        unset($data['administrative_fee']);
+        unset($data['administrative_fee_factor']);
+        if (!empty($data['program_extras'])) {
+            $programExtra = new ProgramExtra();
+            $programExtra->updateProgramExtra($data['program_extras']['id'],$data['program_extras']);
+            unset($data['program_extras']);
+        }else{
+            unset($data['program_extras']);
+        }
+
         if (isset($data['address'])) {
             if ($program->address()->exists()) {
                 $program->address()->update($data['address']);
