@@ -4,9 +4,9 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\SsoAddTokenRequest;
 use App\Http\Requests\SsoLoginRequest;
+use App\Http\Requests\TokenCreationRequest;
 use App\Services\UserService;
 use Illuminate\Support\Facades\DB;
-
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -137,6 +137,10 @@ class AuthController extends Controller
                 return response(['message' => 'Invalid Credentials*'], 422);
             }
 
+            $user->twofa_verified = false;
+
+            $user->save();
+
             $user->load(['organization', 'roles']);
 
             $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
@@ -177,6 +181,16 @@ class AuthController extends Controller
                 ],
                 422);
         }
+    }
+
+    public function generate2faSecret(TokenCreationRequest $request, UserService $service)
+    {
+        $data = $request->validated();
+        $res = $service->generate2faSecret($data);
+        return response([
+            'success' => $res['success'],
+            'message'=> $res['message'],
+        ], $res['code']);
     }
 
     public function logout (Request $request) {

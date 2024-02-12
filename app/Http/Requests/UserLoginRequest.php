@@ -3,8 +3,11 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Services\DomainService;
+use App\Models\User;
+use Illuminate\Validation\Rule;
 
 class UserLoginRequest extends FormRequest
 {
@@ -19,7 +22,18 @@ class UserLoginRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+        if( !$this->domainService->isAdminAppDomain() )
+        {
+            return true;
+        }
+        return $this->request->has('code');
+    }
+
+    protected function failedAuthorization()
+    {
+        throw new HttpResponseException(response()->json([
+            'message' => 'Code is required',
+        ], 403));
     }
 
     public function withValidator($validator)
@@ -40,6 +54,13 @@ class UserLoginRequest extends FormRequest
         });
     }
 
+    public function messages()
+    {
+        return [
+            'email.exists' => 'Invalid code is given',
+        ];
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -47,10 +68,31 @@ class UserLoginRequest extends FormRequest
      */
     public function rules()
     {
-        return [
-            'email' => 'required|email',
-            'password' => 'required',
-            'domainKey' => 'sometimes|string'
-        ];
+        if( !$this->domainService->isAdminAppDomain() )
+        {
+            return [
+                'email' => 'required|email',
+                'password' => 'required',
+                'domainKey' => 'sometimes|string'
+            ];
+        }
+        else 
+        {
+            return [
+                'email' => [
+                    'required',
+                    'email',
+                    Rule::exists(User::class, 'email')->where(function ($query) {
+                        $query->where('twofa_verified', true)
+                              ->whereRaw('BINARY token_2fa = ?', [$this->code]);
+                    })
+                ],
+                'password' => 'required',
+                'domainKey' => 'sometimes|string',
+                'code' => [
+                    'required',
+                ]
+            ];
+        }
     }
 }
