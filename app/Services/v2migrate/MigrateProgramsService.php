@@ -221,8 +221,9 @@ class MigrateProgramsService extends MigrationService
         SELECT
             " . PROGRAMS . ".*
             , " . PROGRAMS_EXTRA . ".uses_units
-            , " . PROGRAM_TYPES_TBL . ".type as program_type,
-            " . TOKENS . ".id AS token
+            , " . PROGRAM_TYPES_TBL . ".type as program_type
+            , " . PROGRAMS_EXTRA . ".bill_direct as bill_direct
+            , " . TOKENS . ".id AS token
         FROM
             " . PROGRAMS . "
         LEFT JOIN

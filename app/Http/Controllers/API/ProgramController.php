@@ -112,7 +112,7 @@ class ProgramController extends Controller
 
         if ($program) {
             if ( ! request()->get('only')) {
-                $program->load(['domains', 'merchants', 'organization', 'address', 'status']);
+                $program->load(['domains', 'merchants', 'organization', 'address', 'status','programExtras']);
             }
             // $program->getTemplate();
             return response($program);
