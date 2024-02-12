@@ -458,7 +458,7 @@ class UserService
         $redeemPointsForGiftCodes = 0;
         $reclaimPoints = 0;
         foreach ($results->toArray() as $value) {
-            if ($value->type == 'Reclaim points') {
+            if ($value->type == AccountType::ACCOUNT_RECLAIM_POINTS) {
                 if ($value->is_credit) {
                     $reclaimPoints += $value->amount;
                 } else {
@@ -466,7 +466,7 @@ class UserService
                 }
             }
 
-            if ($value->type == 'Award points to recipient') {
+            if ($value->type == AccountType::ACCOUNT_AWARD_POINTS_RECIPIENT) {
                 if ($value->is_credit) {
                     $awardPointstoRecipient += $value->amount;
                 } else {
@@ -474,7 +474,7 @@ class UserService
                 }
             }
 
-            if ($value->type == 'Redeem points for gift codes') {
+            if ($value->type == AccountType::ACCOUNT_REDEEM_POINTS_GIFT_CODES) {
                 if ($value->is_credit) {
                     $redeemPointsForGiftCodes += $value->amount;
                 } else {
