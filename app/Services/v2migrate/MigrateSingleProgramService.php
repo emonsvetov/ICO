@@ -123,6 +123,12 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             $this->executeV2SQL(); //run for any missing run!
 
+            // Import program users with roles
+            $this->printf("Migrating giftcodes\n");
+            $this->migrateProgramGiftcodes($v2Program, $v3Program);
+
+            $this->executeV2SQL(); //run for any missing run!
+
             // Pull Invoices
             // $this->migrateProgramInvoices($v2Program, $v3Program);
             // // Pull events
@@ -437,6 +443,10 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
+    public function migrateProgramGiftcodes(object $v2Program, Program $v3Program)
+    {
+        (new MigrateProgramGiftcodesService)->migrate($v2Program, $v3Program);
+    }
     public function migrateProgramUsers($v2Program, $v3Program = null) {
 
         $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
