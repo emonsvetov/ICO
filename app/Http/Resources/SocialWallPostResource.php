@@ -24,13 +24,15 @@ class SocialWallPostResource extends JsonResource
             'content' => $this->getContent(),
             'icon' => $this->getIconImage(),
             'receiver_user_account_holder_id' => $this->receiver_user_account_holder_id,
+            'sender_user_account_holder_id' => $this->sender_user_account_holder_id,
+            'to' => $this->getFullReceiver(),
             'comments' => $this->comments(),
             'like' => $this->like,
             'like_count' => $this->likesCount,
             // 'children' => $this->children,
             'created_at' => $this->created_at->format('m/d/Y H:i:s'),
             'updated_at' => $this->created_at->format('m/d/Y'),
-            'avatar' => $this->sender->avatar ?: $this->avatar,
+            'avatar' => $this->receiver->avatar ?: $this->avatar,
         ];
     }
 }

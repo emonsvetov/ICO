@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Services\MerchantService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Exception;
@@ -39,7 +40,8 @@ class MigrateProgramsService extends MigrationService
     }
 
     public function migrate( $args = [] ) {
-
+//        DB::beginTransaction();
+//        ob_start();
         $this->fixAccountHolderIds();
 
         global $v2ProgramUsersTotalCount;

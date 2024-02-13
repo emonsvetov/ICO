@@ -23,7 +23,7 @@ class ProgramMediaController extends Controller
             'program_id' => $program->id,
             'program_media_type_id' => $programMediaType->program_media_type_id,
             'deleted' => 0
-        ])->get();
+        ])->orderBy('created_at', 'desc')->get();
 
         if ($programMedia->isNotEmpty()) {
             return response($programMedia);

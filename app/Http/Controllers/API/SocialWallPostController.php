@@ -8,6 +8,8 @@ use App\Models\Program;
 use App\Models\SocialWallPost;
 use App\Services\SocialWallPostService;
 use App\Http\Controllers\Controller;
+use App\Events\CommentsCreated;
+use App\Services\CommentService;
 use Illuminate\Http\Request;
 
 class SocialWallPostController extends Controller
@@ -25,9 +27,9 @@ class SocialWallPostController extends Controller
         return $this->socialWallPostService->getIndexData($organization, $program, $user, $request->all());
     }
 
-    public function store(SocialWallPostRequest $request)
+    public function store(Organization $organization, Program $program, SocialWallPostRequest $request)
     {
-        $newSocialWallPost = $this->socialWallPostService->create($request->validated());
+        $newSocialWallPost = $this->socialWallPostService->create($request->validated(), $program);
 
         if ( ! $newSocialWallPost) {
             return response(['errors' => 'Social Wall Post Creation failed'], 422);
