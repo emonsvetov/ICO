@@ -121,6 +121,11 @@ class Program extends BaseModel
         return $this->hasOne(ProgramExtra::class);
     }
 
+    public function programTransactionFee()
+    {
+        return $this->hasMany(ProgramTransactionFee::class);
+    }
+
     public function programIsInvoiceForAwards($extraArg = false): bool
     {
         if ($this->invoice_for_awards || ($extraArg && $this->factor_valuation != 1)) {
