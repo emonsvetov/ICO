@@ -5,6 +5,7 @@ namespace App\Services\reports;
 use App\Models\AccountType;
 use App\Models\JournalEventType;
 use App\Models\User;
+use App\Models\Program;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -265,10 +266,43 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
     protected function calc(): array
     {
         $this->table = [];
+        $this->table = array ();
         $query = $this->getBaseQuery();
-        $this->table['total'] = count($query->get()->toArray());
         $query = $this->setLimit($query);
-        $this->table['data'] = $query->get()->toArray();
+        $datas = $query->get()->toArray();
+        $programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
+        if ($programs->isNotEmpty()) {
+            foreach($programs as $program) {
+                $program_account_id =  ( int ) $program->account_holder_id;
+                $filtered_data = array_filter($datas, function($value) use ($program_account_id) {
+                    return $value->program_id == $program_account_id;
+                });
+                $index = array_keys($filtered_data)[0];
+                $this->table[$program_account_id] = $datas[$index] ? $datas[$index] : array();
+                $program = (object)$program->toArray();
+                $this->table [$program_account_id]->program = $program;
+                
+            }
+        }
+        $newTable = [];
+        foreach ($this->table as $key => $item) {
+            if (empty($item->program->dinamicPath)) {
+                $newTable[$item->program_id] = clone $item;
+            } else {
+                $tmpPath = explode(',', $item->program->dinamicPath);
+                if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
+                    $clone = clone $newTable[$tmpPath[0]];
+                    $clone->dinamicDepth = 0;
+                    $newTable[$tmpPath[0]]->subRows[] = $clone;
+                }
+                if (isset($newTable[$tmpPath[0]])) {
+                    $newTable[$tmpPath[0]]->subRows[] = $item;
+                }
+            }
+        }
+        $this->table = [];
+        $this->table['data'] =  array_values($newTable);
+        $this->table['total'] = count($newTable);
         return $this->table;
     }
 

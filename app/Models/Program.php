@@ -216,9 +216,12 @@ class Program extends BaseModel
         // pr($programAccountHolderIds);
         if( $with_rank )    {
             $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+            $programs = _tree_flatten($programs);
             return $programs;
         }
-        return self::whereIn('account_holder_id', $programAccountHolderIds)->offset((int)$offset)->limit((int)$limit)->get();
+        $programs = self::whereIn('account_holder_id', $programAccountHolderIds)->offset((int)$offset)->limit((int)$limit)->get()->toTree();
+        $programs = _tree_flatten($programs);
+        return $programs;
     }
 
     public function create_setup_fee_account()   {
@@ -477,5 +480,18 @@ class Program extends BaseModel
     {
         return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
 
+    }
+
+    public function getParentProgramId($subProgramId)
+    {
+        $hierarchy = null;
+        $program = Program::find($subProgramId);
+        while ($program && $program->parent_id !== null) {
+            $program = Program::find($program->parent_id);
+        }
+        if ($program) {
+            $hierarchy = $program->id;
+        }
+        return $hierarchy;
     }
 }

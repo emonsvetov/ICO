@@ -310,7 +310,8 @@ class ProgramUserController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user = User::where('external_id', $request->get('external_id'))->first();
+            $user = $request->get('external_id') ? User::where('external_id', $request->get('external_id'))->first()
+                : User::where('email', $request->get('email'))->first();
             $program = Program::where('id', $request->get('program_id'))->first();
             $userRequest = UserRequest::createFrom($request);
             $userRequest->user = $user;
@@ -338,7 +339,8 @@ class ProgramUserController extends Controller
     {
         DB::beginTransaction();
         try {
-            $user = User::where('external_id', $request->get('external_id'))->first();
+            $user = $request->get('external_id') ? User::where('external_id', $request->get('external_id'))->first()
+                : User::where('email', $request->get('email'))->first();
             $status = User::getStatusByName($request->get('status'));
             if( !$status->exists() ) {
                 throw new \Exception('Status does not exists');

@@ -9,6 +9,8 @@ use App\Models\SocialWallPost;
 use App\Models\SocialWallPostType;
 use App\Models\User;
 use App\Repositories\interfaces\UserRepositoryInterface;
+use App\Mail\templates\MentionUserEmail;
+use Mail;
 
 class SocialWallPostService
 {
@@ -21,17 +23,24 @@ class SocialWallPostService
         $this->userRepository = $userRepository;
     }
 
-    public function create(array $data): ?SocialWallPost
+    public function create(array $data, Program $program ): ?SocialWallPost
     {
+        $mentionedUsers = $data['mentions_user_ids'];
+        unset($data['mentions_user_ids']);
         $resultObject = SocialWallPost::create($data);
-
+        if(!empty($mentionedUsers)) {
+            $template = $program->getTemplate();
+            foreach($mentionedUsers as $user_id) {
+                $user = User::where('id',$user_id)->get()->first();
+                $message = new MentionUserEmail($user->name, $template);
+                Mail::to($user->email)->send($message);
+            }
+        }
         return $resultObject;
-
     }
 
     public function like(Organization $organization, Program $program, $user, array $request)
     {
-        // print_r($request['id']);
         $post = SocialWallPost::find($request['id']);
         $like = json_decode($post->like);
         if ($like == null)
@@ -119,5 +128,4 @@ class SocialWallPostService
 
         return $resultProgramIds;
     }
-
 }

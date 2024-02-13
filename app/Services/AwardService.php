@@ -112,7 +112,7 @@ class AwardService
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach( $users as $user)    {
-                $result[$user->id] = $this->awardUser($event, $user, $user, $award);
+                $result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
             }
 
             // print_r( $journalEventType );
@@ -1058,6 +1058,57 @@ class AwardService
                 $result[$user->id][] = $this->_reclaimPeerPoints($program, $user, $reclaim);
             }
             return $result;
+        }
+    }
+
+    public function reclaimPoints(Program $program, User $user, array $reclaim)
+    {
+        $authUser = auth()->user();
+        if ($program->programIsInvoiceForAwards(true)) {
+            DB::beginTransaction();
+
+            try {
+                $journalEventTypeId = JournalEventType::getIdByTypeReclaimPoints();
+
+                $journalEventData = [
+                    'parent_journal_event_id' => $reclaim['journal_event_id'],
+                    'journal_event_type_id' => $journalEventTypeId,
+                    'notes' => strip_tags($reclaim['note'], ALLOWED_HTML_TAGS),
+                    'prime_account_holder_id' => $authUser->account_holder_id,
+                    'created_at' => now()
+                ];
+
+                $journalEventService = resolve(\App\Services\JournalEventService::class);
+                $journalEventId = $journalEventService->create($journalEventData);
+
+                $accountTypePeer2PeerPoints = AccountType::getTypeIdPeer2PeerPoints();
+                $currencyId = Currency::getDefault();
+
+                $data = [
+                    'debit_account_holder_id' => $user->account_holder_id,
+                    'debit_account_type_id' => $accountTypePeer2PeerPoints,
+                    'debit_finance_type_id' => FinanceType::getIdByTypeLiability(),
+                    'debit_medium_type_id' => MediumType::getIdByTypePoints(),
+                    'credit_account_holder_id' => $program->account_holder_id,
+                    'credit_account_type_id' => $accountTypePeer2PeerPoints,
+                    'credit_finance_type_id' => FinanceType::getIdByTypeLiability(),
+                    'credit_medium_type_id' => MediumType::getIdByTypePoints(),
+                    'journal_event_id' => $journalEventId,
+                    'amount' => $reclaim['amount'],
+                    'currency_type_id' => $currencyId,
+                ];
+
+                $accountService = resolve(\App\Services\AccountService::class);
+                $result = $accountService->posting($data);
+
+                DB::commit();
+                return $result;
+            } catch (\Exception $e) {
+                DB::rollback();
+                throw $e;
+            }
+        } else {
+            throw new \RuntimeException("Program does not support this function.");
         }
     }
 

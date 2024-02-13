@@ -746,7 +746,11 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 ];
             }
             if( $programMerchants ) {
-                $v3Program->merchants()->sync($programMerchants, false);
+                try {
+                    $v3Program->merchants()->sync($programMerchants, false);
+                } catch (\Exception $exception){
+                    $this->printf("Mechant sync failed: ". print_r($programMerchants, true) . "\n");
+                }
             }
         }
     }

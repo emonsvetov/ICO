@@ -125,7 +125,7 @@ class ReportCashDepositService extends ReportServiceAbstract
                     WHEN `root_name` = name THEN ''
                     ELSE `root_name`
                 END as 'root_name',
-                id as 'program_id',
+                id as 'program_account_holder_id',
                 name as 'program_name',
                 invoice_id,
                 invoice_number,
