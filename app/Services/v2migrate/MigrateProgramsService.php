@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Services\MerchantService;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Exception;
@@ -39,7 +40,8 @@ class MigrateProgramsService extends MigrationService
     }
 
     public function migrate( $args = [] ) {
-
+//        DB::beginTransaction();
+//        ob_start();
         $this->fixAccountHolderIds();
 
         global $v2ProgramUsersTotalCount;
@@ -221,8 +223,9 @@ class MigrateProgramsService extends MigrationService
         SELECT
             " . PROGRAMS . ".*
             , " . PROGRAMS_EXTRA . ".uses_units
-            , " . PROGRAM_TYPES_TBL . ".type as program_type,
-            " . TOKENS . ".id AS token
+            , " . PROGRAM_TYPES_TBL . ".type as program_type
+            , " . PROGRAMS_EXTRA . ".bill_direct as bill_direct
+            , " . TOKENS . ".id AS token
         FROM
             " . PROGRAMS . "
         LEFT JOIN

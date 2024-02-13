@@ -18,7 +18,8 @@ class MentionUserEmail extends SendgridEmail
      */
     public function __construct(
         string $name,
-        $template
+        $template,
+        string $comment
     ) {
         parent::__construct();
         $this->init(func_get_args());

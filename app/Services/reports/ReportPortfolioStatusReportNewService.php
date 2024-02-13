@@ -271,6 +271,8 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
         $query = $this->setLimit($query);
         $datas = $query->get()->toArray();
         $programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
+        $programs = _tree_flatten($programs);
+
         if ($programs->isNotEmpty()) {
             foreach($programs as $program) {
                 $program_account_id =  ( int ) $program->account_holder_id;
@@ -278,7 +280,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                     return $value->program_id == $program_account_id;
                 });
                 $index = array_keys($filtered_data)[0];
-                $this->table[$program_account_id] = $datas[$index] ? $datas[$index] : array();
+                $this->table[$program_account_id] = $datas[$index];
                 $program = (object)$program->toArray();
                 $this->table [$program_account_id]->program = $program;
                 
@@ -287,20 +289,16 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
         $newTable = [];
         foreach ($this->table as $key => $item) {
             if (empty($item->program->dinamicPath)) {
-                $newTable[$item->program_id] = clone $item;
+                $newTable[$item->program->id] = clone $item;
             } else {
                 $tmpPath = explode(',', $item->program->dinamicPath);
-                if (isset($newTable[$tmpPath[0]]) && empty($newTable[$tmpPath[0]]->subRows)) {
-                    $clone = clone $newTable[$tmpPath[0]];
-                    $clone->dinamicDepth = 0;
-                    $newTable[$tmpPath[0]]->subRows[] = $clone;
-                }
                 if (isset($newTable[$tmpPath[0]])) {
                     $newTable[$tmpPath[0]]->subRows[] = $item;
                 }
             }
         }
         $this->table = [];
+        
         $this->table['data'] =  array_values($newTable);
         $this->table['total'] = count($newTable);
         return $this->table;
@@ -335,7 +333,18 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
         $this->isExport = true;
         $this->params[self::SQL_LIMIT] = null;
         $this->params[self::SQL_OFFSET] = null;
-        $data = $this->getTable();
+        $table = $this->getTable();
+        $temp = array();
+        foreach ($table['data'] as $key => $item) {
+            array_push($temp, $item);
+
+            if (isset($item->subRows)) {
+                foreach($item->subRows as $sub => $subItem) {
+                    array_push($temp, $subItem);
+                }
+            }
+        }
+        $data['data'] = $temp;
         $data['headers'] = $this->getCsvHeaders();
         return $data;
     }

@@ -502,7 +502,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'name'
             ],
             [
-                'label' => 'Program ID',
+                'label' => 'Program Account Holder ID',
                 'key' => 'account_holder_id'
             ],
             [
@@ -512,6 +512,10 @@ class ReportJournalDetailedService extends ReportServiceAbstract
             [
                 'label' => 'Deposit Reversal',
                 'key' => 'deposit_reversal'
+            ],
+            [
+                'label' => 'Program Funds net transfers',
+                'key' => 'program_funds_net_transfers'
             ],
             [
                 'label' => 'Points Purchased',
@@ -530,13 +534,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'net_points_purchased'
             ],
             [
-                'label' => 'Points Redeemed',
-                'key' => 'points_redeemed'
-            ],
-
-            [
-                'label' => 'Setup Fee',
-                'key' => 'setup_fee'
+                'label' => 'Deposit Fee',
+                'key' => 'deposit_fee'
             ],
             [
                 'label' => 'Fixed Fee',
@@ -545,10 +544,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
             [
                 'label' => 'Usage Fee',
                 'key' => 'usage_fee'
-            ],
-            [
-                'label' => 'Deposit Fee',
-                'key' => 'deposit_fee'
             ],
             [
                 'label' => 'Convenience Fees',
@@ -563,17 +558,20 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'program_pays_for_saas_fees'
             ],
             [
+                'label' => 'Setup Fee',
+                'key' => 'setup_fee'
+            ],
+            [
+                'label' => 'Points Redeemed',
+                'key' => 'points_redeemed'
+            ],
+            [
                 'label' => 'Premium From Codes Redeemed',
                 'key' => 'codes_redeemed_premium'
             ],
             [
                 'label' => 'Cost of Codes Redeemed',
                 'key' => 'codes_redeemed_cost'
-            ],
-        
-            [
-                'label' => 'Program Funds net transfers',
-                'key' => 'program_funds_net_transfers'
             ],
             [
                 'label' => 'Program refunds for monies pending',
@@ -596,8 +594,18 @@ class ReportJournalDetailedService extends ReportServiceAbstract
     protected function getReportForCSV(): array
     {
         $this->isExport = true;
-        $data = $this->getTable();
-
+        $table = $this->getTable();
+        $temp = array();
+        foreach ($table['data'] as $key => $item) {
+            array_push($temp, $item);
+            
+            if (isset($item->subRows)) {
+                foreach($item->subRows as $sub => $subItem) {
+                    array_push($temp, $subItem);
+                }
+            }
+        }
+        $data['data'] = $temp;
         $data['headers'] = $this->getCsvHeaders();
         return $data;
     }

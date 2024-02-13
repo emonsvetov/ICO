@@ -143,7 +143,7 @@ class ProgramUserController extends Controller
     {
         $params = [
             'programId' => $program->id,
-            'user_id' => $user->id,
+            'user_account_holder_id' => $user->account_holder_id,
             'paginate' => true,
             'limit' => $request->get('limit'),
             'offset' => ($request->get('page') - 1) * $request->get('limit'),

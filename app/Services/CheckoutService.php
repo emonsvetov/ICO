@@ -318,7 +318,7 @@ class CheckoutService
 
 					$reserved_code = Giftcode::holdGiftcode ([
 						'user_account_holder_id' => $user->account_holder_id,
-						// 'program' => $program,
+						'program' => $program,
 						'merchant_account_holder_id' => $gift_code2->gift_code_provider_account_holder_id,
 						'redemption_value' => $gift_code2->redemption_value,
 						'sku_value' => $gift_code2->sku_value,
