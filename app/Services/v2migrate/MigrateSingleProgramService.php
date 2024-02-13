@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\ProgramTransactionFee;
 use Exception;
 
 use App\Services\ProgramService;
@@ -112,6 +113,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->printf("Migrating program accounts\n");
             $this->migrateProgramAccounts( $v3Program, $v2Program );
 
+            $this->migrateProgramParams($v3Program, $v2Program);
+            $this->migrateProgramTransactionFees($v3Program, $v2Program);
             $this->migrateProgramExtra($v3Program, $v2Program);
 
 
@@ -702,6 +705,28 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 // $this->importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
             }
         }
+    }
+
+    public function migrateProgramParams(&$v3Program, $v2Program) {
+        $sql = sprintf("SELECT * FROM programs WHERE account_holder_id = %d", $v2Program->account_holder_id);
+        $result = $this->v2db->select($sql)[0];
+        $v3ProgramOriginal = Program::find($v3Program->id);
+        $v3ProgramOriginal->balance_threshold = $result->balance_threshold;
+        $v3ProgramOriginal->send_balance_threshold_notification = $result->send_balance_threshold_notification;
+        $v3ProgramOriginal->low_balance_email = $result->low_balance_email;
+
+        $v3ProgramOriginal->use_cascading_approvals = (int)$result->use_cascading_approvals;
+        $v3ProgramOriginal->enable_schedule_awards = $result->enable_schedule_awards;
+        $v3ProgramOriginal->use_budget_cascading = (int)$result->use_budget_cascading;
+        $v3ProgramOriginal->budget_summary = (int)$result->budget_summary;
+        $v3ProgramOriginal->save();
+    }
+
+    public function migrateProgramTransactionFees(&$v3Program, $v2Program)
+    {
+        $sql = sprintf("SELECT * FROM programs_transaction_fees WHERE program_account_holder_id = %d", $v2Program->account_holder_id);
+        $result = $this->v2db->select($sql);
+        (new ProgramTransactionFee)->updateTransactionFees($v3Program->id, $result);
     }
 
     public function migrateProgramExtra(&$v3Program, $v2Program) {
