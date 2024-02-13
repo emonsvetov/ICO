@@ -694,7 +694,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 foreach ($v2JournalEvents as $v2JournalEvent) {
                     $v2UserID = $v2JournalEvent->prime_account_holder_id;
                     $v3JournalEventsData[] = [
-                        'prime_account_holder_id' => $v2UserID ? $v2v3Users[$v2UserID]['user_id'] : $v2UserID,
+                        'prime_account_holder_id' => $v2v3Users[$v2UserID]['user_id'] ?? 0,
                         'journal_event_type_id' => $v2JournalEvent->journal_event_type_id,
                         'notes' => $v2JournalEvent->notes,
                         'event_xml_data_id' => $v2JournalEvent->event_xml_data_id,
@@ -714,17 +714,22 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
             $v3JournalEventIDs = JournalEvent::whereIn('v2_journal_event_id', $v2JournalEventIDs)->get()->keyBy('v2_journal_event_id')->toArray();
 
-            foreach ($v2Postings as $v2Posting) {
-               $v3PostingsData[] = [
-                   'journal_event_id' => $v3JournalEventIDs[$v2Posting->journal_event_id]['id'],
-                   'medium_info_id' => $v2Posting->medium_info_id,
-                   'account_id' => $v3Accounts[$v2Posting->account_id]['id'],
-                   'posting_amount' => $v2Posting->posting_amount,
-                   'qty' => $v2Posting->qty,
-                   'is_credit' => $v2Posting->is_credit,
-                   'v2_posting_id' => $v2Posting->id,
-                   'created_at' => $v2Posting->posting_timestamp,
-               ];
+            try {
+                foreach ($v2Postings as $v2Posting) {
+                    $v2AccountID = $v2Posting->account_id;
+                    $v3PostingsData[] = [
+                        'journal_event_id' => $v3JournalEventIDs[$v2Posting->journal_event_id]['id'],
+                        'medium_info_id' => $v2Posting->medium_info_id,
+                        'account_id' => $v3Accounts[$v2Posting->account_id]['id'],
+                        'posting_amount' => $v2Posting->posting_amount,
+                        'qty' => $v2Posting->qty,
+                        'is_credit' => $v2Posting->is_credit,
+                        'v2_posting_id' => $v2Posting->id,
+                        'created_at' => $v2Posting->posting_timestamp,
+                    ];
+                }
+            } catch (Exception $e) {
+                $error = $e->getMessage();
             }
 
             DB::table('postings')->insertOrIgnore($v3PostingsData);
