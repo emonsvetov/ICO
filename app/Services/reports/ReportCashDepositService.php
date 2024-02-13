@@ -129,7 +129,7 @@ class ReportCashDepositService extends ReportServiceAbstract
                 name as 'program_name',
                 invoice_id,
                 invoice_number,
-                max(`date_paid`) as 'date_of_deposit',
+                DATE_FORMAT(max(`date_paid`), '%m-%d-%Y') as 'date_of_deposit',
                 (
                     CASE
                         WHEN max(`Funding Deposit`) IS NULL THEN 0
