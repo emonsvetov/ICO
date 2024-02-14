@@ -148,7 +148,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                     '".JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES."'
                     ) AND end_year >= end_date, amount, 0)) AS total_expiring_points,
                 factor_valuation,
-                end_date as 'expire_date'
+                DATE_FORMAT(end_date, '%m-%d-%Y') as 'expire_date'
                 ,(
                     select
                         round(sum(posts.posting_amount * posts.qty),2) as total_posting_amount

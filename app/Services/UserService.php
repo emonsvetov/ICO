@@ -14,7 +14,8 @@ use App\Models\Status;
 use App\Models\User;
 use App\Http\Traits\MediaUploadTrait;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Mail;
 class UserService
 {
     use Filterable, UserFilters, MediaUploadTrait;
@@ -310,6 +311,38 @@ class UserService
         return $user;
     }
 
+    public function generate2faSecret($data)
+    {
+        try {
+
+            $user = User::where('email', $data['email'])->first();
+            $token = Str::random(6);
+            $recipientEmail = $user->email;
+            $user->token_2fa = $token;
+            $user->twofa_verified = true;
+            $user->save();
+        
+            Mail::raw($token, function ($message) use ($recipientEmail) {
+                $message->to($recipientEmail)
+                        ->subject('2FA code for Incentco');
+            });
+            return [
+                'success' => true,
+                'message' => 'Verification email sent',
+                'code' => 200,
+            ];
+        }
+        catch(\Exception $e)
+        {
+            return [
+                'success' => false,
+                'message' => 'Mail request failed '.$e->getMessage(),
+                'code' => 422,
+            ];
+        }
+
+    }
+
     public function calculateExpirationDate(\stdClass $data)
     {
         $res = false;
@@ -432,12 +465,77 @@ class UserService
             $expirationDate = $this->calculateExpirationDate($val);
             if ($expirationDate !== false) {
                 $val->points_value = round($val->points_value, 2);
+                if (intval($val->points_value) == $val->points_value) {
+                    $val->points_value = number_format($val->points_value, 2);
+                }
                 $val->expiration_date = $expirationDate;
                 $filteredArrayData[] = $val;
             }
         }
 
         return $filteredArrayData;
+    }
+
+    public function getUserBalance($accountHolderId)
+    {
+        $results = DB::table('accounts')
+            ->select('journal_event_types.type', 'event_xml_data.name', 'journal_events.created_at as event_date', 'postings.posting_amount as amount', 'postings.is_credit', 'journal_events.journal_event_type_id')
+            ->join('account_types', 'account_types.id', '=', 'accounts.account_type_id')
+            ->join('postings', 'postings.account_id', '=', 'accounts.id')
+            ->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id')
+            ->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id')
+            ->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id')
+            ->where('accounts.account_holder_id', '=', $accountHolderId)
+            ->get();
+        $awardPointstoRecipient = 0;
+        $redeemPointsForGiftCodes = 0;
+        $reclaimPoints = 0;
+        foreach ($results->toArray() as $value) {
+            if ($value->type == AccountType::ACCOUNT_RECLAIM_POINTS) {
+                if ($value->is_credit) {
+                    $reclaimPoints += $value->amount;
+                } else {
+                    $reclaimPoints -= $value->amount;
+                }
+            }
+
+            if ($value->type == AccountType::ACCOUNT_AWARD_POINTS_RECIPIENT) {
+                if ($value->is_credit) {
+                    $awardPointstoRecipient += $value->amount;
+                } else {
+                    $awardPointstoRecipient -= $value->amount;
+                }
+            }
+
+            if ($value->type == AccountType::ACCOUNT_AWARD_MONIES_RECIPIENT) {
+                if ($value->is_credit) {
+                    $awardPointstoRecipient += $value->amount;
+                } else {
+                    $awardPointstoRecipient -= $value->amount;
+                }
+            }
+
+            if ($value->type == AccountType::ACCOUNT_REDEEM_POINTS_GIFT_CODES) {
+                if ($value->is_credit) {
+                    $redeemPointsForGiftCodes += $value->amount;
+                } else {
+                    $redeemPointsForGiftCodes -= $value->amount;
+                }
+            }
+        }
+
+        if ($value->type == AccountType::ACCOUNT_REDEEM_MONIES_GIFT_CODES) {
+            if ($value->is_credit) {
+                $redeemPointsForGiftCodes += $value->amount;
+            } else {
+                $redeemPointsForGiftCodes -= $value->amount;
+            }
+        }
+
+        $balance = $reclaimPoints + $awardPointstoRecipient + $redeemPointsForGiftCodes;
+        return [
+            'balance' => number_format($balance, 2, '.', '')
+        ];
     }
 
     public function reclaim($request)

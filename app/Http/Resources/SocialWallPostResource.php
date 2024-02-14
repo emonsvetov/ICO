@@ -32,7 +32,7 @@ class SocialWallPostResource extends JsonResource
             // 'children' => $this->children,
             'created_at' => $this->created_at->format('m/d/Y H:i:s'),
             'updated_at' => $this->created_at->format('m/d/Y'),
-            'avatar' => $this->receiver->avatar ?: $this->avatar,
+            'avatar' => $this->receiver->avatar,
         ];
     }
 }
