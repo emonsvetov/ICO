@@ -22,11 +22,7 @@ class UserLoginRequest extends FormRequest
      */
     public function authorize()
     {
-        if( !$this->domainService->isAdminAppDomain() )
-        {
-            return true;
-        }
-        return $this->request->has('code');
+       return true;
     }
 
     protected function failedAuthorization()
@@ -68,7 +64,7 @@ class UserLoginRequest extends FormRequest
      */
     public function rules()
     {
-        if( !$this->domainService->isAdminAppDomain() )
+        if( !$this->domainService->isAdminAppDomain() || !$this->code )
         {
             return [
                 'email' => 'required|email',
