@@ -18,7 +18,7 @@ class CronJobsController extends Controller
             break;
 
             case 'local':
-                $command = 'sudo -S -u root crontab -l 2>&1';
+                $command = 'sudo -S -u ubuntu crontab -l 2>&1';
             break;
 
             default:
