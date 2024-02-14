@@ -483,18 +483,19 @@ class ReportPointsReserveService extends ReportServiceAbstract
                 'key' => 'redeemed'
             ],
             [
-                'label' => 'Unredeemed',
-                'key' => 'value_unredeemed'
+                'label' => 'Unredeemed points from current year',
+                'key' => 'this_unredeemed'
+            ],
+            [
+                'label' => 'Unredeemed points from previous year’s award',
+                'key' => 'last_unredeemed'
             ],
             [
                 'label' => 'Paid',
                 'key' => 'value_paid'
             ],
 
-            [
-                'label' => 'Reclaimed',
-                'key' => 'reclaimed'
-            ],
+
             [
                 'label' => 'Balance',
                 'key' => 'balance'
@@ -516,7 +517,51 @@ class ReportPointsReserveService extends ReportServiceAbstract
     {
         $this->isExport = true;
         $data = $this->getTable();
+        $total = [
+            'value_awarded' => 0,
+            'expired' => 0,
+            'reclaimed' => 0,
+            'redeemed' => 0,
+            'this_unredeemed' => 0,
+            'last_unredeemed' => 0,
+            'value_paid' => 0,
+            'balance' => 0,
+            'reserve_percentage' => 0,
+            'calculated_reserve' => 0,
+        ];
+        $empty = [
+            'value_awarded' => '',
+            'expired' => '',
+            'reclaimed' => '',
+            'redeemed' => '',
+            'this_unredeemed' => '',
+            'last_unredeemed' => '',
+            'value_paid' => '',
+            'balance' => '',
+            'reserve_percentage' => '',
+            'calculated_reserve' => '',
+        ];
+        // Rearrange $data by adding subprograms as same level
+        $newData = [];
+        foreach ($data['data'] as $key => $item) {
+            $newData[] = $item;
+            if(isset($item->subRows)){
+                foreach ($item->subRows as $subItem) {
+                    $newData[] = $subItem;
+                }
+            }
+        }
+        foreach ($newData as $item) {
+            foreach ($total as $subKey => $subItem) {
+                $total[$subKey] += $item->{$subKey};
+            }
+        }
 
+        $total['reserve_percentage'] = number_format($total['reserve_percentage']/count($newData), 2);
+        $total['name'] = 'Total';
+        $data['data'] = array_values($newData);
+        $data['data'][] = $empty;
+        $data['data'][] = $total;
         $data['headers'] = $this->getCsvHeaders();
         return $data;
     }
