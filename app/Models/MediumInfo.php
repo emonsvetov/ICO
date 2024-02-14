@@ -67,11 +67,9 @@ class MediumInfo extends BaseModel
 
         // Retrieve merchant details
         $merchant = Merchant::where('id', $merchantId)->first();
-        if ($merchant->get_gift_codes_from_root) {
+        if (isset($merchant) && $merchant->get_gift_codes_from_root!== null) {
             $rootMerchant = $merchant->getRoot();
             $merchantId = (int)$rootMerchant->id;
-        } else {
-            $merchantId = (int)$merchant->id;
         }
 
         // Start constructing the query
