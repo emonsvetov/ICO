@@ -29,12 +29,12 @@ class ReportPointsReserveService extends ReportServiceAbstract
         $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
         $this_year = $this->params [self::YEAR];
         $last_year = $this_year - 1;
-        
+
         $subreport_params [self::ACCOUNT_HOLDER_IDS] = array ();
 
         if ($ranked_programs->isNotEmpty()) {
             foreach ( $ranked_programs as $program ) {
-           
+
                 $subreport_params [self::ACCOUNT_HOLDER_IDS] [] = ( int ) $program->account_holder_id;
                 $program = (object)$program->toArray();
 				$this->table [( int ) $program->account_holder_id] = $program;
@@ -42,7 +42,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
 				$this->table [( int ) $program->account_holder_id]->value_awarded = 0;
                 $this->table [( int ) $program->account_holder_id]->this_awarded = 0;
                 $this->table [( int ) $program->account_holder_id]->last_awarded = 0;
-                
+
 				$this->table [( int ) $program->account_holder_id]->redeemed = 0;
                 $this->table [( int ) $program->account_holder_id]->this_redeemed = 0;
                 $this->table [( int ) $program->account_holder_id]->last_redeemed = 0;
@@ -50,17 +50,17 @@ class ReportPointsReserveService extends ReportServiceAbstract
 				$this->table [( int ) $program->account_holder_id]->expired = 0;
                 $this->table [( int ) $program->account_holder_id]->this_expired = 0;
                 $this->table [( int ) $program->account_holder_id]->last_expired = 0;
-                
+
 				$this->table [( int ) $program->account_holder_id]->amount_due = 0;
 				$this->table [( int ) $program->account_holder_id]->value_unredeemed = 0;
                 $this->table [( int ) $program->account_holder_id]->this_unredeemed = 0;
-                $this->table [( int ) $program->account_holder_id]->last_unredeemed = 0; 
+                $this->table [( int ) $program->account_holder_id]->last_unredeemed = 0;
 				$this->table [( int ) $program->account_holder_id]->value_paid = 0;
 				$this->table [( int ) $program->account_holder_id]->calculated_reserve = 0;
 				$this->table [( int ) $program->account_holder_id]->reclaimed = 0;
                 $this->table [( int ) $program->account_holder_id]->this_reclaimed = 0;
                 $this->table [( int ) $program->account_holder_id]->last_reclaimed = 0;
-                
+
 				$this->table [( int ) $program->account_holder_id]->balance = 0;
             }
         }
@@ -72,7 +72,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
             [self::ACCOUNT_TYPE_POINTS_REDEEMED],
             [self::ACCOUNT_TYPE_MONIES_REDEEMED],
             [self::ACCOUNT_TYPE_MONIES_EXPIRED],
-            [self::ACCOUNT_TYPE_POINTS_EXPIRED] 
+            [self::ACCOUNT_TYPE_POINTS_EXPIRED]
         );
         $subreport_params [self::JOURNAL_EVENT_TYPES] = array (
             [self::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT],
@@ -190,11 +190,11 @@ class ReportPointsReserveService extends ReportServiceAbstract
         $subreport_params [ReportSumPostsByAccountAndJournalEventAndCreditService::IS_CREDIT] = 0;
         $subreport_params [self::ACCOUNT_TYPES] = array (
             [self::ACCOUNT_TYPE_MONIES_AVAILABLE],
-            [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER] 
+            [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER]
         );
         $subreport_params [self::JOURNAL_EVENT_TYPES] = array (
             [self::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS],
-            [self::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING] 
+            [self::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING]
         );
         $debits_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
         $debits_report_table = $debits_report->getTable ();
@@ -271,7 +271,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
 				$row->value_unredeemed = $row->value_awarded - $row->expired - $row->reclaimed - $row->redeemed;
                 $row->this_unredeemed = $row->this_awarded - $row->this_expired - $row->this_reclaimed - $row->this_redeemed;
                 $row->last_unredeemed = $row->last_awarded - $row->last_expired - $row->last_reclaimed - $row->last_redeemed;
-                
+
 				$row->balance = $row->value_awarded - $row->reclaimed - $row->value_paid;
 				if (isset ( $row->reserve_percentage ) && $row->reserve_percentage > 0) {
 					/*
@@ -306,13 +306,13 @@ class ReportPointsReserveService extends ReportServiceAbstract
         $this->table['total'] = count($total_programs);
         return  $this->table;
     }
-    
+
     public function getAwardAmount($year, $table, $variable, $subreport_params) {
 
          // Get the monies awards for this year
          $subreport_params [self::ACCOUNT_TYPES] = array ();
          $subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
-         if ($year) 
+         if ($year)
             $subreport_params [self::YEAR] = $year;
          $points_report = new ReportSumProgramAwardsMoniesService ( $subreport_params );
          $points_report_table = $points_report->getTable ();
@@ -327,7 +327,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
                  }
              }
          }
- 
+
          // Get the points awards
          $subreport_params [self::ACCOUNT_TYPES] = array ();
          $subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
@@ -356,7 +356,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
             [self::ACCOUNT_TYPE_POINTS_REDEEMED],
             [self::ACCOUNT_TYPE_MONIES_REDEEMED],
             [self::ACCOUNT_TYPE_MONIES_EXPIRED],
-            [self::ACCOUNT_TYPE_POINTS_EXPIRED] 
+            [self::ACCOUNT_TYPE_POINTS_EXPIRED]
         );
         $subreport_params [self::JOURNAL_EVENT_TYPES] = array (
             [self::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT],
@@ -483,17 +483,16 @@ class ReportPointsReserveService extends ReportServiceAbstract
                 'key' => 'redeemed'
             ],
             [
-                'label' => 'Unredeemed',
-                'key' => 'value_unredeemed'
+                'label' => 'Unredeemed points from current year',
+                'key' => 'this_unredeemed'
+            ],
+            [
+                'label' => 'Unredeemed points from previous year’s award',
+                'key' => 'last_unredeemed'
             ],
             [
                 'label' => 'Paid',
                 'key' => 'value_paid'
-            ],
-
-            [
-                'label' => 'Reclaimed',
-                'key' => 'reclaimed'
             ],
             [
                 'label' => 'Balance',
@@ -516,6 +515,51 @@ class ReportPointsReserveService extends ReportServiceAbstract
     {
         $this->isExport = true;
         $data = $this->getTable();
+        $total = [
+            'value_awarded' => 0,
+            'expired' => 0,
+            'reclaimed' => 0,
+            'redeemed' => 0,
+            'this_unredeemed' => 0,
+            'last_unredeemed' => 0,
+            'value_paid' => 0,
+            'balance' => 0,
+            'reserve_percentage' => 0,
+            'calculated_reserve' => 0,
+        ];
+        $empty = [
+            'value_awarded' => '',
+            'expired' => '',
+            'reclaimed' => '',
+            'redeemed' => '',
+            'this_unredeemed' => '',
+            'last_unredeemed' => '',
+            'value_paid' => '',
+            'balance' => '',
+            'reserve_percentage' => '',
+            'calculated_reserve' => '',
+        ];
+        // Rearrange $data by adding subprograms as same level
+        $newData = [];
+        foreach ($data['data'] as $key => $item) {
+            $newData[] = $item;
+            if(isset($item->subRows)){
+                foreach ($item->subRows as $subItem) {
+                    $newData[] = $subItem;
+                }
+            }
+        }
+        foreach ($newData as $item) {
+            foreach ($total as $subKey => $subItem) {
+                $total[$subKey] += $item->{$subKey};
+            }
+        }
+
+        $total['reserve_percentage'] = number_format($total['reserve_percentage']/count($newData), 2);
+        $total['name'] = 'Total';
+        $data['data'] = array_values($newData);
+        $data['data'][] = $empty;
+        $data['data'][] = $total;
 
         $data['headers'] = $this->getCsvHeaders();
         return $data;
