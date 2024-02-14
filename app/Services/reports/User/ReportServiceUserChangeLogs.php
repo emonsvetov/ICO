@@ -27,10 +27,10 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
             $join->on('model_has_roles.model_type', 'like', DB::raw("'" . $userClassForSql . "'"));
         });
         $query->join('roles', 'model_has_roles.role_id', '=', 'roles.id');
-        $query->join('technical_reasons', 'technical_reasons.id', '=', 'users_log.technical_reason_id');
+        $query->leftJoin('technical_reasons', 'technical_reasons.id', '=', 'users_log.technical_reason_id');
         $query->leftJoin('statuses as status1', 'status1.id', '=', 'users_log.old_user_status_id');
         $query->leftJoin('statuses as status2', 'status2.id', '=', 'users_log.new_user_status_id');
-        $query->leftJoin('users as ub', 'ub.account_holder_id', '=', 'users_log.updated_by');
+        $query->leftJoin('users as ub', 'ub.id', '=', 'users_log.updated_by');
 
         $query->selectRaw("
             `users_log`.user_account_holder_id
@@ -78,7 +78,10 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
         }
 
         $query->whereIn('users_log.parent_program_id', $programs);
-        $query->where('roles.name', 'LIKE', config('roles.participant'));
+        if ($this->params[self::USER_ACCOUNT_HOLDER_ID]){
+            $query->where('users_log.user_account_holder_id', $this->params[self::USER_ACCOUNT_HOLDER_ID]);
+        }
+
         return $query;
     }
 

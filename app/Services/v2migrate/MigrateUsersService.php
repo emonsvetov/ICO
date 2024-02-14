@@ -12,10 +12,12 @@ use Exception;
 use App\Models\User;
 use App\Models\UserV2User;
 use App\Models\Role;
+use function PHPUnit\Framework\containsIdentical;
 
 class MigrateUsersService extends MigrationService
 {
     private MigrateUserRoleService $migrateUserRoleService;
+    private MigrateUsersLogService $migrateUsersLogService;
 
     public $offset = 0;
     public $limit = 1;
@@ -26,10 +28,11 @@ class MigrateUsersService extends MigrationService
     public array $v3UserCache = [];
     public array $v3ProgramCache = [];
 
-    public function __construct(MigrateUserRoleService $migrateUserRoleService)
+    public function __construct(MigrateUserRoleService $migrateUserRoleService, MigrateUsersLogService $migrateUsersLogService)
     {
         parent::__construct();
         $this->migrateUserRoleService = $migrateUserRoleService;
+        $this->migrateUsersLogService = $migrateUsersLogService;
     }
 
     public function migrate( $options = [] )  {
@@ -74,9 +77,8 @@ class MigrateUsersService extends MigrationService
         // $this->migrateDuplicateUsers();
     }
 
-    public function recursivelyMigrateUsersByV3Programs( $v3Programs ) {
-        // pr( $v3Programs->toArray() );
-        //
+    public function recursivelyMigrateUsersByV3Programs( $v3Programs )
+    {
         foreach( $v3Programs as $v3Program) {
             if( isset( $this->v3ProgramCache[$v3Program->v2_account_holder_id])) {
                 continue;
@@ -84,13 +86,33 @@ class MigrateUsersService extends MigrationService
             $v2users = $this->v2_read_list_by_program($v3Program->v2_account_holder_id);
             $this->setv2pid($v3Program->v2_account_holder_id);
             $this->setv3pid($v3Program->id);
+            $v3Users = [];
             foreach( $v2users as $v2user)   {
-                $this->migrateSingleUserByV2V3ProgramIds($v2user, $v3Program->v2_account_holder_id, $v3Program->id);
+                $v3User = $this->migrateSingleUserByV2V3ProgramIds($v2user, $v3Program->v2_account_holder_id, $v3Program->id);
+                $v3Users[$v3User->id] = $v3User;
             }
+
+            $this->migrateUsersLog($v3Program, $v3Users);
+
             if( !empty( $v3Program['children']) ) {
                 $this->recursivelyMigrateUsersByV3Programs( $v3Program['children'] );
             }
             $this->v3ProgramCache[$v3Program->v2_account_holder_id] = $v3Program;
+        }
+    }
+
+    public function migrateUsersLog(Program $v3Program, array $v3Users){
+        $v2Users = $this->v2_read_list_by_program($v3Program->v2_account_holder_id);
+        foreach ($v2Users as $v2User) {
+            if (!isset($v3Users[$v2User->v3_user_id])){
+                throw new Exception('Wrong data. Didnt found user by "v3_user_id"');
+            }
+            $v3User = $v3Users[$v2User->v3_user_id];
+            $this->migrateUsersLogService->setMigrateUsersService($this);
+            $result = $this->migrateUsersLogService->migrate($v2User, $v3User, $v3Program);
+            if(!$result){
+                throw new Exception('Migrate Users Log Failed.');
+            }
         }
     }
 
@@ -112,6 +134,7 @@ class MigrateUsersService extends MigrationService
         $this->setv2pid($v2_program_holder_id);
         $this->setv3pid($v3_program_id);
         $v3User = $this->migrateSingleUser( $v2User );
+        return $v3User;
     }
 
     public function migrateSingleUserByV2Program($v2User, $v2Program)    {
@@ -137,7 +160,10 @@ class MigrateUsersService extends MigrationService
                 $userV2user->save();
             }
         }   else {
-            $newAssoc = new UserV2User(['v2_user_account_holder_id' => $v2User->account_holder_id]);
+            $newAssoc = new UserV2User([
+                'user_id' => $v3User->id,
+                'v2_user_account_holder_id' => $v2User->account_holder_id,
+            ]);
             $v3User->v2_users()->save($newAssoc);
             $this->printf(" -- New userV2User assoc added for user v2:%d and v3:%s\n", $v2User->account_holder_id, $v3User->id);
         }
@@ -192,6 +218,8 @@ class MigrateUsersService extends MigrationService
         $v3User = User::where('email', $v2User->email)->first();
         if( $v3User ) {
             $createUser = false;
+            $v3User->update(['organization_id' => 1000000000]);
+            $v3User = User::where('email', $v2User->email)->first();
             $userV2user = UserV2User::where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
             if( !$userV2user ) {
                 $this->syncUserAssoc($v2User, $v3User);
@@ -259,6 +287,8 @@ class MigrateUsersService extends MigrationService
         }   else {
             $dob = "1970-01-01";
         }
+        $hireDate = $v2User->hire_date != '0000-00-00' ? date("Y-m-d", strtotime($v2User->hire_date)) : null;
+
         $data = [
             'first_name' => $v2User->first_name,
             'last_name' => $v2User->last_name,
@@ -284,7 +314,7 @@ class MigrateUsersService extends MigrationService
             'last_login' => $v2User->last_login,
             'v2_parent_program_id' => $v2User->parent_program_id,
             // 'v2_account_holder_id' => $v2User->account_holder_id, //sync by "user_v2_users"
-            'hire_date' => $v2User->hire_date && $v2User->hire_date != '0000-00-00' ? $v2User->hire_date : null,
+            'work_anniversary' => $hireDate,
             'email_verified_at' => $v2User->activated
         ];
         $formRequest = new UserRequest();

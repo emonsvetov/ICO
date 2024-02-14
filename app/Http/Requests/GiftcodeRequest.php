@@ -32,6 +32,7 @@ class GiftcodeRequest extends FormRequest
             'code' => 'required|unique:medium_info',
             'pin' => 'string|nullable',
             'redemption_url' => 'required|string',
+            'factor_valuation' => 'nullable|integer',
         ];
     }
 }

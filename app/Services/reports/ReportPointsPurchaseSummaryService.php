@@ -274,6 +274,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
                 'key' => 'name'
             ],
             [
+                'label' => 'Program Account Holder ID',
+                'key' => 'account_holder_id'
+            ],
+            [
                 'label' => 'Eligible Participant',
                 'key' => 'participants_count'
             ],
@@ -328,6 +332,22 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             [
                 'label' => 'YTD',
                 'key' => 'YTD'
+            ],
+            [
+                'label' => 'Q1',
+                'key' => 'Q1'
+            ],
+            [
+                'label' => 'Q2',
+                'key' => 'Q2'
+            ],
+            [
+                'label' => 'Q3',
+                'key' => 'Q3'
+            ],
+            [
+                'label' => 'Q3',
+                'key' => 'Q3'
             ],
             [
                 'label' => 'Per Participant',

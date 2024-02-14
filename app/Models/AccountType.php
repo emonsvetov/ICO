@@ -21,6 +21,11 @@ class AccountType extends BaseModel
     const ACCOUNT_TYPE_PEER2PEER_POINTS = 'Peer to Peer Points';
     const ACCOUNT_TYPE_PEER2PEER_MONIES = 'Peer to Peer Monies';
     const ACCOUNT_TYPE_GIFT_CODES_AVAILABLE = 'Gift Codes Available';
+    const ACCOUNT_RECLAIM_POINTS = 'Reclaim points';
+    const ACCOUNT_AWARD_POINTS_RECIPIENT = 'Award points to recipient';
+    const ACCOUNT_REDEEM_POINTS_GIFT_CODES = 'Redeem points for gift codes';
+    const ACCOUNT_AWARD_MONIES_RECIPIENT = 'Award monies to recipient';
+    const ACCOUNT_REDEEM_MONIES_GIFT_CODES = 'Redeem monies for gift codes';
 
     public static function getTypeIdPeer2PeerPoints(): int
     {

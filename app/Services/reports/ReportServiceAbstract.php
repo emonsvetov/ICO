@@ -75,6 +75,7 @@ abstract class ReportServiceAbstract
     const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS = "Reversal program pays for points";
     const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING = "Reversal program pays for monies pending";
     const ACCOUNT_TYPE_POINTS_AWARDED = "Points Awarded";
+    const ACCOUNT_TYPE_MONIES_AWARDED = "Monies Awarded";
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;

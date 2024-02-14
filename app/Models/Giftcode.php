@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\GiftcodeService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -267,7 +268,7 @@ class Giftcode extends Model
 		self::_handle_premium_diff( $params );
 	}
 
-	private static function _get_next_available_giftcode($merchant_account_holder_id, $sku_value, $redemption_value
+	private static function _get_next_available_giftcode($program, $merchant_account_holder_id, $sku_value, $redemption_value
 	)
 	{
 		$query = self::select([
@@ -294,10 +295,10 @@ class Giftcode extends Model
 		->orderBy('medium_info.virtual_inventory', 'ASC')
 		->limit(1);
 
-		if(env('APP_ENV') == 'production'){
-		    $query->where('medium_info_is_test', '=', 0);
-        }else{
+		if(GiftcodeService::isTestMode($program)){
 		    $query->where('medium_info_is_test', '=', 1);
+        }else{
+		    $query->where('medium_info_is_test', '=', 0);
         }
 
 		return $query->first();
@@ -308,14 +309,28 @@ class Giftcode extends Model
 		extract($params);
 
 		$giftcode = self::_get_next_available_giftcode(
+		    $program,
 			$merchant_account_holder_id,
 			$sku_value,
 			$redemption_value
 		);
 
 		if( !$giftcode )	{
-			return ['errors' => sprintf('No available GiftCodes for merchant#:%d, sku_value:%s, redemption_value:%s', $merchant_id, $sku_value, $redemption_value)];
+			return ['errors' => sprintf('No available GiftCodes for merchant#:%d, sku_value:%s, redemption_value:%s', $merchant_id, $sku_value, $redemption_value) /*. print_r($params,true)*/ ];
+
 		}
+
+        /**
+         * No available GiftCodes for merchant#:1, sku_value:5.0000, redemption_value:5.0000Array (
+         * [user_account_holder_id] => 13137
+         * [merchant_account_holder_id] => 4452
+         * [redemption_value] => 5.0000 [sku_value] => 5.0000
+         * [merchants] => Array ( [0] => Array ( [id] => 1 [account_holder_id] => 4452 [parent_id] => [name] => 1-800-Flowers [logo] => merchants/1/9AZ0Gb91UUfbCJHWGJZJkCwdhAVWyNrXLc4kbmux.png [icon] => merchants/1/xXaSX63PcqUWqx77oUi8YrbDoSeQL3mSXlHpkS2m.png [large_icon] => merchants/1/zBD6NxFqaInIa8Bdjj8Vic8zomX78T2Odu1nU7iN.png [banner] => [description] => <p>A national leader offering spectacular floral arrangements and plants through to gourmet food and wine baskets, as well as selections from Godiva, Cheryl &amp; Company, Plough and Hearth, The Popcorn Factory and more, ensures that you will have a wonderful shopping experience.</p> [website] => http://www.1800flowers.com [redemption_instruction] => <ol>
+
+ </ol> [redemption_callback_id] => 0 [category] => [merchant_code] => FLO [website_is_redemption_url] => 0 [get_gift_codes_from_root] => 0 [is_default] => 1 [giftcodes_require_pin] => 1 [display_rank_by_priority] => 10 [display_rank_by_redemptions] => 10 [requires_shipping] => 0 [physical_order] => 0 [is_premium] => 0 [use_tango_api] => 1 [use_virtual_inventory] => 1 [virtual_denominations] => U935268:10:10,U683701:25:25,U106098:50:50 [virtual_discount] => 9.6000 [toa_id] => 38 [status] => 1 [display_popup] => 0 [created_at] => 2023-05-22T22:18:20.000000Z [updated_at] => 2023-12-27T08:06:42.000000Z [deleted_at] => [v2_merchant_id] => 203646 [v2_account_holder_id] => 203646 ) ) [merchant_id] => 1 [currency_id] => 1 )
+         *
+         */
+
 
 		//Reserve Giftcode
 

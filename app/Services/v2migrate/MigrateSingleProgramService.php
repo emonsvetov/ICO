@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\ProgramTransactionFee;
 use Exception;
 
 use App\Services\ProgramService;
@@ -12,6 +13,7 @@ use App\Models\DomainIP;
 use App\Models\Event;
 use App\Models\Invoice;
 use App\Models\Leaderboard;
+use Illuminate\Support\Facades\DB;
 use stdClass;
 
 class MigrateSingleProgramService extends MigrateProgramsService
@@ -67,7 +69,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 $v3Program = Program::where('v2_account_holder_id', $v2Program->account_holder_id )->first();
                 if( $v3Program )   {
                     $this->printf(" - v3 Program \"%d\" exists for v2: \"%d\", found via v2_account_holder_id search. Updating null v3_program_id value.\n", $v3Program->id, $v2Program->v3_program_id, $v2Program->account_holder_id);
-                    $this->v2db->statement("UPDATE `programs` SET `v3_program_id`=%d WHERE `id`=%d", $v3Program->id, $v2Program->account_holder_id);
+                    $this->v2db->statement("UPDATE `programs` SET `v3_program_id` = ? WHERE `account_holder_id` = ?", [$v3Program->id, $v2Program->account_holder_id]);
                     $create = false;
                     // $this->importMap['program'][$v2Program->account_holder_id]['program'][$v3Program->id]['exists'] = 1;
                     //Update??
@@ -111,11 +113,22 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->printf("Migrating program accounts\n");
             $this->migrateProgramAccounts( $v3Program, $v2Program );
 
+            $this->migrateProgramParams($v3Program, $v2Program);
+            $this->migrateProgramTransactionFees($v3Program, $v2Program);
+            $this->migrateProgramExtra($v3Program, $v2Program);
+
+
             $this->syncProgramMerchantRelations($v2Program, $v3Program);
 
             // Import program users with roles
             $this->printf("Migrating program users\n");
             $this->migrateProgramUsers($v2Program);
+
+            $this->executeV2SQL(); //run for any missing run!
+
+            // Import program users with roles
+            $this->printf("Migrating giftcodes\n");
+            $this->migrateProgramGiftcodes($v2Program, $v3Program);
 
             $this->executeV2SQL(); //run for any missing run!
 
@@ -433,6 +446,10 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
+    public function migrateProgramGiftcodes(object $v2Program, Program $v3Program)
+    {
+        (new MigrateProgramGiftcodesService)->migrate($v2Program, $v3Program);
+    }
     public function migrateProgramUsers($v2Program, $v3Program = null) {
 
         $migrateUserService = app('App\Services\v2migrate\MigrateUsersService');
@@ -687,6 +704,91 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 $this->printf(" -  - Address created for new Program: {$v3Program->id}\n");
                 // $this->importMap['program'][$v2Program->account_holder_id]['address'][$address->id] = $newAddress->id;
             }
+        }
+    }
+
+    public function migrateProgramParams(&$v3Program, $v2Program) {
+        $sql = sprintf("SELECT * FROM programs WHERE account_holder_id = %d", $v2Program->account_holder_id);
+        $result = $this->v2db->select($sql)[0];
+        $v3ProgramOriginal = Program::find($v3Program->id);
+        $v3ProgramOriginal->balance_threshold = $result->balance_threshold;
+        $v3ProgramOriginal->send_balance_threshold_notification = $result->send_balance_threshold_notification;
+        $v3ProgramOriginal->low_balance_email = $result->low_balance_email;
+
+        $v3ProgramOriginal->use_cascading_approvals = (int)$result->use_cascading_approvals;
+        $v3ProgramOriginal->enable_schedule_awards = $result->enable_schedule_awards;
+        $v3ProgramOriginal->use_budget_cascading = (int)$result->use_budget_cascading;
+        $v3ProgramOriginal->budget_summary = (int)$result->budget_summary;
+        $v3ProgramOriginal->save();
+    }
+
+    public function migrateProgramTransactionFees(&$v3Program, $v2Program)
+    {
+        $sql = sprintf("SELECT * FROM programs_transaction_fees WHERE program_account_holder_id = %d", $v2Program->account_holder_id);
+        $result = $this->v2db->select($sql);
+        (new ProgramTransactionFee)->updateTransactionFees($v3Program->id, $result);
+    }
+
+    public function migrateProgramExtra(&$v3Program, $v2Program) {
+        $sql = sprintf("SELECT * FROM programs_extra WHERE program_account_holder_id = %d", $v2Program->account_holder_id);
+        $result = $this->v2db->select($sql)[0];
+        try {
+            DB::beginTransaction();
+
+            DB::table('programs_extra')->updateOrInsert(
+                ['program_id' => $v3Program->id],
+                [
+                    'program_id' => $v3Program->id,
+                    'program_account_holder_id' => $result->program_account_holder_id,
+                    'factor_valuation' => $result->factor_valuation,
+                    'points_over_budget' => $result->points_over_budget,
+                    'bill_direct' => $result->bill_direct,
+                    'allow_creditcard_deposits' => $result->allow_creditcard_deposits,
+                    'reserve_percentage' => $result->reserve_percentage,
+                    'setup_fee' => $result->setup_fee,
+                    'discount_rebate_percentage' => $result->discount_rebate_percentage,
+                    'expiration_rebate_percentage' => $result->expiration_rebate_percentage,
+                    'convenience_fee' => $result->convenience_fee,
+                    'percent_total_spend_rebate' => $result->percent_total_spend_rebate,
+                    'budget_number' => $result->budget_number,
+                    'alarm_percentage' => $result->alarm_percentage,
+                    'administrative_fee' => $result->administrative_fee,
+                    'administrative_fee_factor' => $result->administrative_fee_factor,
+                    'administrative_fee_calculation' => $result->administrative_fee_calculation,
+                    'deposit_fee' => $result->deposit_fee,
+                    'fixed_fee' => $result->fixed_fee,
+                    'monthly_usage_fee' => $result->monthly_usage_fee,
+                    'monthly_recurring_points_billing_percentage' => $result->monthly_recurring_points_billing_percentage,
+                    'bcc_email_list' => $result->bcc_email_list,
+                    'cc_email_list' => $result->cc_email_list,
+                    'accounts_receivable_email' => $result->accounts_receivable_email,
+                    'allow_multiple_participants_per_unit' => $result->allow_multiple_participants_per_unit,
+                    'uses_units' => $result->uses_units,
+                    'allow_awarding_pending_activation_participants' => $result->allow_awarding_pending_activation_participants,
+                    'default_domain_access_key' => $result->default_domain_access_key,
+                    'allow_hierarchy_to_view_social_wall' => $result->allow_hierarchy_to_view_social_wall,
+                    'can_view_hierarchy_social_wall' => $result->can_view_hierarchy_social_wall,
+                    'allow_managers_to_change_email' => $result->allow_managers_to_change_email,
+                    'allow_participants_to_change_email' => $result->allow_participants_to_change_email,
+                    'air_show_programs_tab' => $result->air_show_programs_tab,
+                    'air_show_manager_award_tab' => $result->air_show_manager_award_tab,
+                    'air_premium_cost_to_program' => $result->air_premium_cost_to_program,
+                    'air_show_all_event_list' => $result->air_show_all_event_list,
+                    'sub_program_groups' => $result->sub_program_groups,
+                    'show_internal_store' => $result->show_internal_store,
+                    'rank_range' => $result->rank_range,
+                    'approve_grade_id' => $result->approve_grade_id,
+                    'approve_grade_ids' => $result->approve_grade_ids,
+                    'approve_grade_notification_ids' => $result->approve_grade_notification_ids,
+                    'notification_email_list' => $result->notification_email_list,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            );
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            dd($e->getMessage());
         }
     }
 
