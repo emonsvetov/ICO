@@ -21,11 +21,13 @@ class ProgramTransactionFee extends Model
     {
         ProgramTransactionFee::where('program_id', $programId)->delete();
         foreach ($data as $item) {
-            ProgramTransactionFee::create([
-                'program_id' => $programId,
-                'tier_amount' => $item->tier_amount,
-                'transaction_fee' => $item->transaction_fee,
-            ]);
+            if (is_object($item)){
+                ProgramTransactionFee::create([
+                    'program_id' => $programId,
+                    'tier_amount' => $item->tier_amount,
+                    'transaction_fee' => $item->transaction_fee,
+                ]);
+            }
         }
     }
 }

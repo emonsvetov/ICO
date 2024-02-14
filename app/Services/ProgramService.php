@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ProgramExtra;
+use App\Models\ProgramTransactionFee;
 use DB;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -357,6 +358,7 @@ class ProgramService
         unset($data['administrative_fee_calculation']);
         unset($data['administrative_fee']);
         unset($data['administrative_fee_factor']);
+
         if (!empty($data['program_extras'])) {
             $programExtra = new ProgramExtra();
             $programExtra->updateProgramExtra($data['program_extras']['id'],$data['program_extras']);
@@ -364,6 +366,22 @@ class ProgramService
         }else{
             unset($data['program_extras']);
         }
+
+        $programExtra = new ProgramTransactionFee();
+        $programTransactionFee = [];
+        foreach ($data['program_transaction_fee'] as $val) {
+            if (!empty($val['tier_amount']) && !empty($val['transaction_fee'])) {
+                $std = new \stdClass();
+                $std->tier_amount = (float)$val['tier_amount'];
+                $std->transaction_fee = (float)$val['transaction_fee'];
+                $programTransactionFee[] = $std;
+            }
+
+        }
+        $programExtra->updateTransactionFees($program->id, $programTransactionFee);
+        unset($data['program_transaction_fee']);
+
+
 
         if (isset($data['address'])) {
             if ($program->address()->exists()) {
