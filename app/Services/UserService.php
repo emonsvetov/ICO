@@ -313,23 +313,24 @@ class UserService
 
     public function generate2faSecret($data)
     {
+        try {
+
         $user = User::where('email', $data['email'])->first();
         $token = Str::random(6);
         $recipientEmail = $user->email;
         $user->token_2fa = $token;
         $user->twofa_verified = true;
         $user->save();
-       
-        try {
-            Mail::raw($token, function ($message) use ($recipientEmail) {
-                $message->to($recipientEmail)
-                        ->subject('2FA code for Incentco');
-            });
-            return [
-                'success' => true,
-                'message' => 'Verification email sent',
-                'code' => 200,
-            ];
+     
+        Mail::raw($token, function ($message) use ($recipientEmail) {
+            $message->to($recipientEmail)
+                    ->subject('2FA code for Incentco');
+        });
+        return [
+            'success' => true,
+            'message' => 'Verification email sent',
+            'code' => 200,
+        ];
         }
         catch(\Exception $e)
         {
