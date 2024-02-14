@@ -19,11 +19,8 @@ use App\Models\Event;
 use App\Models\Invoice;
 use App\Models\Leaderboard;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use stdClass;
-use Symfony\Component\HttpFoundation\Request;
 
 class MigrateSingleProgramService extends MigrateProgramsService
 {
