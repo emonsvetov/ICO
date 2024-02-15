@@ -64,7 +64,7 @@ class UserLoginRequest extends FormRequest
      */
     public function rules()
     {
-        if( !$this->domainService->isAdminAppDomain() || !$this->code )
+        if( !$this->domainService->isAdminAppDomain() || ($this->domainService->isAdminAppDomain() && !$this->code ) )
         {
             return [
                 'email' => 'required|email',
