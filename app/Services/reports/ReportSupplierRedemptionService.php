@@ -249,7 +249,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
                 'title' => "$key",
                 'fixed' => false,
                 'footer' => "$val",
-                'width' => 50,
+                'width' => 70,
                 'prefix' => "",
                 'suffix' => "",
                 'type' => "integer",
