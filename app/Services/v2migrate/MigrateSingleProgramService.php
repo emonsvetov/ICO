@@ -712,7 +712,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
         $result = $this->v2db->select($sql)[0];
         $v3ProgramOriginal = Program::find($v3Program->id);
         $v3ProgramOriginal->balance_threshold = $result->balance_threshold;
-        $v3ProgramOriginal->send_balance_threshold_notification = $result->send_balance_threshold_notification;
+        $v3ProgramOriginal->send_balance_threshold_notification = (int)$result->send_balance_threshold_notification;
         $v3ProgramOriginal->low_balance_email = $result->low_balance_email;
 
         $v3ProgramOriginal->use_cascading_approvals = (int)$result->use_cascading_approvals;
@@ -741,7 +741,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     'program_id' => $v3Program->id,
                     'program_account_holder_id' => $result->program_account_holder_id,
                     'factor_valuation' => $result->factor_valuation,
-                    'points_over_budget' => $result->points_over_budget,
+                    'points_over_budget' => !$result->points_over_budget,
                     'bill_direct' => $result->bill_direct,
                     'allow_creditcard_deposits' => $result->allow_creditcard_deposits,
                     'reserve_percentage' => $result->reserve_percentage,
