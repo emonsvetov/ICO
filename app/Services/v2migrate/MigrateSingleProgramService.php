@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\Merchant;
 use App\Models\ProgramTransactionFee;
 use Exception;
 
@@ -107,6 +108,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 $this->executeV2SQL();
             }
 
+            $this->syncProgramMerchantRelations($v2Program, $v3Program);
+
             // if( $v2Program->account_holder_id != 719006) return;
             // pr($v2Program->account_holder_id);
             //Migration Accounts
@@ -116,9 +119,6 @@ class MigrateSingleProgramService extends MigrateProgramsService
             $this->migrateProgramParams($v3Program, $v2Program);
             $this->migrateProgramTransactionFees($v3Program, $v2Program);
             $this->migrateProgramExtra($v3Program, $v2Program);
-
-
-            $this->syncProgramMerchantRelations($v2Program, $v3Program);
 
             // Import program users with roles
             $this->printf("Migrating program users\n");
@@ -831,6 +831,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
         //$this->v2db->statement("SET SQL_MODE=''");
         $result = $this->v2db->select($sql);
+        $v3MerchantIDs = Merchant::all()->pluck('id', 'id')->toArray();
+
         if( $result && sizeof($result) > 0) {
             $programMerchants = [];
             foreach( $result as $row) {
@@ -842,10 +844,12 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     throw new Exception("Null v2program:v3_program_id found. Please run `php artisan v2migrate:programs [ID]` before running this migration.\n\n");
 //
                 }
-                $programMerchants[$row->v3_merchant_id] = [
-                    'featured' => $row->featured,
-                    'cost_to_program' => $row->cost_to_program
-                ];
+                if ($v3MerchantIDs[$row->v3_merchant_id] ?? FALSE) {
+                    $programMerchants[$row->v3_merchant_id] = [
+                        'featured' => $row->featured,
+                        'cost_to_program' => $row->cost_to_program
+                    ];
+                }
             }
             if( $programMerchants ) {
                 try {
