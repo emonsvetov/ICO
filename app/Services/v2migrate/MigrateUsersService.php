@@ -1,6 +1,8 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Models\Account;
+use App\Models\AccountV2Account;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Password;
 use App\Http\Requests\UserRequest;
@@ -46,7 +48,7 @@ class MigrateUsersService extends MigrationService
                 // pr($v3Program->getFlatTree()->toArray());
                 //
                 if( $v3RootProgram ) {
-                    $v3Programs = Program::find($v3RootProgram->id)->descendantsAndSelf()->select('id', 'name', 'parent_id', 'path', 'v2_account_holder_id')->depthFirst()->get()->toTree();
+                    $v3Programs = Program::find($v3RootProgram->id)->descendantsAndSelf()->select('id', 'account_holder_id', 'name', 'parent_id', 'path', 'v2_account_holder_id')->depthFirst()->get()->toTree();
                     // pr( $v3Programs->toArray() );
                     $this->recursivelyMigrateUsersByV3Programs($v3Programs);
                 }
@@ -87,12 +89,23 @@ class MigrateUsersService extends MigrationService
             $this->setv2pid($v3Program->v2_account_holder_id);
             $this->setv3pid($v3Program->id);
             $v3Users = [];
-            foreach( $v2users as $v2user)   {
-                $v3User = $this->migrateSingleUserByV2V3ProgramIds($v2user, $v3Program->v2_account_holder_id, $v3Program->id);
-                $v3Users[$v3User->id] = $v3User;
+            foreach ($v2users as $v2User) {
+                $v3User = $this->migrateSingleUserByV2V3ProgramIds($v2User, $v3Program->v2_account_holder_id, $v3Program->id);
+                $v3Users[$v2User->account_holder_id] = $v3User;
             }
 
             $this->migrateUsersLog($v3Program, $v3Users);
+
+            // Events
+            foreach( $v2users as $v2User)   {
+                $v3User = $v3Users[$v2User->account_holder_id];
+
+                (new MigrateJournalEventsService)->migrateJournalEventsByModelAccounts($v3User, $v2User);
+                $this->executeV2SQL(); //run for any missing run!
+                $this->fixUserJournalEvents( $v2User,  $v3User);
+                $this->fixUserXmlEvents( $v2User,  $v3User);
+            }
+
 
             if( !empty( $v3Program['children']) ) {
                 $this->recursivelyMigrateUsersByV3Programs( $v3Program['children'] );
@@ -104,10 +117,10 @@ class MigrateUsersService extends MigrationService
     public function migrateUsersLog(Program $v3Program, array $v3Users){
         $v2Users = $this->v2_read_list_by_program($v3Program->v2_account_holder_id);
         foreach ($v2Users as $v2User) {
-            if (!isset($v3Users[$v2User->v3_user_id])){
-                throw new Exception('Wrong data. Didnt found user by "v3_user_id"');
+            if (!isset($v3Users[$v2User->account_holder_id])){
+                throw new Exception('Wrong data. Didnt found user by "v2 account_holder_id"');
             }
-            $v3User = $v3Users[$v2User->v3_user_id];
+            $v3User = $v3Users[$v2User->account_holder_id];
             $this->migrateUsersLogService->setMigrateUsersService($this);
             $result = $this->migrateUsersLogService->migrate($v2User, $v3User, $v3Program);
             if(!$result){
