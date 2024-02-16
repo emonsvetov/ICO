@@ -377,4 +377,62 @@ class MigrateMerchantsService extends MigrationService
             }
         }
     }
+
+    /**
+     * Sync merchants to a program.
+     *
+     * @param $v2AccountHolderID
+     * @param $v3AccountHolderID
+     * @return bool
+     * @throws Exception
+     */
+    public function syncProgramMerchantRelations($v2AccountHolderID, $v3AccountHolderID) {
+
+        $result = FALSE;
+
+        // Checking if v3 program is exists.
+        if (empty($v3AccountHolderID)) {
+            throw new Exception("v3 program not found.");
+        }
+
+        $v3MerchantIDs = Merchant::all()->pluck('id', 'id')->toArray();
+
+        $v2ProgramMerchants = $this->v2db->select(
+            sprintf("
+                SELECT p.v3_program_id, m.v3_merchant_id, pm.*
+                FROM `programs` p
+                JOIN `program_merchant` pm ON p.account_holder_id = pm.program_id
+                JOIN `merchants` m on m.account_holder_id=pm.merchant_id
+                WHERE p.account_holder_id=%d AND m.v3_merchant_id IS NOT NULL", $v2AccountHolderID)
+        );
+
+        if(!empty($v2ProgramMerchants)) {
+            $programMerchants = [];
+            foreach( $v2ProgramMerchants as $v2ProgramMerchant) {
+                if( !$v2ProgramMerchant->v3_merchant_id ) {
+                    throw new Exception(sprintf("v2merchant:v3_merchant_id found for v2Program:%s. Please run `php artisan v2migrate:merchants` before running program migration for this program.\n\n", $v2Program->account_holder_id));
+                }
+                if( !$v2ProgramMerchant->v3_program_id ) {
+                    throw new Exception("v2program:v3_program_id found. Please run `php artisan v2migrate:programs [ID]` before running this migration.\n\n");
+                }
+                if ($v3MerchantIDs[$v2ProgramMerchant->v3_merchant_id] ?? FALSE) {
+                    $programMerchants[$v2ProgramMerchant->v3_merchant_id] = [
+                        'featured' => $v2ProgramMerchant->featured,
+                        'cost_to_program' => $v2ProgramMerchant->cost_to_program
+                    ];
+                }
+            }
+            if($programMerchants) {
+                try {
+                    $v3Program = Program::where('account_holder_id', $v3AccountHolderID)->first();
+                    $v3Program->merchants()->sync($programMerchants, false);
+                    $result = TRUE;
+                } catch (\Exception $exception) {
+                    throw new Exception("Sync merchants to a program is failed.");
+                }
+            }
+        }
+
+        return $result;
+    }
 }
