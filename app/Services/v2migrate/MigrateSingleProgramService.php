@@ -4,6 +4,11 @@ namespace App\Services\v2migrate;
 
 use App\Models\Merchant;
 use App\Models\ProgramTransactionFee;
+use App\Http\Requests\UserRequest;
+use App\Models\Account;
+use App\Models\JournalEvent;
+use App\Models\User;
+use App\Models\UserV2User;
 use Exception;
 
 use App\Services\ProgramService;
@@ -15,6 +20,7 @@ use App\Models\Event;
 use App\Models\Invoice;
 use App\Models\Leaderboard;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 use stdClass;
 
 class MigrateSingleProgramService extends MigrateProgramsService
@@ -149,6 +155,9 @@ class MigrateSingleProgramService extends MigrateProgramsService
             // // Pull Leaderboards
             $this->printf("Migrating program Leaderboards\n");
             $this->migrateProgramLeaderboards($v2Program, $v3Program);
+
+            $this->printf("Migrating program deposit balance\n");
+            $this->migrateProgramDepositBalance($v2Program, $v3Program);
 
             if( !property_exists($v2Program, 'sub_programs') ) { //if root program
                 $this->printf("'sub_programs' property does not exists for v2:%d. Fetching..\n", $v2Program->account_holder_id);
@@ -633,6 +642,180 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 // $MigrateEventXmlDataService->v3Program = $v3Program;
                 // $MigrateEventXmlDataService->migrateEventXmlDataByV2Event($v2Event, $v3Event);
             }
+        }
+    }
+
+    public function migrateProgramDepositBalance($v2Program, $v3Program) {
+        $v2AccountIDs = [];
+        $v2Users = [];
+        $v3PostingsData = [];
+        $v2JournalEventIDs = [];
+
+        $v2Accounts = $this->v2db->select("SELECT a.id from accounts a where a.account_holder_id IN ($v2Program->account_holder_id)");
+        foreach ($v2Accounts as $v2Account) {
+            $v2AccountIDs[] = $v2Account->id;
+        }
+        $v3Accounts = Account::whereIn('v2_account_id', $v2AccountIDs)->get()->keyBy('v2_account_id')->toArray();
+
+        $v2Postings = $this->v2db->select("SELECT p.* from accounts a join postings p on (p.account_id = a.id) where a.account_holder_id IN ($v2Program->account_holder_id)");
+        if ($v2Postings) {
+
+            foreach ($v2Postings as $v2Posting) {
+                $v2JournalEventIDs[] = $v2Posting->journal_event_id;
+            }
+
+            $v2JournalEventIDs = array_unique($v2JournalEventIDs);
+
+            $v2JournalEventIDsToStr = implode(",", $v2JournalEventIDs);
+            $v2JournalEvents = $this->v2db->select("SELECT jet.type, je.* from journal_events je join journal_event_types jet on jet.id = je.journal_event_type_id where je.id IN ($v2JournalEventIDsToStr)");
+
+            // TODO for prime_account_holder_id.
+            foreach ($v2JournalEvents as $v2JournalEvent) {
+                $v2Users[] = $v2JournalEvent->prime_account_holder_id;
+            }
+
+            $v2UsersIDs = array_unique($v2Users);
+            $v2UsersIDsToStr = implode(",", $v2UsersIDs);
+            $v2Users = $this->v2db->select("SELECT u.* FROM users u WHERE u.account_holder_id IN ($v2UsersIDsToStr)");
+            foreach ($v2Users as $v2User) {
+                $v3User = User::where('email', $v2User->email)->first();
+                if( $v3User ) {
+                    $userV2user = UserV2User::where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
+                    if( !$userV2user ) {
+                        $this->syncUserAssoc($v2User, $v3User);
+                    }
+                }
+                else {
+                    $v3User = $this->createUser($v2User);
+                    $this->syncUserAssoc($v2User, $v3User);
+                }
+            }
+
+            $v2v3Users = UserV2User::whereIn('v2_user_account_holder_id', $v2UsersIDs)->get()->keyBy('v2_user_account_holder_id')->toArray();
+
+            $v3JournalEventsData = [];
+            try {
+                foreach ($v2JournalEvents as $v2JournalEvent) {
+                    $v2UserID = $v2JournalEvent->prime_account_holder_id;
+                    $v3JournalEventsData[] = [
+                        'prime_account_holder_id' => $v2v3Users[$v2UserID]['user_id'] ?? 0,
+                        'journal_event_type_id' => $v2JournalEvent->journal_event_type_id,
+                        'notes' => $v2JournalEvent->notes,
+                        'event_xml_data_id' => $v2JournalEvent->event_xml_data_id,
+                        'invoice_id' => $v2JournalEvent->invoice_id,
+                        'is_read' => $v2JournalEvent->is_read,
+                        'parent_journal_event_id' => 0,
+                        'v2_journal_event_id' => $v2JournalEvent->id,
+                        'v2_prime_account_holder_id' => $v2JournalEvent->prime_account_holder_id,
+                        'v2_parent_journal_event_id' => $v2JournalEvent->parent_journal_event_id,
+                    ];
+                }
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+            }
+
+            DB::table('journal_events')->insertOrIgnore($v3JournalEventsData);
+
+            $v3JournalEventIDs = JournalEvent::whereIn('v2_journal_event_id', $v2JournalEventIDs)->get()->keyBy('v2_journal_event_id')->toArray();
+
+            try {
+                foreach ($v2Postings as $v2Posting) {
+                    $v2AccountID = $v2Posting->account_id;
+                    $v3PostingsData[] = [
+                        'journal_event_id' => $v3JournalEventIDs[$v2Posting->journal_event_id]['id'],
+                        'medium_info_id' => $v2Posting->medium_info_id,
+                        'account_id' => $v3Accounts[$v2Posting->account_id]['id'],
+                        'posting_amount' => $v2Posting->posting_amount,
+                        'qty' => $v2Posting->qty,
+                        'is_credit' => $v2Posting->is_credit,
+                        'v2_posting_id' => $v2Posting->id,
+                        'created_at' => $v2Posting->posting_timestamp,
+                    ];
+                }
+            } catch (Exception $e) {
+                $error = $e->getMessage();
+            }
+
+            DB::table('postings')->insertOrIgnore($v3PostingsData);
+        }
+    }
+
+    /**
+     * Fix for user migrations.
+     *
+     * @param $v2User
+     * @return mixed
+     * @throws Exception
+     */
+    public function createUser($v2User) {
+        if( (int)$v2User->birth_month && (int)$v2User->birth_day) {
+            $dob = "1970-" . ((int)$v2User->birth_month < 10 ? "0" . (int)$v2User->birth_month :  $v2User->birth_month) . "-" . ( (int) $v2User->birth_day < 10 ? "0" . (int)$v2User->birth_day :  $v2User->birth_day);
+        }   else {
+            $dob = "1970-01-01";
+        }
+        $hireDate = $v2User->hire_date != '0000-00-00' ? date("Y-m-d", strtotime($v2User->hire_date)) : null;
+
+        $data = [
+            'first_name' => $v2User->first_name,
+            'last_name' => $v2User->last_name,
+            'email' => trim($v2User->email),
+            'password' => $v2User->password,
+            'password_confirmation' => $v2User->password,
+            'organization_id' => 1000000000, //TODO
+            'user_status_id' => $v2User->user_state_id,
+            // 'phone' => @$v2User->phone,
+            'employee_number' => (int) $v2User->employee_number,
+            'division' => $v2User->division_name,
+            'office_location' => $v2User->office_geo_location,
+            'position_title' => $v2User->position_title,
+            'position_grade_level' => $v2User->position_grade,
+            'supervisor_employee_number' => $v2User->supervisor_employee_number,
+            'last_location' => $v2User->last_location,
+            'dob' => $dob,
+            'update_id' => $v2User->update_id,
+            'created_at' => $v2User->created,
+            'updated_at' => $v2User->updated,
+            'activated' => $v2User->activated,
+            'deactivated' => $v2User->deactivated,
+            'last_login' => $v2User->last_login,
+            'v2_parent_program_id' => $v2User->parent_program_id,
+            // 'v2_account_holder_id' => $v2User->account_holder_id, //sync by "user_v2_users"
+            'work_anniversary' => $hireDate,
+            'email_verified_at' => $v2User->activated
+        ];
+        $formRequest = new UserRequest();
+        $validator = Validator::make($data, $formRequest->rules());
+        if ($validator->fails()) {
+            throw new Exception($validator->errors()->toJson());
+        }
+        return User::createAccount( $data );
+    }
+
+    /**
+     * Fix for user migrations.
+     *
+     * @param $v2User
+     * @param $v3User
+     */
+    public function syncUserAssoc($v2User, $v3User) {
+        $userV2user = $v3User->v2_users()->where('v2_user_account_holder_id', $v2User->account_holder_id)->first();
+        if( $userV2user ) {
+            $this->printf(" -- userV2User assoc found for user v2:%d and v3:%s\n", $v2User->account_holder_id, $v3User->id);
+            if( $userV2user->user_id != $v3User->id ) {
+                $userV2user->user_id = $v3User->id;
+                $userV2user->save();
+            }
+        }   else {
+            $newAssoc = new UserV2User([
+                'user_id' => $v3User->id,
+                'v2_user_account_holder_id' => $v2User->account_holder_id,
+            ]);
+            $v3User->v2_users()->save($newAssoc);
+            $this->printf(" -- New userV2User assoc added for user v2:%d and v3:%s\n", $v2User->account_holder_id, $v3User->id);
+        }
+        if( $v3User->v2_account_holder_id )  { //This is confusing, make it null
+            $v3User->v2_account_holder_id = null;
+            $v3User->save();
         }
     }
 
