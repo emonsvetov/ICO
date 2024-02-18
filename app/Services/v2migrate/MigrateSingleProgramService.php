@@ -2,6 +2,8 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\Merchant;
+use App\Models\ProgramTransactionFee;
 use Exception;
 
 use App\Services\ProgramService;
@@ -106,16 +108,17 @@ class MigrateSingleProgramService extends MigrateProgramsService
                 $this->executeV2SQL();
             }
 
+            $this->syncProgramMerchantRelations($v2Program, $v3Program);
+
             // if( $v2Program->account_holder_id != 719006) return;
             // pr($v2Program->account_holder_id);
             //Migration Accounts
             $this->printf("Migrating program accounts\n");
             $this->migrateProgramAccounts( $v3Program, $v2Program );
 
+            $this->migrateProgramParams($v3Program, $v2Program);
+            $this->migrateProgramTransactionFees($v3Program, $v2Program);
             $this->migrateProgramExtra($v3Program, $v2Program);
-
-
-            $this->syncProgramMerchantRelations($v2Program, $v3Program);
 
             // Import program users with roles
             $this->printf("Migrating program users\n");
@@ -704,6 +707,28 @@ class MigrateSingleProgramService extends MigrateProgramsService
         }
     }
 
+    public function migrateProgramParams(&$v3Program, $v2Program) {
+        $sql = sprintf("SELECT * FROM programs WHERE account_holder_id = %d", $v2Program->account_holder_id);
+        $result = $this->v2db->select($sql)[0];
+        $v3ProgramOriginal = Program::find($v3Program->id);
+        $v3ProgramOriginal->balance_threshold = $result->balance_threshold;
+        $v3ProgramOriginal->send_balance_threshold_notification = (int)$result->send_balance_threshold_notification;
+        $v3ProgramOriginal->low_balance_email = $result->low_balance_email;
+
+        $v3ProgramOriginal->use_cascading_approvals = (int)$result->use_cascading_approvals;
+        $v3ProgramOriginal->enable_schedule_awards = $result->enable_schedule_awards;
+        $v3ProgramOriginal->use_budget_cascading = (int)$result->use_budget_cascading;
+        $v3ProgramOriginal->budget_summary = (int)$result->budget_summary;
+        $v3ProgramOriginal->save();
+    }
+
+    public function migrateProgramTransactionFees(&$v3Program, $v2Program)
+    {
+        $sql = sprintf("SELECT * FROM programs_transaction_fees WHERE program_account_holder_id = %d", $v2Program->account_holder_id);
+        $result = $this->v2db->select($sql);
+        (new ProgramTransactionFee)->updateTransactionFees($v3Program->id, $result);
+    }
+
     public function migrateProgramExtra(&$v3Program, $v2Program) {
         $sql = sprintf("SELECT * FROM programs_extra WHERE program_account_holder_id = %d", $v2Program->account_holder_id);
         $result = $this->v2db->select($sql)[0];
@@ -716,7 +741,7 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     'program_id' => $v3Program->id,
                     'program_account_holder_id' => $result->program_account_holder_id,
                     'factor_valuation' => $result->factor_valuation,
-                    'points_over_budget' => $result->points_over_budget,
+                    'points_over_budget' => !$result->points_over_budget,
                     'bill_direct' => $result->bill_direct,
                     'allow_creditcard_deposits' => $result->allow_creditcard_deposits,
                     'reserve_percentage' => $result->reserve_percentage,
@@ -806,6 +831,8 @@ class MigrateSingleProgramService extends MigrateProgramsService
 
         //$this->v2db->statement("SET SQL_MODE=''");
         $result = $this->v2db->select($sql);
+        $v3MerchantIDs = Merchant::all()->pluck('id', 'id')->toArray();
+
         if( $result && sizeof($result) > 0) {
             $programMerchants = [];
             foreach( $result as $row) {
@@ -817,10 +844,12 @@ class MigrateSingleProgramService extends MigrateProgramsService
                     throw new Exception("Null v2program:v3_program_id found. Please run `php artisan v2migrate:programs [ID]` before running this migration.\n\n");
 //
                 }
-                $programMerchants[$row->v3_merchant_id] = [
-                    'featured' => $row->featured,
-                    'cost_to_program' => $row->cost_to_program
-                ];
+                if ($v3MerchantIDs[$row->v3_merchant_id] ?? FALSE) {
+                    $programMerchants[$row->v3_merchant_id] = [
+                        'featured' => $row->featured,
+                        'cost_to_program' => $row->cost_to_program
+                    ];
+                }
             }
             if( $programMerchants ) {
                 try {

@@ -175,6 +175,7 @@ class ProgramRequest extends FormRequest
             'balance_threshold'=>'nullable|integer|gt:-1',
             'low_balance_email'=>'nullable|email',
             'program_extras'=>'nullable',
+            'program_transaction_fee'=>'nullable',
         ];
     }
 

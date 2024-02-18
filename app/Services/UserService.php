@@ -313,14 +313,15 @@ class UserService
 
     public function generate2faSecret($data)
     {
-        $user = User::where('email', $data['email'])->first();
-        $token = Str::random(6);
-        $recipientEmail = $user->email;
-        $user->token_2fa = $token;
-        $user->twofa_verified = true;
-        $user->save();
-       
         try {
+
+            $user = User::where('email', $data['email'])->first();
+            $token = Str::random(6);
+            $recipientEmail = $user->email;
+            $user->token_2fa = $token;
+            $user->twofa_verified = true;
+            $user->save();
+        
             Mail::raw($token, function ($message) use ($recipientEmail) {
                 $message->to($recipientEmail)
                         ->subject('2FA code for Incentco');
@@ -339,7 +340,7 @@ class UserService
                 'code' => 422,
             ];
         }
-       
+
     }
 
     public function calculateExpirationDate(\stdClass $data)
@@ -506,6 +507,14 @@ class UserService
                 }
             }
 
+            if ($value->type == AccountType::ACCOUNT_AWARD_MONIES_RECIPIENT) {
+                if ($value->is_credit) {
+                    $awardPointstoRecipient += $value->amount;
+                } else {
+                    $awardPointstoRecipient -= $value->amount;
+                }
+            }
+
             if ($value->type == AccountType::ACCOUNT_REDEEM_POINTS_GIFT_CODES) {
                 if ($value->is_credit) {
                     $redeemPointsForGiftCodes += $value->amount;
@@ -514,9 +523,18 @@ class UserService
                 }
             }
         }
+
+        if ($value->type == AccountType::ACCOUNT_REDEEM_MONIES_GIFT_CODES) {
+            if ($value->is_credit) {
+                $redeemPointsForGiftCodes += $value->amount;
+            } else {
+                $redeemPointsForGiftCodes -= $value->amount;
+            }
+        }
+
         $balance = $reclaimPoints + $awardPointstoRecipient + $redeemPointsForGiftCodes;
         return [
-            'balance' => $balance
+            'balance' => number_format($balance, 2, '.', '')
         ];
     }
 
