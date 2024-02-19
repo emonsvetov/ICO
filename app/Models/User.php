@@ -407,4 +407,9 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return $this->hasMany(UserV2User::class);
     }
+
+    public function push_tokens()
+    {
+        return $this->hasMany(\App\Models\PushNotificationToken::class);
+    }
 }

@@ -175,6 +175,7 @@ class PermissionSeeder extends Seeder
             'user-goal-progress-view',
             'can-refer',
             'mark-notifications-read',
+            'push-notification-create',
         ];
 
         foreach ($permissions as $permission) {
