@@ -10,6 +10,7 @@ class MigrationBaseService extends MigrationService
     private $migrateMerchantsService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
+    const MIGRATE_MERCHANTS = 'Migrate merchants';
 
     public function __construct(MigrateMerchantsService $migrateMerchantsService)
     {
@@ -22,6 +23,7 @@ class MigrationBaseService extends MigrationService
         $result['success'] = TRUE;
         $result['error'] = NULL;
         $migrations = [
+            self::MIGRATE_MERCHANTS => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
         ];
 
@@ -33,6 +35,8 @@ class MigrationBaseService extends MigrationService
 
         try {
 
+
+            $migrations[self::MIGRATE_MERCHANTS] = $this->migrateMerchantsService->migrate();
             $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID, $v3AccountHolderID);
 
 
