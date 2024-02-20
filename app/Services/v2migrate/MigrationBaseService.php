@@ -17,13 +17,43 @@ class MigrationBaseService extends MigrationService
         $this->migrateMerchantsService = $migrateMerchantsService;
     }
 
-    public function migrate($args)
+    /**
+     * Run global migrations.
+     */
+    public function migrateGlobal()
     {
         $result = [];
         $result['success'] = TRUE;
         $result['error'] = NULL;
         $migrations = [
             self::MIGRATE_MERCHANTS => FALSE,
+        ];
+
+        DB::beginTransaction();
+
+        try {
+            $migrations[self::MIGRATE_MERCHANTS] = $this->migrateMerchantsService->migrate();
+
+            DB::commit();
+        } catch (Exception $e) {
+            $result['success'] = FALSE;
+            $result['error'] = $e->getMessage();
+            DB::rollback();
+        }
+
+        $result['migrations'] = $migrations;
+        return $result;
+    }
+
+    /**
+     * Run migration for a program.
+     */
+    public function migrate($args)
+    {
+        $result = [];
+        $result['success'] = TRUE;
+        $result['error'] = NULL;
+        $migrations = [
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
         ];
 
@@ -35,8 +65,6 @@ class MigrationBaseService extends MigrationService
 
         try {
 
-
-            $migrations[self::MIGRATE_MERCHANTS] = $this->migrateMerchantsService->migrate();
             $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID, $v3AccountHolderID);
 
 

@@ -30,32 +30,39 @@ class MigrateMerchantsService extends MigrationService
     /**
      * Run merchants migration.
      *
-     * @return bool
+     * @return array
      * @throws Exception
      */
     public function migrate() {
         $merchantTree = [];
         try {
-            $v2MerchantHierarchy = $this->read_list_hierarchy();
-            if (!blank($v2MerchantHierarchy)) {
-                $v2MerchantHierarchy = sort_result_by_rank($merchantTree, $v2MerchantHierarchy, 'merchant');
+            $v2MerchantHierarchyList = $this->read_list_hierarchy();
+            $newMerchants = $this->countNewMerchantsToMigrate($v2MerchantHierarchyList);
+            $countNewMerchants = count($newMerchants);
+
+            if (!blank($v2MerchantHierarchyList)) {
+                $v2MerchantHierarchy = sort_result_by_rank($merchantTree, $v2MerchantHierarchyList, 'merchant');
                 foreach ($v2MerchantHierarchy as $v2MerchantNode) {
                     $this->migrateMerchant($v2MerchantNode);
                 }
             }
-            return TRUE;
+
+            return [
+                'success' => TRUE,
+                'info' => "was migrated $countNewMerchants items",
+            ];
         } catch(Exception $e) {
             throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
         }
     }
 
     /**
-     * Filter of existing merchants before migrate.
+     * Count of new merchants.
      *
      * @param $v2MerchantHierarchy
      * @return array
      */
-    public function findNewMerchantsToMigrate($v2MerchantHierarchy) {
+    public function countNewMerchantsToMigrate($v2MerchantHierarchy) {
         $v2MerchantIDs = [];
         foreach ($v2MerchantHierarchy as $v2Merchant) {
             $v2MerchantIDs[] = $v2Merchant->account_holder_id;
@@ -294,7 +301,10 @@ class MigrateMerchantsService extends MigrationService
      */
     public function syncProgramMerchantRelations($v2AccountHolderID, $v3AccountHolderID) {
 
-        $result = FALSE;
+        $result = [
+            'success' => FALSE,
+            'info' => '',
+        ];
 
         // Checking if v3 program is exists.
         if (empty($v3AccountHolderID)) {
@@ -314,25 +324,31 @@ class MigrateMerchantsService extends MigrationService
 
         if(!empty($v2ProgramMerchants)) {
             $programMerchants = [];
-            foreach( $v2ProgramMerchants as $v2ProgramMerchant) {
-                if( !$v2ProgramMerchant->v3_merchant_id ) {
-                    throw new Exception(sprintf("v2merchant:v3_merchant_id found for v2Program:%s. Please run `php artisan v2migrate:merchants` before running program migration for this program.\n\n", $v2Program->account_holder_id));
+            foreach($v2ProgramMerchants as $v2ProgramMerchant) {
+                if (!$v2ProgramMerchant->v3_merchant_id) {
+                    throw new Exception("v3_merchant_id in V2 table merchants not found.");
                 }
-                if( !$v2ProgramMerchant->v3_program_id ) {
-                    throw new Exception("v2program:v3_program_id found. Please run `php artisan v2migrate:programs [ID]` before running this migration.\n\n");
+                if (!$v2ProgramMerchant->v3_program_id) {
+                    throw new Exception("v3_program_id in V2 table programs not found.");
                 }
+
                 if ($v3MerchantIDs[$v2ProgramMerchant->v3_merchant_id] ?? FALSE) {
                     $programMerchants[$v2ProgramMerchant->v3_merchant_id] = [
                         'featured' => $v2ProgramMerchant->featured,
                         'cost_to_program' => $v2ProgramMerchant->cost_to_program
                     ];
                 }
+                else {
+                    throw new Exception("Merchant with ID : $v2ProgramMerchant->v3_merchant_id not found in V3. Please run global migrations for migrate a new merchants.");
+                }
             }
-            if($programMerchants) {
+            if ($programMerchants) {
                 try {
                     $v3Program = Program::where('account_holder_id', $v3AccountHolderID)->first();
                     $v3Program->merchants()->sync($programMerchants, false);
-                    $result = TRUE;
+                    $countProgramMerchants = count($programMerchants);
+                    $result['success'] = TRUE;
+                    $result['info'] = "was sync $countProgramMerchants items";
                 } catch (\Exception $exception) {
                     throw new Exception("Sync merchants to a program is failed.");
                 }
