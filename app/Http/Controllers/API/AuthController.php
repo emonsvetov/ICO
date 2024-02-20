@@ -137,7 +137,7 @@ class AuthController extends Controller
                 return response(['message' => 'Invalid Credentials*'], 422);
             }
 
-            if (!isset($validated['code'])) {
+            if (!isset($validated['code']) && $domainService->isAdminAppDomain()) {
                 return response(['message' => 'Code is required'], 403);
             }
 

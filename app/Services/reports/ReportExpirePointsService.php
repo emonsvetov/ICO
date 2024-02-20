@@ -249,4 +249,23 @@ class ReportExpirePointsService extends ReportServiceAbstract
         ];
     }
 
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data = $this->getTable();
+        foreach ($data as $key => $item) {
+            foreach ($item as $subKey => $subItem) {
+                if($subKey == 'amount_expiring' || $subKey == 'balance'){
+                    $data[$key]->{$subKey} = '$'.$subItem;
+                }
+            }
+        }
+        $data['data'] = $data;
+        $data['total'] = count($data);
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
+    }
+
 }

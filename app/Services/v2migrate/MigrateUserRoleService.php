@@ -142,43 +142,40 @@ class MigrateUserRoleService extends MigrationService
                 $this->printf("Program roles synced for v3user:%d.\n", $v3User->id);
             }
         } else {
-            if ($v3User->email == 'jmoore@temp-incentco.com') {
+            // fucking hardcode for admin user, just dont look at this:)
+            $sql = sprintf("
+                SELECT
+                        `r`.*,
+                        `r`.`owner_id` AS `program_account_holder_id`,
+                        `rhu`.`users_id`,
+                        `rt`.`type` AS role_name,
+                        `p`.`name` AS `program_name`,
+                        `p`.`v3_program_id`
+                FROM
+                    `roles_has_users` `rhu`
+                        LEFT JOIN `roles` `r` ON `rhu`.`roles_id`=`r`.`id`
+                        LEFT JOIN `role_types` `rt` ON `r`.`role_type_id`=`rt`.`id`
+                        LEFT JOIN `programs` `p` ON `p`.`account_holder_id`=`r`.`owner_id`
+                WHERE
+                    `rhu`.`users_id`=%d", $v2User->account_holder_id); //AND rt.type NOT LIKE 'Participant' AND rt.type NOT LIKE 'Program Manager'
+            $sql .= sprintf(' AND r.owner_id=1');
+            $v2UserRoles = $this->v2db->select($sql);
 
-                // fucking hardcode for admin user, just dont look at this:)
-                $sql = sprintf("
-                    SELECT
-                            `r`.*,
-                            `r`.`owner_id` AS `program_account_holder_id`,
-                            `rhu`.`users_id`,
-                            `rt`.`type` AS role_name,
-                            `p`.`name` AS `program_name`,
-                            `p`.`v3_program_id`
-                    FROM
-                        `roles_has_users` `rhu`
-                            LEFT JOIN `roles` `r` ON `rhu`.`roles_id`=`r`.`id`
-                            LEFT JOIN `role_types` `rt` ON `r`.`role_type_id`=`rt`.`id`
-                            LEFT JOIN `programs` `p` ON `p`.`account_holder_id`=`r`.`owner_id`
-                    WHERE
-                        `rhu`.`users_id`=%d", $v2User->account_holder_id); //AND rt.type NOT LIKE 'Participant' AND rt.type NOT LIKE 'Program Manager'
-                $sql .= sprintf(' AND r.owner_id=1');
-                $v2UserRoles = $this->v2db->select($sql);
+            if ($v2UserRoles) {
+                $v2Parent = (new MigrateProgramsService)->get_program_info($this->v2pid());
 
-                if ($v2UserRoles) {
-                    $v2Parent = (new MigrateProgramsService)->get_program_info($this->v2pid());
-
-                    $v2RoleName = $this->_getRoleNameFromV2RoleName('Program Manager');
-                    if ($v2RoleName) {
-                        $v3RoleId = Role::getIdByName($v2RoleName);
-                        if ($v3RoleId) {
-                            if ($this->v2pid()) {
-                                if (!isset($newProgramRoles[$v2Parent->v3_program_id])) {
-                                    $newProgramRoles[$v2Parent->v3_program_id] = [];
-                                }
-                                $newProgramRoles[$v2Parent->v3_program_id][] = $v3RoleId;
-                                $v3User->programs()->sync(array_keys($newProgramRoles));
-                                foreach ($newProgramRoles as $programId => $programRoles) {
-                                    $v3User->syncProgramRoles($programId, $programRoles);
-                                }
+                $v2RoleName = $this->_getRoleNameFromV2RoleName('Program Manager');
+                if ($v2RoleName) {
+                    $v3RoleId = Role::getIdByName($v2RoleName);
+                    if ($v3RoleId) {
+                        if ($this->v2pid()) {
+                            if (!isset($newProgramRoles[$v2Parent->v3_program_id])) {
+                                $newProgramRoles[$v2Parent->v3_program_id] = [];
+                            }
+                            $newProgramRoles[$v2Parent->v3_program_id][] = $v3RoleId;
+                            $v3User->programs()->sync(array_keys($newProgramRoles));
+                            foreach ($newProgramRoles as $programId => $programRoles) {
+                                $v3User->syncProgramRoles($programId, $programRoles);
                             }
                         }
                     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\AccountType;
 use App\Models\Role;
 use App\Services\reports\User\ReportServiceUserHistory;
 use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
@@ -183,13 +184,14 @@ class ProgramUserController extends Controller
         AccountService $accountService
     ) {
         $amount_balance = $user->readAvailableBalance($program, $user);
+        $pointsEarned = $accountService->read_awarded_total_for_participant($program, $user);
         $factor_valuation = $program->factor_valuation;
         $points_balance = $amount_balance * $program->factor_valuation;
         $peerBalance = $userService->readAvailablePeerBalance($user, $program);
         $expiredBalance = $accountService->readExpiredBalance($user, $program);
         $redeemedBalance = $accountService->readRedeemedBalance($user, $program);
         return response([
-            'points' => $points_balance,
+            'points' => $pointsEarned,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
             'peerBalance' => $peerBalance,

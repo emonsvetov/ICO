@@ -1,6 +1,8 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Models\AccountV2Account;
+use App\Models\UserV2User;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\DB;
@@ -255,7 +257,8 @@ class MigrateJournalEventsService extends MigrationService
                     throw new Exception(" - empty 'v2_user_account_holder_id'");
                 }
                 $in__v2_account_holder_id = implode(',', $in__v2_account_holder_id_col->toArray());
-                pr($in__v2_account_holder_id);
+//                pr($in__v2_account_holder_id);
+
                 // pr($in__v2_account_holder_id->toArray());
                 //
                 $query = Account::join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id')->join('user_v2_users', 'user_v2_users.user_id', '=', 'users.id')->join('account_v2_accounts AS a2a', 'a2a.account_id', '=', 'accounts.id')->select(['accounts.*', 'users.id AS user_id', 'user_v2_users.v2_user_account_holder_id', 'a2a.v2_account_id as a2a_v2_account_id']);
@@ -283,7 +286,32 @@ class MigrateJournalEventsService extends MigrationService
             //
 
             //Get a few fields only. Keeping above for debugging.
-            $sql = "SELECT postings.id AS posting_id, postings.journal_event_id, je.prime_account_holder_id, je.journal_event_timestamp, je.journal_event_type_id, je.notes, je.invoice_id, je.event_xml_data_id, je.parent_journal_event_id, je.is_read, je.v3_journal_event_id, users.account_holder_id AS user_account_holder_id, users.v3_user_id FROM accounts JOIN postings on postings.account_id=accounts.id JOIN journal_events je ON je.id=postings.journal_event_id LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id WHERE accounts.account_holder_id IN ($in__v2_account_holder_id) AND accounts.id IN ($in__v2_account_id) ORDER BY je.journal_event_timestamp ASC, postings.posting_timestamp ASC";
+            $sql = "
+                SELECT
+                    postings.id AS posting_id,
+                    postings.journal_event_id,
+                    je.prime_account_holder_id,
+                    je.journal_event_timestamp,
+                    je.journal_event_type_id,
+                    je.notes,
+                    je.invoice_id,
+                    je.event_xml_data_id,
+                    je.parent_journal_event_id,
+                    je.is_read,
+                    je.v3_journal_event_id,
+                    users.account_holder_id AS user_account_holder_id,
+                    users.v3_user_id
+                FROM
+                    accounts
+                        JOIN postings on postings.account_id=accounts.id
+                        JOIN journal_events je ON je.id=postings.journal_event_id
+                        LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id
+                WHERE
+                    accounts.account_holder_id IN ($in__v2_account_holder_id)
+                    AND accounts.id IN ($in__v2_account_id)
+                ORDER BY
+                    je.journal_event_timestamp ASC, postings.posting_timestamp ASC
+             ";
 
             $this->printf(" - Fetching journal_events+postings for model %s:\"%s\"\n", $this->modelName, $v3Model->id);
             $this->printSql($sql . "\n\n");
@@ -340,11 +368,17 @@ class MigrateJournalEventsService extends MigrationService
             if( !$userV2user ) {
                 throw new Exception(sprintf("Invalid \"userV2user\". Are you sure this user was imported properly?\"\n"));
             }
+
+            $accounts = Account::where('account_holder_id', $v3Model->account_holder_id)->get();
+            foreach( $accounts as $v3Account)    {
+                $v3Account->v2_account_id = $userV2user->v2_user_account_holder_id;
+                $this->migrateJournalEventsByModelAndAccount($v3Model, $v3Account);
+            }
         } else {
             if( !$v3Model->v2_account_holder_id )    {
                 throw new Exception(sprintf("Invalid \"v2_account_holder_id\" in model \"%s\". Are you sure this model was imported properly?\"\n", $this->modelName));
             }
-            $accounts = \App\Models\Account::where('account_holder_id', $v3Model->account_holder_id)->get();
+            $accounts = Account::where('account_holder_id', $v3Model->account_holder_id)->get();
 
             if( count($accounts) > 0 )  {
                 foreach( $accounts as $v3Account)    {
@@ -400,7 +434,8 @@ class MigrateJournalEventsService extends MigrationService
                     if( $v2Model && $v3Model && $v3Model instanceof \App\Models\User  &&$v2Model->account_holder_id == $v2JournalEvent->prime_account_holder_id) {
                         $prime_account_holder_id = $v3Model->account_holder_id;
                     }   else {
-                        $modelTmp = User::where('v2_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
+                        $userV2user = UserV2User::where('v2_user_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
+                        $modelTmp = $userV2user ? User::where('id', $userV2user->user_id)->first() : null;
                         if( $modelTmp )  {
                             $prime_account_holder_id = $modelTmp->account_holder_id;
                         }   else {
@@ -490,7 +525,8 @@ class MigrateJournalEventsService extends MigrationService
                             if( $v2Model && $v3Model && $v3Model instanceof \App\Models\User && $v2EventXmlData->awarder_account_holder_id == $v2Model->account_holder_id) {
                                 $awarder_account_holder_id = $v3Model->account_holder_id;
                             }   else {
-                                $v3User_tmp = User::where('v2_account_holder_id', $v2EventXmlData->awarder_account_holder_id)->first();
+                                $userV2user = UserV2User::where('v2_user_account_holder_id', $v2EventXmlData->awarder_account_holder_id)->first();
+                                $v3User_tmp = $userV2user ? User::where('id', $userV2user->user_id)->first() : null;
                                 if( $v3User_tmp )   {
                                     $awarder_account_holder_id = $v3User_tmp->account_holder_id;
                                 }   else {
@@ -511,7 +547,7 @@ class MigrateJournalEventsService extends MigrationService
                             }
                         }
 
-                        $$v3EventXmlData = EventXmlData::create([
+                        $v3EventXmlData = EventXmlData::create([
                             'v2_id' => $v2EventXmlData->id,
                             'awarder_account_holder_id' => $awarder_account_holder_id,
                             'name' => $v2EventXmlData->name,
@@ -544,7 +580,9 @@ class MigrateJournalEventsService extends MigrationService
                 if( !empty($v2EventXmlData) && $v3EventXmlData )   {
                     //If the "awarder_account_holder_id" was "framed" previously
                     if( strpos($v3EventXmlData->awarder_account_holder_id, $this->idPrefix) == 0 ) {
-                        $v3User_tmp = User::where('v2_account_holder_id', $v2EventXmlData->awarder_account_holder_id)->first();
+                        $userV2user = UserV2User::where('v2_user_account_holder_id', $v2EventXmlData->awarder_account_holder_id)->first();
+                        $v3User_tmp = $userV2user ? User::where('id', $userV2user->user_id)->first() : null;
+
                         if( $v3User_tmp )   {
                             $v3EventXmlData->awarder_account_holder_id = $v3User_tmp->account_holder_id;
                             $saveEventXml = true;
@@ -566,6 +604,10 @@ class MigrateJournalEventsService extends MigrationService
                     $v3JournalEvent->event_xml_data_id = $v3EventXmlData->id;
                     $saveJournal = true;
                 }
+                if(strpos($v3JournalEvent->event_xml_data_id, $this->idPrefix) === 0 ) {
+                    $v3JournalEvent->event_xml_data_id = $v3EventXmlData->id;
+                    $saveJournal = true;
+                }
             }
 
             //for previously imported journals
@@ -582,7 +624,8 @@ class MigrateJournalEventsService extends MigrationService
                             $saveJournal = true;
                         }
                     }  else {
-                        $v3User_tmp = User::where('v2_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
+                        $userV2user = UserV2User::where('v2_user_account_holder_id', $v2JournalEvent->prime_account_holder_id)->first();
+                        $v3User_tmp = $userV2user ? User::where('id', $userV2user->user_id)->first() : null;
                         if( $v3User_tmp )   {
                             $v3JournalEvent->prime_account_holder_id = $v3User_tmp->account_holder_id;
                             $saveJournal = true;
@@ -630,10 +673,15 @@ class MigrateJournalEventsService extends MigrationService
         //Migrate Postings as part of JournalEvent
         $v2postings = $this->v2db->select( sprintf("SELECT * FROM `postings` where `journal_event_id`=%d", $v2JournalEvent->id));
 
+
+
         // $v2postings = \App\Models\Posting::where('journal_event_id', $v2JournalEvent->id)->get();
         if( $v2postings ) {
             foreach( $v2postings as $v2posting )        {
                 $createPosting = true;
+
+
+
                 if( $v2posting->v3_posting_id )   {
                     //Confirm
                     $v3Posting = \App\Models\Posting::find( $v2posting->v3_posting_id );
@@ -665,11 +713,20 @@ class MigrateJournalEventsService extends MigrationService
                          * It will not import accounts in case and will prefix v2 account id with
                          * 999999.
                         */
-                        $v3Account = \App\Models\Account::where('v2_account_id', $v2posting->account_id)->first();
+
+                        $v3Account = Account::where('v2_account_id', $v2posting->account_id)->first();
                         if( $v3Account )    {
                             $v3AccountId = $v3Account->id;
                         }   else {
-                            $v3AccountId = $this->idPrefix . $v2posting->account_id;
+                            $sql = sprintf("SELECT * FROM accounts WHERE id = %d", $v2posting->account_id);
+                            $v2Account = $this->v2db->select($sql);
+                            $v3Account = isset($v2Account[0]) ? Account::where('id', $v2Account[0]->v3_account_id)->first() : null;
+
+                            if ($v3Account) {
+                                $v3AccountId = $v3Account->id;
+                            } else {
+                                $v3AccountId = $this->idPrefix . $v2posting->account_id;
+                            }
                         }
                     }
 
