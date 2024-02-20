@@ -126,7 +126,7 @@ class MigrateMerchantsService extends MigrationService
                     }
                 }
 
-                if( $icons ) {
+                if ($icons) {
                     $uploads = $this->handleMerchantMediaUpload( null, $parentMerchant, false, $icons );
                     if( $uploads )   {
                         $parentMerchant->update($uploads);
