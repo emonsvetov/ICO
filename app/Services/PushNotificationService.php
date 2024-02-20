@@ -11,21 +11,26 @@ use App\Models\User;
 class PushNotificationService
 {
     public array $responses = [];
-    public function firstOrCreate(Program $program, $data )  {
+    public function firstOrCreate( $data )  {
         $token = PushNotificationToken::where('user_id', $data['user_id'])
             ->where('token', 'LIKE', $data['token'])
             ->first();
         if( !$token )   {
             $token = PushNotificationToken::create($data);
+        }   else {
+            $token->updated_at = now();
+            $token->save(); //update timestamp
         }
         return $token;
     }
 
     public function notifySingleUser( User $user, $data = [] )    {
         $tokens = [];
-        if( $user->push_tokens() )
+        $pushTokens = $user->push_tokens()->get();
+        pr($pushTokens->isEmpty());
+        if( !$pushTokens->isEmpty() )
         {
-            foreach( $user->push_tokens() as $token )   {
+            foreach( $pushTokens as $token )   {
                 $tokens[] = $token->token;
             }
         }
@@ -39,6 +44,7 @@ class PushNotificationService
                     'data'=>$data['data']
                 ]
             );
+            return $this->responses;
         }
     }
 
@@ -46,7 +52,7 @@ class PushNotificationService
         $tokens = [];
         $pushTokens = PushNotificationToken::where('program_id', $program->id)
         ->get();
-        if( !$pushTokens->empty() )
+        if( !$pushTokens->isEmpty() )
         {
             foreach( $pushTokens as $token )   {
                 $tokens[] = $token->token;
@@ -62,6 +68,7 @@ class PushNotificationService
                     'data'=>$data['data']
                 ]
             );
+            return $this->responses;
         }
     }
 
@@ -69,7 +76,7 @@ class PushNotificationService
         $tokens = [];
         $pushTokens = PushNotificationToken::whereIn('user_id', $userIds)
         ->get();
-        if( !$pushTokens->empty() )
+        if( !$pushTokens->isEmpty() )
         {
             foreach( $pushTokens as $token )   {
                 $tokens[] = $token->token;
@@ -85,10 +92,11 @@ class PushNotificationService
                     'data'=>$data['data']
                 ]
             );
+            return $this->responses;
         }
     }
 
-    private function __notify( $params = []) {
+    protected function __notify( $params = []) {
 
         if( !$params['to'] ) return;
 

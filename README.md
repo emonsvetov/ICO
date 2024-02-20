@@ -266,3 +266,41 @@ By Multiple Programs
 
 - Please check app/Jobs/v2migrate for migration jobs
 - Please check app/Services/v2migrate for service classes
+
+** Push Notifications
+
+*** Program Notification Example
+
+`$program = Program::find(4786);
+(new App\Services\PushNotificationService)->notifyUsersByProgram( $program, [
+    'title'=>"You have a program notification",
+    'body'=>"This is the body of program notification",
+    'data'=>[ //to be consumed by the mobile app
+        'param1'=>'some value',
+        'param2'=>'some value',
+    ]
+]);`
+
+*** User Notification Example
+`$user = User::find(124);
+(new App\Services\PushNotificationService)->notifySingleUser( $user, [
+    'title'=>"You have a notification",
+    'body'=>"This is the body of notification",
+    'data'=>[ //to be consumed by the mobile app
+        'param1'=>'some value',
+        'param2'=>'some value',
+    ]
+]);`
+
+*** Notify Multiple users by id; Example
+`$userIds = [124, 125];
+(new App\Services\PushNotificationService)->notifyMultipleUsers( $userIds, [
+    'title'=>"You have a notification",
+    'body'=>"This is the body of notification",
+    'data'=>[ //to be consumed by the mobile app
+        'param1'=>'some value',
+        'param2'=>'some value',
+    ]
+]);`
+
+One can add more methods to App\Services\PushNotificationService

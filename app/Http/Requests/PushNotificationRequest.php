@@ -24,7 +24,7 @@ class PushNotificationRequest extends FormRequest
     public function rules()
     {
         return [
-            'program_id' => 'required|integer',
+            'program_id' => 'sometimes|integer',
             'user_id' => 'required|integer',
             'os_name' => 'required|string',
             'device_name' => 'required|string',
