@@ -18,6 +18,11 @@ class MigrationController extends Controller
         $this->migrationBaseService = $migrationBaseService;
     }
 
+    /**
+     * Run migrations for a program.
+     *
+     * @param $account_holder_id
+     */
     public function run($account_holder_id)
     {
         ini_set('max_execution_time', 360);
@@ -25,6 +30,17 @@ class MigrationController extends Controller
         $args = [];
         $args['v2AccountHolderID'] = $account_holder_id;
         $result = $this->migrationBaseService->migrate($args);
+        return response($result);
+    }
+
+    /**
+     * Run global migrations list.
+     */
+    public function runGlobal()
+    {
+        ini_set('max_execution_time', 360);
+
+        $result = $this->migrationBaseService->migrateGlobal();
         return response($result);
     }
 
