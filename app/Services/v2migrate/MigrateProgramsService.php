@@ -10,8 +10,6 @@ use App\Models\Program;
 
 class MigrateProgramsService extends MigrationService
 {
-    public int $iteration = 0;
-    public int $count = 0;
     public array $importedPrograms = [];
     private ProgramService $programService;
 
@@ -34,18 +32,13 @@ class MigrateProgramsService extends MigrationService
         }
 
         $this->fixAccountHolderIds();
-        $this->printf("Starting program migration iteration: " . ++$this->iteration . "\n\n",);
+        $this->printf("Starting program migration\n\n",);
         $v2RootPrograms = $this->read_list_all_root_program_ids($programArgs);
         if (!$v2RootPrograms) {
             throw new Exception("No program found. Args: " . print_r($args, true));
         }
 
         $this->migratePrograms($v2RootPrograms);
-
-        $this->offset = $this->offset + $this->limit;
-        if (count($v2RootPrograms) >= $this->limit) {
-            $this->migrate($args);
-        }
 
         return $this->importedPrograms;
     }
