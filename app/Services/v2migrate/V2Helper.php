@@ -24,7 +24,8 @@ class V2Helper
         $query = "
             SELECT
                 `" . PROGRAMS . "`.account_holder_id,
-                `" . PROGRAMS . "`.name
+                `" . PROGRAMS . "`.name,
+                `" . PROGRAMS . "`.v3_program_id
                 FROM `" . PROGRAMS . "`
             WHERE
                 ( SELECT
@@ -582,20 +583,4 @@ class V2Helper
         }
     }
 
-    protected function fixAccountHolderIds()
-    {
-        $v3Programs = Program::whereNotNull('account_holder_id')->get();
-        foreach ($v3Programs as $v3Program) {
-            $this->fixBrokenAccountHolderByProgram($v3Program);
-        }
-    }
-
-    protected function fixBrokenAccountHolderByProgram($v3Program)
-    {
-        $v3AccountHolder = AccountHolder::where('id', $v3Program->account_holder_id)->first();
-        if (!$v3AccountHolder) {
-            $v3Program->account_holder_id = AccountHolder::insertGetId(['context' => 'Program', 'created_at' => now()]);
-            $v3Program->save();
-        }
-    }
 }

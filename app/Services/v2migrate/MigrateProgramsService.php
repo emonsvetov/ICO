@@ -20,22 +20,22 @@ class MigrateProgramsService extends MigrationService
     }
 
     /**
-     * @param array $args
+     * @param int $v2AccountHolderID
      * @return array
      * @throws Exception
      */
-    public function migrate(array $args = []): array
+    public function migrate(int $v2AccountHolderID): array
     {
-        $programArgs = ['program' => (int)array_shift($args)];
-        if (!$programArgs['program']) {
-            throw new Exception("Wrong data provided. Args: " . print_r($args, true));
+        if (!$v2AccountHolderID) {
+            throw new Exception("Wrong data provided. v2AccountHolderID: {$v2AccountHolderID}");
         }
+        $programArgs = ['program' => $v2AccountHolderID];
 
         $this->fixAccountHolderIds();
         $this->printf("Starting program migration\n\n",);
         $v2RootPrograms = $this->read_list_all_root_program_ids($programArgs);
         if (!$v2RootPrograms) {
-            throw new Exception("No program found. Args: " . print_r($args, true));
+            throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
         }
 
         $this->migratePrograms($v2RootPrograms);
