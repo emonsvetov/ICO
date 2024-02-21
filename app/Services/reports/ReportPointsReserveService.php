@@ -22,9 +22,13 @@ class ReportPointsReserveService extends ReportServiceAbstract
     {
         $this->table = array ();
 		// Setup the default params for the sub reports
-		$subreport_params = array ();
-		$subreport_params[self::DATE_BEGIN] = $this->params[self::DATE_BEGIN];
-		$subreport_params[self::DATE_END] = $this->params[self::DATE_END];
+		$subreport_params = array ();		
+        if (!empty($this->params['from'])) {
+            $subreport_params[self::DATE_BEGIN] = $this->params['from'];
+        }
+        if (!empty($this->params['to'])) {
+            $subreport_params[self::DATE_END] = $this->params['to'];
+        }
         $total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
         $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
         $this_year = $this->params [self::YEAR];
@@ -490,16 +494,6 @@ class ReportPointsReserveService extends ReportServiceAbstract
                 'label' => 'Unredeemed points from previous year’s award',
                 'key' => 'last_unredeemed'
             ],
-            [
-                'label' => 'Paid',
-                'key' => 'value_paid'
-            ],
-
-
-            [
-                'label' => 'Balance',
-                'key' => 'balance'
-            ],
 
             [
                 'label' => 'Reserve %',
@@ -524,8 +518,6 @@ class ReportPointsReserveService extends ReportServiceAbstract
             'redeemed' => 0,
             'this_unredeemed' => 0,
             'last_unredeemed' => 0,
-            'value_paid' => 0,
-            'balance' => 0,
             'reserve_percentage' => 0,
             'calculated_reserve' => 0,
         ];
@@ -536,8 +528,6 @@ class ReportPointsReserveService extends ReportServiceAbstract
             'redeemed' => '',
             'this_unredeemed' => '',
             'last_unredeemed' => '',
-            'value_paid' => '',
-            'balance' => '',
             'reserve_percentage' => '',
             'calculated_reserve' => '',
         ];
