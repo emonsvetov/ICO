@@ -10,21 +10,25 @@ class MigrationBaseService extends MigrationService
     private $migrateMerchantsService;
     private MigrateProgramsService $migrateProgramsService;
     private MigrateProgramAccountsService $migrateProgramAccountsService;
+    private MigrateUsersService $migrateUsersService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const MIGRATE_MERCHANTS = 'Migrate merchants';
     const PROGRAM_HIERARCHY = 'Program Hierarchy';
     const PROGRAM_ACCOUNTS = 'Program Accounts';
+    const USERS = 'Users';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
         MigrateProgramsService $migrateProgramsService,
-        MigrateProgramAccountsService $migrateProgramAccountsService
+        MigrateProgramAccountsService $migrateProgramAccountsService,
+        MigrateUsersService $migrateUsersService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
         $this->migrateProgramsService = $migrateProgramsService;
         $this->migrateProgramAccountsService = $migrateProgramAccountsService;
+        $this->migrateUsersService = $migrateUsersService;
     }
 
     /**
@@ -66,6 +70,7 @@ class MigrationBaseService extends MigrationService
         $migrations = [
             self::PROGRAM_HIERARCHY => FALSE,
             self::PROGRAM_ACCOUNTS => FALSE,
+            self::USERS => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
         ];
 
@@ -76,6 +81,7 @@ class MigrationBaseService extends MigrationService
         try {
             $migrations[self::PROGRAM_HIERARCHY] = (bool)$this->migrateProgramsService->migrate($v2AccountHolderID);
             $migrations[self::PROGRAM_ACCOUNTS] = (bool)$this->migrateProgramAccountsService->migrate($v2AccountHolderID);
+            $migrations[self::USERS] = (bool)$this->migrateUsersService->migrate($v2AccountHolderID);
             $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
 
             DB::commit();
