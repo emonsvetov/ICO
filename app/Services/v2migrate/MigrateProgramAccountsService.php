@@ -48,12 +48,10 @@ class MigrateProgramAccountsService extends MigrationService
             $this->printf("Starting migrations for root program: {$v2RootProgram->account_holder_id}\n",);
             $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $v2RootProgram->account_holder_id);
             $v2Accounts = $this->v2db->select($sql);
-//            $this->syncOrCreateAccounts($v2RootProgram, $v2Accounts);
+            $this->syncOrCreateAccounts($v2RootProgram, $v2Accounts);
 
             $subPrograms = $this->read_list_children_heirarchy(( int )$v2RootProgram->account_holder_id);
             foreach ($subPrograms as $subProgram) {
-//                print_r($subProgram);
-//                die;
                 $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $subProgram->account_holder_id);
                 $v2Accounts = $this->v2db->select($sql);
                 $this->syncOrCreateAccounts($subProgram, $v2Accounts);
@@ -88,11 +86,6 @@ class MigrateProgramAccountsService extends MigrationService
             if ($v2Account->v3_account_id != $v3AccountId) {
                 $this->v2db->statement(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
             }
-
-//            print_r($v2Account);
-//            echo "      ";
-//            print_r($v3AccountId);
-//            die;
 
             $this->importedProgramAccounts[] = $v3AccountId;
         }
