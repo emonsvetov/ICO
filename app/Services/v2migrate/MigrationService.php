@@ -115,7 +115,7 @@ class MigrationService extends V2Helper
         $argv = func_get_args();
 //        print_r($string);
 //        print_r($argv);
-        \Illuminate\Support\Facades\Log::channel('v2migration')->info($string.print_r($argv, true));
+        \Illuminate\Support\Facades\Log::channel('v2migration')->info($string);
 //        $format = array_shift( $argv );
 //        vprintf( $format, $argv );
 //        \Illuminate\Support\Facades\Log::channel('v2migration')->info(rtrim(vsprintf( $format, $argv )));
