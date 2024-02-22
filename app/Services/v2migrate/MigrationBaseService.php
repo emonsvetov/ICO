@@ -7,11 +7,11 @@ use Illuminate\Support\Facades\DB;
 
 class MigrationBaseService extends MigrationService
 {
-    private $migrateMerchantsService;
+    private MigrateMerchantsService $migrateMerchantsService;
     private MigrateProgramsService $migrateProgramsService;
     private MigrateProgramAccountsService $migrateProgramAccountsService;
     private MigrateUsersService $migrateUsersService;
-    private $migrateDomainsService;
+    private MigrateDomainsService $migrateDomainsService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const MIGRATE_MERCHANTS = 'Migrate merchants';
