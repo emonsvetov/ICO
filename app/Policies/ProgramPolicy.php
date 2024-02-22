@@ -41,6 +41,7 @@ class ProgramPolicy
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
         if( $user->isAdmin() ) return true;
         if( $user->isManagerToProgram( $program )) return true;
+        if( $user->isParticipantToProgram( $program )) return true;
         return $user->can('program-view');
     }
 
