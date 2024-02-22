@@ -720,4 +720,18 @@ class V2Helper
         return $sql;
     }
 
+    public function getUsersLog($v2AccountHolderId): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+                *
+			FROM
+				users_log
+			WHERE
+			    user_account_holder_id = '$v2AccountHolderId'
+		";
+        return $this->v2db->select($sql);
+    }
+
 }
