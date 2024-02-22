@@ -188,8 +188,8 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
             $total['percent_total_cost'] = round($total['percent_total_cost']);
         }
 
-        if (isset($total['percent_total_cost'])) {
-            $total['percent_total_redemption_value'] = round($total['percent_total_cost']);
+        if (isset($total['percent_total_redemption_value'])) {
+            $total['percent_total_redemption_value'] = round($total['percent_total_redemption_value']);
         }
 
         $merchants = Merchant::get()->toTree();
@@ -202,10 +202,27 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
             } else {
                 $tmpPath = explode(',', $item->dinamicPath);
                 if (isset($newTable[$tmpPath[0]]) && isset($bodyReference[$item->id])) {
-                    if (empty($newTable[$tmpPath[0]]['children']))
-                        $newTable[$tmpPath[0]]['children'] = [];
-                    array_push($newTable[$tmpPath[0]]['children'], $bodyReference[$item->id]);
+                    if (empty($newTable[$tmpPath[0]]['childrenCount']))
+                        $newTable[$tmpPath[0]]['childrenCount'] = 1;
+                    else
+                        $newTable[$tmpPath[0]]['childrenCount'] ++;
+                    foreach($bodyReference[$item->id] as $subKey => $subItem){
+                        if($subKey != 'key' && $subKey !== 'name'){
+                            if(empty($newTable[$tmpPath[0]][$subKey])){
+                                $newTable[$tmpPath[0]][$subKey] = $subItem;
+                            }
+                            else{
+                                $newTable[$tmpPath[0]][$subKey] += $subItem;
+                            }
+                        }
+                    }
+                    $newTable[$tmpPath[0]]['percent_total_cost'] = round($newTable[$tmpPath[0]]['percent_total_cost'], 2);
                 }
+            }
+        }
+        foreach($newTable as $key => $item){
+            if(isset($item['childrenCount'])){
+                $newTable[$key]['avg_discount_percent'] = round( $item['avg_discount_percent'] / ($item['childrenCount'] + 1 ), 2);
             }
         }
 
