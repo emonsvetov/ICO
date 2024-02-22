@@ -78,7 +78,13 @@ class AccountService
         $debits = JournalEvent::read_sum_postings_by_account_and_journal_events(
             $account_holder_id, $account_type, $journal_event_types, 0
         );
-        return (float)(number_format(($credits->total - $debits->total), 2, '.', ''));
+        // Calculate the balance without rounding
+        $balance = $credits->total - $debits->total;
+
+        // Format the balance to always display two decimal places
+        $formatted_balance = number_format($balance, 2, '.', '');
+
+        return (float) $formatted_balance;
     }
 
     /**
