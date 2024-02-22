@@ -13,6 +13,10 @@ class LeaderboardController extends Controller
     public function index( Organization $organization, Program $program )
     {
         $where = ['organization_id' => $organization->id, 'program_id' => $program->id];
+        if( request()->get('count') )    {
+            $count = Leaderboard::where($where)->count();
+            return response( $count );
+        }
         $leaderboards = Leaderboard::where($where)->with('leaderboard_type')->get();
         if( $leaderboards->isNotEmpty() ) {
             return response( $leaderboards );
@@ -26,8 +30,8 @@ class LeaderboardController extends Controller
         if( empty($data['status_id']) )   {
             $data['status_id'] = Leaderboard::getActiveStatusId();
         }
-        $newLeaderboard = Leaderboard::create( 
-            $data + 
+        $newLeaderboard = Leaderboard::create(
+            $data +
             [
                 'organization_id' => $organization->id,
                 'program_id' => $program->id
@@ -44,7 +48,7 @@ class LeaderboardController extends Controller
 
     public function show( Organization $organization, Program $program, Leaderboard $leaderboard )
     {
-        if ( $leaderboard ) 
+        if ( $leaderboard )
         {
             $leaderboard->load('status');
             return response( $leaderboard );
