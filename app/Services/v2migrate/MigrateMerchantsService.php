@@ -49,7 +49,7 @@ class MigrateMerchantsService extends MigrationService
 
             return [
                 'success' => TRUE,
-                'info' => "was migrated $countNewMerchants items",
+                'info' => "migrated $countNewMerchants items",
             ];
         } catch(Exception $e) {
             throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");

@@ -39,7 +39,11 @@ class MigrateProgramAccountsService extends MigrationService
 
         $this->migrateProgramAccounts($v2RootPrograms);
 
-        return $this->importedProgramAccounts;
+        return [
+            'success' => TRUE,
+            'info' => "migrated " . count($this->importedProgramAccounts) . " items",
+        ];
+
     }
 
     public function migrateProgramAccounts(array $v2RootPrograms): void
