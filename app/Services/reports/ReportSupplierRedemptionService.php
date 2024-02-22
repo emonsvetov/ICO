@@ -189,7 +189,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
         }
 
         if (isset($total['percent_total_redemption_value'])) {
-            $total['percent_total_redemption_value'] = round($total['percent_total_redemption_value']);
+            $total['percent_total_redemption_value'] = round($total['percent_total_redemption_value'], 2);
         }
 
         $merchants = Merchant::get()->toTree();
