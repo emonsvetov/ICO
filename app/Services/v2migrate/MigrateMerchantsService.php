@@ -310,23 +310,24 @@ class MigrateMerchantsService extends MigrationService
 
         // Checking if v3 program is exists.
         if (empty($v3AccountHolderID)) {
-            throw new Exception("v3 program not found.");
+            throw new Exception("v3 program or v2_account_holder_id not found.");
         }
 
         $v3MerchantIDs = Merchant::all()->pluck('id', 'id')->toArray();
 
         $v2ProgramMerchants = $this->v2db->select(
             sprintf("
-                SELECT p.v3_program_id, m.v3_merchant_id, pm.*
+                SELECT p.v3_program_id, m.v3_merchant_id, pm.*, m.name merchant_name
                 FROM `programs` p
                 JOIN `program_merchant` pm ON p.account_holder_id = pm.program_id
                 JOIN `merchants` m on m.account_holder_id=pm.merchant_id
                 WHERE p.account_holder_id=%d AND m.v3_merchant_id IS NOT NULL", $v2AccountHolderID)
         );
 
-        if(!empty($v2ProgramMerchants)) {
-            $programMerchants = [];
-            foreach($v2ProgramMerchants as $v2ProgramMerchant) {
+        $programMerchants = [];
+
+        if(!blank($v2ProgramMerchants)) {
+            foreach ($v2ProgramMerchants as $v2ProgramMerchant) {
                 if (!$v2ProgramMerchant->v3_merchant_id) {
                     throw new Exception("v3_merchant_id in V2 table merchants not found.");
                 }
@@ -334,27 +335,24 @@ class MigrateMerchantsService extends MigrationService
                     throw new Exception("v3_program_id in V2 table programs not found.");
                 }
 
-                if ($v3MerchantIDs[$v2ProgramMerchant->v3_merchant_id] ?? FALSE) {
+                if ($v3MerchantIDs[$v2ProgramMerchant->v3_merchant_id] ?? false) {
                     $programMerchants[$v2ProgramMerchant->v3_merchant_id] = [
                         'featured' => $v2ProgramMerchant->featured,
                         'cost_to_program' => $v2ProgramMerchant->cost_to_program
                     ];
-                }
-                else {
-                    throw new Exception("Merchant with ID : $v2ProgramMerchant->v3_merchant_id not found in V3. Please run global migrations for migrate a new merchants.");
-                }
-            }
-            if ($programMerchants) {
-                try {
-                    $v3Program = Program::where('account_holder_id', $v3AccountHolderID)->first();
-                    $v3Program->merchants()->sync($programMerchants, false);
-                    $countProgramMerchants = count($programMerchants);
-                    $result['success'] = TRUE;
-                    $result['info'] = "was sync $countProgramMerchants items";
-                } catch (\Exception $exception) {
-                    throw new Exception("Sync merchants to a program is failed.");
+                } else {
+                    throw new Exception("Merchant with ID : $v2ProgramMerchant->merchant_name not found in V3. Please run global migrations for migrate a new merchants.");
                 }
             }
+        }
+
+        try {
+            $v3Program->merchants()->sync($programMerchants);
+            $countProgramMerchants = count($programMerchants);
+            $result['success'] = TRUE;
+            $result['info'] = "was sync $countProgramMerchants items";
+        } catch (\Exception $exception) {
+            throw new Exception("Sync merchants to a program is failed.");
         }
 
         return $result;

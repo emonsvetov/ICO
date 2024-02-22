@@ -14,6 +14,7 @@ class MigrationBaseService extends MigrationService
     private MigrateDomainsService $migrateDomainsService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
+    const SYNC_DOMAINS_TO_PROGRAM = 'Sync domains to a program';
     const MIGRATE_MERCHANTS = 'Migrate merchants';
     const PROGRAM_HIERARCHY = 'Program Hierarchy';
     const PROGRAM_ACCOUNTS = 'Program Accounts';
@@ -78,6 +79,7 @@ class MigrationBaseService extends MigrationService
             self::PROGRAM_ACCOUNTS => FALSE,
             self::USERS => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
+            self::SYNC_DOMAINS_TO_PROGRAM => FALSE,
         ];
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
@@ -89,6 +91,7 @@ class MigrationBaseService extends MigrationService
             $migrations[self::PROGRAM_ACCOUNTS] = (bool)$this->migrateProgramAccountsService->migrate($v2AccountHolderID);
             $migrations[self::USERS] = (bool)$this->migrateUsersService->migrate($v2AccountHolderID);
             $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
+            $migrations[self::SYNC_DOMAINS_TO_PROGRAM] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
 
             DB::commit();
         } catch (Exception $e) {
