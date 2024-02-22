@@ -2,13 +2,13 @@
 
 namespace App\Services\v2migrate;
 
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 
 use App\Models\Program;
 
-class MigrationService
+class MigrationService extends V2Helper
 {
-    public $v2db; //Database connection
 
     public bool $overwrite = false;
     public int $importedCount = 0;
@@ -90,7 +90,7 @@ class MigrationService
 
     protected function __construct()
     {
-        $this->v2db = DB::connection('v2');
+        parent::__construct();
     }
 
     public function isPrintSql() {
@@ -113,8 +113,9 @@ class MigrationService
 
     protected function printf($string) {
         $argv = func_get_args();
-        print_r($argv);
-        \Illuminate\Support\Facades\Log::channel('v2migration')->info(print_r($argv, true));
+//        print_r($string);
+//        print_r($argv);
+        \Illuminate\Support\Facades\Log::channel('v2migration')->info($string);
 //        $format = array_shift( $argv );
 //        vprintf( $format, $argv );
 //        \Illuminate\Support\Facades\Log::channel('v2migration')->info(rtrim(vsprintf( $format, $argv )));

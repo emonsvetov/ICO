@@ -295,16 +295,18 @@ class MigrateMerchantsService extends MigrationService
      * Sync merchants to a program.
      *
      * @param $v2AccountHolderID
-     * @param $v3AccountHolderID
      * @return bool
      * @throws Exception
      */
-    public function syncProgramMerchantRelations($v2AccountHolderID, $v3AccountHolderID) {
+    public function syncProgramMerchantRelations($v2AccountHolderID) {
 
         $result = [
             'success' => FALSE,
             'info' => '',
         ];
+
+        $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
+        $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
 
         // Checking if v3 program is exists.
         if (empty($v3AccountHolderID)) {

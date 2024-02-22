@@ -8,18 +8,30 @@ use Illuminate\Support\Facades\DB;
 class MigrationBaseService extends MigrationService
 {
     private $migrateMerchantsService;
+    private MigrateProgramsService $migrateProgramsService;
+    private MigrateProgramAccountsService $migrateProgramAccountsService;
+    private MigrateUsersService $migrateUsersService;
     private $migrateDomainsService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const MIGRATE_MERCHANTS = 'Migrate merchants';
+    const PROGRAM_HIERARCHY = 'Program Hierarchy';
+    const PROGRAM_ACCOUNTS = 'Program Accounts';
+    const USERS = 'Users';
     const MIGRATE_DOMAINS = 'Migrate domains';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
-        MigrateDomainsService $migrateDomainsService,
+        MigrateProgramsService $migrateProgramsService,
+        MigrateProgramAccountsService $migrateProgramAccountsService,
+        MigrateUsersService $migrateUsersService,
+        MigrateDomainsService $migrateDomainsService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
+        $this->migrateProgramsService = $migrateProgramsService;
+        $this->migrateProgramAccountsService = $migrateProgramAccountsService;
+        $this->migrateUsersService = $migrateUsersService;
         $this->migrateDomainsService = $migrateDomainsService;
     }
 
@@ -62,19 +74,21 @@ class MigrationBaseService extends MigrationService
         $result['success'] = TRUE;
         $result['error'] = NULL;
         $migrations = [
+            self::PROGRAM_HIERARCHY => FALSE,
+            self::PROGRAM_ACCOUNTS => FALSE,
+            self::USERS => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
         ];
 
-        $v2AccountHolderID = $args['v2AccountHolderID'];
-        $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
+        $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
 
-        $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
         DB::beginTransaction();
 
         try {
-
-            $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID, $v3AccountHolderID);
-
+            $migrations[self::PROGRAM_HIERARCHY] = (bool)$this->migrateProgramsService->migrate($v2AccountHolderID);
+            $migrations[self::PROGRAM_ACCOUNTS] = (bool)$this->migrateProgramAccountsService->migrate($v2AccountHolderID);
+            $migrations[self::USERS] = (bool)$this->migrateUsersService->migrate($v2AccountHolderID);
+            $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
 
             DB::commit();
         } catch (Exception $e) {
