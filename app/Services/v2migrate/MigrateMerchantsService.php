@@ -20,6 +20,9 @@ class MigrateMerchantsService extends MigrationService
     public $programMerchants = [];
     public $createDuplicateName = false;
 
+    public $countCreatedMerchants = 0;
+    public $countUpdatedMerchants = 0;
+
     public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
         $this->merchantService = $merchantService;
@@ -37,8 +40,6 @@ class MigrateMerchantsService extends MigrationService
         $merchantTree = [];
         try {
             $v2MerchantHierarchyList = $this->read_list_hierarchy();
-            $newMerchants = $this->countNewMerchantsToMigrate($v2MerchantHierarchyList);
-            $countNewMerchants = count($newMerchants);
 
             if (!blank($v2MerchantHierarchyList)) {
                 $v2MerchantHierarchy = sort_result_by_rank($merchantTree, $v2MerchantHierarchyList, 'merchant');
@@ -49,7 +50,7 @@ class MigrateMerchantsService extends MigrationService
 
             return [
                 'success' => TRUE,
-                'info' => "was migrated $countNewMerchants items",
+                'info' => "created $this->countCreatedMerchants items, updated $this->countUpdatedMerchants items",
             ];
         } catch(Exception $e) {
             throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
@@ -85,52 +86,58 @@ class MigrateMerchantsService extends MigrationService
             $v2Merchant = $v2MerchantNode['merchant'];
             $parentMerchant = Merchant::where('v2_account_holder_id', $v2Merchant->account_holder_id)->first();
 
+            $v3MerchantData = [
+                'v2_account_holder_id' => $v2Merchant->account_holder_id,
+                'use_virtual_inventory' => $v2Merchant->use_virtual_inventory,
+                'virtual_denominations' => $v2Merchant->virtual_denominations,
+                'virtual_discount' => $v2Merchant->virtual_discount,
+                'name' => $v2Merchant->name,
+                'parent_id' => $parent_id,
+                'description' => $v2Merchant->description,
+                'website' => $v2Merchant->website,
+                'redemption_instruction' => $v2Merchant->redemption_instruction,
+                'redemption_callback_id' => $v2Merchant->redemption_callback_id,
+                'category' => $v2Merchant->category,
+                'merchant_code' => $v2Merchant->merchant_code,
+                'website_is_redemption_url' => $v2Merchant->website_is_redemption_url,
+                'get_gift_codes_from_root' => $v2Merchant->get_gift_codes_from_root,
+                'is_default' => $v2Merchant->is_default,
+                'giftcodes_require_pin' => $v2Merchant->giftcodes_require_pin,
+                'display_rank_by_priority' => $v2Merchant->display_rank_by_priority,
+                'display_rank_by_redemptions' => $v2Merchant->display_rank_by_redemptions,
+                'requires_shipping' => $v2Merchant->requires_shipping,
+                'physical_order' => $v2Merchant->physical_order,
+                'is_premium' => $v2Merchant->is_premium,
+                'use_tango_api' => (int) $v2Merchant->use_tango_api,
+                'toa_id' => (int) $v2Merchant->toa_id,
+                'status' => $v2Merchant->status,
+                'display_popup' => $v2Merchant->display_popup,
+                'updated_at' => $v2Merchant->updated_at,
+                'deleted_at' => $v2Merchant->deleted > 0 ? now()->subDays(1) : null,
+            ];
+
             if (blank($parentMerchant)) {
-                $merchant_account_holder_id = AccountHolder::insertGetId(['context'=>'Merchant', 'created_at' => now()]);
-
-                $v3MerchantData = [
-                    'v2_account_holder_id' => $v2Merchant->account_holder_id,
-                    'account_holder_id' => $merchant_account_holder_id,
-                    'name' => $v2Merchant->name,
-                    'parent_id' => $parent_id,
-                    'description' => $v2Merchant->description,
-                    'website' => $v2Merchant->website,
-                    'redemption_instruction' => $v2Merchant->redemption_instruction,
-                    'redemption_callback_id' => $v2Merchant->redemption_callback_id,
-                    'category' => $v2Merchant->category,
-                    'merchant_code' => $v2Merchant->merchant_code,
-                    'website_is_redemption_url' => $v2Merchant->website_is_redemption_url,
-                    'get_gift_codes_from_root' => $v2Merchant->get_gift_codes_from_root,
-                    'is_default' => $v2Merchant->is_default,
-                    'giftcodes_require_pin' => $v2Merchant->giftcodes_require_pin,
-                    'display_rank_by_priority' => $v2Merchant->display_rank_by_priority,
-                    'display_rank_by_redemptions' => $v2Merchant->display_rank_by_redemptions,
-                    'requires_shipping' => $v2Merchant->requires_shipping,
-                    'physical_order' => $v2Merchant->physical_order,
-                    'is_premium' => $v2Merchant->is_premium,
-                    'use_tango_api' => (int) $v2Merchant->use_tango_api,
-                    'toa_id' => (int) $v2Merchant->toa_id,
-                    'status' => $v2Merchant->status,
-                    'display_popup' => $v2Merchant->display_popup,
-                    'updated_at' => $v2Merchant->updated_at,
-                    'deleted_at' => $v2Merchant->deleted > 0 ? now()->subDays(1) : null,
-                ];
-
+                $v3MerchantData['account_holder_id'] = AccountHolder::insertGetId(['context'=>'Merchant', 'created_at' => now()]);
                 $parentMerchant = Merchant::create($v3MerchantData);
+                $this->countCreatedMerchants++;
                 $this->v2db->unprepared("UPDATE `merchants` SET `v3_merchant_id` = {$parentMerchant->id} WHERE `account_holder_id` = {$v2Merchant->account_holder_id}");
+            }
+            else {
+                $parentMerchant->update($v3MerchantData);
+                $this->countUpdatedMerchants++;
+            }
 
-                $icons = [];
-                foreach(Merchant::MEDIA_FIELDS as $mediaField) {
-                    if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
-                        $icons[$mediaField] = $v2Merchant->{$mediaField};
-                    }
+            $icons = [];
+            foreach(Merchant::MEDIA_FIELDS as $mediaField) {
+                if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
+                    $icons[$mediaField] = $v2Merchant->{$mediaField};
                 }
+            }
 
-                if( $icons ) {
-                    $uploads = $this->handleMerchantMediaUpload( null, $parentMerchant, false, $icons );
-                    if( $uploads )   {
-                        $parentMerchant->update($uploads);
-                    }
+            if( $icons ) {
+                $uploads = $this->handleMerchantMediaUpload( null, $parentMerchant, false, $icons );
+                if( $uploads )   {
+                    $parentMerchant->update($uploads);
                 }
             }
 
