@@ -217,6 +217,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
                         }
                     }
                     $newTable[$tmpPath[0]]['percent_total_cost'] = round($newTable[$tmpPath[0]]['percent_total_cost'], 2);
+                    $newTable[$tmpPath[0]]['percent_total_redemption_value'] = round($newTable[$tmpPath[0]]['percent_total_redemption_value'], 2);
                 }
             }
         }
