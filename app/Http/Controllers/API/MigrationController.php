@@ -30,6 +30,7 @@ class MigrationController extends Controller
         $args = [];
         $args['v2AccountHolderID'] = $account_holder_id;
         $result = $this->migrationBaseService->migrate($args);
+
         return response($result);
     }
 
