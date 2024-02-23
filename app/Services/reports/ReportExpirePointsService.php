@@ -163,6 +163,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                         '".JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES."'
                         ) AND end_date > end_year AND end_date <= end_next_year, amount, 0)) AS expiring_points_next_year,
                 factor_valuation,
+                end_date,
                 DATE_FORMAT(end_date, '%m-%d-%Y') as 'expire_date'
                 ,(
                     select
@@ -216,14 +217,16 @@ class ReportExpirePointsService extends ReportServiceAbstract
             CAST( expiring_points_next_year * factor_valuation AS DECIMAL(10, 2))
             as 'amount_expiring_next_year',
             expire_date,
+            end_date,
             IF(redeemed IS NOT NULL, redeemed, 0) * factor_valuation as redeemed
         ");
-
+        $currentDate = date('Y-m-d');
         $query->whereRaw("
             total_debit - total_credit > 0
 	        AND total_debit - total_expiring_points > 0
 	        AND total_expiring_points > 0
         ");
+        $query->whereRaw("end_date > ?", [$currentDate]);
         $query->mergeBindings($subQuery2);
 
         return $query;
