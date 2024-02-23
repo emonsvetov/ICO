@@ -73,8 +73,11 @@ class MigrateEventService extends MigrationService
 
     public function syncProgramEventsRelations($v2AccountHolderID)
     {
+        $v2Program = $this->v2db->select(
+            sprintf("select * from programs where account_holder_id = %d", $v2AccountHolderID)
+        )[0];
 
-       // $program = Program::where('name', '')->first();
+        $program = Program::where('name', $v2Program->name)->first();
 
         $v2ProgramEvents = $this->v2db->select(
             sprintf("select * from event_templates where program_account_holder_id = %d", $v2AccountHolderID)
@@ -109,10 +112,10 @@ class MigrateEventService extends MigrationService
                 $event->only_internal_redeemable = $item->only_internal_redeemable;
                 $event->message = $item->notification_body;
                 $res = $event->save();
-                if (!$res){
+                if (!$res) {
                     break;
                 }
-                $this->migrateEventAwardLevel($event->id,$item->id);
+                $this->migrateEventAwardLevel($event->id, $item->id);
             } else {
                 $event = new Event();
                 $event->organization_id = $program->organization_id;
@@ -137,10 +140,10 @@ class MigrateEventService extends MigrationService
                 $event->only_internal_redeemable = $item->only_internal_redeemable;
                 $event->message = $item->notification_body;
                 $res = $event->save();
-                if (!$res){
+                if (!$res) {
                     break;
                 }
-                $this->migrateEventAwardLevel($event->id,$item->id);
+                $this->migrateEventAwardLevel($event->id, $item->id);
             }
         }
 

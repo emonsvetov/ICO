@@ -85,6 +85,7 @@ class MigrationBaseService extends MigrationService
             self::USER_ACCOUNTS => FALSE,
             self::USER_LOGS => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
+            self::SYNC_EVENTS_TO_PROGRAM => FALSE,
         ];
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
@@ -93,12 +94,12 @@ class MigrationBaseService extends MigrationService
 
         try {
             $migrations[self::PROGRAM_HIERARCHY] = (bool)$this->migrateProgramsService->migrate($v2AccountHolderID);
+            $migrations[self::SYNC_EVENTS_TO_PROGRAM] = $this->migrateEventService->syncProgramEventsRelations($v2AccountHolderID);
             $migrations[self::PROGRAM_ACCOUNTS] = (bool)$this->migrateProgramAccountsService->migrate($v2AccountHolderID);
             $migrations[self::USERS] = (bool)$this->migrateUsersService->migrate($v2AccountHolderID);
             $migrations[self::USER_ACCOUNTS] = (bool)$this->migrateUserAccountsService->migrate($v2AccountHolderID);
             $migrations[self::USER_LOGS] = (bool)$this->migrateUserLogsService->migrate($v2AccountHolderID);
             $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
-            $migrations[self::SYNC_EVENTS_TO_PROGRAM] = $this->migrateEventService->syncProgramEventsRelations($v2AccountHolderID);
             DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
