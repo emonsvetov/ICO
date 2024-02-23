@@ -1,19 +1,21 @@
 <?php
 
-namespace App\Services\v2migrate;
+namespace App\Services\v2migrate\archive;
 
-use App\Models\Merchant;
-use App\Models\ProgramTransactionFee;
-use Exception;
-
-use App\Services\ProgramService;
 use App\Models\Address;
-use App\Models\Program;
 use App\Models\Domain;
 use App\Models\DomainIP;
 use App\Models\Event;
 use App\Models\Invoice;
 use App\Models\Leaderboard;
+use App\Models\Merchant;
+use App\Models\Program;
+use App\Models\ProgramTransactionFee;
+use App\Services\ProgramService;
+use App\Services\v2migrate\MigrateProgramAccountsService;
+use App\Services\v2migrate\MigrateProgramGiftcodesService;
+use App\Services\v2migrate\MigrateProgramsService;
+use Exception;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 

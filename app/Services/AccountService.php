@@ -221,7 +221,7 @@ class AccountService
         $debits = JournalEvent::read_sum_postings_by_account_and_journal_events(
             $account_holder_id, $account_type, $journal_events, 0
         );
-        return (float)($debits->total);
+        return (float) number_format($debits->total, 2, '.', '');
     }
     /**
      * This method returns available balance for a program
@@ -553,7 +553,7 @@ class AccountService
 		$credits = JournalEvent::read_sum_postings_by_account_and_journal_events(
             $account_holder_id, $account_type, $journal_event_types, 1
         );
-		return ( float ) ($credits->total);
+        return (float) number_format($credits->total, 2, '.', '');
 
 	}
 

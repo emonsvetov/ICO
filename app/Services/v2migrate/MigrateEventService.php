@@ -71,9 +71,10 @@ class MigrateEventService extends MigrationService
         }
     }
 
-    public function syncProgramEventsRelations($v2AccountHolderID, $v3AccountHolderID)
+    public function syncProgramEventsRelations($v2AccountHolderID)
     {
-        $program = Program::where('account_holder_id', $v3AccountHolderID)->first();
+
+       // $program = Program::where('name', '')->first();
 
         $v2ProgramEvents = $this->v2db->select(
             sprintf("select * from event_templates where program_account_holder_id = %d", $v2AccountHolderID)

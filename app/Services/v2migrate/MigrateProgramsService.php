@@ -1,747 +1,331 @@
 <?php
+
 namespace App\Services\v2migrate;
 
-use App\Services\MerchantService;
-use Illuminate\Support\Facades\DB;
-use RuntimeException;
+use App\Models\AccountHolder;
 use Exception;
-
-use App\Services\v2migrate\MigrateSingleProgramsService;
-use App\Services\v2migrate\MigrateAccountsService;
-use App\Events\OrganizationCreated;
 use App\Services\ProgramService;
 use App\Models\Organization;
 use App\Models\Program;
 
-$v2ProgramUsersTotalCount = [];
-
 class MigrateProgramsService extends MigrationService
 {
+    public array $importedPrograms = [];
     private ProgramService $programService;
 
-    public $offset = 0;
-    public $limit = 9999;
-    public $iteration = 0;
-    public $count = 0;
-    public bool $overwriteProgram = false;
-    public int $importedProgramsCount = 0;
-    public array $importedPrograms = [];
-    public array $importMap = []; //This is the final map of imported objects with name is key. Ex. $importMap['program'][$v2_account_holder_id] = $v2ID;
-    public array $cacheJournalEventsMap = [];
-    public bool $isPrintSql = true;
-    public $countPostings = 0;
-    public $newPrograms = [];
-    public $newProgramsCount = 0;
-    public $superAdminsMigrated = false;
-
-    public function __construct()
+    public function __construct(ProgramService $programService)
     {
         parent::__construct();
+        $this->programService = $programService;
     }
 
-    public function migrate( $args = [] ) {
-//        DB::beginTransaction();
-//        ob_start();
+    /**
+     * @param int $v2AccountHolderID
+     * @return array
+     * @throws Exception
+     */
+    public function migrate(int $v2AccountHolderID): array
+    {
+        if (!$v2AccountHolderID) {
+            throw new Exception("Wrong data provided. v2AccountHolderID: {$v2AccountHolderID}");
+        }
+        $programArgs = ['program' => $v2AccountHolderID];
+
         $this->fixAccountHolderIds();
-
-        global $v2ProgramUsersTotalCount;
-        $v2ProgramUsersTotalCount = [];
-
-        // (new \App\Services\v2migrate\MigrateOwnersService)->verifyOwner();
-
-        $this->printf("Starting program migration iteration: %d\n\n", $this->iteration++);
-
-        $v2RootPrograms = $this->read_list_all_root_program_ids( $args );
-
-        if( !$v2RootPrograms ) {
-            $this->printf("No program found in iteration %d. Exiting.\n", $this->iteration);
-            return;
-        }   else {
-            $this->printf("%s programs found in iteration %d.\n", count($v2RootPrograms), $this->iteration);
+        $this->printf("Starting program migration\n\n",);
+        $v2RootPrograms = $this->read_list_all_root_program_ids($programArgs);
+        if (!$v2RootPrograms) {
+            throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
         }
-        // pr($v2RootPrograms);
-        $this->printf("Attempting to migratePrograms num:%d in iteration %d.\n", count($v2RootPrograms), $this->iteration);
+
         $this->migratePrograms($v2RootPrograms);
-        // resolve(\App\Services\v2migrate\MigrateJournalEventsService::class)->fixPostingsAccoundIds();
 
-        $this->offset = $this->offset + $this->limit;
-        // if( $this->count >= 20 )
-        if( count($v2RootPrograms) >= $this->limit) {
-            $this->migrate( $args );
-        }
-
-        // DB::rollback();
-        // $this->v2db->rollBack();
-        // $this->printf($this->importedProgramsCount . " programs migrated\n");
-        // $this->printf(count($v2ProgramUsersTotalCount) . " users found\n");
-        // $this->printf(implode(',', $v2ProgramUsersTotalCount));
-        // printf("Rendering Import Map..\n");
-        // print_r($this->importMap);
+        return $this->importedPrograms;
     }
 
-    public function migratePrograms($v2RootPrograms) {
-        // DB::beginTransaction();
-        // $this->v2db->beginTransaction();
-        try {
-            foreach ($v2RootPrograms as $v2RootProgram) {
-                $this->printf("Attempting to migration rootProgram:%d\n", $v2RootProgram->account_holder_id);
-                // pr(719006)
-                try{
-                    $this->printf("Before attempting rootProgram:%d we need to make sure it is valid program by getting its info\n", $v2RootProgram->account_holder_id);
-                    $rootProgram = $this->get_program_info ( $v2RootProgram->account_holder_id );
-                    $this->setv2pid($v2RootProgram->account_holder_id);
-
-                    if( !$rootProgram ) {
-                        $this->printf("rootProgram:%d cannot be verified in 'get_program_info'. Skipping.\n", $v2RootProgram->account_holder_id);
-                        continue;
-                    }
-                    // pr($rootProgram);
-
-                    $this->printf("Starting migrations for root program.\"%s\"\n", $rootProgram->name);
-                    $this->printf("Before that lets make sure that v2 program \"%s\" has 'v3_program_id' and 'v3_organization_id' fields in the table.\n", $rootProgram->name);
-                    if( !property_exists($rootProgram, "v3_program_id") || !property_exists($rootProgram, "v3_organization_id" ) ) {
-                        $this->printf("v2 program \"%s\" has 'v3_program_id' or 'v3_organization_id' fields in the table. Skipping.\n", $rootProgram->name);
-                        // throw new Exception( "v2Fields \"v3_account_holder_id\" and \"v3_organization_id\" are required in v2 table to sync properly. Termininating!");
-                        continue;
-                    }
-
-                    $createOrganization = false;
-
-                    if( empty($rootProgram->v3_organization_id) ) {
-                        $createOrganization = true;
-                        $this->printf("v2 program \"%s\" does not have positive 'v3_organization_id' value. Will create one.\n", $rootProgram->name);
-                    }   else {
-                        $this->printf("v2 program \"%s\" has positive 'v3_organization_id' value. let it verify that v2 organization exists for this positive value\n", $rootProgram->name);
-                        $exists = Organization::find( $rootProgram->v3_organization_id );
-                        if( !$exists ) {
-                            $this->printf("v3:organization does not exist for v2 program \"%s\" which has positive 'v3_organization_id' value. Will need to create one.\n", $rootProgram->name);
-                            $createOrganization = true;
-                        }
-                    }
-
-                    if( $createOrganization ) {
-                        //Create organization
-                        try {
-                            $this->printf("Creating v3:organization by program name \"%s\".\n", $rootProgram->name);
-                            $organization = Organization::create([
-                                'name' => $rootProgram->name
-                            ]);
-                            OrganizationCreated::dispatch($organization);
-                            $this->v2db->statement("UPDATE `programs` SET `v3_organization_id` = {$organization->id} WHERE `account_holder_id` = {$rootProgram->account_holder_id}");
-                        } catch (Exception $e) {
-                            if( strpos($e->getMessage(), 'Duplicate entry') > 0 && strpos($e->getMessage(), 'organizations_name_unique') > 0) {
-                                $this->printf("v3:organization exists by program name \"%s\". Getting it for to be used.\n", $rootProgram->name);
-                                $organization = Organization::where([
-                                    'name' => $rootProgram->name
-                                ])->first();
-                            }
-                        }
-                        $rootProgram->v3_organization_id = $organization->id;
-                    }
-
-                    try{
-                        $this->v2Program = $rootProgram;
-                        $migrateSingleProgramService = resolve(\App\Services\v2migrate\MigrateSingleProgramService::class);
-                        $migrateSingleProgramService->migrateSingleProgram($rootProgram->v3_organization_id, $rootProgram);
-                        // pr($this->importedProgramsCount);
-                        // pr($newPrograms);
-                        $this->executeV2SQL();
-                        $this->executeV3SQL();
-                        continue;
-                    } catch(Exception $e)    {
-                        // throw new Exception( sprintf("Error creating new program. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}", $e->getMessage()));
-                        $this->printf("Error creating new program for v2program:%s. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()} Message: {$e->getMessage()}\n", $rootProgram->name);
-                        continue;
-                    }
-
-                } catch(Exception $e)    {
-                    // throw new Exception("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
-                    $this->printf("Error fetching v2 program info. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
-                    continue;
-                }
-            }
-            // DB::commit();
-            // $this->v2db->commit();
-        } catch (Exception $e) {
-            // DB::rollback();
-            // $this->v2db->rollBack();
-            $error = "Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}";
-            $this->printf($error);
-            // throw new Exception("Error migrating v2 programs into v3. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
-            return;
-        }
-    }
-
-    public function read_list_all_root_program_ids($arguments = array()) {
-
-        $query = "
-        SELECT
-            `" . PROGRAMS . "`.account_holder_id,
-            `" . PROGRAMS . "`.name
-            FROM `" . PROGRAMS . "`
-        WHERE
-            ( SELECT
-                MAX(COALESCE(`ranking_path_length`.path_length, 0)) as path_length
-            FROM
-                " . PROGRAM_PATHS . "
-                LEFT JOIN " . PROGRAM_PATHS . " AS ranking_path_length ON " . PROGRAM_PATHS . ".descendant = ranking_path_length.descendant and " . PROGRAM_PATHS . ".ancestor != ranking_path_length.ancestor
-            WHERE
-                " . PROGRAM_PATHS . ".descendant = " . PROGRAMS . ".account_holder_id
-            ) = 0";
-        if(isset($arguments['label']) && $arguments['label'] != '') {
-            $query .= " AND ". PROGRAMS .".label = '" . $arguments['label'] . "'";
-        }
-        if(isset($arguments['name']) && $arguments['name'] != '') {
-            $query .= " AND ". PROGRAMS .".name LIKE '%" . $arguments['name'] . "%'";
-        }
-        if(isset($arguments['program']) && !empty($arguments['program']) ) {
-            $program_account_holder_ids = [];
-            if( !is_array($arguments['program']) && ((int) $arguments['program']) > 0 ) {
-                $program_account_holder_ids[] = (int) $arguments['program'];
-            }   else {
-                $program_account_holder_ids = array_filter($arguments['program'], function($p) { return ( (int) $p > 0 ); });
-            }
-            if( $program_account_holder_ids ) {
-                $query .= " AND ". PROGRAMS .".account_holder_id IN (" . implode(',', $program_account_holder_ids) . ")";
-            }
-        }
-        $query .= " LIMIT {$this->offset}, {$this->limit}";
-
-        try{
-            return $this->v2db->select($query);
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 programs. Error:%s", $e->getMessage()));
-        }
-    }
-    public function get_program_info( $program_account_holder_id ) {
-        if( (int) !$program_account_holder_id ) {
-            throw new \InvalidArgumentException ( "Invalid 'program_account_holder_id' passed, should not be empty", 400 );
-        }
-		$condition = PROGRAMS . ".account_holder_id = {$program_account_holder_id}";
-
-		$query = "
-        SELECT
-            " . PROGRAMS . ".*
-            , " . PROGRAMS_EXTRA . ".uses_units
-            , " . PROGRAM_TYPES_TBL . ".type as program_type
-            , " . PROGRAMS_EXTRA . ".bill_direct as bill_direct
-            , " . TOKENS . ".id AS token
-        FROM
-            " . PROGRAMS . "
-        LEFT JOIN
-            " . PROGRAMS_EXTRA . " ON " . PROGRAMS_EXTRA . ".program_account_holder_id = " . PROGRAMS . ".account_holder_id
-        JOIN
-            " . PROGRAM_TYPES_TBL . " on " . PROGRAM_TYPES_TBL . ".id = " . PROGRAMS . ".program_type_id
-        INNER JOIN
-            " . STATE_TYPES_TBL . " ON " . STATE_TYPES_TBL . ".id = " . PROGRAMS . ".program_state_id
-        LEFT JOIN
-            " . TOKENS . " ON " . TOKENS . ".account_holder_id = " . PROGRAMS . ".account_holder_id
-        AND
-            " . TOKENS . ".token_type_id = (
-                SELECT
-                    " . TOKEN_TYPES . ".id
-                FROM
-                    " . TOKEN_TYPES . "
-                WHERE
-                    " . TOKEN_TYPES . ".name = '" . TOKEN_TYPE_SIGNUP . "'
-            )
-        WHERE
-            " . $condition . "
-            AND
-                " . STATE_TYPES_TBL . ".state != '" . PROGRAM_STATE_DELETED . "'
-            LIMIT 1";
-
-        try{
-            $result = $this->v2db->select($query);
-            if( $result ) return current($result);
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 program info. Error:%s", $e->getMessage()));
-        }
-	}
-    public function read_list_config_fields($offset = 0, $limit = 0) {
-		// build the query statement to check if we have this program_account_holder_id
-		$sql = "
-            SELECT
-                " . CONFIG_FIELDS . ".*,
-                " . CUSTOM_FIELD_TYPES . ".type
-            FROM
-                " . CONFIG_FIELDS . "
-            LEFT JOIN
-                " . CUSTOM_FIELD_TYPES . " ON " . CUSTOM_FIELD_TYPES . ".id =  " . CONFIG_FIELDS . ".custom_field_type_id
-            ";
-		if ($limit > 0) {
-			$sql .= " LIMIT {$offset}, {$limit}";
-		}
-		$result = $this->v2db->select ( $sql );
-		if (is_array ( $result ) && count ( $result ) > 0) {
-			foreach ( $result as &$row ) {
-				$row->rules = $this->read_config_field_rules ( ( int ) $row->id );
-				$row->rules_string = '';
-				if (is_array ( $row->rules ) && count ( $row->rules ) > 0) {
-					$arr_rules = array ();
-					foreach ( $row->rules as $rule ) {
-						$rule_string = $rule->rule;
-						if ($rule->requires_argument) {
-							$rule_string .= '[' . $rule->argument . ']';
-						}
-						$arr_rules [] = $rule_string;
-					}
-					$row->rules_string = implode ( '|', $arr_rules );
-				}
-			}
-			foreach ( $result as &$row2 ) {
-				$field_types = array (
-						'id' => 'int',
-						'custom_field_type_id' => 'int',
-						'require_hierarchy_unique' => 'bool',
-						'must_inherit' => 'bool'
-				);
-				switch ($row2->type) {
-					case "int" :
-						$field_types ['default_value'] = 'int';
-						break;
-					case "float" :
-						$field_types ['default_value'] = 'float';
-						break;
-					case "bool" :
-						$field_types ['default_value'] = 'bool';
-						break;
-				}
-				$row2 = cast_fieldtypes ( $row2, $field_types );
-			}
-		}
-		return $result;
-	}
-
-    public function read_config_field_rules($config_custom_field_id = 0) {
-		// build the query statement to check if we have this program_account_holder_id
-		$sql = "
-            SELECT
-                " . CONFIG_FIELDS_HAS_RULES . ".argument,
-                " . CONFIG_FIELDS_HAS_RULES . ".config_fields_id,
-                " . CONFIG_FIELDS_HAS_RULES . ".custom_fields_rules_id,
-                " . CUSTOM_FIELD_RULES . ".rule,
-                " . CUSTOM_FIELD_RULES . ".requires_argument
-            FROM
-                " . CONFIG_FIELDS_HAS_RULES . "
-            INNER JOIN
-                " . CONFIG_FIELDS . " ON " . CONFIG_FIELDS . ".id = " . CONFIG_FIELDS_HAS_RULES . ".config_fields_id
-            INNER JOIN
-                " . CUSTOM_FIELD_RULES . " ON " . CUSTOM_FIELD_RULES . ".id = " . CONFIG_FIELDS_HAS_RULES . ".custom_fields_rules_id
-            WHERE
-                " . CONFIG_FIELDS_HAS_RULES . ".`config_fields_id` = {$config_custom_field_id}";
-
-		$result = $this->v2db->select ( $sql );
-		try{
-            $result = $this->v2db->select($sql);
-            if( $result ) return current($result);
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 read_config_field_rules. Error:%s", $e->getMessage()));
-        }
-	}
-
-	public function get_top_level_program_id($program_id = 0) {
-		// build the query statement to check if we have this program_account_holder_id
-		$sql = "SELECT ancestor as program_id" . " FROM " . PROGRAM_PATHS . " WHERE descendant={$program_id}" . " ORDER BY path_length DESC LIMIT 1" . ";";
-		// run the query that we built above
-		try{
-            $result = $this->v2db->select($sql);
-            if( $result ) {
-                $row = current($result);
-                return $row->program_id;
-            }   else {
-                return $program_id;
-            }
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 get_top_level_program_id. Error:%s", $e->getMessage()));
-        }
-	}
-
-    public function read_extra_program_info($program_account_holder_id = 0) {
-		// set query to get extra program info
-		$sql = "
-			SELECT
-			p.*, d.name as default_domain_name
-			FROM
-				" . PROGRAMS_EXTRA . " AS p
-                        LEFT JOIN " . DOMAINS . " AS d ON d.access_key = p.default_domain_access_key
-			WHERE
-				p.program_account_holder_id = {$program_account_holder_id}
-			LIMIT 1";
-        try{
-            $result = $this->v2db->select($sql);
-            if( $result ) {
-                $row = current($result);
-                $field_types = array (
-                    'program_account_holder_id' => 'int',
-                    'factor_valuation' => 'int',
-                    'points_over_budget' => 'int',
-                    'bill_direct' => 'bool',
-                    'reserve_percentage' => 'int',
-                    'setup_fee' => 'float',
-                    'monthly_usage_fee' => 'float',
-                    'discount_rebate_percentage' => 'float',
-                    'expiration_rebate_percentage' => 'float',
-                    'budget_number' => 'float',
-                    'alarm_percentage' => 'int',
-                    'administrative_fee' => 'float',
-                    'administrative_fee_factor' => 'float',
-                    'administrative_fee_calculation' => 'string',
-                    'fixed_fee' => 'float',
-                    'monthly_recurring_points_billing_percentage ' => 'int',
-                    'allow_multiple_participants_per_unit' => 'bool',
-                    'uses_units' => 'bool',
-                    'allow_awarding_pending_activation_participants' => 'bool',
-                    'default_domain_name' => 'string',
-                    'allow_creditcard_deposits' => 'bool',
-                    'air_show_programs_tab' => 'bool',
-                    'air_show_manager_award_tab' => 'bool',
-                    'air_premium_cost_to_program' => 'bool',
-                    'air_show_all_event_list' => 'bool'
-                );
-                $row = cast_fieldtypes ( $row, $field_types );
-                return $row;
-            }
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 get_top_level_program_id. Error:%s", $e->getMessage()));
-        }
-	}
-	public function read_program_config_fields_by_name($program_account_holder_id = 0, $config_field_names = array(), $extraArgs=[]) {
-		// If no config fields were passed then we want to select all of them.
-		// However, for inheritance to work we must populate the config field names list with every config field name
-		if (! isset ( $config_field_names ) || ! is_array ( $config_field_names ) || count ( $config_field_names ) == 0) {
-			$all_config_fields = $this->read_list_config_fields ( 0, 999999 );
-			foreach ( $all_config_fields as $config_field ) {
-				$config_field_names [] = $config_field->name;
-			}
-		}
-		$config_field_names = array_unique ( $config_field_names );
-
-		// DAE-31
-		$ancestor = 'ancestor';
-		$getMoreConfigField = true;
-		if(isset($extraArgs['onlySelfDetails']) && $extraArgs['onlySelfDetails'] ==1){
-			$ancestor = 'descendant';
-			$getMoreConfigField = false;
-		}
-		$parentProgramId = $this->get_top_level_program_id((int) $program_account_holder_id);
-
-		// Get the config settings for this program and all of its direct ancestors
-		$sql = "SELECT
-			" . PROGRAMS_CONFIG_FIELDS . ".*,
-			if(" . CONFIG_FIELDS . ".access_parent_value = 0 AND " . PROGRAMS_CONFIG_FIELDS . ".program_account_holder_id !={$program_account_holder_id}, " . CONFIG_FIELDS . ".default_value, " . PROGRAMS_CONFIG_FIELDS . ".value) as value,
-            " . CONFIG_FIELDS . ".*,
-            " . CUSTOM_FIELD_TYPES . ".type,
-            GROUP_CONCAT(if(requires_argument, CONCAT(" . CUSTOM_FIELD_RULES . ".rule, '[', argument, ']'), " . CUSTOM_FIELD_RULES . ".rule) SEPARATOR '|') AS rules_string
-            FROM
-            " . PROGRAM_PATHS . "
-            INNER JOIN
-            " . PROGRAMS_CONFIG_FIELDS . " ON " . PROGRAMS_CONFIG_FIELDS . ".program_account_holder_id = " . PROGRAM_PATHS . ".{$ancestor}
-            INNER JOIN
-            " . CONFIG_FIELDS . " ON " . CONFIG_FIELDS . ".id = " . PROGRAMS_CONFIG_FIELDS . ".config_field_id
-            INNER JOIN
-                " . CUSTOM_FIELD_TYPES . " ON " . CUSTOM_FIELD_TYPES . ".id =  " . CONFIG_FIELDS . ".custom_field_type_id
-            LEFT JOIN
-                " . CONFIG_FIELDS_HAS_RULES . " ON " . CONFIG_FIELDS_HAS_RULES . ".config_fields_id =  " . CONFIG_FIELDS . ".id
-            LEFT JOIN
-                " . CUSTOM_FIELD_RULES . " ON " . CUSTOM_FIELD_RULES . ".id = " . CONFIG_FIELDS_HAS_RULES . ".custom_fields_rules_id
-            WHERE
-				((" . PROGRAM_PATHS . ".descendant = {$program_account_holder_id}  AND  must_inherit != 1) OR (must_inherit = 1 AND " . PROGRAMS_CONFIG_FIELDS . ".program_account_holder_id = {$parentProgramId}))";
-
-		if (isset ( $config_field_names ) && is_array ( $config_field_names ) && count ( $config_field_names ) > 0) {
-			// Don't modify the passed in names we will need them later
-			$config_field_names_escaped = array ();
-			foreach ( $config_field_names as $config_field_name ) {
-				$config_field_names_escaped [] = "'{$config_field_name}'";
-			}
-			$sql .= " AND " . CONFIG_FIELDS . ".`name` IN (" . implode ( ",", $config_field_names_escaped ) . ") ";
-		}
-		$sql .= "GROUP BY " . PROGRAMS_CONFIG_FIELDS . ".program_account_holder_id, " . CONFIG_FIELDS . ".id ";
-		$sql .= "ORDER BY " . CONFIG_FIELDS . ".group, " . PROGRAM_PATHS . ".path_length "; // Order by path length so that the first instance of a config field we encounter is closest to our program in the tree
-        try{
-            $this->v2db->statement("SET SQL_MODE=''");
-            $result = $this->v2db->select($sql);
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 read_config_field_rules. Error:%s", $e->getMessage()));
-        }
-
-		// Organize the return data, pluck out the fields that were requested
-		$return_data = array ();
-		if (isset ( $result ) && is_array ( $result ) && count ( $result ) > 0) {
-			foreach ( $result as $row ) {
-				// Exit loop if we have everything we came here for
-				if (count ( $return_data ) == count ( $config_field_names )) {
-					break;
-				}
-				// If we have already grabbed a config item by this name then skip it
-				if (isset ( $return_data [$row->name] )) {
-					continue;
-				}
-				// Set the inherited flag
-				if ($row->program_account_holder_id == $program_account_holder_id) {
-					$row->inherited = false;
-				} else {
-					$row->inherited = true;
-				}
-				$field_types = array (
-						'id' => 'int',
-						'program_account_holder_id' => 'int',
-						'custom_field_type_id' => 'int',
-						'require_hierarchy_unique' => 'bool'
-				);
-				switch ($row->type) {
-					case "int" :
-						$field_types ['default_value'] = 'int';
-						$field_types ['value'] = 'int';
-						break;
-					case "float" :
-						$field_types ['default_value'] = 'float';
-						$field_types ['value'] = 'float';
-						break;
-					case "bool" :
-						$field_types ['default_value'] = 'bool';
-						$field_types ['value'] = 'bool';
-						break;
-				}
-				$row = cast_fieldtypes ( $row, $field_types );
-				$return_data [$row->name] = $row;
-			}
-		}
-
-		// Determine what rows are missed and grab the defaults
-		if (! is_array ( $return_data ) || count ( $return_data ) == 0 || count ( $return_data ) != count ( $config_field_names )) {
-			// Collect a list of all of the config fields that we don't have
-			$missing_config_fields = array ();
-			foreach ( $config_field_names as $config_field_name ) {
-				if (! isset ( $return_data [$config_field_name] )) {
-					$missing_config_fields [] = $config_field_name;
-				}
-			}
-			// DAE-31
-			if($getMoreConfigField == true) {
-				// if fields are missing, then use the defaults
-				$more_config_fields = $this->read_config_fields_by_name ( $missing_config_fields );
-				// Update the inherited flag on all of the fields we just received
-				// and use the default value from the field as the value
-				if (isset ( $more_config_fields ) && is_array ( $more_config_fields ) && count ( $more_config_fields ) > 0) {
-					foreach ( $more_config_fields as $more_config_field ) {
-						$more_config_field->inherited = true;
-						$more_config_field->value = $more_config_field->default_value;
-						$return_data [$more_config_field->name] = $more_config_field;
-					}
-				}
-			}
-		}
-		ksort ( $return_data );
-		// get the row in object type
-		return $return_data;
-	}
-
-	public function read_config_fields_by_name($config_field_names = array()) {
-		$sql = "
-            SELECT
-            " . CONFIG_FIELDS . ".*,
-            " . CUSTOM_FIELD_TYPES . ".type,
-            GROUP_CONCAT(if(requires_argument, CONCAT(custom_field_rules.rule, '[', argument, ']'), custom_field_rules.rule) SEPARATOR '|') AS rules_string
-            FROM
-                " . CONFIG_FIELDS . "
-            INNER JOIN
-                " . CUSTOM_FIELD_TYPES . " ON " . CUSTOM_FIELD_TYPES . ".id =  " . CONFIG_FIELDS . ".custom_field_type_id
-            LEFT JOIN
-                " . CONFIG_FIELDS_HAS_RULES . " ON " . CONFIG_FIELDS_HAS_RULES . ".config_fields_id =  " . CONFIG_FIELDS . ".id
-            LEFT JOIN
-                " . CUSTOM_FIELD_RULES . " ON " . CUSTOM_FIELD_RULES . ".id = " . CONFIG_FIELDS_HAS_RULES . ".custom_fields_rules_id
-            WHERE ";
-		foreach ( $config_field_names as &$config_field_name ) {
-			$config_field_name = "'{$config_field_name}'";
-		}
-		$sql .= CONFIG_FIELDS . ".`name` IN (" . implode ( ",", $config_field_names ) . ") ";
-		$sql .= "GROUP BY " . CONFIG_FIELDS . ".id ";
-		$result = $this->v2db->select ( $sql );
-		if ( !$result ) {
-			throw new \RuntimeException ( 'No result in v2migrate program:read_config_fields_by_name', 500 );
-		}
-		if (sizeof($result) < 1) {
-			throw new \UnexpectedValueException ( 'Unable to find the config field in database record', 500 );
-		}
-		if (isset ( $result ) && is_array ( $result ) && count ( $result ) > 0) {
-			foreach ( $result as &$row ) {
-				$field_types = array (
-						'id' => 'int',
-						'custom_field_type_id' => 'int',
-						'require_hierarchy_unique' => 'bool',
-						'must_inherit' => 'bool'
-				);
-				switch ($row->type) {
-					case "int" :
-						$field_types ['default_value'] = 'int';
-						break;
-					case "float" :
-						$field_types ['default_value'] = 'float';
-						break;
-					case "bool" :
-						$field_types ['default_value'] = 'bool';
-						break;
-				}
-				$row = cast_fieldtypes ( $row, $field_types );
-			}
-		}
-		// get the row in object type
-		return $result;
-	}
-
-	public function read_list_children_heirarchy($program_id, $direction = 'descendant', $args = array()) {
-		// verify $direction if the meets the expected values
-		if (! in_array ( $direction, array (
-				'descendant',
-				'ascendant'
-		) )) {
-			throw new \UnexpectedValueException ( 'Unexpected value for $direction, must only be ascendant or descendant' );
-		}
-		// query statement to get the program heirarchy
-		// accepts direction whether ascending or descending
-		$sql = "CALL sp_closure_table_heirarchy('programs', 'program_paths', {$program_id}, '{$direction}', @result)";
-		// execute query to get the table heirarchy
-        try{
-            $this->v2db->statement("SET SQL_MODE=''");
-            $data = $this->v2db->select($sql);
-            // this query will return all program's regardless of their state. so we need to filter them again
-            $hierarchy_program_account_holder_id = array ();
-            if (count ( $data ) > 0) {
-                foreach ( $data as $row ) {
-                    $hierarchy_program_account_holder_id [] = ( int ) $row->account_holder_id;
-                }
-            }
-            // this will return only the programs that are not deleted
-            $programs = $this->read_programs ( $hierarchy_program_account_holder_id, true, 0, 999999999, $args);
-            $active_program_account_holder_ids = array ();
-
-            $active_programs = array();
-            if (count ( $programs ) > 0) {
-                foreach ( $programs as $program ) {
-                    $active_program_account_holder_ids [] = $program->account_holder_id;
-                    $active_programs[$program->account_holder_id] = $program;
-                }
+    /**
+     * @param array $v2RootPrograms
+     * @return void
+     * @throws Exception
+     */
+    public function migratePrograms(array $v2RootPrograms): void
+    {
+        foreach ($v2RootPrograms as $v2RootProgram) {
+            $this->printf("Starting migrations for root program: {$v2RootProgram->account_holder_id}\n",);
+            $v2Program = $this->get_program_info($v2RootProgram->account_holder_id);
+            if (!$v2Program) {
+                throw new Exception("Program info not found. v2RootProgram: {$v2RootProgram->account_holder_id}");
             }
 
-            if (count ( $data ) > 0) {
-                for($i = count ( $data ) - 1; $i >= 0; -- $i) {
-                    if (! in_array ( $data [$i]->account_holder_id, $active_program_account_holder_ids )) {
-                        unset ( $data [$i] );
-                    }
-                    if (isset($args['get_details']) && $args['get_details']) {
-                        $data[$i]->external_id = $active_programs[$data [$i]->account_holder_id]->external_id;
-                        $data[$i]->uses_units = $active_programs[$data [$i]->account_holder_id]->uses_units;
-                        $data[$i]->label = $active_programs[$data [$i]->account_holder_id]->label;
-                    }
-                    $data[$i]->v3_organization_id = $active_programs[$data [$i]->account_holder_id]->v3_organization_id;
-                    $data[$i]->v3_program_id = $active_programs[$data [$i]->account_holder_id]->v3_program_id;
-                    if (isset($args['get_extra_info']) && $args['get_extra_info']) {
-                        $data[$i] = $active_programs[$data [$i]->account_holder_id];
-                    }
-                }
-            }
-            $data = array_values ( $data );
-            return $data;
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 read_list_heirarchy. Error:%s", $e->getMessage()));
-        }
-	}
+            $v2Program = $this->findOrCreateOrganization($v2Program);
+            $this->migrateSingleProgram($v2Program);
 
-    public function read_programs($program_account_holder_ids, $with_rank = false, $offset = 0, $limit = 0, $extraArgs = array()) {
-		$statement = "SELECT
-                    " . PROGRAMS . ".*,
-                    " . PROGRAMS_EXTRA . ".*
-                    , " . PROGRAM_TYPES_TBL . ".type program_type";
-		if ($with_rank) {
-			$statement .= "
-                        , (SELECT
-                            GROUP_CONCAT(DISTINCT ranking_program.account_holder_id
-                                ORDER BY " . PROGRAM_PATHS . ".path_length DESC) AS 'rank'
-                        FROM
-                            " . PROGRAM_PATHS . "
-                        LEFT JOIN
-                            " . PROGRAMS . " AS ranking_program ON " . PROGRAM_PATHS . ".ancestor = ranking_program.account_holder_id
-                        WHERE " . PROGRAM_PATHS . ".descendant = " . PROGRAMS . ".account_holder_id
-                            ) as 'rank'
-                        , ( SELECT
-                            MAX(COALESCE(`ranking_path_length`.path_length, 0)) as path_length
-                        FROM
-                            " . PROGRAM_PATHS . "
-                        LEFT JOIN
-                            " . PROGRAM_PATHS . " AS ranking_path_length ON " . PROGRAM_PATHS . ".descendant = ranking_path_length.descendant and " . PROGRAM_PATHS . ".ancestor != ranking_path_length.ancestor
-
-                        WHERE " . PROGRAM_PATHS . ".descendant = " . PROGRAMS . ".account_holder_id
-                            ) as path_length";
-		}
-		$statement .= "
-                FROM
-                    " . PROGRAMS . "
-                INNER JOIN " . ACCOUNT_HOLDERS . " ON " . ACCOUNT_HOLDERS . ".id = " . PROGRAMS . ".account_holder_id
-                JOIN " . PROGRAM_TYPES_TBL . " on " . PROGRAM_TYPES_TBL . ".id = " . PROGRAMS . ".program_type_id";
-
-		if( isset($extraArgs['exclude_unassigned_domains']) && $extraArgs['exclude_unassigned_domains'] == 1)   {
-		    $statement .= " JOIN " . DOMAINS_HAS_PROGRAMS . " ON " . DOMAINS_HAS_PROGRAMS . ".programs_id = " . PROGRAMS . ".account_holder_id";
-        } else {
-		    $statement .= " LEFT JOIN " . DOMAINS_HAS_PROGRAMS . " ON " . DOMAINS_HAS_PROGRAMS . ".programs_id = " . PROGRAMS . ".account_holder_id";
-		}
-
-		$statement .= "
-		               LEFT JOIN " . PROGRAMS_EXTRA . " ON " . PROGRAMS_EXTRA . ".program_account_holder_id = " . PROGRAMS . ".account_holder_id
-                       INNER JOIN " . STATE_TYPES_TBL . " ON " . STATE_TYPES_TBL . ".id = " . PROGRAMS . ".program_state_id
-                       WHERE
-                            " . STATE_TYPES_TBL . ".state != '" . PROGRAM_STATE_DELETED . "'";
-
-		if (is_array ( $program_account_holder_ids ) && count ( $program_account_holder_ids ) > 0) {
-			$statement .= "
-                    AND
-                " . PROGRAMS . ".account_holder_id IN (" . implode ( ',', $program_account_holder_ids ) . ")";
-		}
-		if (isset($extraArgs['program_active']) && $extraArgs['program_active']) {
-			$statement .= " AND  " . PROGRAMS . ".`deactivate` = 0 ";
-		}
-		$statement .= "
-                GROUP BY
-                    " . PROGRAMS . ".account_holder_id";
-		if ($with_rank) {
-			$statement .= " ORDER BY 'rank'";
-		}
-		if ($offset > 0) {
-			$statement .= " LIMIT";
-			if ($offset > 0) {
-				$statement .= $offset . ", ";
-			}
-			$statement .= $limit;
-		}
-		try {
-			$result = $this->v2db->select ( $statement );
-			return $result;
-		} catch ( Exception $e ) {
-			throw new RuntimeException ( $e, 500 );
-		}
-	}
-
-    protected function fixAccountHolderIds()    {
-        $v3Programs = Program::whereNotNull('account_holder_id')->get();
-        if( $v3Programs )   {
-            foreach( $v3Programs as $v3Program )    {
-                $this->fixBrokenAccountHolderByProgram( $v3Program );
+            $subPrograms = $this->read_list_children_heirarchy(( int )$v2Program->account_holder_id);
+            foreach ($subPrograms as $subProgram) {
+                $v2SubProgram = $this->get_program_info($subProgram->account_holder_id);
+                $v2SubProgram->v3_organization_id = $v2Program->v3_organization_id;
+                $v2Parent = $this->get_program_info($subProgram->direct_ancestor);
+                $v3ParentId = $v2Parent->v3_program_id ?? null;
+                $this->migrateSingleProgram($v2SubProgram, $v3ParentId);
             }
         }
     }
 
-    protected function fixBrokenAccountHolderByProgram( $v3Program )    {
-        //Find and Confirm stored account holder id in v2 db
-        //I needed to do this as I found some very large account holder ids in v3 which did not exist in the v2 database. Probably they were created in some old version of v3 db then AUTO INCREMENT key was reset??
-        $this->printf("Find and confirm model's stored account_holder_id with in v3 db.\n");
-        $v3AccountHolder = \App\Models\AccountHolder::where('id', $v3Program->account_holder_id )->first();
-        if( !$v3AccountHolder ) {
-            $this->printf("v3Program->account_holder_id: %d NOT FOUND in v3 table.\n", $v3Program->account_holder_id);
-            $this->printf("Going to create new v3 account_holder_id for model and then update: %s:%d.\n", 'Program', $v3Program->id);
-            $v3Program->account_holder_id = \App\Models\AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
+    /**
+     * @param object $v2Program
+     * @param int|null $v3_parent_id
+     * @return void
+     */
+    public function migrateSingleProgram(object $v2Program, int $v3_parent_id = null)
+    {
+        $v3Program = $this->getV3Program($v2Program);
+        if ($v3Program) {
+            $v3Program->parent_id = $v3_parent_id;
+            $v3Program->organization_id = $v2Program->v3_organization_id;
             $v3Program->save();
-        }   else {
-            $this->printf("v3Program->account_holder_id: %d FOUND in v3 table.\n", $v3Program->account_holder_id);
+            $this->printf("v3Program({$v3Program->id}) updated for v2 program: {$v2Program->name}.\n",);
+        } else {
+            $v3Program = $this->createV3Program($v2Program, $v3_parent_id);
+            $this->printf("v3Program({$v3Program->id}) created for v2 program: {$v2Program->name}.\n",);
         }
+        $this->importedPrograms[] = $v3Program;
+    }
+
+    /**
+     * @param object $v2Program
+     * @return null|Program
+     */
+    public function getV3Program(object $v2Program): ?Program
+    {
+        if ($v2Program->v3_program_id) {
+            $v3Program = Program::find($v2Program->v3_program_id);
+            if ($v3Program) {
+                if ($v3Program->v2_account_holder_id !== $v2Program->account_holder_id) {
+                    $v3Program->v2_account_holder_id = $v2Program->account_holder_id;
+                    $v3Program->save();
+                }
+            }
+        } else {
+            $v3Program = Program::where('v2_account_holder_id', $v2Program->account_holder_id)->first();
+            if ($v3Program) {
+                $this->v2db->statement("
+                    UPDATE `programs`
+                    SET `v3_program_id` = ?
+                    WHERE `account_holder_id` = ?",
+                    [$v3Program->id, $v2Program->account_holder_id]
+                );
+            }
+        }
+        return $v3Program;
+    }
+
+    /**
+     * @param object $rootProgram
+     * @return object
+     */
+    public function findOrCreateOrganization(object $rootProgram): object
+    {
+        $v3Organization = Organization::find($rootProgram->v3_organization_id);
+        $createOrganization = $v3Organization ? false : true;
+        if ($createOrganization) {
+            $v3Organization = Organization::where('name', $rootProgram->name)->first();
+            if (!$v3Organization) {
+                $v3Organization = Organization::create([
+                    'name' => $rootProgram->name
+                ]);
+                $this->v2db->statement("
+                        UPDATE `programs`
+                        SET `v3_organization_id` = {$v3Organization->id}
+                        WHERE `account_holder_id` = {$rootProgram->account_holder_id}
+                    ");
+            }
+            $rootProgram->v3_organization_id = $v3Organization->id;
+        }
+        return $rootProgram;
+    }
+
+    protected function fixAccountHolderIds(): void
+    {
+        $v3Programs = Program::whereNotNull('account_holder_id')
+            ->select('programs.*')
+            ->leftJoin('account_holders', 'account_holders.id', '=', 'programs.account_holder_id')
+            ->whereNull('account_holders.id')
+            ->get();
+        foreach ($v3Programs as $v3Program) {
+            $v3Program->account_holder_id = AccountHolder::insertGetId(['context' => 'Program', 'created_at' => now()]);
+            $v3Program->save();
+        }
+    }
+
+    /**
+     * @param object $v2Program
+     * @param int|null $v3_parent_id
+     * @return mixed
+     * @throws Exception
+     */
+    public function createV3Program($v2Program, int $v3_parent_id = null)
+    {
+        $program_config_fields_grouped = $this->read_program_config_fields_by_name($v2Program->account_holder_id);
+        $program_config_fields = [];
+        foreach ($program_config_fields_grouped as $program_config_field) {
+            $program_config_fields[$program_config_field->name] = $program_config_field->value;
+        }
+
+        $extra_info = $this->read_extra_program_info(( int )$v2Program->account_holder_id);
+
+        if (!$extra_info) {
+            $extra_info = (object)[
+                'setup_fee' => 0,
+                'allow_awarding_pending_activation_participants' => 0,
+                'uses_units' => 0,
+                'allow_multiple_participants_per_unit' => 0,
+                'allow_managers_to_change_email' => 0,
+                'allow_participants_to_change_email' => 0,
+                'sub_program_groups' => 0,
+                'show_internal_store' => 0,
+                'allow_creditcard_deposits' => 0,
+                'reserve_percentage' => 0,
+                'discount_rebate_percentage' => 0,
+                'expiration_rebate_percentage' => 0,
+                'percent_total_spend_rebate' => 0,
+                'administrative_fee' => 0,
+                'administrative_fee_factor' => 0,
+                'administrative_fee_calculation' => 0,
+                'deposit_fee' => 0,
+                'fixed_fee' => 0,
+                'convenience_fee' => 0,
+                'monthly_usage_fee' => 0,
+                'factor_valuation' => 0,
+                'accounts_receivable_email' => 0,
+                'bcc_email_list' => 0,
+                'cc_email_list' => 0,
+                'notification_email_list' => 0,
+                'allow_hierarchy_to_view_social_wall' => 0,
+                'can_view_hierarchy_social_wall' => 0
+            ];
+        }
+
+        $data = [
+            // 'account_holder_id'                              => (int)$v2Program->account_holder_id + $max_account_holder_id + 10000,
+            // 'organization_id'                                => $v2Program->organization_id,
+            'parent_id' => $v3_parent_id,
+            'name' => $v2Program->name,
+            'type' => 'default',
+            'status_id' => (int)$v2Program->program_state_id,
+            'setup_fee' => $extra_info->setup_fee,
+            'is_pay_in_advance' => 1,
+            'invoice_for_awards' => $v2Program->invoice_for_awards,
+            'is_add_default_merchants' => 1,
+            'public_contact_email' => $v2Program->public_contact_email,
+            'prefix' => $v2Program->prefix,
+            'external_id' => $v2Program->external_id,
+            'corporate_entity' => $v2Program->corporate_entity,
+            'expiration_rule_id' => $v2Program->expiration_rule_id ? (int)$v2Program->expiration_rule_id : null,
+            'custom_expire_offset' => $v2Program->custom_expire_offset ? (int)$v2Program->custom_expire_offset : null,
+            'custom_expire_units' => $v2Program->custom_expire_units,
+            'annual_expire_month' => $v2Program->annual_expire_month ? (int)$v2Program->annual_expire_month : null,
+            'annual_expire_day' => $v2Program->annual_expire_day ? (int)$v2Program->annual_expire_day : null,
+            'allow_awarding_pending_activation_participants' => $extra_info->allow_awarding_pending_activation_participants,
+            'uses_units' => $extra_info->uses_units,
+            'allow_multiple_participants_per_unit' => $extra_info->allow_multiple_participants_per_unit,
+            'send_points_expire_notices' => $v2Program->send_points_expire_notices,
+            'points_expire_notice_days' => $v2Program->points_expire_notice_days ? (int)$v2Program->points_expire_notice_days : null,
+            'allow_managers_to_change_email' => $extra_info->allow_managers_to_change_email,
+            'allow_participants_to_change_email' => $extra_info->allow_participants_to_change_email,
+            'sub_program_groups' => $extra_info->sub_program_groups,
+            'events_has_limits' => (int)$v2Program->events_has_limits,
+            'event_has_category' => (int)$v2Program->has_category,
+            'show_internal_store' => (int)$extra_info->show_internal_store,
+            'has_promotional_award' => (int)$v2Program->has_promotional_award,
+            'use_one_leaderboard' => (int)$v2Program->use_one_leaderboard,
+            'use_cascading_approvals' => (int)$v2Program->use_cascading_approvals,
+            'enable_schedule_awards' => (int)$v2Program->enable_schedule_awards,
+            'use_budget_cascading' => (int)$v2Program->use_budget_cascading,
+            'budget_summary' => (int)$v2Program->budget_summary,
+            'enable_reference_documents' => (int)$v2Program->enable_reference_documents,
+            'consolidated_dashboard_reports' => (int)$v2Program->consolidated_dashboard_reports,
+            'enable_global_search' => (int)$v2Program->enable_global_search,
+            'archive_program' => null,
+            'deactivate_account' => null,
+            'create_invoices' => (int)$v2Program->create_invoices,
+            'allow_creditcard_deposits' => (int)$extra_info->allow_creditcard_deposits,
+            'reserve_percentage' => (float)$extra_info->reserve_percentage ? (int)$extra_info->reserve_percentage : null,
+            'discount_rebate_percentage' => $extra_info->discount_rebate_percentage ? (int)$extra_info->discount_rebate_percentage : null,
+            'expiration_rebate_percentage' => $extra_info->expiration_rebate_percentage ? (int)$extra_info->expiration_rebate_percentage : null,
+            'percent_total_spend_rebate' => $extra_info->percent_total_spend_rebate ? (int)$extra_info->percent_total_spend_rebate : null,
+            'bill_parent_program' => null,
+            'administrative_fee' => $extra_info->administrative_fee ? (int)$extra_info->administrative_fee : null,
+            'administrative_fee_factor' => $extra_info->administrative_fee_factor ? (int)$extra_info->administrative_fee_factor : null,
+            'administrative_fee_calculation' => $extra_info->administrative_fee_calculation ? $extra_info->administrative_fee_calculation : 'participants',
+            'transaction_fee' => null,
+            'deposit_fee' => $extra_info->deposit_fee ? (int)$extra_info->deposit_fee : null,
+            'fixed_fee' => $extra_info->fixed_fee ? (int)$extra_info->fixed_fee : null,
+            'convenience_fee' => $extra_info->convenience_fee ? (int)$extra_info->convenience_fee : null,
+            'monthly_usage_fee' => $extra_info->monthly_usage_fee ? (int)$extra_info->monthly_usage_fee : null,
+            'factor_valuation' => (int)$extra_info->factor_valuation,
+            'accounts_receivable_email' => $extra_info->accounts_receivable_email,
+            'bcc_email_list' => trim($extra_info->bcc_email_list),
+            'cc_email_list' => trim($extra_info->cc_email_list),
+            'notification_email_list' => trim($extra_info->notification_email_list),
+            'allow_hierarchy_to_view_social_wall' => $extra_info->allow_hierarchy_to_view_social_wall,
+            'can_post_social_wall_comments' => $program_config_fields['can_post_social_wall_comments'],
+            'can_view_hierarchy_social_wall' => $extra_info->can_view_hierarchy_social_wall,
+            'managers_can_post_social_wall_messages' => $program_config_fields['managers_can_post_social_wall_messages'],
+            'share_siblings_social_wall' => $program_config_fields['share_siblings_social_wall'],
+            'show_all_social_wall' => $program_config_fields['show_all_social_wall'],
+            'social_wall_separation' => null,
+            'uses_social_wall' => $program_config_fields['uses_social_wall'],
+            'amount_override_limit_percent' => $program_config_fields['amount_override_limit_percent'] ? $program_config_fields['amount_override_limit_percent'] : null,
+            'awards_limit_amount_override' => $program_config_fields['awards_limit_amount_override'],
+            'brochures_enable_on_participant' => $program_config_fields['brochures_enable_on_participant'],
+            'crm_company_tag_id' => $program_config_fields['crm_company_tag_id'] ? $program_config_fields['crm_company_tag_id'] : null,
+            'crm_reminder_email_delay_1' => $program_config_fields['crm_reminder_email_delay_1'] ? $program_config_fields['crm_reminder_email_delay_1'] : null,
+            'crm_reminder_email_delay_2' => $program_config_fields['crm_reminder_email_delay_2'] ? $program_config_fields['crm_reminder_email_delay_2'] : null,
+            'crm_reminder_email_delay_3' => $program_config_fields['crm_reminder_email_delay_3'] ? $program_config_fields['crm_reminder_email_delay_3'] : null,
+            'crm_reminder_email_delay_4' => $program_config_fields['crm_reminder_email_delay_4'] ? $program_config_fields['crm_reminder_email_delay_4'] : null,
+            'csv_import_option_use_external_program_id' => $program_config_fields['csv_import_option_use_external_program_id'],
+            'csv_import_option_use_organization_uid' => $program_config_fields['csv_import_option_use_organization_uid'],
+            'google_custom_search_engine_cx' => $program_config_fields['google_custom_search_engine_cx'],
+            'invoice_po_number' => $program_config_fields['invoice_po_number'],
+            'leaderboard_seperation' => $program_config_fields['leaderboard_seperation'],
+            'share_siblings_leader_board' => $program_config_fields['share_siblings_leader_board'],
+            'uses_leaderboards' => null,
+            'manager_can_award_all_program_participants' => $program_config_fields['manager_can_award_all_program_participants'],
+            'program_managers_can_invite_participants' => $program_config_fields['program_managers_can_invite_participants'],
+            'peer_award_seperation' => $program_config_fields['peer_award_seperation'],
+            'peer_search_seperation' => $program_config_fields['peer_search_seperation'],
+            'share_siblings_peer2peer' => $program_config_fields['share_siblings_peer2peer'],
+            'uses_hierarchy_peer2peer' => $program_config_fields['uses_hierarchy_peer2peer'],
+            'uses_peer2peer' => $program_config_fields['uses_peer2peer'],
+            'point_ratio_seperation' => $program_config_fields['point_ratio_seperation'] ? $program_config_fields['point_ratio_seperation'] : null,
+            'team_management_view' => $program_config_fields['team_management_view'],
+            'uses_goal_tracker' => $program_config_fields['uses_goal_tracker'],
+            'enable_upload_while_awarding' => false,
+            'amount_override_percentage' => 0,
+            'remove_social_from_pending_deactivation' => false,
+            'is_demo' => false,
+            'allow_award_peers_not_logged_into' => false,
+            'allow_search_peers_not_logged_into' => false,
+            'allow_view_leaderboards_not_logged_into' => false,
+        ];
+
+        $newProgram = $this->programService->create(
+            $data +
+            [
+                'organization_id' => $v2Program->v3_organization_id,
+                'v2_account_holder_id' => $v2Program->account_holder_id,
+            ]
+        );
+
+        $this->v2db->statement("
+                UPDATE `programs`
+                SET
+                    `v3_organization_id` = {$v2Program->v3_organization_id},
+                    `v3_program_id` = {$newProgram->id}
+                WHERE `account_holder_id` = {$v2Program->account_holder_id}
+            ");
+
+        $v2Program->v3_program_id = $newProgram->id; //To be used in related models
+        return $newProgram;
     }
 }

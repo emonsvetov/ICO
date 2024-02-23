@@ -16,8 +16,6 @@ use App\Models\User;
 class MigrateGiftcodesService extends MigrationService
 {
     public $count = 0;
-    public $offset = 0;
-    public $limit = 1000;
     public $iteration = 0;
     public $cachedv3Merchants = [];
     public $cachedv3Programs = [];
