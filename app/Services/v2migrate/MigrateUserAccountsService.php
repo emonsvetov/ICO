@@ -36,7 +36,10 @@ class MigrateUserAccountsService extends MigrationService
 
         $this->migrateUserAccounts($v2RootPrograms);
 
-        return $this->importedUserAccounts;
+        return [
+            'success' => TRUE,
+            'info' => "migrated " . count($this->importedUserAccounts) . " items",
+        ];
     }
 
     /**
