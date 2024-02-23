@@ -37,6 +37,7 @@ class LeaderboardPolicy
         if(!$this->__preAuthCheck($authUser, $organization, $program)) return false;
         if($authUser->isAdmin()) return true;
         if($authUser->isManagerToProgram($program)) return true;
+        if($authUser->isParticipantToProgram($program)) return true;
         return $authUser->can('program-leaderboard-list');
     }
 

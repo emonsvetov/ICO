@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 class ReportExpirePointsService extends ReportServiceAbstract
 {
     const START_DATE_FIELD = 'posting_date';
+    const DEFAULT_PROGRAM_POINT_RATIO = 40;
 
     /**
      * @inheritDoc
@@ -108,7 +109,8 @@ class ReportExpirePointsService extends ReportServiceAbstract
                             WHEN 'YEAR' THEN date_add(`postings`.created_at, INTERVAL `expiration_rules`.expire_offset YEAR)
                         END
                 END as 'end_date'
-                , date_add(date_format(NOW(), '%Y-12-31'),interval 1 day) as 'end_year'
+                , date_format(NOW(), '%Y-12-31') as 'end_year'
+                , date_format(date_add(date_format(NOW(), '%Y-12-31'),interval 1 year), '%Y-12-31') as 'end_next_year'
                 #, `users`.first_name as user_name
             ");
 
@@ -118,7 +120,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
             $subQuery->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
             $subQuery->groupBy(DB::raw('
                 program_id, user_id, user_account_holder_id, is_credit, expiration_name, account_type_name,
-                cast(`postings`.`created_at` as date), expire_offset, end_date, end_year, program_name, program_parent_id,
+                cast(`postings`.`created_at` as date), expire_offset, end_date, end_year, end_next_year, program_name, program_parent_id,
                 participant_first_name, participant_last_name, participant_email, journal_event_type_name
             '));
         }, 'subQuery')
@@ -146,7 +148,20 @@ class ReportExpirePointsService extends ReportServiceAbstract
                     '".JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS."',
                     '".JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES."',
                     '".JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES."'
-                    ) AND end_year >= end_date, amount, 0)) AS total_expiring_points,
+                    ) AND end_date <= end_year, amount, 0)) AS total_expiring_points,
+                SUM(IF(is_credit = 1 AND journal_event_type_name NOT IN (
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_POINTS."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_MONIES."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES."',
+                        '".JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES."'
+                        ) AND end_date > end_year AND end_date <= end_next_year, amount, 0)) AS expiring_points_next_year,
                 factor_valuation,
                 DATE_FORMAT(end_date, '%m-%d-%Y') as 'expire_date'
                 ,(
@@ -168,7 +183,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                         '".JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES."')
                 ) as redeemed
             ")
-            ->groupBy(['user_id', 'user_account_holder_id', 'program_id', 'program_parent_id', 'program_name',
+            ->groupBy(['user_id', 'user_account_holder_id', 'program_id', 'program_parent_id', 'program_name', 'factor_valuation',
                 'participant_first_name', 'participant_last_name', 'participant_email']);
 
         $query = DB::table(DB::raw("({$subQuery2->toSql()}) as sub2"));
@@ -179,6 +194,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
             program_id,
             program_parent_id,
             program_name,
+            factor_valuation,
             CONCAT(LEFT(participant_first_name, 1), '.', LEFT(participant_last_name, 1), '.') as participant,
             CONCAT(LEFT(participant_email, 4), '*******', right(participant_email, 4), '.') as participant_email,
             total_debit,
@@ -189,7 +205,7 @@ class ReportExpirePointsService extends ReportServiceAbstract
                 AS DECIMAL(10, 2)
                 )
                 as 'balance',
-            total_expiring_points,
+            expiring_points_next_year,
             CAST(
                 IF((total_debit - total_credit - IF(redeemed IS NOT NULL, redeemed, 0)) > total_expiring_points ,
                     total_expiring_points,
@@ -197,6 +213,8 @@ class ReportExpirePointsService extends ReportServiceAbstract
                 AS DECIMAL(10, 2)
                 )
                 as 'amount_expiring',
+            CAST( expiring_points_next_year * factor_valuation AS DECIMAL(10, 2))
+            as 'amount_expiring_next_year',
             expire_date,
             IF(redeemed IS NOT NULL, redeemed, 0) * factor_valuation as redeemed
         ");
@@ -210,7 +228,32 @@ class ReportExpirePointsService extends ReportServiceAbstract
 
         return $query;
     }
+    protected function calc()
+    {
+        $this->table = [];
+        $query = $this->getBaseQuery();
+        $query = $this->setWhereFilters($query);
+        $this->table['data'] = $query->get()->toArray();
+    }
 
+    public function getTable(): array
+    {
+        parent::getTable();
+        $data = $this->table['data'];
+        foreach ($data as $program) {
+            $program->amount_expiring_this_year = $program->amount_expiring - $program->amount_expiring_next_year;
+
+            if(!isset( $program->factor_valuation))
+                $program->amount_in_dollars = $program->amount_expiring / self::DEFAULT_PROGRAM_POINT_RATIO;
+            else
+                $program->amount_in_dollars = $program->amount_expiring / $program->factor_valuation;
+            $program->amount_in_dollars = number_format($program->amount_in_dollars, 2, '.', '');
+        }
+        return [
+            'data' => $data,
+            'total' => count($data)
+        ];
+    }
     public function getCsvHeaders(): array
     {
         return [
@@ -239,12 +282,24 @@ class ReportExpirePointsService extends ReportServiceAbstract
                 'key' => 'expire_date'
             ],
             [
-                'label' => 'Amount Expiring',
-                'key' => 'amount_expiring'
+                'label' => 'Amount Expiring By Current Year',
+                'key' => 'amount_expiring_this_year'
+            ],
+            [
+                'label' => 'Amount Expiring By Following Year',
+                'key' => 'amount_expiring_next_year'
             ],
             [
                 'label' => 'Current Balance',
                 'key' => 'balance'
+            ],
+            [
+                'label' => 'Point Ratio',
+                'key' => 'factor_valuation'
+            ],
+            [
+                'label' => 'Amount In Dollars',
+                'key' => 'amount_in_dollars'
             ],
         ];
     }
@@ -254,10 +309,10 @@ class ReportExpirePointsService extends ReportServiceAbstract
         $this->isExport = true;
         $this->params[self::SQL_LIMIT] = null;
         $this->params[self::SQL_OFFSET] = null;
-        $data = $this->getTable();
+        $data = $this->getTable()['data'];
         foreach ($data as $key => $item) {
             foreach ($item as $subKey => $subItem) {
-                if($subKey == 'amount_expiring' || $subKey == 'balance'){
+                if($subKey == 'amount_in_dollars'){
                     $data[$key]->{$subKey} = '$'.$subItem;
                 }
             }
