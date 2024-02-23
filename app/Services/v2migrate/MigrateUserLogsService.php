@@ -42,7 +42,10 @@ class MigrateUserLogsService extends MigrationService
 
         $this->migrateUserLogs($v2RootPrograms);
 
-        return $this->importedUserLogs;
+        return [
+            'success' => TRUE,
+            'info' => "migrated " . count($this->importedUserLogs) . " items",
+        ];
     }
 
     /**
