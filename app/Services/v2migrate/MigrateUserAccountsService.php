@@ -2,17 +2,14 @@
 
 namespace App\Services\v2migrate;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\User;
 use Exception;
 
-use App\Models\JournalEvent;
-use App\Models\Program;
 use App\Models\Account;
-use App\Models\Posting;
 
-class MigrateProgramAccountsService extends MigrationService
+class MigrateUserAccountsService extends MigrationService
 {
-    public array $importedProgramAccounts = [];
+    public array $importedUserAccounts = [];
 
     public function __construct()
     {
@@ -31,44 +28,61 @@ class MigrateProgramAccountsService extends MigrationService
         }
         $programArgs = ['program' => $v2AccountHolderID];
 
-        $this->printf("Starting program accounts migration\n\n",);
+        $this->printf("Starting user accounts migration\n\n",);
         $v2RootPrograms = $this->read_list_all_root_program_ids($programArgs);
         if (!$v2RootPrograms) {
             throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
         }
 
-        $this->migrateProgramAccounts($v2RootPrograms);
+        $this->migrateUserAccounts($v2RootPrograms);
 
         return [
             'success' => TRUE,
-            'info' => "migrated " . count($this->importedProgramAccounts) . " items",
+            'info' => "migrated " . count($this->importedUserAccounts) . " items",
         ];
-
     }
 
-    public function migrateProgramAccounts(array $v2RootPrograms): void
+    /**
+     * @throws Exception
+     */
+    public function migrateUserAccounts(array $v2RootPrograms): void
     {
         foreach ($v2RootPrograms as $v2RootProgram) {
-            $this->printf("Starting migrations for root program: {$v2RootProgram->account_holder_id}\n",);
-            $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $v2RootProgram->account_holder_id);
-            $v2Accounts = $this->v2db->select($sql);
-            $this->syncOrCreateAccounts($v2RootProgram, $v2Accounts);
+            $this->syncOrCreateAccounts($v2RootProgram);
 
             $subPrograms = $this->read_list_children_heirarchy(( int )$v2RootProgram->account_holder_id);
             foreach ($subPrograms as $subProgram) {
-                $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $subProgram->account_holder_id);
-                $v2Accounts = $this->v2db->select($sql);
-                $this->syncOrCreateAccounts($subProgram, $v2Accounts);
+                $this->syncOrCreateAccounts($subProgram);
             }
         }
     }
 
-    public function syncOrCreateAccounts($v2Program, $v2Accounts)
+    /**
+     * @throws Exception
+     */
+    public function syncOrCreateAccounts($v2Program)
     {
-        $v3Program = Program::findOrFail($v2Program->v3_program_id);
+        $v2users = $this->v2_read_list_by_program($v2Program->account_holder_id);
+
+        foreach ($v2users as $v2User) {
+            $v3User = User::findOrFail($v2User->v3_user_id);
+            $this->migrateSingleUserAccounts($v2User, $v3User);
+        }
+    }
+
+    /**
+     * @param object $v2User
+     * @param User $v3User
+     * @return void
+     */
+    public function migrateSingleUserAccounts(object $v2User, User $v3User): void
+    {
+        $sql = sprintf("SELECT * FROM accounts WHERE account_holder_id = %d", $v2User->account_holder_id);
+        $v2Accounts = $this->v2db->select($sql);
+
         foreach ($v2Accounts as $v2Account) {
             $v3Account = Account::where([
-                'account_holder_id' => $v3Program->account_holder_id,
+                'account_holder_id' => $v3User->account_holder_id,
                 'account_type_id' => $v2Account->account_type_id,
                 'finance_type_id' => $v2Account->finance_type_id,
                 'medium_type_id' => $v2Account->medium_type_id,
@@ -77,7 +91,7 @@ class MigrateProgramAccountsService extends MigrationService
             $v3AccountId = $v3Account->id ?? null;
             if (!$v3AccountId) {
                 $v3AccountId = Account::getIdByColumns([
-                    'account_holder_id' => $v3Program->account_holder_id,
+                    'account_holder_id' => $v3User->account_holder_id,
                     'account_type_id' => $v2Account->account_type_id,
                     'finance_type_id' => $v2Account->finance_type_id,
                     'medium_type_id' => $v2Account->medium_type_id,
@@ -91,7 +105,7 @@ class MigrateProgramAccountsService extends MigrationService
                 $this->v2db->statement(sprintf("UPDATE `accounts` SET `v3_account_id`=%d WHERE `id`=%d", $v3AccountId, $v2Account->id));
             }
 
-            $this->importedProgramAccounts[] = $v3AccountId;
+            $this->importedUserAccounts[] = $v3AccountId;
         }
     }
 }

@@ -40,7 +40,11 @@ class MigrateUsersService extends MigrationService
 
         $this->migrateUsers($v2RootPrograms);
 
-        return $this->importedUsers;
+        return [
+            'success' => TRUE,
+            'info' => "migrated " . count($this->importedUsers) . " items",
+        ];
+
     }
 
     /**
@@ -248,6 +252,35 @@ class MigrateUsersService extends MigrationService
             $newRoleName = 'Read Only Manager';
         }
         return $newRoleName;
+    }
+
+    /**
+     * @param object $v2User
+     * @param Program $v3Program
+     * @return User
+     * @throws Exception
+     */
+    public function migrateOnlyUser(object $v2User, Program $v3Program): User
+    {
+        $this->printf("Starting migration of v2user: {$v2User->account_holder_id} with email: {$v2User->email}\n");
+
+        $v3User = User::getByEmail($v2User->email);
+        if ($v3User) {
+            $v3User->update(['organization_id' => $v3Program->organization_id]);
+        } else {
+            $v3User = $this->createUser($v2User, $v3Program);
+        }
+
+        $this->syncUserAssoc($v2User, $v3User);
+        if ($v2User->v3_user_id != $v3User->id) {
+            $this->v2db->statement(sprintf("
+                    UPDATE `users`
+                    SET `v3_user_id`=%d
+                    WHERE account_holder_id=%d;
+            ", $v3User->id, $v2User->account_holder_id));
+        }
+
+        return $v3User;
     }
 
 }
