@@ -88,6 +88,9 @@ class MigrateMerchantsService extends MigrationService
 
             $v3MerchantData = [
                 'v2_account_holder_id' => $v2Merchant->account_holder_id,
+                'use_virtual_inventory' => $v2Merchant->use_virtual_inventory,
+                'virtual_denominations' => $v2Merchant->virtual_denominations,
+                'virtual_discount' => $v2Merchant->virtual_discount,
                 'name' => $v2Merchant->name,
                 'parent_id' => $parent_id,
                 'description' => $v2Merchant->description,
