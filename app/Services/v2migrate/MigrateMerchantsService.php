@@ -86,36 +86,32 @@ class MigrateMerchantsService extends MigrationService
             $v2Merchant = $v2MerchantNode['merchant'];
             $parentMerchant = Merchant::where('v2_account_holder_id', $v2Merchant->account_holder_id)->first();
 
-            if (blank($parentMerchant)) {
-                $merchant_account_holder_id = AccountHolder::insertGetId(['context'=>'Merchant', 'created_at' => now()]);
-
-                $v3MerchantData = [
-                    'v2_account_holder_id' => $v2Merchant->account_holder_id,
-                    'account_holder_id' => $merchant_account_holder_id,
-                    'name' => $v2Merchant->name,
-                    'parent_id' => $parent_id,
-                    'description' => $v2Merchant->description,
-                    'website' => $v2Merchant->website,
-                    'redemption_instruction' => $v2Merchant->redemption_instruction,
-                    'redemption_callback_id' => $v2Merchant->redemption_callback_id,
-                    'category' => $v2Merchant->category,
-                    'merchant_code' => $v2Merchant->merchant_code,
-                    'website_is_redemption_url' => $v2Merchant->website_is_redemption_url,
-                    'get_gift_codes_from_root' => $v2Merchant->get_gift_codes_from_root,
-                    'is_default' => $v2Merchant->is_default,
-                    'giftcodes_require_pin' => $v2Merchant->giftcodes_require_pin,
-                    'display_rank_by_priority' => $v2Merchant->display_rank_by_priority,
-                    'display_rank_by_redemptions' => $v2Merchant->display_rank_by_redemptions,
-                    'requires_shipping' => $v2Merchant->requires_shipping,
-                    'physical_order' => $v2Merchant->physical_order,
-                    'is_premium' => $v2Merchant->is_premium,
-                    'use_tango_api' => (int) $v2Merchant->use_tango_api,
-                    'toa_id' => (int) $v2Merchant->toa_id,
-                    'status' => $v2Merchant->status,
-                    'display_popup' => $v2Merchant->display_popup,
-                    'updated_at' => $v2Merchant->updated_at,
-                    'deleted_at' => $v2Merchant->deleted > 0 ? now()->subDays(1) : null,
-                ];
+            $v3MerchantData = [
+                'v2_account_holder_id' => $v2Merchant->account_holder_id,
+                'name' => $v2Merchant->name,
+                'parent_id' => $parent_id,
+                'description' => $v2Merchant->description,
+                'website' => $v2Merchant->website,
+                'redemption_instruction' => $v2Merchant->redemption_instruction,
+                'redemption_callback_id' => $v2Merchant->redemption_callback_id,
+                'category' => $v2Merchant->category,
+                'merchant_code' => $v2Merchant->merchant_code,
+                'website_is_redemption_url' => $v2Merchant->website_is_redemption_url,
+                'get_gift_codes_from_root' => $v2Merchant->get_gift_codes_from_root,
+                'is_default' => $v2Merchant->is_default,
+                'giftcodes_require_pin' => $v2Merchant->giftcodes_require_pin,
+                'display_rank_by_priority' => $v2Merchant->display_rank_by_priority,
+                'display_rank_by_redemptions' => $v2Merchant->display_rank_by_redemptions,
+                'requires_shipping' => $v2Merchant->requires_shipping,
+                'physical_order' => $v2Merchant->physical_order,
+                'is_premium' => $v2Merchant->is_premium,
+                'use_tango_api' => (int) $v2Merchant->use_tango_api,
+                'toa_id' => (int) $v2Merchant->toa_id,
+                'status' => $v2Merchant->status,
+                'display_popup' => $v2Merchant->display_popup,
+                'updated_at' => $v2Merchant->updated_at,
+                'deleted_at' => $v2Merchant->deleted > 0 ? now()->subDays(1) : null,
+            ];
 
             if (blank($parentMerchant)) {
                 $v3MerchantData['account_holder_id'] = AccountHolder::insertGetId(['context'=>'Merchant', 'created_at' => now()]);
