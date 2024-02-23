@@ -23,7 +23,7 @@ class SocialWallPostService
         $this->userRepository = $userRepository;
     }
 
-    public function create(array $data, Program $program )
+    public function create(array $data, Program $program ): ?SocialWallPost
     {
         $mentionedUsers = null;
         if(isset($data['mentions_user_ids'])) {
@@ -35,7 +35,7 @@ class SocialWallPostService
             $template = $program->getTemplate();
             foreach($mentionedUsers as $user_id) {
                 $user = User::where('id',$user_id)->get()->first();
-                $message = new MentionUserEmail($user->name, $template);
+                $message = new MentionUserEmail($user->name, $template, $data['comment']);
                 Mail::to($user->email)->send($message);
             }
         }
