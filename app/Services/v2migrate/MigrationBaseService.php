@@ -31,6 +31,7 @@ class MigrationBaseService extends MigrationService
         MigrateProgramAccountsService $migrateProgramAccountsService,
         MigrateUsersService $migrateUsersService,
         MigrateUserAccountsService $migrateUserAccountsService,
+        MigrateDomainsService $migrateDomainsService,
         MigrateUserLogsService $migrateUserLogsService
     )
     {
@@ -40,6 +41,7 @@ class MigrationBaseService extends MigrationService
         $this->migrateUsersService = $migrateUsersService;
         $this->migrateUserAccountsService = $migrateUserAccountsService;
         $this->migrateUserLogsService = $migrateUserLogsService;
+        $this->migrateDomainsService = $migrateDomainsService;
     }
 
     /**
