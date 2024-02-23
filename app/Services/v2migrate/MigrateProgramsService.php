@@ -40,7 +40,10 @@ class MigrateProgramsService extends MigrationService
 
         $this->migratePrograms($v2RootPrograms);
 
-        return $this->importedPrograms;
+        return [
+            'success' => TRUE,
+            'info' => "migrated " . count($this->importedPrograms) . " items",
+        ];
     }
 
     /**
