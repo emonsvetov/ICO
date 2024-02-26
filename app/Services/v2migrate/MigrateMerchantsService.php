@@ -2,6 +2,7 @@
 namespace App\Services\v2migrate;
 
 use App\Models\AccountHolder;
+use App\Models\TangoOrdersApi;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Exception;
@@ -19,15 +20,42 @@ class MigrateMerchantsService extends MigrationService
     private MigrateGiftcodesService $migrateGiftcodesService;
     public $programMerchants = [];
     public $createDuplicateName = false;
+    public $v2TangoAPIList = [];
+    public $v3TangoUserID;
 
     public $countCreatedMerchants = 0;
     public $countUpdatedMerchants = 0;
+    public $countCreatedTangoApi = 0;
+    public $countUpdatedTangoApi = 0;
 
     public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
         $this->merchantService = $merchantService;
         $this->migrateGiftcodesService = $migrateGiftcodesService;
         parent::__construct();
+    }
+
+    /**
+     * Read list tango API.
+     *
+     * @return array
+     * @throws Exception
+     */
+    public function read_tango_api()
+    {
+        try {
+            $this->v2db->statement("SET SQL_MODE=''");
+            $v2Query = $this->v2db->select("SELECT * FROM `tango_orders_api`");
+        } catch(\Exception $e) {
+            throw new Exception( sprintf("Error select v2 tango_orders_api. Error:%s", $e->getMessage()));
+        }
+
+        $result = [];
+        foreach ($v2Query as $row) {
+            $result[$row->toa_id] = $row;
+        }
+
+        return $result;
     }
 
     /**
@@ -40,6 +68,11 @@ class MigrateMerchantsService extends MigrationService
         $merchantTree = [];
         try {
             $v2MerchantHierarchyList = $this->read_list_hierarchy();
+            $this->v2TangoAPIList = $this->read_tango_api();
+
+            // Get general user ID.
+            $v3TangoApi = TangoOrdersApi::whereNotNull('user_id')->first();
+            $this->v3TangoUserID = !blank($v3TangoApi) ? $v3TangoApi->user_id : 1;
 
             if (!blank($v2MerchantHierarchyList)) {
                 $v2MerchantHierarchy = sort_result_by_rank($merchantTree, $v2MerchantHierarchyList, 'merchant');
@@ -50,7 +83,9 @@ class MigrateMerchantsService extends MigrationService
 
             return [
                 'success' => TRUE,
-                'info' => "created $this->countCreatedMerchants items, updated $this->countUpdatedMerchants items",
+                'info' => "
+                created $this->countCreatedMerchants items, updated $this->countUpdatedMerchants items (merchants),
+                created $this->countCreatedTangoApi items, updated $this->countUpdatedTangoApi items (tangoAPI).",
             ];
         } catch(Exception $e) {
             throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
@@ -75,6 +110,79 @@ class MigrateMerchantsService extends MigrationService
     }
 
     /**
+     * Get V3 Tango API ID.
+     *
+     * @param $v2TangoApiID
+     * @return mixed
+     * @throws Exception
+     */
+    public function getV3TangoApiIDByV2ID($v2TangoApiID)
+    {
+
+        $v2TangoAPIList = $this->v2TangoAPIList;
+        $v3TangoApi = FALSE;
+
+        if (isset($v2TangoAPIList[$v2TangoApiID])) {
+            $v2TangoApiObj = $v2TangoAPIList[$v2TangoApiID];
+            $v2TangoApiName = $v2TangoApiObj->toa_name;
+
+            try {
+                $v3TangoApiByID = TangoOrdersApi::where('v2_toa_id', $v2TangoApiID)->first();
+            } catch(\Exception $e) {
+                throw new Exception("dont find v2_toa_id, please run php artisan migrate");
+            }
+
+            $v3TangoApiData = [
+                'platform_name' => $v2TangoApiObj->toa_platform_name,
+                'platform_key' => $v2TangoApiObj->toa_platform_key,
+                'platform_url' => $v2TangoApiObj->toa_platform_url,
+                'platform_mode' => $v2TangoApiObj->toa_platform_mode,
+                'account_identifier' => $v2TangoApiObj->toa_account_identifier,
+                'account_number' => $v2TangoApiObj->toa_account_number,
+                'customer_number' => $v2TangoApiObj->toa_customer_number,
+                'udid' => $v2TangoApiObj->toa_udid,
+                'etid' => $v2TangoApiObj->toa_etid,
+                'status' => $v2TangoApiObj->toa_status,
+                'user_id' => $this->v3TangoUserID,
+                'name' => $v2TangoApiObj->toa_name,
+                'is_test' => $v2TangoApiObj->toa_is_test,
+                'toa_merchant_min_value' => $v2TangoApiObj->toa_merchant_min_value,
+                'toa_merchant_max_value' => $v2TangoApiObj->toa_merchant_max_value,
+                'v2_toa_id' => $v2TangoApiID,
+            ];
+
+            if (!blank($v3TangoApiByID)) {
+                $v3TangoApi = $v3TangoApiByID;
+                $v3TangoApi->update($v3TangoApiData);
+                $this->countUpdatedTangoApi++;
+            }
+            else {
+                $v3TangoApiByName = TangoOrdersApi::where('name', $v2TangoApiName)->get();
+                $v3TangoApiByNameCount = $v3TangoApiByName->count();
+
+                if ($v3TangoApiByNameCount > 1) {
+                    throw new Exception("find few tango API items with the " . $v2TangoApiName . " name.");
+                }
+                if ($v3TangoApiByNameCount == 1) {
+                    $v3TangoApi = $v3TangoApiByName->first();
+                    $v3TangoApi->update($v3TangoApiData);
+                    $this->countUpdatedTangoApi++;
+                }
+                if ($v3TangoApiByNameCount == 0) {
+                    $v3TangoApi = TangoOrdersApi::create($v3TangoApiData);
+                    $this->countCreatedTangoApi++;
+                }
+            }
+        }
+
+        if (blank($v3TangoApi)) {
+            throw new Exception("Error fetching v3 tango api.");
+        }
+
+        return $v3TangoApi->id;
+    }
+
+    /**
      * Migrate a new merchant to v3.
      *
      * @param $v2MerchantNode
@@ -85,6 +193,8 @@ class MigrateMerchantsService extends MigrationService
         if( isset($v2MerchantNode['merchant']) ) {
             $v2Merchant = $v2MerchantNode['merchant'];
             $parentMerchant = Merchant::where('v2_account_holder_id', $v2Merchant->account_holder_id)->first();
+            $v2TangoApiID = (int) $v2Merchant->toa_id;
+            $v3TangoAPIID = $v2TangoApiID ? $this->getV3TangoApiIDByV2ID($v2TangoApiID) : 0;
 
             $v3MerchantData = [
                 'v2_account_holder_id' => $v2Merchant->account_holder_id,
@@ -109,7 +219,7 @@ class MigrateMerchantsService extends MigrationService
                 'physical_order' => $v2Merchant->physical_order,
                 'is_premium' => $v2Merchant->is_premium,
                 'use_tango_api' => (int) $v2Merchant->use_tango_api,
-                'toa_id' => (int) $v2Merchant->toa_id,
+                'toa_id' => $v3TangoAPIID,
                 'status' => $v2Merchant->status,
                 'display_popup' => $v2Merchant->display_popup,
                 'updated_at' => $v2Merchant->updated_at,
@@ -317,7 +427,7 @@ class MigrateMerchantsService extends MigrationService
 
         // Checking if v3 program is exists.
         if (empty($v3AccountHolderID)) {
-            throw new Exception("v3 program not found.");
+            throw new Exception("v3 program with ID: " . $v2AccountHolderID . " not found.");
         }
 
         $v3MerchantIDs = Merchant::all()->pluck('id', 'id')->toArray();
