@@ -489,6 +489,8 @@ class V2Helper
                 for ($i = count($data) - 1; $i >= 0; --$i) {
                     if (!in_array($data [$i]->account_holder_id, $active_program_account_holder_ids)) {
                         unset ($data [$i]);
+                        // because the program is broken, such as invalid program_type, this program will never show up in V2
+                        continue;
                     }
                     if (isset($args['get_details']) && $args['get_details']) {
                         $data[$i]->external_id = $active_programs[$data [$i]->account_holder_id]->external_id;
