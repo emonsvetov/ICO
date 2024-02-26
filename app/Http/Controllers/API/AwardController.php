@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ProgramRequest;
 use App\Http\Requests\ReclaimPeerPointsRequest;
 use App\Http\Requests\AwardRequest;
+use App\Models\AwardLevel;
 use App\Models\Event;
 use App\Models\Organization;
 use App\Models\Program;
@@ -98,5 +99,11 @@ class AwardController extends Controller
             DB::rollBack();
             return response(['errors' => 'Award creation failed', 'e' => $e->getMessage()], 422);
         }
+    }
+
+    public function programAwardLevels($organization, $program, AwardService $awardService)
+    {
+        $awardLevels = AwardLevel::where('program_id', $program)->get();
+        return response($awardLevels, 200);
     }
 }

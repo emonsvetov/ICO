@@ -447,6 +447,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\Award,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/program-award-levels',[App\Http\Controllers\API\AwardController::class, 'programAwardLevels'])->name('programAwardLevels');
+
     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
 
     // Participant
