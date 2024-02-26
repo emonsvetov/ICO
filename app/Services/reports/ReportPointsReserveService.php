@@ -539,7 +539,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
         ];
         // Rearrange $data by adding subprograms as same level
         $newData = [];
-        foreach ($data['data'] as $key => $item) {
+        foreach ($data['data']['data'] as $key => $item) {
             $newData[] = $item;
             if(isset($item->subRows)){
                 foreach ($item->subRows as $subItem) {
