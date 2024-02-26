@@ -89,12 +89,12 @@ class MigrationBaseService extends MigrationService
         $migrations = [
             self::PROGRAM_HIERARCHY => FALSE,
             self::PROGRAM_ACCOUNTS => FALSE,
+            self::SYNC_EVENTS_TO_PROGRAM => FALSE,
             self::USERS => FALSE,
             self::USER_ACCOUNTS => FALSE,
             self::USER_LOGS => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
             self::SYNC_DOMAINS_TO_PROGRAM => FALSE,
-            self::SYNC_EVENTS_TO_PROGRAM => FALSE,
         ];
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
