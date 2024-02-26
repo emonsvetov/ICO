@@ -736,4 +736,63 @@ class V2Helper
         return $this->v2db->select($sql);
     }
 
+    public function getProgramGiftCodes(array $v3ProgramIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+
+        $sql = "
+            SELECT
+                gc.id,
+                gc.purchase_date,
+                gc.redemption_date,
+                gc.redemption_datetime,
+                gc.redemption_value,
+                gc.cost_basis,
+                gc.discount,
+                gc.factor_valuation,
+                gc.sku_value,
+                gc.code,
+                gc.pin,
+                gc.redemption_url,
+                gc.v3_medium_info_id,
+                gc.redeemed_program_account_holder_id,
+                gc.redeemed_merchant_account_holder_id,
+                gc.redeemed_account_holder_id AS redeemed_user_account_holder_id,
+                m.v3_merchant_id,
+                p.v3_program_id AS v3_redeemed_program_id,
+                mr.v3_merchant_id AS v3_redeemed_merchant_id,
+                u.v3_user_id AS v3_redeemed_user_id
+            FROM
+                `medium_info` gc
+                JOIN `merchants` m ON gc.merchant_account_holder_id=m.account_holder_id
+                LEFT JOIN programs p on p.account_holder_id=gc.redeemed_program_account_holder_id
+                LEFT JOIN users u on u.account_holder_id=gc.redeemed_account_holder_id
+                LEFT JOIN merchants mr ON mr.account_holder_id=gc.redeemed_merchant_account_holder_id
+            WHERE
+                m.v3_merchant_id != 0
+                AND m.v3_merchant_id IS NOT NULL
+                AND gc.redemption_date IS NOT NULL
+                AND p.v3_program_id IN(" . implode(",", $v3ProgramIds) . ")
+                AND mr.v3_merchant_id IS NOT NULL AND u.v3_user_id IS NOT NULL
+            LIMIT
+                {$this->offset}, {$this->limit}
+        ";
+
+        return $this->v2db->select($sql);
+    }
+
+    public function getGiftCodeByCode(string $code): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+                id
+			FROM
+				medium_info
+			WHERE
+			    code = '$code'
+		";
+        return $this->v2db->select($sql);
+    }
+
 }
