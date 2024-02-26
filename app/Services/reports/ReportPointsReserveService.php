@@ -9,6 +9,7 @@ use App\Models\Merchant;
 use App\Models\OptimalValue;
 use App\Models\Program;
 use App\Models\User;
+use App\Models\Posting;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\Cast\Object_;
@@ -25,6 +26,10 @@ class ReportPointsReserveService extends ReportServiceAbstract
 		$subreport_params = array ();		
         if (!empty($this->params['from'])) {
             $subreport_params[self::DATE_BEGIN] = $this->params['from'];
+        }
+        else{
+            $earliestDate = Posting::min('created_at');
+            $subreport_params[self::DATE_BEGIN] = $earliestDate;
         }
         if (!empty($this->params['to'])) {
             $subreport_params[self::DATE_END] = $this->params['to'];
@@ -306,8 +311,9 @@ class ReportPointsReserveService extends ReportServiceAbstract
             }
         }
         $this->table = [];
-        $this->table['data'] =  array_values($newTable);
+        $this->table['data']['data'] =  array_values($newTable);
         $this->table['total'] = count($total_programs);
+        $this->table['data']['date_begin'] = $subreport_params[self::DATE_BEGIN];
         return  $this->table;
     }
     
