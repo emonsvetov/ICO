@@ -8,6 +8,7 @@ use App\Http\Requests\ProgramRequest;
 use App\Http\Requests\ReclaimPeerPointsRequest;
 use App\Http\Requests\AwardRequest;
 use App\Models\AwardLevel;
+use App\Models\AwardLevelHasUser;
 use App\Models\Event;
 use App\Models\Organization;
 use App\Models\Program;
@@ -103,7 +104,37 @@ class AwardController extends Controller
 
     public function programAwardLevels($organization, $program, AwardService $awardService)
     {
-        $awardLevels = AwardLevel::where('program_id', $program)->get();
+        $awardLevels = AwardLevel::select('award_levels.*')
+            ->selectRaw('COUNT(award_levels_has_users.users_id) as number_of_participants')
+            ->leftJoin('award_levels_has_users', 'award_levels.id', '=', 'award_levels_has_users.award_levels_id')
+            ->where('award_levels.program_id', $program)
+            ->groupBy('award_levels.id')
+            ->get();
+
         return response($awardLevels, 200);
+    }
+
+    public function createAwardLevel(Request $request, $organization, $program, AwardService $awardService)
+    {
+        $awardLevel = new AwardLevel();
+        $awardLevel->program_id = $request->program_id;
+        $awardLevel->program_account_holder_id = null;
+        $awardLevel->name = $request->name;
+
+        return response([
+            'success' => $awardLevel->save()
+        ], 200);
+    }
+
+    public function awardLevelParticipants(Request $request, $organization, $program, AwardService $awardService)
+    {
+        $results = AwardLevelHasUser::select('award_levels_has_users.*', 'users.*')
+            ->leftJoin('users', 'award_levels_has_users.users_id', '=', 'users.id')
+            ->where('award_levels_has_users.award_levels_id', $request->id)
+            ->get();
+
+        return response([
+            'data' => $results
+        ], 200);
     }
 }
