@@ -16,9 +16,13 @@ class MigrateEventService extends MigrationService
         parent::__construct();
     }
 
-    public function migrate()
+    public function migrate($v2AccountHolderID)
     {
-
+       $res = $this->syncProgramEventsRelations($v2AccountHolderID);
+        return [
+            'success' => $res,
+            'info' => "",
+        ];
     }
 
     public function migrateEventAwardLevel($eventIdV3, $eventIdV2)
