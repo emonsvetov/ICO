@@ -15,6 +15,7 @@ class MigrationBaseService extends MigrationService
     private MigrateUserAccountsService $migrateUserAccountsService;
     private MigrateUserLogsService $migrateUserLogsService;
     private $migrateEventService;
+    private MigrateProgramGiftCodesService $migrateProgramGiftCodesService;
     private MigrateAwardLevelService $migrateAwardLevelService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
@@ -27,6 +28,7 @@ class MigrationBaseService extends MigrationService
     const USER_ACCOUNTS = 'User Accounts';
     const USER_LOGS = 'User Logs';
     const SYNC_EVENTS_TO_PROGRAM = 'Sync events to a program';
+    const PROGRAM_GIFT_CODES = 'Program Gift Codes';
     const SYNC_AWARD_LEVELS_TO_PROGRAM = 'Award Levels';
 
     public function __construct(
@@ -38,6 +40,7 @@ class MigrationBaseService extends MigrationService
         MigrateDomainsService $migrateDomainsService,
         MigrateUserLogsService $migrateUserLogsService,
         MigrateEventService $migrateEventService,
+        MigrateProgramGiftCodesService $migrateProgramGiftCodesService
         MigrateAwardLevelService $migrateAwardLevelService
     )
     {
@@ -49,6 +52,7 @@ class MigrationBaseService extends MigrationService
         $this->migrateUserLogsService = $migrateUserLogsService;
         $this->migrateDomainsService = $migrateDomainsService;
         $this->migrateEventService = $migrateEventService;
+        $this->migrateProgramGiftCodesService = $migrateProgramGiftCodesService;
         $this->migrateAwardLevelService = $migrateAwardLevelService;
     }
 
@@ -97,6 +101,7 @@ class MigrationBaseService extends MigrationService
             self::USERS => FALSE,
             self::USER_ACCOUNTS => FALSE,
             self::USER_LOGS => FALSE,
+            self::PROGRAM_GIFT_CODES => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
             self::SYNC_DOMAINS_TO_PROGRAM => FALSE,
             self::SYNC_AWARD_LEVELS_TO_PROGRAM => FALSE,
@@ -114,12 +119,15 @@ class MigrationBaseService extends MigrationService
             $migrations[self::USERS] = $this->migrateUsersService->migrate($v2AccountHolderID);
             $migrations[self::USER_ACCOUNTS] = $this->migrateUserAccountsService->migrate($v2AccountHolderID);
             $migrations[self::USER_LOGS] = $this->migrateUserLogsService->migrate($v2AccountHolderID);
+            $migrations[self::PROGRAM_GIFT_CODES] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
             $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
             $migrations[self::SYNC_DOMAINS_TO_PROGRAM] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
+
             DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
-            $result['error'] = $e->getMessage();
+            $file = basename($e->getFile());
+            $result['error'] = $e->getMessage(). ". File: {$file}" . ". Line: {$e->getLine()}";
             DB::rollback();
         }
 

@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Services\v2migrate;
+namespace App\Services\v2migrate\archive;
 
 use App\Models\Merchant;
 use App\Models\Program;
+use App\Services\v2migrate\MigrationService;
 use Illuminate\Support\Facades\Validator;
 use Exception;
 
