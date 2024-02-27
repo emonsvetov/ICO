@@ -43,7 +43,7 @@ class MigrateUserLogsService extends MigrationService
         $this->migrateUserLogs($v2RootPrograms);
 
         return [
-            'success' => TRUE,
+            'success' => count($this->importedUserLogs) > 0,
             'info' => "migrated " . count($this->importedUserLogs) . " items",
         ];
     }
@@ -73,48 +73,48 @@ class MigrateUserLogsService extends MigrationService
     public function createLogs(object $v2Program)
     {
         $v3Program = Program::findOrFail($v2Program->v3_program_id);
-        $v2users = $this->v2_read_list_by_program($v2Program->account_holder_id);
-
-        foreach ($v2users as $v2User) {
-            $v3User = User::findOrFail($v2User->v3_user_id);
-            $this->migrateSingleUserLogs($v2User, $v3User, $v3Program);
+        $v2UserLogs = $this->v2GetUserLogsByProgram($v2Program->account_holder_id);
+        foreach ($v2UserLogs as $v2UserLog) {
+            $v3User = User::find($v2UserLog->user_account_holder_id);
+            if (!$v3User){
+                $v2User = $this->v2GetUserById($v2UserLog->user_account_holder_id);
+                $v3User = $this->migrateUsersService->migrateOnlyUser($v2User, $v3Program);
+            }
+            $this->migrateSingleUserLog($v2UserLog, $v3User, $v3Program);
         }
     }
 
     /**
-     * @param object $v2User
+     * @param object $v2UserLog
      * @param User $v3User
      * @param Program $v3Program
      * @return void
      * @throws Exception
      */
-    public function migrateSingleUserLogs(object $v2User, User $v3User, Program $v3Program): void
+    public function migrateSingleUserLog(object $v2UserLog, User $v3User, Program $v3Program): void
     {
-        $v2UsersLogs = $this->getUsersLog($v2User->account_holder_id);
-
-        foreach ($v2UsersLogs as $data) {
-            unset($data->id);
-            $data->user_account_holder_id = $v3User->account_holder_id;
-            $data->parent_program_id = $v3Program->id;
-            $data->old_user_status_id = $data->old_user_state_id;
-            $data->new_user_status_id = $data->new_user_state_id;
-            if ($data->updated_by) {
-                $v2UpdateByUser = $this->getV2UserById($data->updated_by);
-                if (!isset($v2UpdateByUser->v3_user_id) || !$v2UpdateByUser->v3_user_id) {
+        $data = $v2UserLog;
+        unset($data->id);
+        $data->user_account_holder_id = $v3User->account_holder_id;
+        $data->parent_program_id = $v3Program->id;
+        $data->old_user_status_id = $data->old_user_state_id;
+        $data->new_user_status_id = $data->new_user_state_id;
+        if ($data->updated_by) {
+            $v2UpdateByUser = $this->getV2UserById($data->updated_by);
+            if (!isset($v2UpdateByUser->v3_user_id) || !$v2UpdateByUser->v3_user_id) {
+                $v3UpdateByUser = $this->migrateUsersService->migrateOnlyUser($v2UpdateByUser, $v3Program);
+            } else {
+                $v3UpdateByUser = User::find($v2UpdateByUser->v3_user_id);
+                if (!$v3UpdateByUser || ($v3UpdateByUser->email != $v2UpdateByUser->email)) {
                     $v3UpdateByUser = $this->migrateUsersService->migrateOnlyUser($v2UpdateByUser, $v3Program);
-                } else {
-                    $v3UpdateByUser = User::find($v2UpdateByUser->v3_user_id);
-                    if (!$v3UpdateByUser || ($v3UpdateByUser->email != $v2UpdateByUser->email)) {
-                        $v3UpdateByUser = $this->migrateUsersService->migrateOnlyUser($v2UpdateByUser, $v3Program);
-                    }
                 }
-                $data->updated_by = $v3UpdateByUser->id ?? null;
             }
-
-            $usersLogRequest = new UsersLogRequest((array)$data);
-            $validator = Validator::make($usersLogRequest->all(), $usersLogRequest->rules());
-            $usersLogRequest->setValidator($validator);
-            $this->importedUserLogs[] = UsersLog::firstOrCreate($usersLogRequest->validated(), $usersLogRequest->validated());
+            $data->updated_by = $v3UpdateByUser->id ?? null;
         }
+
+        $usersLogRequest = new UsersLogRequest((array)$data);
+        $validator = Validator::make($usersLogRequest->all(), $usersLogRequest->rules());
+        $usersLogRequest->setValidator($validator);
+        $this->importedUserLogs[] = UsersLog::firstOrCreate($usersLogRequest->validated(), $usersLogRequest->validated())->toArray();
     }
 }

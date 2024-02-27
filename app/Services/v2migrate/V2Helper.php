@@ -795,4 +795,33 @@ class V2Helper
         return $this->v2db->select($sql);
     }
 
+    public function v2GetUserLogsByProgram(int $parent_program_id): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+                *
+			FROM
+				users_log
+			WHERE
+			    parent_program_id = '$parent_program_id'
+		";
+        return $this->v2db->select($sql);
+    }
+
+    public function v2GetUserById(int $id): ?object
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+                *
+			FROM
+				users
+			WHERE
+			    account_holder_id = '$id'
+		";
+        $result = $this->v2db->select($sql);
+        return $result[0] ?? null;
+    }
+
 }

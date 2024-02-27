@@ -16,6 +16,7 @@ class MigrationBaseService extends MigrationService
     private MigrateUserLogsService $migrateUserLogsService;
     private $migrateEventService;
     private MigrateProgramGiftCodesService $migrateProgramGiftCodesService;
+    private MigrateAwardLevelService $migrateAwardLevelService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const SYNC_DOMAINS_TO_PROGRAM = 'Sync domains to a program';
@@ -28,6 +29,7 @@ class MigrationBaseService extends MigrationService
     const USER_LOGS = 'User Logs';
     const SYNC_EVENTS_TO_PROGRAM = 'Sync events to a program';
     const PROGRAM_GIFT_CODES = 'Program Gift Codes';
+    const SYNC_AWARD_LEVELS_TO_PROGRAM = 'Award Levels';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
@@ -39,6 +41,7 @@ class MigrationBaseService extends MigrationService
         MigrateUserLogsService $migrateUserLogsService,
         MigrateEventService $migrateEventService,
         MigrateProgramGiftCodesService $migrateProgramGiftCodesService
+        MigrateAwardLevelService $migrateAwardLevelService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
@@ -50,6 +53,7 @@ class MigrationBaseService extends MigrationService
         $this->migrateDomainsService = $migrateDomainsService;
         $this->migrateEventService = $migrateEventService;
         $this->migrateProgramGiftCodesService = $migrateProgramGiftCodesService;
+        $this->migrateAwardLevelService = $migrateAwardLevelService;
     }
 
     /**
@@ -100,6 +104,7 @@ class MigrationBaseService extends MigrationService
             self::PROGRAM_GIFT_CODES => FALSE,
             self::SYNC_MERCHANTS_TO_PROGRAM => FALSE,
             self::SYNC_DOMAINS_TO_PROGRAM => FALSE,
+            self::SYNC_AWARD_LEVELS_TO_PROGRAM => FALSE,
         ];
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
@@ -109,7 +114,8 @@ class MigrationBaseService extends MigrationService
         try {
             $migrations[self::PROGRAM_HIERARCHY] = $this->migrateProgramsService->migrate($v2AccountHolderID);
             $migrations[self::PROGRAM_ACCOUNTS] = $this->migrateProgramAccountsService->migrate($v2AccountHolderID);
-            $migrations[self::SYNC_EVENTS_TO_PROGRAM] = $this->migrateEventService->syncProgramEventsRelations($v2AccountHolderID);
+            $migrations[self::SYNC_EVENTS_TO_PROGRAM] = $this->migrateEventService->migrate($v2AccountHolderID);
+            $migrations[self::SYNC_AWARD_LEVELS_TO_PROGRAM] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
             $migrations[self::USERS] = $this->migrateUsersService->migrate($v2AccountHolderID);
             $migrations[self::USER_ACCOUNTS] = $this->migrateUserAccountsService->migrate($v2AccountHolderID);
             $migrations[self::USER_LOGS] = $this->migrateUserLogsService->migrate($v2AccountHolderID);
