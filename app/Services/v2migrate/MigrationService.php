@@ -32,6 +32,8 @@ class MigrationService extends V2Helper
     public $countPostings = 0;
     public $countAccounts = 0;
     public $cachedPrimeAccountHolders = [];
+    public $count = 0;
+    public $iteration = 0;
 
 
     public function setV2Model( $v2Model ) {
