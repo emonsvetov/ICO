@@ -40,7 +40,7 @@ class MigrationBaseService extends MigrationService
         MigrateDomainsService $migrateDomainsService,
         MigrateUserLogsService $migrateUserLogsService,
         MigrateEventService $migrateEventService,
-        MigrateProgramGiftCodesService $migrateProgramGiftCodesService
+        MigrateProgramGiftCodesService $migrateProgramGiftCodesService,
         MigrateAwardLevelService $migrateAwardLevelService
     )
     {
