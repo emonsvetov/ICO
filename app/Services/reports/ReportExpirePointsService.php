@@ -261,47 +261,58 @@ class ReportExpirePointsService extends ReportServiceAbstract
     {
         return [
             [
-                'label' => 'Program ID',
+                'label' => '',
+                'title' => 'Program ID',
                 'key' => 'program_id'
             ],
             [
-                'label' => 'Program Parent',
+                'label' => '',
+                'title' => 'Program Parent',
                 'key' => 'program_parent_id'
             ],
             [
-                'label' => 'Program Name',
+                'label' => '',
+                'title' => 'Program Name',
                 'key' => 'program_name'
             ],
             [
-                'label' => 'Participant',
+                'label' => '',
+                'title' => 'Participant',
                 'key' => 'participant'
             ],
             [
-                'label' => 'Participant Email',
+                'label' => '',
+                'title' => 'Participant Email',
                 'key' => 'participant_email'
             ],
             [
-                'label' => 'Expiring Date',
+                'label' => '',
+                'title' => 'Expiring Date',
                 'key' => 'expire_date'
             ],
             [
-                'label' => 'Amount Expiring By Current Year',
+                'label' => 'Amount',
+                'title' => 'Current Year',
                 'key' => 'amount_expiring_this_year'
             ],
             [
-                'label' => 'Amount Expiring By Following Year',
+                'label' => 'expiring by',
+                'title' => 'Following Year',
                 'key' => 'amount_expiring_next_year'
             ],
             [
-                'label' => 'Current Balance',
+                'label' => '',
+                'title' => 'Current Balance',
                 'key' => 'balance'
             ],
             [
-                'label' => 'Point Ratio',
+                'label' => '',
+                'title' => 'Point Ratio',
                 'key' => 'factor_valuation'
             ],
             [
-                'label' => 'Amount In Dollars',
+                'label' => '',
+                'title' => 'Amount In Dollars',
                 'key' => 'amount_in_dollars'
             ],
         ];
@@ -320,9 +331,16 @@ class ReportExpirePointsService extends ReportServiceAbstract
                 }
             }
         }
+        $headers = $this->getCsvHeaders();
+        // Add header labels as data
+        $headerLabels = clone $data[0];
+        foreach ($headers as $id => $header) {
+            $headerLabels->{$header['key']}  = $header['title'];
+        }
+        array_unshift($data, $headerLabels);
         $data['data'] = $data;
         $data['total'] = count($data);
-        $data['headers'] = $this->getCsvHeaders();
+        $data['headers'] = $headers;
         return $data;
     }
 
