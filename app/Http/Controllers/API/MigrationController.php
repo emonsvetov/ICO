@@ -9,6 +9,7 @@ use App\Services\v2migrate\MigrateProgramsService;
 use App\Services\v2migrate\MigrationBaseService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class MigrationController extends Controller
 {
@@ -16,6 +17,19 @@ class MigrationController extends Controller
 
     public function __construct(MigrationBaseService $migrationBaseService) {
         $this->migrationBaseService = $migrationBaseService;
+    }
+
+    /**
+     * Run artisan migrations.
+     */
+    public function runArtisanMigrate()
+    {
+        Artisan::call('migrate');
+        $output = Artisan::output();
+
+        return response([
+            'info' => nl2br($output)
+        ]);
     }
 
     /**

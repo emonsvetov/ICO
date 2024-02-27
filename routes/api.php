@@ -690,5 +690,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/v2-deprecated/program', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'index'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate/{account_holder_id}', [App\Http\Controllers\API\MigrationController::class, 'run'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate-global', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate-artisan', [App\Http\Controllers\API\MigrationController::class, 'runArtisanMigrate'])->middleware('can:viewAny,App\V2Deprecated');
 });
 
