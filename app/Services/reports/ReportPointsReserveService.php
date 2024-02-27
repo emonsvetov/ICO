@@ -473,41 +473,50 @@ class ReportPointsReserveService extends ReportServiceAbstract
     {
         return [
             [
-                'label' => 'Program',
+                'label' => '',
+                'title' => 'Program',
                 'key' => 'name'
             ],
             [
-                'label' => 'Awarded',
+                'label' => '',
+                'title' => 'Awarded',
                 'key' => 'value_awarded'
             ],
             [
-                'label' => 'Expired',
+                'label' => '',
+                'title' => 'Expired',
                 'key' => 'expired'
             ],
             [
-                'label' => 'Reclaimed',
+                'label' => '',
+                'title' => 'Reclaimed',
                 'key' => 'reclaimed'
             ],
             [
-                'label' => 'Redeemed',
+                'label' => '',
+                'title' => 'Redeemed',
                 'key' => 'redeemed'
             ],
             [
-                'label' => 'Unredeemed points from current year',
+                'label' => 'Unredeemed',
+                'title' => 'current year',
                 'key' => 'this_unredeemed'
             ],
             [
-                'label' => 'Unredeemed points from previous year’s award',
+                'label' => 'points from',
+                'title' => 'previous year',
                 'key' => 'last_unredeemed'
             ],
 
             [
-                'label' => 'Reserve %',
+                'label' => '',
+                'title' => 'Reserve %',
                 'key' => 'reserve_percentage'
             ],
 
             [
-                'label' => 'Calculated Reserve',
+                'label' => '',
+                'title' => 'Calculated Reserve',
                 'key' => 'calculated_reserve'
             ],
         ];
@@ -516,7 +525,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
     protected function getReportForCSV(): array
     {
         $this->isExport = true;
-        $data = $this->getTable();
+        $data = $this->getTable()['data'];
         $total = [
             'value_awarded' => 0,
             'expired' => 0,
@@ -537,9 +546,16 @@ class ReportPointsReserveService extends ReportServiceAbstract
             'reserve_percentage' => '',
             'calculated_reserve' => '',
         ];
+
+        $headers = $this->getCsvHeaders();
+        // Add header labels as data
+        $headerLabels = clone $data['data'][0];
+        foreach ($headers as $id => $header) {
+            $headerLabels->{$header['key']}  = $header['title'];
+        }
         // Rearrange $data by adding subprograms as same level
         $newData = [];
-        foreach ($data['data']['data'] as $key => $item) {
+        foreach ($data['data'] as $key => $item) {
             $newData[] = $item;
             if(isset($item->subRows)){
                 foreach ($item->subRows as $subItem) {
@@ -553,12 +569,44 @@ class ReportPointsReserveService extends ReportServiceAbstract
             }
         }
 
-        $total['reserve_percentage'] = number_format($total['reserve_percentage']/count($newData), 2);
+        foreach ($total as $key => $item) {
+            if($key == 'reserve_percentage'){
+                $total[$key] = number_format($total['reserve_percentage']/count($newData), 2);
+                $total[$key] = $total[$key].'%';
+            }
+            else{
+                $total[$key] = '$'.$item;
+            }
+        }
+
+        $dollarKeys = [
+            'value_awarded',
+            'expired',
+            'reclaimed',
+            'redeemed',
+            'this_unredeemed',
+            'last_unredeemed',
+            'calculated_reserve'
+        ];
+
+        $newData = array_values($newData);
+
+        foreach ($newData as $key => $item) {
+            foreach ($item as $subKey => $subItem) {
+                if($subKey == 'reserve_percentage'){
+                    $newData[$key]->{$subKey} = $subItem.'%';
+                }
+                else if(in_array($subKey, $dollarKeys)){
+                    $newData[$key]->{$subKey} ='$'. $subItem;
+                }
+            }
+        }
+        array_unshift($newData, $headerLabels);
         $total['name'] = 'Total';
-        $data['data'] = array_values($newData);
+        $data['data'] = $newData;
         $data['data'][] = $empty;
         $data['data'][] = $total;
-        $data['headers'] = $this->getCsvHeaders();
+        $data['headers'] = $headers;
         return $data;
     }
 
