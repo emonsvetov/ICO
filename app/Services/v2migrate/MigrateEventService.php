@@ -95,12 +95,18 @@ class MigrateEventService extends MigrationService
         )[0];
 
         $program = Program::where('name', $v2Program->name)->first();
-
+        if (!$program) {
+            return [
+                'success' => $res,
+                'itemsCount' => $itemsCount,
+            ];
+        }
         $v2ProgramEvents = $this->v2db->select(
             sprintf("select event_templates.*, state_types.state from event_templates
                             left join state_types on event_templates.event_state_id = state_types.id
                            where program_account_holder_id = %d", $v2AccountHolderID)
         );
+
 
         $this->migrateEventLedgerCodes($v2AccountHolderID, $program->id);
         $itemsCount = count($v2ProgramEvents);
