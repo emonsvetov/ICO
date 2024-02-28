@@ -20,8 +20,8 @@ class MigrateEventService extends MigrationService
     {
        $res = $this->syncProgramEventsRelations($v2AccountHolderID);
         return [
-            'success' => $res,
-            'info' => "",
+            'success' => $res['success'],
+            'info' => "number of lines ". $res['itemsCount'],
         ];
     }
 
@@ -77,6 +77,8 @@ class MigrateEventService extends MigrationService
 
     public function syncProgramEventsRelations($v2AccountHolderID)
     {
+        $res = true;
+        $itemsCount = 0;
         $v2Program = $this->v2db->select(
             sprintf("select * from programs where account_holder_id = %d", $v2AccountHolderID)
         )[0];
@@ -88,6 +90,7 @@ class MigrateEventService extends MigrationService
         );
 
         $this->migrateEventLedgerCodes($v2AccountHolderID, $program->id);
+        $itemsCount = count($v2ProgramEvents);
 
         foreach ($v2ProgramEvents as $item) {
             $event = Event::where('name', $item->name)
@@ -151,6 +154,9 @@ class MigrateEventService extends MigrationService
             }
         }
 
-        return $res;
+        return [
+            'success' => $res,
+            'itemsCount' => $itemsCount,
+        ];
     }
 }
