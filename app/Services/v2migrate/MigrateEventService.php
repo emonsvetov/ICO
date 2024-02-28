@@ -21,12 +21,12 @@ class MigrateEventService extends MigrationService
         $res['success'] = true;
         $res['itemsCount'] = 0;
         $v2Helper = new V2Helper();
-        $v2RootPrograms = $v2Helper->read_list_children_heirarchy($v2AccountHolderID);
+        $v2SubPrograms = $v2Helper->read_list_children_heirarchy($v2AccountHolderID);
         $eMigrate = $this->syncProgramEventsRelations($v2AccountHolderID);
         $res['success'] = $eMigrate['success'];
         $res['itemsCount'] += $eMigrate['itemsCount'];
-       foreach ($v2RootPrograms as $programs){
-           $eMigrate = $this->syncProgramEventsRelations($programs->account_holder_id);
+       foreach ($v2SubPrograms as $subProgram){
+           $eMigrate = $this->syncProgramEventsRelations($subProgram->account_holder_id);
            $res['success'] = $eMigrate['success'];
            $res['itemsCount'] += $eMigrate['itemsCount'];
        }
