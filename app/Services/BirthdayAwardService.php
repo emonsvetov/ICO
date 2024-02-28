@@ -12,12 +12,15 @@ use Exception;
 class BirthdayAwardService extends AwardService {
 
     public array $programUserCache = [];
+    public array $userStatus = [];
 
     public function sendBirthdayAward() {
         // DB::enableQueryLog();
         // pr(toSql(DB::getQueryLog()));
         $events = Event::getBirthdayAwardsWithProgram();
         if( $events->isNotEmpty() )  {
+            $this->userStatus[] = User::getIdStatusActive();
+            $this->userStatus[] = User::getIdStatusPendingActivation();
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
                 $participants = $this->getBirthdayAwardeesByEvent( $event );
@@ -48,15 +51,12 @@ class BirthdayAwardService extends AwardService {
     }
 
     private function getBirthdayAwardeesByEvent( Event $event )   {
-
-        $userStatus = User::getStatusByName(User::STATUS_DELETED);
-
         $program = $event->program;
         $query = User::whereHas('roles', function (Builder $query) use ($program) {
             $query->where('name', 'LIKE', config('roles.participant'))
                 ->where('model_has_roles.program_id', $program->id);
         });
-        $query->where('user_status_id', '!=', $userStatus->id);
+        $query->whereIn('user_status_id', $this->userStatus);
         $query->whereNotNull('dob');
         try{
             $participants = $query->get();
