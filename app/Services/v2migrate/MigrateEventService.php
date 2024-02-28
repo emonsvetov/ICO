@@ -86,7 +86,9 @@ class MigrateEventService extends MigrationService
         $program = Program::where('name', $v2Program->name)->first();
 
         $v2ProgramEvents = $this->v2db->select(
-            sprintf("select * from event_templates where program_account_holder_id = %d", $v2AccountHolderID)
+            sprintf("select event_templates.*, state_types.state from event_templates
+                            left join state_types on event_templates.event_state_id = state_types.id
+                           where program_account_holder_id = %d", $v2AccountHolderID)
         );
 
         $this->migrateEventLedgerCodes($v2AccountHolderID, $program->id);
@@ -99,7 +101,13 @@ class MigrateEventService extends MigrationService
                 ->first();
 
             if ($event) {
-                $event->enable = $item->post_to_social_wall;
+                if ($item->state == 'Active') {
+                    $event->enable = true;
+                } else {
+                    $event->enable = false;
+                }
+
+                $event->v2_event_id = $item->id;
                 $event->event_type_id = $item->event_type_id;
                 $event->post_to_social_wall = $item->post_to_social_wall;
                 $event->email_template_type_id = $item->email_template_id;
@@ -127,7 +135,13 @@ class MigrateEventService extends MigrationService
                 $event = new Event();
                 $event->organization_id = $program->organization_id;
                 $event->program_id = $program->id;
-                $event->enable = $item->post_to_social_wall;
+                $event->v2_event_id = $item->id;
+
+                if ($item->state == 'Active') {
+                    $event->enable = true;
+                } else {
+                    $event->enable = false;
+                }
                 $event->name = $item->name;
                 $event->post_to_social_wall = $item->post_to_social_wall;
                 $event->event_type_id = $item->event_type_id;
