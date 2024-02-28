@@ -18,7 +18,17 @@ class MigrateEventService extends MigrationService
 
     public function migrate($v2AccountHolderID)
     {
-       $res = $this->syncProgramEventsRelations($v2AccountHolderID);
+        $res['success'] = true;
+        $res['itemsCount'] = 0;
+        $programArgs = ['program' => $v2AccountHolderID];
+        $v2Helper = new V2Helper();
+        $v2RootPrograms = $v2Helper->read_list_all_root_program_ids($programArgs);
+
+       foreach ($v2RootPrograms as $programs){
+           $eMigrate = $this->syncProgramEventsRelations($programs->account_holder_id);
+           $res['success'] = $eMigrate['success'];
+           $res['itemsCount'] += $eMigrate['itemsCount'];
+       }
         return [
             'success' => $res['success'],
             'info' => "number of lines ". $res['itemsCount'],
