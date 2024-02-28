@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\Builder;
-// use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB;
 use App\Models\Event;
 use App\Models\User;
 use Exception;
@@ -12,12 +12,15 @@ use Exception;
 class MilestoneAwardService extends AwardService {
 
     public array $programUserCache = [];
+    public array $userStatus = [];
 
     public function sendMilestoneAward() {
         // DB::enableQueryLog();
         // pr(toSql(DB::getQueryLog()));
         $events = Event::getActiveMilestoneAwardsWithProgram();
         if( $events->isNotEmpty() )  {
+            $this->userStatus[] = User::getIdStatusActive();
+            $this->userStatus[] = User::getIdStatusPendingActivation();
             $programService = resolve(\App\Services\ProgramService::class);
             foreach($events as $event)   {
                 $participants = $this->getMilestoneAwardeesByEvent( $event );
@@ -47,14 +50,13 @@ class MilestoneAwardService extends AwardService {
 
     private function getMilestoneAwardeesByEvent( Event $event )   {
         $milestoneYears = $event->milestone_award_frequency;
-        $userStatus = User::getStatusByName(User::STATUS_DELETED);
 
         $program = $event->program;
         $query = User::whereHas('roles', function (Builder $query) use ($program) {
             $query->where('name', 'LIKE', config('roles.participant'))
                 ->where('model_has_roles.program_id', $program->id);
         });
-        $query->where('user_status_id', '!=', $userStatus->id);
+        $query->whereIn('user_status_id', $this->userStatus);
         $query->whereNotNull('work_anniversary');
         try{
             $participants = $query->get();
