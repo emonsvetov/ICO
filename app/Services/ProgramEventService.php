@@ -71,7 +71,12 @@ class ProgramEventService
 
     public function getEventAwardsLevel($eventId)
     {
-        return EventAwardLevel::where('event_id', $eventId)->get();
+        $eventAwardLevels = DB::table('event_award_level')
+            ->join('award_levels', 'event_award_level.award_level_id', '=', 'award_levels.id')
+            ->select('event_award_level.*', 'award_levels.name')
+            ->where('event_award_level.event_id', $eventId)
+            ->get();
+        return $eventAwardLevels;
     }
 
     public function storeAwardLevel($data)
@@ -85,7 +90,6 @@ class ProgramEventService
             $eventAwardLevel->event_id = $data['event_id'];
             $eventAwardLevel->award_level_id = $data['award_level_id'];
             $eventAwardLevel->amount = $data['amount'];
-            $eventAwardLevel->save();
 
         }
         return $eventAwardLevel->save();
