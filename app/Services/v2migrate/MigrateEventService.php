@@ -25,11 +25,11 @@ class MigrateEventService extends MigrationService
         $eMigrate = $this->syncProgramEventsRelations($v2AccountHolderID);
         $res['success'] = $eMigrate['success'];
         $res['itemsCount'] += $eMigrate['itemsCount'];
-       foreach ($v2SubPrograms as $subProgram){
-           $eMigrate = $this->syncProgramEventsRelations($subProgram->account_holder_id);
-           $res['success'] = $eMigrate['success'];
-           $res['itemsCount'] += $eMigrate['itemsCount'];
-       }
+        foreach ($v2SubPrograms as $subProgram) {
+            $eMigrate = $this->syncProgramEventsRelations($subProgram->account_holder_id);
+            $res['success'] = $eMigrate['success'];
+            $res['itemsCount'] += $eMigrate['itemsCount'];
+        }
         return [
             'success' => $res['success'],
             'info' => "number of lines ". $res['itemsCount'],
@@ -133,7 +133,12 @@ class MigrateEventService extends MigrationService
                     $eventAwardLevel = EventLedgerCode::where('event_ledger_codes_v2id', $item->ledger_code)
                         ->where('program_id', $program->id)
                         ->first();
-                    $event->ledger_code = $eventAwardLevel->id;
+                    if ($eventAwardLevel) {
+                        $event->ledger_code = $eventAwardLevel->id;
+                    } else {
+                        $event->ledger_code = null;
+                    }
+
                 } else {
                     $event->ledger_code = null;
                 }
@@ -166,7 +171,13 @@ class MigrateEventService extends MigrationService
                     $eventAwardLevel = EventLedgerCode::where('event_ledger_codes_v2id', $item->ledger_code)
                         ->where('program_id', $program->id)
                         ->first();
-                    $event->ledger_code = $eventAwardLevel->id;
+
+                    if ($eventAwardLevel->id) {
+                        $event->ledger_code = $eventAwardLevel->id;
+                    } else {
+                        $event->ledger_code = null;
+                    }
+
                 } else {
                     $event->ledger_code = null;
                 }
