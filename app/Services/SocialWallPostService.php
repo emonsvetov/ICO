@@ -25,8 +25,11 @@ class SocialWallPostService
 
     public function create(array $data, Program $program ): ?SocialWallPost
     {
-        $mentionedUsers = $data['mentions_user_ids'];
-        unset($data['mentions_user_ids']);
+        $mentionedUsers = null;
+        if(isset($data['mentions_user_ids'])) {
+            $mentionedUsers = $data['mentions_user_ids'];
+            unset($data['mentions_user_ids']);
+        }
         $resultObject = SocialWallPost::create($data);
         if(!empty($mentionedUsers)) {
             $template = $program->getTemplate();

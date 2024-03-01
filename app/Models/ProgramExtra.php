@@ -53,6 +53,7 @@ class ProgramExtra extends Model
         "approve_grade_notification_ids",
         "notification_email_list",
         "updated_at",
+        "program_account_holder_id",
     ];
     public function updateProgramExtra($id, array $data)
     {

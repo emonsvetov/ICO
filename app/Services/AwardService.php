@@ -440,7 +440,7 @@ class AwardService
                 'receiver_user_account_holder_id' => $userAccountHolderId,
             ];
             $socialWallPostService = resolve(\App\Services\SocialWallPostService::class);
-            $socialWallPostService->create($socialWallPostData);
+            $socialWallPostService->create($socialWallPostData, $program);
         }
 
         if( $awardee->status()->first()->status == User::STATUS_NEW )

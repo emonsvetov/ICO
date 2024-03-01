@@ -18,7 +18,18 @@ class MigrateEventService extends MigrationService
 
     public function migrate($v2AccountHolderID)
     {
-       $res = $this->syncProgramEventsRelations($v2AccountHolderID);
+        $res['success'] = true;
+        $res['itemsCount'] = 0;
+        $v2Helper = new V2Helper();
+        $v2SubPrograms = $v2Helper->read_list_children_heirarchy($v2AccountHolderID);
+        $eMigrate = $this->syncProgramEventsRelations($v2AccountHolderID);
+        $res['success'] = $eMigrate['success'];
+        $res['itemsCount'] += $eMigrate['itemsCount'];
+        foreach ($v2SubPrograms as $subProgram) {
+            $eMigrate = $this->syncProgramEventsRelations($subProgram->account_holder_id);
+            $res['success'] = $eMigrate['success'];
+            $res['itemsCount'] += $eMigrate['itemsCount'];
+        }
         return [
             'success' => $res['success'],
             'info' => "number of lines ". $res['itemsCount'],
@@ -84,10 +95,18 @@ class MigrateEventService extends MigrationService
         )[0];
 
         $program = Program::where('name', $v2Program->name)->first();
-
+        if (!$program) {
+            return [
+                'success' => $res,
+                'itemsCount' => $itemsCount,
+            ];
+        }
         $v2ProgramEvents = $this->v2db->select(
-            sprintf("select * from event_templates where program_account_holder_id = %d", $v2AccountHolderID)
+            sprintf("select event_templates.*, state_types.state from event_templates
+                            left join state_types on event_templates.event_state_id = state_types.id
+                           where program_account_holder_id = %d", $v2AccountHolderID)
         );
+
 
         $this->migrateEventLedgerCodes($v2AccountHolderID, $program->id);
         $itemsCount = count($v2ProgramEvents);
@@ -99,7 +118,13 @@ class MigrateEventService extends MigrationService
                 ->first();
 
             if ($event) {
-                $event->enable = $item->post_to_social_wall;
+                if ($item->state == 'Active') {
+                    $event->enable = true;
+                } else {
+                    $event->enable = false;
+                }
+
+                $event->v2_event_id = $item->id;
                 $event->event_type_id = $item->event_type_id;
                 $event->post_to_social_wall = $item->post_to_social_wall;
                 $event->email_template_type_id = $item->email_template_id;
@@ -108,7 +133,12 @@ class MigrateEventService extends MigrationService
                     $eventAwardLevel = EventLedgerCode::where('event_ledger_codes_v2id', $item->ledger_code)
                         ->where('program_id', $program->id)
                         ->first();
-                    $event->ledger_code = $eventAwardLevel->id;
+                    if ($eventAwardLevel) {
+                        $event->ledger_code = $eventAwardLevel->id;
+                    } else {
+                        $event->ledger_code = null;
+                    }
+
                 } else {
                     $event->ledger_code = null;
                 }
@@ -127,7 +157,13 @@ class MigrateEventService extends MigrationService
                 $event = new Event();
                 $event->organization_id = $program->organization_id;
                 $event->program_id = $program->id;
-                $event->enable = $item->post_to_social_wall;
+                $event->v2_event_id = $item->id;
+
+                if ($item->state == 'Active') {
+                    $event->enable = true;
+                } else {
+                    $event->enable = false;
+                }
                 $event->name = $item->name;
                 $event->post_to_social_wall = $item->post_to_social_wall;
                 $event->event_type_id = $item->event_type_id;
@@ -135,7 +171,13 @@ class MigrateEventService extends MigrationService
                     $eventAwardLevel = EventLedgerCode::where('event_ledger_codes_v2id', $item->ledger_code)
                         ->where('program_id', $program->id)
                         ->first();
-                    $event->ledger_code = $eventAwardLevel->id;
+
+                    if ($eventAwardLevel->id) {
+                        $event->ledger_code = $eventAwardLevel->id;
+                    } else {
+                        $event->ledger_code = null;
+                    }
+
                 } else {
                     $event->ledger_code = null;
                 }

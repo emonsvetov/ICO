@@ -2,9 +2,11 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\Address;
 use App\Models\ProgramExtra;
 use App\Models\ProgramTransactionFee;
 use App\Services\ProgramService;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -12,6 +14,7 @@ use App\Models\JournalEvent;
 use App\Models\Program;
 use App\Models\Account;
 use App\Models\Posting;
+use Illuminate\Support\Facades\Schema;
 
 class MigrateProgramAccountsService extends MigrationService
 {
@@ -232,7 +235,7 @@ class MigrateProgramAccountsService extends MigrationService
         $v2ProgramExtraInfo = (array) $v2ProgramData['v2ProgramExtraInfo'];
         $v2ProgramConfigFields = (array) $v2ProgramData['v2ProgramConfigFields'];
         $v2Program = (array) $v2ProgramData['v2Program'];
-        $v2Address = (array) $v2ProgramData['v2Address'];
+        $v2Address = (array) reset($v2ProgramData['v2Address']);
         $v2ProgramTransactionFees = (array) $v2ProgramData['v2ProgramTransactionFees'];
 
         $v2Settings = array_merge($v2Program, $v2ProgramConfigFields, $v2ProgramExtraInfo, $v2Address);
@@ -241,9 +244,9 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'];
         ksort($v2Settings);
 
-        $v3ProgramAttributes = $v3Program->getAttributes();
-        $v3ProgramExtrasAttributes = $v3Program->programExtras()->first()->getAttributes();
-        $v3ProgramAddressAttributes = $v3Program->address()->first()->getAttributes();
+        $v3ProgramAttributes = Schema::getColumnListing((new Program)->getTable());
+        $v3ProgramExtrasAttributes = Schema::getColumnListing((new ProgramExtra)->getTable());
+        $v3ProgramAddressAttributes = Schema::getColumnListing((new Address)->getTable());
 
         $settingsForUpdate = [
             'uses_social_wall',
@@ -411,23 +414,25 @@ class MigrateProgramAccountsService extends MigrationService
             $v3ProgramExtraData = [];
             $v3ProgramData = [];
             $v3ProgramAddressData = [];
-            foreach ($v3ProgramExtrasAttributes as $field => $value) {
+            foreach ($v3ProgramExtrasAttributes as $field) {
                 if (isset($v2Settings[$field])) {
                     $v3ProgramExtraData[$field] = $v2Settings[$field];
                 }
             }
-            foreach ($v3ProgramAttributes as $field => $value) {
+            foreach ($v3ProgramAttributes as $field) {
                 if (isset($v2Settings[$field])) {
                     $v3ProgramData[$field] = empty($v2Settings[$field]) ? 0 : $v2Settings[$field];
                 }
             }
-            foreach ($v3ProgramAddressAttributes as $field => $value) {
+            foreach ($v3ProgramAddressAttributes as $field) {
                 if (isset($v2Settings[$field])) {
                     $v3ProgramAddressData[$field] = $v2Settings[$field];
                 }
             }
             $v3Program->programExtras()->updateOrCreate(['program_account_holder_id' => $v3Program->v2_account_holder_id], $v3ProgramExtraData);
+            $v3ProgramAddressData['account_holder_id'] = $v3Program->account_holder_id;
             $v3Program->address()->updateOrCreate(['account_holder_id' => $v3Program->account_holder_id], $v3ProgramAddressData);
+            $v3ProgramData['account_holder_id'] = $v3Program->account_holder_id;
             $v3Program->update($v3ProgramData);
 
             $v3ProgramTransactionFee = [];
