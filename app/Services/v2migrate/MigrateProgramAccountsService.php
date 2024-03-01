@@ -200,10 +200,11 @@ class MigrateProgramAccountsService extends MigrationService
         $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
         $subPrograms = $programs[0]["children"] ?? FALSE;
 
-        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $v3SubProgram = Program::find($v3Program->id);
+        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? FALSE;
 
         if ($v2AccountHolderID) {
-            $this->updateProgramSettings($v3Program, [
+            $this->updateProgramSettings($v3SubProgram, [
                 'v2ProgramConfigFields' => $this->readConfigFieldsByName($v2AccountHolderID),
                 'v2ProgramExtraInfo' => $this->readExtraProgramInfo($v2AccountHolderID),
                 'v2Program' => $this->get_program_info($v2AccountHolderID),
