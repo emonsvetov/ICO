@@ -9,6 +9,7 @@ use App\Services\v2migrate\MigrateProgramsService;
 use App\Services\v2migrate\MigrationBaseService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class MigrationController extends Controller
 {
@@ -18,6 +19,24 @@ class MigrationController extends Controller
         $this->migrationBaseService = $migrationBaseService;
     }
 
+    /**
+     * Run artisan migrations.
+     */
+    public function runArtisanMigrate()
+    {
+        Artisan::call('migrate');
+        $output = Artisan::output();
+
+        return response([
+            'info' => nl2br($output)
+        ]);
+    }
+
+    /**
+     * Run migrations for a program.
+     *
+     * @param $account_holder_id
+     */
     public function run($account_holder_id)
     {
         ini_set('max_execution_time', 360);
@@ -25,6 +44,18 @@ class MigrationController extends Controller
         $args = [];
         $args['v2AccountHolderID'] = $account_holder_id;
         $result = $this->migrationBaseService->migrate($args);
+
+        return response($result);
+    }
+
+    /**
+     * Run global migrations list.
+     */
+    public function runGlobal()
+    {
+        ini_set('max_execution_time', 360);
+
+        $result = $this->migrationBaseService->migrateGlobal();
         return response($result);
     }
 

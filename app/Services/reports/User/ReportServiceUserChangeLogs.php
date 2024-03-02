@@ -62,7 +62,8 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
             if (!blank($this->params[self::PROGRAM_ID])) {
                 $program = Program::where('id', $this->params[self::PROGRAM_ID])->first();
                 $topLevelProgram = $program->getRoot(['id', 'name']);
-                $programs[] = $topLevelProgram->id;
+                $programs[] = $program->id;
+                $query->whereIn('programs.id', $programs);
             }
         }
         else {
@@ -71,7 +72,7 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
                 foreach ($programIDs as $programID) {
                     $program = Program::where('account_holder_id', $programID)->first();
                     $topLevelProgram = $program->getRoot(['id', 'name']);
-                    $programs[] = $topLevelProgram->id;
+                    $programs[] = $program->id;
                 }
                 $programs = array_unique($programs);
             }

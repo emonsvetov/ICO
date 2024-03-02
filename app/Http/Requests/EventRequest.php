@@ -32,6 +32,7 @@ class EventRequest extends FormRequest
             'max_awardable_amount' => 'sometimes|integer',
             'post_to_social_wall'=> 'nullable|boolean',
             'message'=> 'required|string',
+            'icon'=> 'string',
             'include_in_budget'=> 'boolean|nullable',
             'enable_schedule_award'=> 'boolean|nullable',
             'is_birthday_award'=> 'boolean|nullable',

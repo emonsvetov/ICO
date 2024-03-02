@@ -92,6 +92,13 @@ Route::group([
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
         Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
+    Route::group([
+        'prefix' => '/event-award-level',
+    ], function ()
+    {
+        Route::put('/{event}', [App\Http\Controllers\API\EventController::class,'storeAwardLevel'])->name('api.v1.organization.program.event.storeAwardLevel')->middleware('can:storeAwardLevel,App\ProgramEvent,organization,program');
+        Route::delete('/{event}', [App\Http\Controllers\API\EventController::class,'deleteAwardLevel'])->name('api.v1.organization.program.event.deleteAwardLevel')->middleware('can:deleteAwardLevel,App\ProgramEvent,organization,program,event');
+    });
 });
 
 Route::get('/v1/organization/{organization}/programgroup', [App\Http\Controllers\API\ProgramGroupController::class, 'index'])->name('api.v1.organization.programgroup.index');
@@ -443,6 +450,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\Award,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/program-award-levels',[App\Http\Controllers\API\AwardController::class, 'programAwardLevels'])->name('programAwardLevels');
+    Route::post('/v1/organization/{organization}/program/{program}/create-award-level',[App\Http\Controllers\API\AwardController::class, 'createAwardLevel'])->name('createAwardLevel');
+    Route::post('/v1/organization/{organization}/program/{program}/award-level-participants',[App\Http\Controllers\API\AwardController::class, 'awardLevelParticipants'])->name('awardLevelParticipants');
+
     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
 
     // Participant
@@ -699,5 +710,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/push-notification-token',[App\Http\Controllers\API\PushNotificationController::class, 'store'])->middleware('can:create,App\PushNotification,organization,program');
     //Push notification for mobileApp
     Route::post('/v1/organization/{organization}/program/{program}/send-push-notification',[App\Http\Controllers\API\PushNotificationController::class, 'send'])->middleware('can:create,App\PushNotification,organization,program');
+    Route::get('/v1/v2-deprecated/migrate-global', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate-artisan', [App\Http\Controllers\API\MigrationController::class, 'runArtisanMigrate'])->middleware('can:viewAny,App\V2Deprecated');
 });
 
