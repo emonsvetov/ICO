@@ -172,7 +172,7 @@ class MigrateEventService extends MigrationService
                         ->where('program_id', $program->id)
                         ->first();
 
-                    if ($eventAwardLevel->id) {
+                    if ($eventAwardLevel) {
                         $event->ledger_code = $eventAwardLevel->id;
                     } else {
                         $event->ledger_code = null;
