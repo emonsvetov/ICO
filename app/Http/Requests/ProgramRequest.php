@@ -174,6 +174,8 @@ class ProgramRequest extends FormRequest
             'send_balance_threshold_notification'=>'nullable|boolean',
             'balance_threshold'=>'nullable|integer|gt:-1',
             'low_balance_email'=>'nullable|email',
+            'program_extras'=>'nullable',
+            'program_transaction_fee'=>'nullable',
         ];
     }
 

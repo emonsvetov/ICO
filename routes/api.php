@@ -92,6 +92,13 @@ Route::group([
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
         Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
+    Route::group([
+        'prefix' => '/event-award-level',
+    ], function ()
+    {
+        Route::put('/{event}', [App\Http\Controllers\API\EventController::class,'storeAwardLevel'])->name('api.v1.organization.program.event.storeAwardLevel')->middleware('can:storeAwardLevel,App\ProgramEvent,organization,program');
+        Route::delete('/{event}', [App\Http\Controllers\API\EventController::class,'deleteAwardLevel'])->name('api.v1.organization.program.event.deleteAwardLevel')->middleware('can:deleteAwardLevel,App\ProgramEvent,organization,program,event');
+    });
 });
 
 Route::get('/v1/organization/{organization}/programgroup', [App\Http\Controllers\API\ProgramGroupController::class, 'index'])->name('api.v1.organization.programgroup.index');
@@ -123,7 +130,7 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::post('/v1/login', [App\Http\Controllers\API\AuthController::class, 'login'])->name('api.v1.login');
     Route::post('/v1/admin/login', [App\Http\Controllers\API\AuthController::class, 'adminLogin'])->name('api.v1.adminLogin');
     Route::post('/v1/register', [App\Http\Controllers\API\AuthController::class, 'register'])->name('api.v1.register');
-
+    Route::post('/v1/generate-2fa-secret', [App\Http\Controllers\API\AuthController::class, 'generate2faSecret'])->name('api.v1.generate2faSecret');
     Route::post('/v1/password/forgot', [App\Http\Controllers\API\PasswordController::class, 'forgotPassword']);
     Route::post('/v1/password/reset', [App\Http\Controllers\API\PasswordController::class, 'reset']);
 
@@ -440,6 +447,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'readListReclaimablePeerPoints'])->middleware('can:readListReclaimablePeerPoints,App\Award,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/program-award-levels',[App\Http\Controllers\API\AwardController::class, 'programAwardLevels'])->name('programAwardLevels');
+    Route::post('/v1/organization/{organization}/program/{program}/create-award-level',[App\Http\Controllers\API\AwardController::class, 'createAwardLevel'])->name('createAwardLevel');
+    Route::post('/v1/organization/{organization}/program/{program}/award-level-participants',[App\Http\Controllers\API\AwardController::class, 'awardLevelParticipants'])->name('awardLevelParticipants');
+
     Route::post('/v1/organization/{organization}/program/{program}/user/{user}/reclaim-peer-points',[App\Http\Controllers\API\AwardController::class, 'reclaimPeerPoints'])->middleware('can:reclaimPeerPoints,App\Award,organization,program,user');
 
     // Participant
@@ -679,7 +690,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // v2 Routes
     Route::get('/v1/v2-deprecated/program', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'index'])->middleware('can:viewAny,App\V2Deprecated');
-    Route::get('/v1/v2-deprecated/migrate/{account_holder_id}', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'migrate'])->middleware('can:viewAny,App\V2Deprecated');
-
+    Route::get('/v1/v2-deprecated/migrate/{account_holder_id}', [App\Http\Controllers\API\MigrationController::class, 'run'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate-global', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate-artisan', [App\Http\Controllers\API\MigrationController::class, 'runArtisanMigrate'])->middleware('can:viewAny,App\V2Deprecated');
 });
 

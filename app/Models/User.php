@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\interfaces\ImageInterface;
 use App\Models\Role;
+use App\Services\AccountService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -202,7 +203,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 			// use monies
             $account_type = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
 		}
-        return self::_read_balance( $user->account_holder_id, $account_type, $journal_event_types );
+        return (new AccountService)->readBalance($user->account_holder_id, $account_type, $journal_event_types);
     }
 
     // TODO: This function not only for "User", we should use AccountService->readBalance()

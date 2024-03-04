@@ -21,11 +21,11 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
 
         $query->selectRaw("
             `medium_info`.*
+            , DATE(`medium_info`.redemption_date) as date
             , `merchants`.name
-            , `medium_info`.sku_value as amount
-            , `medium_info`.code as code
+            , `medium_info`.redemption_value/factor_valuation as amount
+            , `medium_info`.code
         ");
-        //  / `medium_info`.factor_valuation
         return $query;
     }
 
@@ -45,6 +45,15 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
         }
 
         $query->whereIn('medium_info.redeemed_program_id', $programs);
+        return $query;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected function setOrderBy(Builder $query): Builder
+    {
+        $query->orderByDesc('medium_info.redemption_date');
         return $query;
     }
 

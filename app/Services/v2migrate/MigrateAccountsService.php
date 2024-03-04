@@ -134,6 +134,26 @@ class MigrateAccountsService extends MigrationService
         if( $v2Account->v3_account_id ) {
             $this->printf("\$v2Account->v3_account_id is non zero (%s) for v3:%d. Confirming v3 record..\n", $v2Account->v3_account_id, $v2Account->id);
             $v3Account = Account::find($v2Account->v3_account_id);
+
+            if ($this->modelName == 'user') {
+                if ($v3Account && $v3Account->account_holder_id != $v3_account_holder_id){
+                    // Wrong relation, lets remove it
+//                    $this->v2db->statement("UPDATE `accounts` SET `v3_account_id` = NULL WHERE `id` = {$v2Account->id}");
+                    $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`= NULL WHERE `id`=%d", $v2Account->id));
+                    $v2Account->v3_account_id = '';
+                    $v3Account = null;
+                }
+            }
+
+            if ($this->modelName == 'program') {
+                if ($v3Account && $v3Account->account_holder_id != $v3_account_holder_id){
+                    // Wrong relation, lets remove it
+                    $this->addV2SQL(sprintf("UPDATE `accounts` SET `v3_account_id`= NULL WHERE `id`=%d", $v2Account->id));
+                    $v2Account->v3_account_id = '';
+                    $v3Account = null;
+                }
+            }
+
             if( $v3Account )    {
                 $this->printf("v2Account:v3_account_id IS NOT NULL.\n", $v2Account->id);
                 if( $this->modelName == 'user' )    {

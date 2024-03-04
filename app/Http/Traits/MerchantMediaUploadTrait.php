@@ -17,12 +17,11 @@ trait MerchantMediaUploadTrait {
 
         foreach( Merchant::MEDIA_FIELDS as $field ) {
             if( $fromUrl ) {
-                if( isset($fromUrl[$field]) && !empty($fromUrl[$field]) && $this->URL_exists(Merchant::MEDIA_SERVER . $fromUrl[$field]) ) {
+                if( isset($fromUrl[$field]) && !empty($fromUrl[$field]) && $this->URL_exists(env('V2_API_URL') . $fromUrl[$field]) ) {
                     $extension = pathinfo($fromUrl[$field], PATHINFO_EXTENSION);
                     $filename = Str::random(40) . '.' . $extension;
                     $fullFilepath = $filePath . '/' . $filename;
-                    // dd($fullFilepath);
-                    $uploaded = Storage::disk($disk)->put($fullFilepath, file_get_contents(Merchant::MEDIA_SERVER . $fromUrl[$field]));
+                    $uploaded = Storage::disk($disk)->put($fullFilepath, file_get_contents(env('V2_API_URL') . $fromUrl[$field]));
                     if( $uploaded ) {
                         $uploads[$field] = $fullFilepath;
                     }
@@ -34,7 +33,6 @@ trait MerchantMediaUploadTrait {
                 }
             }
             if( $updating && $uploads ) {
-                //try to find and delete old file
                 if(isset($uploads[$field])) {
                     $oldFile = $merchant[$field];
                     if( $oldFile )  {

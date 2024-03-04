@@ -502,7 +502,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'name'
             ],
             [
-                'label' => 'Program ID',
+                'label' => 'Program Account Holder ID',
                 'key' => 'account_holder_id'
             ],
             [

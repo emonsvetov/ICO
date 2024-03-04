@@ -188,13 +188,48 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
             $total['percent_total_cost'] = round($total['percent_total_cost']);
         }
 
-        if (isset($total['percent_total_cost'])) {
-            $total['percent_total_redemption_value'] = round($total['percent_total_cost']);
+        if (isset($total['percent_total_redemption_value'])) {
+            $total['percent_total_redemption_value'] = round($total['percent_total_redemption_value'], 2);
+        }
+
+        $merchants = Merchant::get()->toTree();
+        $merchants =  _tree_flatten($merchants);
+
+        $newTable = [];
+        foreach ($merchants as $key => $item) {
+            if (empty($item->dinamicPath) && isset($bodyReference[$item->id])) {
+                $newTable[$item->id] = $bodyReference[$item->id];
+            } else {
+                $tmpPath = explode(',', $item->dinamicPath);
+                if (isset($newTable[$tmpPath[0]]) && isset($bodyReference[$item->id])) {
+                    if (empty($newTable[$tmpPath[0]]['childrenCount']))
+                        $newTable[$tmpPath[0]]['childrenCount'] = 1;
+                    else
+                        $newTable[$tmpPath[0]]['childrenCount'] ++;
+                    foreach($bodyReference[$item->id] as $subKey => $subItem){
+                        if($subKey != 'key' && $subKey !== 'name'){
+                            if(empty($newTable[$tmpPath[0]][$subKey])){
+                                $newTable[$tmpPath[0]][$subKey] = $subItem;
+                            }
+                            else{
+                                $newTable[$tmpPath[0]][$subKey] += $subItem;
+                            }
+                        }
+                    }
+                    $newTable[$tmpPath[0]]['percent_total_cost'] = round($newTable[$tmpPath[0]]['percent_total_cost'], 2);
+                    $newTable[$tmpPath[0]]['percent_total_redemption_value'] = round($newTable[$tmpPath[0]]['percent_total_redemption_value'], 2);
+                }
+            }
+        }
+        foreach($newTable as $key => $item){
+            if(isset($item['childrenCount'])){
+                $newTable[$key]['avg_discount_percent'] = round( $item['avg_discount_percent'] / ($item['childrenCount'] + 1 ), 2);
+            }
         }
 
         return [
-            'data' => $bodyReference,
-            'total' => count($bodyReference),
+            'data' => $newTable,
+            'total' => count($newTable),
             'config' => [
                 'columns' => $this->getHeaders(),
                 'total' => $total
@@ -232,7 +267,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
                 'title' => "$key",
                 'fixed' => false,
                 'footer' => "$val",
-                'width' => 50,
+                'width' => 70,
                 'prefix' => "",
                 'suffix' => "",
                 'type' => "integer",

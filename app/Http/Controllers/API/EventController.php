@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AwardLevelRequest;
 use Illuminate\Http\Request;
 
 use App\Services\ProgramEventService;
@@ -33,7 +34,7 @@ class EventController extends Controller
         }
     }
 
-    public function show( Organization $organization, Program $program, Event $event )
+    public function show( Organization $organization, Program $program, Event $event , ProgramEventService $programEventService)
     {
         if ( !( $organization->id == $program->organization_id && $program->id == $event->program_id ) )
         {
@@ -42,6 +43,7 @@ class EventController extends Controller
 
         $event->eventIcon;
         $event->eventType;
+        $event->eventAwardsLevel = $programEventService->getEventAwardsLevel($event->id);
 
         if ( $event )
         {
@@ -51,7 +53,7 @@ class EventController extends Controller
         return response( [] );
     }
 
-    public function update(EventRequest $request, Organization $organization, Program $program, Event $event, ProgramEventService $programEventService )
+    public function update(EventRequest $request, Organization $organization, Program $program, Event $event, ProgramEventService $programEventService)
     {
         $validated = $request->validated();
         try {
@@ -77,5 +79,19 @@ class EventController extends Controller
         {
             return response(['errors' => 'Error deleting program event', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
         }
+    }
+
+    public function storeAwardLevel(AwardLevelRequest $request, $organizationId, $programId, $eventId,ProgramEventService $programEventService)
+    {
+        $data = $request->validated();
+        $res = $programEventService->storeAwardLevel($data);
+        return response([$res]);
+    }
+
+    public function deleteAwardLevel(AwardLevelRequest $request, $organizationId, $programId, $eventId,ProgramEventService $programEventService)
+    {
+        $data = $request->validated();
+        $res = $programEventService->deleteAwardLevel($data);
+        return response([$res]);
     }
 }

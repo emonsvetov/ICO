@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Event;
+use App\Models\EventAwardLevel;
 use App\Models\EventType;
 use App\Models\EmailTemplateType;
 use App\Models\Organization;
@@ -16,8 +17,7 @@ use Throwable;
 class ProgramEventService
 {
 
-    public function __construct(
-    )
+    public function __construct()
     {
     }
     /**
@@ -67,5 +67,41 @@ class ProgramEventService
             $data['email_template_type_id'] = EmailTemplateType::getIdByType($emailTemplateType_type);
         }
         return $data;
+    }
+
+    public function getEventAwardsLevel($eventId)
+    {
+        $eventAwardLevels = DB::table('event_award_level')
+            ->join('award_levels', 'event_award_level.award_level_id', '=', 'award_levels.id')
+            ->select('event_award_level.*', 'award_levels.name')
+            ->where('event_award_level.event_id', $eventId)
+            ->get();
+        return $eventAwardLevels;
+    }
+
+    public function storeAwardLevel($data)
+    {
+        $eventAwardLevel = EventAwardLevel::where('id', $data['id'])->first();
+        if ($eventAwardLevel){
+            $eventAwardLevel->award_level_id = $data['award_level_id'];
+            $eventAwardLevel->amount = $data['amount'];
+        }else{
+            $eventAwardLevel = new EventAwardLevel();
+            $eventAwardLevel->event_id = $data['event_id'];
+            $eventAwardLevel->award_level_id = $data['award_level_id'];
+            $eventAwardLevel->amount = $data['amount'];
+
+        }
+        return $eventAwardLevel->save();
+    }
+
+    public function deleteAwardLevel($data)
+    {
+        $res = false;
+        $eventAwardLevel = EventAwardLevel::where('id', $data['id'])->first();
+        if ($eventAwardLevel) {
+            $res = $eventAwardLevel->delete();
+        }
+        return $res;
     }
 }

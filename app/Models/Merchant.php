@@ -23,7 +23,6 @@ class Merchant extends Model
     protected $guarded = [];
 
     const MEDIA_FIELDS = ['logo', 'icon', 'large_icon', 'banner'];
-    const MEDIA_SERVER = 'https://qa-api.dev.incentco.net';
 
     public function findByIds($ids = [])
     {

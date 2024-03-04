@@ -14,18 +14,17 @@ border-left:solid 1px;
                     <img style="margin: 25px;max-height: 80px;" src="{{ url( '/storage/' . $template['small_logo'])}}"
                          border="0"><br>
                     <span
-                        style="font-size:50px; font-weight: bold; color: #333333;line-height: .75em;letter-spacing: -3px;">YOU RECEIVED<br>AWARD POINTS</span>
+                        style="font-size:50px; font-weight: bold; color: #333333;line-height: .75em;letter-spacing: -3px;">YOU WERE MENTIONED<br>ON THE SOCIAL WALL</span>
                     <hr style="border-top: 4px dashed {{ $template['theme_color'] }}; margin:40px;">
                 </div>
                 <p style="margin-left:20px; margin-right:20px;">
-                    Dear {{ $name }}
+                    From {{ $name }}
                 </p>
-                <p style="margin-left:20px; margin-right:20px;">
-                    You are mentioned in the social wall.
-                </p>
-                <p style="margin-left:20px; margin-right:20px;">
-                    Thanks!
-                </p>
+                <div style="margin-left:20px; margin-right:20px;">
+                    {!! $comment !!}
+                </div>
+                
+
             </td>
         </tr>
         <tr>
