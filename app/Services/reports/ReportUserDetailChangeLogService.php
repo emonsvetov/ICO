@@ -33,9 +33,9 @@ class ReportUserDetailChangeLogService extends ReportServiceAbstract
                     $parent_program_id =  $program->get_top_level_program_id($program->id);
                     $userStatesSql = "SELECT statuses.id, statuses.status from statuses where statuses.id > 0 AND statuses.context = '".$userString."'";
 
-                    // WTF IS THIS?!??! #$@#$#!%!!#% Sql in foreach ? 989 chars in one row ? pagination ? 
                     $sql = " SELECT ul.updated_at, ul.user_account_holder_id, CONCAT(ul.first_name, ' ', ul.last_name) as name, CONCAT(ub.first_name, ' ', ub.last_name) as updated_by, ul.email,ul.id,ul.type, statuses.status as role, ul.updated_at, ul.old_user_status_id, state1.status as old_user_state_label, ul.new_user_status_id, state2.status as new_user_state_label, tr.name as technical_reason FROM users_log as ul LEFT JOIN users as ub ON ub.id = ul.updated_by LEFT JOIN  model_has_roles ON model_has_roles.model_id =ub.id LEFT JOIN roles ON roles.id = model_has_roles.role_id LEFT JOIN statuses ON statuses.id = ub.user_status_id LEFT JOIN technical_reasons AS tr ON tr.id = ul.technical_reason_id LEFT JOIN ($userStatesSql) as state1 ON ul.old_user_status_id = state1.id LEFT JOIN ($userStatesSql) as state2 ON ul.new_user_status_id = state2.id WHERE ul.parent_program_id = {$parent_program_id} AND DATE_FORMAT(ul.updated_at,'%Y-%m-%d H:i:s') >= DATE_FORMAT('{$start_date} 00:00:00','%Y-%m-%d H:i:s')
-                    AND DATE_FORMAT(ul.updated_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')";
+                    AND DATE_FORMAT(ul.updated_at,'%Y-%m-%d H:i:s') <= DATE_FORMAT('{$end_date} 23:59:59','%Y-%m-%d H:i:s')
+                    GROUP BY ul.id";
                     $this->table[$program->id] = DB::select($sql);
 				}
             }
