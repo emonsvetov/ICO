@@ -186,11 +186,12 @@ class ProgramUserController extends Controller
         $amount_balance = $user->readAvailableBalance($program, $user);
         $pointsEarned = $accountService->read_awarded_total_for_participant($program, $user);
         $factor_valuation = $program->factor_valuation;
-        $points_balance = $amount_balance * $program->factor_valuation;
+        $pointBalance = $amount_balance * $program->factor_valuation;
         $peerBalance = $userService->readAvailablePeerBalance($user, $program);
         $expiredBalance = $accountService->readExpiredBalance($user, $program);
         $redeemedBalance = $accountService->readRedeemedBalance($user, $program);
         return response([
+            'pointBalance' => $pointBalance,
             'points' => $pointsEarned,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
