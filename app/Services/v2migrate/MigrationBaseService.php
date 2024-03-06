@@ -17,6 +17,7 @@ class MigrationBaseService extends MigrationService
     private $migrateEventService;
     private MigrateProgramGiftCodesService $migrateProgramGiftCodesService;
     private MigrateAwardLevelService $migrateAwardLevelService;
+    private MigrateInvoiceService $migrateInvoiceService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const SYNC_DOMAINS_TO_PROGRAM = 'Sync domains to a program';
@@ -30,7 +31,8 @@ class MigrationBaseService extends MigrationService
     const SYNC_EVENTS_TO_PROGRAM = 'Sync events to a program';
     const PROGRAM_GIFT_CODES = 'Program Gift Codes';
     const SYNC_AWARD_LEVELS_TO_PROGRAM = 'Award Levels';
-    const SYNC_PROGRAM_HIERARCHY_SETTINGS = 'Sync program hierarchy Settings';
+    const SYNC_PROGRAM_HIERARCHY_SETTINGS = 'Sync program hierarchy settings';
+    const SYNC_INVOICES_TO_PROGRAM = 'Sync invoices to a program';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
@@ -42,7 +44,8 @@ class MigrationBaseService extends MigrationService
         MigrateUserLogsService $migrateUserLogsService,
         MigrateEventService $migrateEventService,
         MigrateProgramGiftCodesService $migrateProgramGiftCodesService,
-        MigrateAwardLevelService $migrateAwardLevelService
+        MigrateAwardLevelService $migrateAwardLevelService,
+        MigrateInvoiceService $migrateInvoiceService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
@@ -55,6 +58,7 @@ class MigrationBaseService extends MigrationService
         $this->migrateEventService = $migrateEventService;
         $this->migrateProgramGiftCodesService = $migrateProgramGiftCodesService;
         $this->migrateAwardLevelService = $migrateAwardLevelService;
+        $this->migrateInvoiceService = $migrateInvoiceService;
     }
 
     /**
@@ -107,6 +111,7 @@ class MigrationBaseService extends MigrationService
             self::SYNC_DOMAINS_TO_PROGRAM => FALSE,
             self::SYNC_AWARD_LEVELS_TO_PROGRAM => FALSE,
             self::SYNC_PROGRAM_HIERARCHY_SETTINGS => FALSE,
+            self::SYNC_INVOICES_TO_PROGRAM => FALSE,
         ];
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
@@ -125,6 +130,7 @@ class MigrationBaseService extends MigrationService
             $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
             $migrations[self::SYNC_DOMAINS_TO_PROGRAM] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
             $migrations[self::SYNC_PROGRAM_HIERARCHY_SETTINGS] = $this->migrateProgramAccountsService->syncProgramHierarchySettings($v2AccountHolderID);
+            $migrations[self::SYNC_INVOICES_TO_PROGRAM] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
 
             DB::commit();
         } catch (Exception $e) {
