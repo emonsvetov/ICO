@@ -77,8 +77,10 @@ class InvoiceService
 
 		if( $invoice )  {
             $invoice = (new ChargeInvoiceForMoniesPending())->process($invoice, $user, $program, $amount );
+            $invoice->amount = $amount;
             if ($deposit_fee > 0) {
             	$invoice = (new ChargeInvoiceForDespositFee())->process ($invoice, $user, $program, $deposit_fee_amount);
+                $invoice->amount += $deposit_fee_amount;
             }
             // sleep(2); //To Remove
         }

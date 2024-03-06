@@ -27,8 +27,10 @@ class InvoiceController extends Controller
 
     public function createOnDemand(InvoiceRequest $request, InvoiceService $invoiceService, Organization $organization, Program $program )
     {
-        // return $request->validated();
-        return response( $invoiceService->createOnDemand($request->validated(), $program));
+        $invoice = $invoiceService->createOnDemand($request->validated(), $program);
+        //Attach program to the invoice
+        $invoice->program = $program;
+        return response( $invoice );
     }
 
     public function store(InvoiceRequest $request, Organization $organization, Program $program )
