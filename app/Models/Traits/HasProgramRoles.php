@@ -250,6 +250,7 @@ trait HasProgramRoles
         return $this->isProgramParticipant( $program );
     }
     public function isManager( $program ) {
+        if( !$program ) return false;
         $program = Program::getModelByMixed($program);
         $isManager = $this->hasRoleInProgram( config('roles.manager'), $program);
         if( $isManager )  return true;

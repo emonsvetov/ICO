@@ -84,7 +84,7 @@ class UserImportController extends Controller
     }
 
 
-    public function addAwardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization)
+    public function addAwardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization, Program $program = null)
     {
         //Use policies to determine if has rights and correct organization
         //Setup Request file
@@ -105,7 +105,7 @@ class UserImportController extends Controller
     }
 
 
-    public function awardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization)
+    public function awardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization, Program $program = null)
     {
         //Use policies to determine if has rights and correct organization
         //Setup Request file
@@ -126,7 +126,7 @@ class UserImportController extends Controller
     }
 
 
-    public function userFileAutoImport(CSVImportRequest $request, Organization $organization)
+    public function userFileAutoImport(CSVImportRequest $request, Organization $organization, Program $program = null)
     {
         $fileUpload = $request->validated();
         $validated = $request->validate([
@@ -158,7 +158,7 @@ class UserImportController extends Controller
         }
     }
 
-    public function userFileImport(CSVImportRequest $request, Organization $organization)
+    public function userFileImport(CSVImportRequest $request, Organization $organization, Program $program = null)
     {
         $fileUpload = $request->validated();
 
@@ -244,7 +244,7 @@ class UserImportController extends Controller
         //$file->getRealPath();
     }
 
-    public function userSaveSettings(Request $request, Organization $organization, CSVimportService $csvImportService)
+    public function userSaveSettings(Request $request, Organization $organization, Program $program = null, CSVimportService $csvImportService)
     {
         $validated = $request->validate([
             'fieldsToMap' => 'required|json',

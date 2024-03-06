@@ -677,6 +677,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Imports
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
+    Route::post('/v1/organization/{organization}/program/{program}/import', [App\Http\Controllers\API\ImportController::class, 'store'])->middleware('can:create,App\Import,organization,program');
+    Route::post('/v1/organization/{organization}/program/{program}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
+    Route::get('/v1/organization/{organization}/program/{program}/import/download-template', [App\Http\Controllers\API\ImportController::class, 'downloadTemplate'])->middleware('can:downloadTemplate,App\Import,organization,program');
 
     // Dashboard
     Route::get('/v1/organization/{organization}/program/{program}/dashboard',[App\Http\Controllers\API\DashboardController::class, 'index'])->middleware('can:viewAny,App\Dashboard,organization,program');

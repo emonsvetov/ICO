@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 // use App\Http\Requests\CSVImportRequest;
 // use App\Services\CSVimportHeaderService;
 // use App\Services\CSVimportService;
-
+use Illuminate\Support\Facades\Response;
 use App\Models\Organization;
 use App\Models\CsvImport;
 
@@ -17,7 +17,7 @@ class ImportController extends Controller
     public function index(Organization $organization)
     {
         $query = CsvImport::withOrganization($organization);
-        
+
         $csv_import_type = request()->get('csv_import_type', '');
         if( $csv_import_type )
         {
@@ -33,7 +33,19 @@ class ImportController extends Controller
         ->with('csv_import_type')
         ->orderByRaw($orderByRaw)
         ->paginate($limit);
-        
+
         return response($csvImports);
+    }
+    public function downloadTemplate()
+    {
+         $filePath = storage_path('template/demo.csv');
+         if (file_exists($filePath)) {
+            $headers = array(
+                'Content-Type' => 'text/csv',
+            );
+            return response()->download($filePath, 'demo.csv', $headers);
+        } else {
+            return response()->json(['error' => 'File not found'], 404);
+        }
     }
 }
