@@ -14,9 +14,10 @@ class MigrationBaseService extends MigrationService
     private MigrateDomainsService $migrateDomainsService;
     private MigrateUserAccountsService $migrateUserAccountsService;
     private MigrateUserLogsService $migrateUserLogsService;
-    private $migrateEventService;
+    private MigrateEventService $migrateEventService;
     private MigrateProgramGiftCodesService $migrateProgramGiftCodesService;
     private MigrateAwardLevelService $migrateAwardLevelService;
+    private MigrateAvailabeCodesService $migrateAvailabeCodesService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const SYNC_DOMAINS_TO_PROGRAM = 'Sync domains to a program';
@@ -25,6 +26,7 @@ class MigrationBaseService extends MigrationService
     const PROGRAM_ACCOUNTS = 'Program Accounts';
     const USERS = 'Users';
     const MIGRATE_DOMAINS = 'Migrate domains';
+    const MIGRATE_AVAILABE_CODES = 'Migrate Availabe Codes';
     const USER_ACCOUNTS = 'User Accounts';
     const USER_LOGS = 'User Logs';
     const SYNC_EVENTS_TO_PROGRAM = 'Sync events to a program';
@@ -42,7 +44,8 @@ class MigrationBaseService extends MigrationService
         MigrateUserLogsService $migrateUserLogsService,
         MigrateEventService $migrateEventService,
         MigrateProgramGiftCodesService $migrateProgramGiftCodesService,
-        MigrateAwardLevelService $migrateAwardLevelService
+        MigrateAwardLevelService $migrateAwardLevelService,
+        MigrateAvailabeCodesService $migrateAvailabeCodesService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
@@ -55,6 +58,7 @@ class MigrationBaseService extends MigrationService
         $this->migrateEventService = $migrateEventService;
         $this->migrateProgramGiftCodesService = $migrateProgramGiftCodesService;
         $this->migrateAwardLevelService = $migrateAwardLevelService;
+        $this->migrateAvailabeCodesService = $migrateAvailabeCodesService;
     }
 
     /**
@@ -68,13 +72,15 @@ class MigrationBaseService extends MigrationService
         $migrations = [
             self::MIGRATE_MERCHANTS => FALSE,
             self::MIGRATE_DOMAINS => FALSE,
+            self::MIGRATE_AVAILABE_CODES => FALSE,
         ];
 
         DB::beginTransaction();
 
         try {
-            $migrations[self::MIGRATE_MERCHANTS] = $this->migrateMerchantsService->migrate();
-            $migrations[self::MIGRATE_DOMAINS] = $this->migrateDomainsService->migrate();
+            //$migrations[self::MIGRATE_MERCHANTS] = $this->migrateMerchantsService->migrate();
+           // $migrations[self::MIGRATE_DOMAINS] = $this->migrateDomainsService->migrate();
+            $migrations[self::MIGRATE_AVAILABE_CODES] = $this->migrateAvailabeCodesService->migrate();
 
             DB::commit();
         } catch (Exception $e) {
