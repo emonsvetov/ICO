@@ -283,7 +283,7 @@ By Multiple Programs
 
 *** User Notification Example
 `$user = User::find(124);
-(new App\Services\PushNotificationService)->notifySingleUser( $user, [
+(new App\Services\PushNotificationService)->notifyUser( $user, [
     'title'=>"You have a notification",
     'body'=>"This is the body of notification",
     'data'=>[ //to be consumed by the mobile app
@@ -294,7 +294,7 @@ By Multiple Programs
 
 *** Notify Multiple users by id; Example
 `$userIds = [124, 125];
-(new App\Services\PushNotificationService)->notifyMultipleUsers( $userIds, [
+(new App\Services\PushNotificationService)->notifyManyUsers( $userIds, [
     'title'=>"You have a notification",
     'body'=>"This is the body of notification",
     'data'=>[ //to be consumed by the mobile app

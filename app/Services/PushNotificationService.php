@@ -24,10 +24,9 @@ class PushNotificationService
         return $token;
     }
 
-    public function notifySingleUser( User $user, $data = [] )    {
+    public function notifyUser( User $user, $data = [] )    {
         $tokens = [];
         $pushTokens = $user->push_tokens()->get();
-        pr($pushTokens->isEmpty());
         if( !$pushTokens->isEmpty() )
         {
             foreach( $pushTokens as $token )   {
@@ -72,7 +71,7 @@ class PushNotificationService
         }
     }
 
-    public function notifyMultipleUsers( $userIds = [], $data = [] )    {
+    public function notifyManyUsers( $userIds = [], $data = [] )    {
         $tokens = [];
         $pushTokens = PushNotificationToken::whereIn('user_id', $userIds)
         ->get();

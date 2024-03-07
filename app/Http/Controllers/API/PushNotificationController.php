@@ -54,7 +54,7 @@ class PushNotificationController extends Controller
 
         //Example 2: User Notification
         // $user = User::find(124);
-        // $pushNotificationService->notifySingleUser( $user, [
+        // $pushNotificationService->notifyUser( $user, [
         //     'title'=>"You have a notification",
         //     'body'=>"This is the body of notification",
         //     'data'=>[ //to be consumed by the mobile app
@@ -65,7 +65,7 @@ class PushNotificationController extends Controller
 
         //Example 3: Notify Multiple users by id
         // $userIds = [124, 125];
-        // $pushNotificationService->notifyMultipleUsers( $userIds, [
+        // $pushNotificationService->notifyManyUsers( $userIds, [
         //     'title'=>"You have a notification",
         //     'body'=>"This is the body of notification",
         //     'data'=>[ //to be consumed by the mobile app
