@@ -183,11 +183,11 @@ class ProgramUserController extends Controller
         UserService $userService,
         AccountService $accountService
     ) {
-        $amount_balance = $user->readAvailableBalance($program, $user);
         $pointsEarned = $accountService->read_awarded_total_for_participant($program, $user);
         $factor_valuation = $program->factor_valuation;
-        $pointBalance = $amount_balance * $program->factor_valuation;
         $peerBalance = $userService->readAvailablePeerBalance($user, $program);
+        $amount_balance = $user->readAvailableBalance($program, $user) + $peerBalance;
+        $pointBalance = $amount_balance * $program->factor_valuation;
         $expiredBalance = $accountService->readExpiredBalance($user, $program);
         $redeemedBalance = $accountService->readRedeemedBalance($user, $program);
         return response([
