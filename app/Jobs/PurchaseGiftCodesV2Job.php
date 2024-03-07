@@ -43,6 +43,7 @@ class PurchaseGiftCodesV2Job implements ShouldQueue
 
         $Logger = Log::channel('redemption');
         $codes = Giftcode::readNotSyncedCodes();
+print_r($codes); die;
         $errors = [];
 
         foreach( $codes as $code ){

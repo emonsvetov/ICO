@@ -136,6 +136,7 @@ class AwardService
         DB::beginTransaction();
 
         $program = $event->program;
+        $factor_valuation = $program->factor_valuation;
 
         $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
@@ -152,6 +153,7 @@ class AwardService
         $overrideCashValue = $data->override_cash_value ?? 0;
         $eventAmountOverride = $overrideCashValue > 0;
         $awardAmount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
+        $awardPoints = $awardAmount * $factor_valuation;
 
         // check for peer2peer and badge type
         if ( $isPeer2peerBadge ) {
@@ -230,6 +232,7 @@ class AwardService
         $overrideCashValue = $data->override_cash_value ?? 0;
         $eventAmountOverride = $overrideCashValue > 0;
         $awardAmount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
+        $awardPoints = $awardAmount * $factor_valuation;
 
         // $notificationBody = $data->message; //TODO
 
@@ -415,7 +418,7 @@ class AwardService
         $notification = [
             'notificationType' => $notificationType,
             'awardee_first_name' => $awardee->first_name,
-            'awardPoints' => $awardAmount,
+            'awardPoints' => (int) $awardPoints,
             'awardNotificationBody' => $notificationBody,
             'program' => $program,
             'eventName' => $eventName,
@@ -545,6 +548,7 @@ class AwardService
             $eventAmountOverride = $overrideCashValue > 0;
             $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
             $amount = (float)$amount;
+            $awardPoints = $amount * $program->factor_valuation;
 
             $notificationBody = $data['message'] ?? '';
 
@@ -601,7 +605,7 @@ class AwardService
             $awardee->notify(new AwardNotification((object)[
                 'notificationType' => 'PeerAllocation',
                 'awardee_first_name' => $awardee->first_name,
-                'awardPoints' => (int) $amount,
+                'awardPoints' => (int) $awardPoints,
                 'awardNotificationBody' => $notificationBody,
                 'program' => $program
             ]));
