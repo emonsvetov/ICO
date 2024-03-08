@@ -99,6 +99,10 @@ class ProgramUserController extends Controller
 
     public function show(Organization $organization, Program $program, User $user): UserResource
     {
+        $include_balance = request('include_balance', false);
+        if( $include_balance )   {
+            $user = (new \App\Services\Program\ProgramUserService)->attachBalanceToUser($user, $program);
+        }
         return $this->UserResponse($user);
     }
 

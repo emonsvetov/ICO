@@ -11,10 +11,10 @@ use App\Models\User;
 
 class ParticipantController extends Controller
 {
-    public function myPoints( 
-        Organization $organization, 
+    public function myPoints(
+        Organization $organization,
         Program $program,
-        User $user,  
+        User $user,
         AwardService $awardService,
         AccountService $accountService
     )
@@ -64,7 +64,7 @@ class ParticipantController extends Controller
 
             $points_summary = $accountService->readListEventAwardsForParticipant($program, $user);
             $result['points_summary'] = $points_summary;
-            
+
             $points_summary_for_internal_store = $accountService->readListEventAwardsWithInternalStoreForParticipant($program, $user);
             $result['points_summary_for_internal_store'] = $points_summary_for_internal_store;
 
@@ -74,5 +74,33 @@ class ParticipantController extends Controller
                 'errors' => sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine())
             ], 500);
         }
+    }
+
+    public function pointHistory(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AccountService $accountService
+    ) {
+        $pointHistory = $accountService->pointHistory($program, $user);
+        return response($pointHistory);
+    }
+
+    public function unreadNotificationCount(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AccountService $accountService
+    ) {
+        $count = $accountService->getUnreadNotificationCount($program, $user);
+        return response($count);
+    }
+    public function markNotificationsRead(
+        Organization $organization,
+        Program $program,
+        User $user,
+        AccountService $accountService
+    ) {
+        return response($accountService->markNotificationsRead($program, $user));
     }
 }
