@@ -86,17 +86,17 @@ class MigrationBaseService extends MigrationService
             self::MIGRATE_DOMAINS => FALSE,
         ];
 
-        DB::beginTransaction();
+//        DB::beginTransaction();
 
         try {
             $migrations[self::MIGRATE_MERCHANTS] = $this->migrateMerchantsService->migrate();
             $migrations[self::MIGRATE_DOMAINS] = $this->migrateDomainsService->migrate();
 
-            DB::commit();
+//            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
             $result['error'] = $e->getMessage();
-            DB::rollback();
+//            DB::rollback();
         }
 
         $result['migrations'] = $migrations;
@@ -131,7 +131,7 @@ class MigrationBaseService extends MigrationService
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
 
-        DB::beginTransaction();
+//        DB::beginTransaction();
 
         try {
             $migrations[self::PROGRAM_HIERARCHY] = $this->migrateProgramsService->migrate($v2AccountHolderID);
@@ -150,12 +150,12 @@ class MigrationBaseService extends MigrationService
             $migrations[self::PROGRAM_AND_USER_POSTINGS] = $this->migratePostingService->migrate($v2AccountHolderID);
 //            $migrations[self::SYNC_INVOICES_TO_PROGRAM] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
 
-            DB::commit();
+//            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
             $file = basename($e->getFile());
             $result['error'] = $e->getMessage(). ". File: {$file}" . ". Line: {$e->getLine()}";
-            DB::rollback();
+//            DB::rollback();
         }
 
         $result['migrations'] = $migrations;
