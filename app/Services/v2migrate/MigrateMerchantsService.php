@@ -245,7 +245,7 @@ class MigrateMerchantsService extends MigrationService
                 $this->countUpdatedMerchants++;
             }
 
-            $this->migrateAvailableCodes($parentMerchant);
+//            $this->migrateAvailableCodes($parentMerchant);
             $this->updateMerchantMedia($v2Merchant, $parentMerchant);
 
             if (
