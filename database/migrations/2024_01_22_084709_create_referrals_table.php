@@ -13,19 +13,21 @@ class CreateReferralsTable extends Migration
      */
     public function up()
     {
-        Schema::create('referrals', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('organization_id');
-            $table->unsignedBigInteger('program_id');
-            $table->unsignedBigInteger('sender_id');
-            $table->string('recipient_first_name');
-            $table->string('recipient_last_name');
-            $table->string('recipient_email');
-            $table->string('recipient_area_code');
-            $table->string('recipient_phone', 50);
-            $table->mediumText('message')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('referrals')) {
+            Schema::create('referrals', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('organization_id');
+                $table->unsignedBigInteger('program_id');
+                $table->unsignedBigInteger('sender_id');
+                $table->string('recipient_first_name');
+                $table->string('recipient_last_name');
+                $table->string('recipient_email');
+                $table->string('recipient_area_code');
+                $table->string('recipient_phone', 50);
+                $table->mediumText('message')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     /**
