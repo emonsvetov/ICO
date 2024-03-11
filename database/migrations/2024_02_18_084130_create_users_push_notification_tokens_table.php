@@ -13,15 +13,17 @@ class CreateUsersPushNotificationTokensTable extends Migration
      */
     public function up()
     {
-        Schema::create('users_push_notification_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('program_id');
-            $table->unsignedBigInteger('user_id');
-            $table->string('os_name', 32);
-            $table->string('device_name', 60);
-            $table->string('token');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('users_push_notification_tokens')) {
+            Schema::create('users_push_notification_tokens', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('program_id');
+                $table->unsignedBigInteger('user_id');
+                $table->string('os_name', 32);
+                $table->string('device_name', 60);
+                $table->string('token');
+                $table->timestamps();
+            });
+        }
     }
 
     /**
