@@ -17,7 +17,7 @@ class ImportController extends Controller
     public function index(Organization $organization)
     {
         $query = CsvImport::withOrganization($organization);
-        
+
         $csv_import_type = request()->get('csv_import_type', '');
         if( $csv_import_type )
         {
@@ -33,7 +33,7 @@ class ImportController extends Controller
         ->with('csv_import_type')
         ->orderByRaw($orderByRaw)
         ->paginate($limit);
-        
+
         return response($csvImports);
     }
 }

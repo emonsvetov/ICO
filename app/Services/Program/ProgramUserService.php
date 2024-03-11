@@ -32,4 +32,15 @@ class ProgramUserService
             return $user;
         }
     }
+
+    public function attachBalanceToUser(User $user, Program $program ) {
+        $amount_balance = $user->readAvailableBalance($program, $user);
+        $factor_valuation = $program->factor_valuation;
+        $points_balance = $amount_balance * $program->factor_valuation;
+
+        $user->balance = $amount_balance;
+        $user->points_balance = $points_balance;
+        $user->factor_valuation = $factor_valuation;
+        return $user;
+    }
 }

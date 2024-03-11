@@ -44,7 +44,10 @@ trait HasProgramRoles
 
     public function getAllProgramRolesByDomain( $domain )   {
         $allRoles = collect();
-        $domain =  Domain::getModelByMixed($domain);
+        if( !$domain instanceof \App\Models\Domain )   {
+            $domain =  Domain::getModelByMixed($domain)->with('programs');
+        }
+        $domain->load('programs');
         //Lets try to find it in associated programs aka parent programs
         foreach( $domain->programs as $program)    {
             $programRoles = $this->getProgramRolesByProgram($program);
@@ -298,6 +301,13 @@ trait HasProgramRoles
                 $newRoles[$role_id] = $columns;
             }
             $this->roles()->attach( $newRoles );
+        }
+    }
+    public function getManagers()   {
+        die;
+        if( $this->id ) {
+            pr($this->id);
+            return $this->id;
         }
     }
 }

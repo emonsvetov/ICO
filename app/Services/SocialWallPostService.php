@@ -45,7 +45,7 @@ class SocialWallPostService
     public function like(Organization $organization, Program $program, $user, array $request)
     {
         $post = SocialWallPost::find($request['id']);
-        $like = $post->like;
+        $like = json_decode($post->like);
         if ($like == null)
             $like = [];
         if (in_array($user->id, $like)) {
@@ -56,7 +56,7 @@ class SocialWallPostService
         }
         $post->like = $like;
         $post->likesCount = count($like);
-        $post->save();
+        return $post->save();
     }
 
     public function getIndexData(Organization $organization, Program $program, $user, array $request): array
@@ -82,6 +82,7 @@ class SocialWallPostService
             ->whereNull('social_wall_post_id')
             ->orderBy('created_at', 'DESC')
             // ->with(['eventXmlData.event.eventIcon:id,name']) //can be used but limit the select fields first
+            ->limit(10)
             ->get();
 
         return [

@@ -48,7 +48,7 @@ class UserPolicy
         {
             return false;
         }
-        if( $authUser->isAdmin() ) return true;
+        if( $authUser->isAdmin() || ($authUser->id === $user->id) ) return true;
         return $authUser->can('user-view');
     }
 
@@ -81,7 +81,7 @@ class UserPolicy
         {
             return false;
         }
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin() || ($user->id === $model->id) ) return true;
         return $user->id === $model->id || $user->can('user-update');
     }
 

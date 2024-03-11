@@ -13,11 +13,13 @@ class CreateAwardLevelsHasUsersTable extends Migration
      */
     public function up()
     {
-        Schema::create('award_levels_has_users', function (Blueprint $table) {
-            $table->integer('award_levels_id')->index();
-            $table->integer('users_id')->index();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('award_levels_has_users')) {
+            Schema::create('award_levels_has_users', function (Blueprint $table) {
+                $table->integer('award_levels_id')->index();
+                $table->integer('users_id')->index();
+                $table->timestamps();
+            });
+        }
     }
 
     /**

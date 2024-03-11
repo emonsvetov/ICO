@@ -62,6 +62,15 @@ class ReportServiceUserHistory extends ReportServiceAbstractBase
                     AND jet.id = `journal_event_types`.id
             ) as event_total
             ");
+            $subQuery->where(function ($query) {
+            $query->where(DB::raw('(SELECT SUM(IF(p.is_credit = 1, p.posting_amount, -p.posting_amount)) AS total
+                FROM postings p
+                INNER JOIN journal_events je ON je.id = p.journal_event_id
+                INNER JOIN journal_event_types jet ON jet.id = je.journal_event_type_id
+                WHERE p.account_id = accounts.id
+                AND jet.id = journal_event_types.id)'), '<>', 0);
+            });
+
             $subQuery->where('accounts.account_holder_id', '=', $this->params[self::USER_ACCOUNT_HOLDER_ID]);
 
             if (!$query) {
