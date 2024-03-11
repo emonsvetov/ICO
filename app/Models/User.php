@@ -374,8 +374,42 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         })->first();
     }
 
+    public function getActiveOrNewUserByEmail( $email ) {
+        return self::where('email', 'like', $email)
+        ->whereHas('status', function($query) {
+            $query->whereIn('status', ['Active', 'New', 'Pending Activation']);
+            $query->where('context', 'LIKE', 'Users');
+        })
+        ->first();
+    }
+
+    public function forcePasswordChange()  {
+        return $this->isPendingActivation() OR $this->isNew() OR ( $this->isActive() && $this->neverLoggedIn() );
+    }
+
+    public function isActive()    {
+        return $this->status->status === self::STATUS_ACTIVE;
+    }
+
+    public function isPendingActivation()    {
+        return $this->status->status === self::STATUS_PENDING_ACTIVATION;
+    }
+
+    public function isNew()    {
+        return $this->status->status === self::STATUS_NEW;
+    }
+
+    public function neverLoggedIn()    {
+        return is_null($this->last_login);
+    }
+
     public function v2_users()
     {
         return $this->hasMany(UserV2User::class);
+    }
+
+    public function push_tokens()
+    {
+        return $this->hasMany(\App\Models\PushNotificationToken::class);
     }
 }

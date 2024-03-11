@@ -36,7 +36,7 @@ class AwardNotification extends Notification implements ShouldQueue
      */
     public function via($notifiable)
     {
-        return ['mail'];
+        return ['database', 'mail'];
     }
 
     /**
@@ -94,5 +94,15 @@ class AwardNotification extends Notification implements ShouldQueue
                 ))->convertToMailMessage();
             break;
         }
+    }
+
+    public function toArray($notifiable)
+    {
+        $notification = $this->data;
+        $notification->program = [
+            'id' => $this->data->program->id,
+            'name' => $this->data->program->name,
+        ];
+        return $notification;
     }
 }

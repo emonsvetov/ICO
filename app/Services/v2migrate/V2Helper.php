@@ -824,4 +824,105 @@ class V2Helper
         return $result[0] ?? null;
     }
 
+    public function getEventXmlDataByAccountHolderId(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT DISTINCT
+                event_xml_data.*
+            FROM
+                accounts
+                JOIN postings on postings.account_id=accounts.id
+                JOIN journal_events je ON je.id=postings.journal_event_id
+                JOIN event_xml_data on event_xml_data.id=je.event_xml_data_id
+            WHERE
+                accounts.account_holder_id IN (". implode(',', $accountHolderIds) .")
+		";
+        return $this->v2db->select($sql);
+    }
+
+    public function getEventById(int $id): ?object
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+                *
+			FROM
+				event_templates
+			WHERE
+			    id = '$id'
+		";
+        $result = $this->v2db->select($sql);
+        return $result[0] ?? null;
+    }
+
+    public function getJournalEventByAccountIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    je.id,
+                je.prime_account_holder_id,
+                je.journal_event_timestamp,
+                je.journal_event_type_id,
+                je.notes,
+                je.invoice_id,
+                je.event_xml_data_id,
+                je.parent_journal_event_id,
+                je.is_read,
+                je.v3_journal_event_id,
+                users.account_holder_id AS user_account_holder_id,
+                users.v3_user_id,
+                event_xml_data.v3_id as event_xml_data_v3_id
+            FROM
+                accounts
+                JOIN postings on postings.account_id=accounts.id
+                JOIN journal_events je ON je.id=postings.journal_event_id
+                LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id
+                LEFT JOIN event_xml_data on event_xml_data.id = je.event_xml_data_id
+            WHERE
+                accounts.account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+            GROUP BY
+                je.id
+            ORDER BY
+                je.journal_event_timestamp ASC
+		";
+        return $this->v2db->select($sql);
+    }
+
+    public function getPostingsByAccountIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    postings.id,
+			    postings.qty,
+			    postings.posting_amount,
+			    postings.is_credit,
+			    postings.posting_timestamp,
+                je.v3_journal_event_id,
+                users.account_holder_id AS user_account_holder_id,
+                users.v3_user_id,
+                event_xml_data.v3_id as event_xml_data_v3_id,
+			    accounts.v3_account_id,
+			    medium_info.v3_medium_info_id
+            FROM
+                accounts
+                JOIN postings on postings.account_id=accounts.id
+                JOIN journal_events je ON je.id=postings.journal_event_id
+                LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id
+                LEFT JOIN event_xml_data on event_xml_data.id = je.event_xml_data_id
+                LEFT JOIN medium_info on medium_info.id = postings.medium_info_id
+            WHERE
+                accounts.account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+            GROUP BY
+                postings.id
+            ORDER BY
+                postings.posting_timestamp ASC
+		";
+        return $this->v2db->select($sql);
+    }
+
+
+
 }

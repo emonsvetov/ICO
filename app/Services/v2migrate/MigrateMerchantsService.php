@@ -2,7 +2,10 @@
 namespace App\Services\v2migrate;
 
 use App\Models\AccountHolder;
+use App\Models\Giftcode;
+use App\Models\MediumInfo;
 use App\Models\TangoOrdersApi;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Exception;
@@ -22,16 +25,21 @@ class MigrateMerchantsService extends MigrationService
     public $createDuplicateName = false;
     public $v2TangoAPIList = [];
     public $v3TangoUserID;
+    public $v3Merchants = [];
+    public $v2DublicateCodes = [];
 
     public $countCreatedMerchants = 0;
     public $countUpdatedMerchants = 0;
     public $countCreatedTangoApi = 0;
     public $countUpdatedTangoApi = 0;
+    public $countCreatedMerchantCodes = 0;
+    public $countUpdatedMerchantCodes = 0;
 
     public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
         $this->merchantService = $merchantService;
         $this->migrateGiftcodesService = $migrateGiftcodesService;
+        $this->v3Merchants = Merchant::all()->pluck('id', 'v2_account_holder_id')->toArray();
         parent::__construct();
     }
 
@@ -237,19 +245,8 @@ class MigrateMerchantsService extends MigrationService
                 $this->countUpdatedMerchants++;
             }
 
-            $icons = [];
-            foreach(Merchant::MEDIA_FIELDS as $mediaField) {
-                if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
-                    $icons[$mediaField] = $v2Merchant->{$mediaField};
-                }
-            }
-
-            if( $icons ) {
-                $uploads = $this->handleMerchantMediaUpload( null, $parentMerchant, false, $icons );
-                if( $uploads )   {
-                    $parentMerchant->update($uploads);
-                }
-            }
+            $this->migrateAvailableCodes($parentMerchant);
+            $this->updateMerchantMedia($v2Merchant, $parentMerchant);
 
             if (
                 isset($v2MerchantNode['sub_merchant']) &&
@@ -258,6 +255,26 @@ class MigrateMerchantsService extends MigrationService
                 foreach( $v2MerchantNode['sub_merchant'] as $v2SubMerchant ) {
                     $this->migrateMerchant($v2SubMerchant, $parentMerchant->id);
                 }
+            }
+        }
+    }
+
+    /**
+     * Update merchant media.
+     */
+    public function updateMerchantMedia($v2Merchant, $parentMerchant)
+    {
+        $icons = [];
+        foreach(Merchant::MEDIA_FIELDS as $mediaField) {
+            if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
+                $icons[$mediaField] = $v2Merchant->{$mediaField};
+            }
+        }
+
+        if( $icons ) {
+            $uploads = $this->handleMerchantMediaUpload( null, $parentMerchant, false, $icons );
+            if( $uploads )   {
+                $parentMerchant->update($uploads);
             }
         }
     }
@@ -467,7 +484,7 @@ class MigrateMerchantsService extends MigrationService
                     $v3Program->merchants()->sync($programMerchants, false);
                     $countProgramMerchants = count($programMerchants);
                     $result['success'] = TRUE;
-                    $result['info'] = "was sync $countProgramMerchants items";
+                    $result['info'] = "sync $countProgramMerchants items. created $this->countCreatedMerchantCodes items, updated $this->countUpdatedMerchantCodes items (merchant available codes).";
                 } catch (\Exception $exception) {
                     throw new Exception("Sync merchants to a program is failed.");
                 }
@@ -475,5 +492,154 @@ class MigrateMerchantsService extends MigrationService
         }
 
         return $result;
+    }
+
+    /**
+     * Migrate available codes to a merchant.
+     *
+     * @param $v3Merchant
+     * @throws Exception
+     */
+    public function migrateAvailableCodes($v3Merchant)
+    {
+        $v2AvailableMerchantCodes = $this->getV2AvailableMerchantCodes($v3Merchant);
+        if (!empty($v2AvailableMerchantCodes)) {
+            foreach ($v2AvailableMerchantCodes as $v2AvailableMerchantCode) {
+
+                $v2MerchantID = $v2AvailableMerchantCode->merchant_account_holder_id;
+                $v2RedeemedMerchantID = $v2AvailableMerchantCode->redeemed_merchant_account_holder_id;
+                $v2RedeemedUserID = $v2AvailableMerchantCode->redeemed_account_holder_id;
+
+                $code = $v2AvailableMerchantCode->code;
+                $this->v2DublicateCodes[$code] = isset($this->v2DublicateCodes[$code]) ? ($this->v2DublicateCodes[$code] + 1) : 1;
+                $countCode = $this->v2DublicateCodes[$code];
+
+                // Fix for duplicate code as FXXXXXX.
+                if ($countCode > 1) {
+                    $code .= '_' . $countCode;
+                }
+
+                $v3MediumInfoData = [
+                    'purchase_date' => $v2AvailableMerchantCode->purchase_date,
+                    'redemption_date' => $v2AvailableMerchantCode->redemption_date,
+                    'expiration_date' => $v2AvailableMerchantCode->expiration_date,
+                    'hold_until' => $v2AvailableMerchantCode->hold_until,
+                    'redemption_value' => $v2AvailableMerchantCode->redemption_value,
+                    'cost_basis' => $v2AvailableMerchantCode->cost_basis,
+                    'discount' => $v2AvailableMerchantCode->discount,
+                    'sku_value' => $v2AvailableMerchantCode->sku_value,
+                    'pin' => $v2AvailableMerchantCode->pin,
+                    'redemption_url' => $v2AvailableMerchantCode->redemption_url,
+                    'encryption' => $v2AvailableMerchantCode->encryption,
+                    'code' => $code,
+                    'merchant_id' => (int) $v2MerchantID ? $this->getV3MerchantID($v2MerchantID) : NULL,
+                    'redeemed_merchant_id' => (int) $v2RedeemedMerchantID ? $this->getV3MerchantID($v2MerchantID) : NULL,
+                    'redeemed_program_id' => NULL, // all column NULL in v2
+                    'redeemed_user_id' => (int) $v2RedeemedUserID ? $this->getV3RedeemedUserID($v2RedeemedUserID) : NULL,
+                    'factor_valuation' => $v2AvailableMerchantCode->factor_valuation,
+                    'medium_info_is_test' => $v2AvailableMerchantCode->medium_info_is_test,
+                    'redemption_datetime' => $v2AvailableMerchantCode->redemption_datetime,
+                    'purchased_by_v2' => TRUE,
+                    'tango_request_id' => $v2AvailableMerchantCode->tango_request_id,
+                    'tango_reference_order_id' => $v2AvailableMerchantCode->tango_reference_order_id,
+                    'v2_medium_info_id' => $v2AvailableMerchantCode->id,
+                    'virtual_inventory' => $v2AvailableMerchantCode->virtual_inventory,
+                    'v2_sync_status' => Giftcode::SYNC_STATUS_SUCCESS,
+                ];
+
+                $m3MediumInfo = MediumInfo::where('v2_medium_info_id', $v2AvailableMerchantCode->id)->first();
+                if (blank($m3MediumInfo)) {
+                    MediumInfo::create($v3MediumInfoData);
+                    $this->countCreatedMerchantCodes++;
+                }
+                else {
+                    $m3MediumInfo->update($v3MediumInfoData);
+                    $this->countUpdatedMerchantCodes++;
+                }
+
+            }
+        }
+    }
+
+    /**
+     * Get v3 merchant ID.
+     *
+     * @param $v2MerchantID
+     * @return mixed
+     * @throws Exception
+     */
+    public function getV3MerchantID($v2MerchantID)
+    {
+        try {
+            return $this->v3Merchants[$v2MerchantID];
+        } catch (\Exception $e)  {
+            throw new Exception("v2 merchant in v3 not found.");
+        }
+    }
+
+    /**
+     * Get v3 User ID.
+     *
+     * @param $v2UserID
+     * @return mixed
+     * @throws Exception
+     */
+    public function getV3RedeemedUserID($v2UserID)
+    {
+        $v2Sql = "SELECT u.* FROM users u WHERE u.account_holder_id = {$v2UserID} LIMIT 1";
+        $result = $this->v2db->select($v2Sql);
+        $v2User = reset($result);
+
+        $v3UserID = $v2User->v3_user_id ?? FALSE;
+        if (!$v3UserID) {
+            $v3User = User::where('email', $v2User->email)->first();
+            $v3UserID = $v3User->id ?? FALSE;
+        }
+
+        if (!$v3UserID) {
+            throw new Exception("Sync available codes for merchants is failed.");
+        }
+
+        return $v3UserID;
+    }
+
+    /**
+     * Get v2 available merchant codes.
+     *
+     * @param $v3Merchant
+     * @return array
+     * @throws Exception
+     */
+    public function getV2AvailableMerchantCodes($v3Merchant)
+    {
+        $v2merchantAccountHolderID = $v3Merchant->v2_account_holder_id;
+
+        if (blank($v2merchantAccountHolderID)) {
+            throw new Exception("Sync available merchant code is failed.");
+        }
+
+        $v2Sql = "
+        SELECT
+        *,
+        upper(substring(MD5(RAND()), 1, 20)) as `codefake`
+        FROM
+            (
+                select
+                    medium_info.*
+                from
+                    medium_info
+                        join postings on medium_info.id = postings.medium_info_id
+                        join accounts a on postings.account_id = a.id
+                where
+                        medium_info.medium_info_is_test != 1 AND medium_info.virtual_inventory = 0 AND
+                        account_holder_id = {$v2merchantAccountHolderID} AND redemption_date is null  AND medium_info.purchased_by_v3 = 0 group by
+                    medium_info.id
+            ) t
+
+        ORDER BY
+            `sku_value`, `id` ASC
+        ";
+
+        return $this->v2db->select($v2Sql);
     }
 }
