@@ -3,6 +3,7 @@
 namespace App\Services\v2migrate;
 
 use App\Models\Address;
+use App\Models\Invoice;
 use App\Models\ProgramExtra;
 use App\Models\ProgramTransactionFee;
 use App\Services\ProgramService;
@@ -242,7 +243,7 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Settings = array_merge($v2Program, $v2ProgramConfigFields, $v2ProgramExtraInfo, $v2Address);
 
         // Fix.
-        $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'];
+        $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'] ?? FALSE;
         $v2Settings['allow_award_peers_not_logged_into'] = $v2Settings['peer_award_seperation'];
         $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'];
         $v2Settings['bill_direct'] = !$v2Settings['bill_direct'];
