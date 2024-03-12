@@ -40,6 +40,7 @@ class MigrateEventXmlDataService extends MigrationService
         }
 
         $this->migrateEventXmlData($v2RootPrograms);
+        $this->executeV2SQL();
 
         return [
             'success' => TRUE,
@@ -74,7 +75,7 @@ class MigrateEventXmlDataService extends MigrationService
 
         $v2EventXmlList = $this->getEventXmlDataByAccountHolderId(array_merge([$v2Program->account_holder_id], $v2UserIds));
         foreach ($v2EventXmlList as $v2Data) {
-            $this->importedEventXmlData[] = $this->syncOrCreateEventXmlData($v2Data, $v3Program)->toArray();
+            $this->syncOrCreateEventXmlData($v2Data, $v3Program);
         }
     }
 
@@ -102,7 +103,7 @@ class MigrateEventXmlDataService extends MigrationService
             }
         }
 
-        $v3EventXmlData = EventXmlData::firstOrCreate([
+        $data = [
             'v2_id' => $v2Data->id,
             'awarder_account_holder_id' => $awarderAccountHolderId,
             'name' => $v2Data->name,
@@ -119,9 +120,29 @@ class MigrateEventXmlDataService extends MigrationService
             'award_transaction_id' => $v2Data->award_transaction_id,
             'lease_number' => $v2Data->lease_number,
             'token' => $v2Data->token
-        ]);
+        ];
+        $dataSearch = $data;
+        unset($dataSearch['award_level_name']);
+        unset($dataSearch['notification_body']);
+        unset($dataSearch['notes']);
+        unset($dataSearch['referrer']);
+        unset($dataSearch['email_template_id']);
+        unset($dataSearch['event_type_id']);
+        unset($dataSearch['event_template_id']);
+        unset($dataSearch['xml']);
+        unset($dataSearch['award_transaction_id']);
+        unset($dataSearch['lease_number']);
+        unset($dataSearch['token']);
 
-        $this->v2db->statement(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d", $v3EventXmlData->id, $v2Data->id));
-        return $v3EventXmlData;
+        $v3EventXmlData = EventXmlData::where($dataSearch)->first();
+        if (!$v3EventXmlData){
+            $v3EventXmlData = EventXmlData::create($data);
+        }
+        $this->printf("EventXmlData done: {$v3EventXmlData->id}. Count= ".count($this->importedEventXmlData)." \n\n");
+
+        if ($v3EventXmlData) {
+            $this->addV2SQL(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d", $v3EventXmlData->id, $v2Data->id));
+            $this->importedEventXmlData[] = $v3EventXmlData->id;
+        }
     }
 }

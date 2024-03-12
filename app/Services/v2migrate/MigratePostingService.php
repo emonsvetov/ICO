@@ -41,6 +41,7 @@ class MigratePostingService extends MigrationService
         }
 
         $this->migrateAll($v2RootPrograms);
+        $this->executeV2SQL();
 
         return [
             'success' => TRUE,
@@ -82,7 +83,6 @@ class MigratePostingService extends MigrationService
     {
         $v2Data = $this->getPostingsByAccountIds($accountHolderIds);
 
-
         foreach ($v2Data as $item) {
             $this->syncOrCreatePosting($item);
         }
@@ -101,10 +101,16 @@ class MigratePostingService extends MigrationService
             'created_at' => $v2posting->posting_timestamp
         ];
 
-        $v3Posting = Posting::firstOrCreate($data, $data);
+        $dataSearch = $data;
+
+        $v3Posting = Posting::where($dataSearch)->first();
+        if (!$v3Posting){
+            $v3Posting = Posting::create($data);
+        }
+        $this->printf("Posting done: {$v3Posting->id}. Count= ".count($this->importedPostings)." \n\n");
 
         if ($v3Posting) {
-            $this->v2db->statement(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3Posting->id, $v2posting->id));
+            $this->addV2SQL(sprintf("UPDATE `postings` SET `v3_posting_id`=%d WHERE `id`=%d", $v3Posting->id, $v2posting->id));
             $this->importedPostings[] = $v3Posting->id;
         }
     }

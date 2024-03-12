@@ -41,6 +41,7 @@ class MigrateJournalEventService extends MigrationService
         }
 
         $this->migrateAll($v2RootPrograms);
+        $this->executeV2SQL();
 
         return [
             'success' => TRUE,
@@ -107,10 +108,18 @@ class MigrateJournalEventService extends MigrationService
             'created_at' => $v2JournalEvent->journal_event_timestamp
         ];
 
-        $v3JournalEvent = JournalEvent::firstOrCreate($data, $data);
+        $dataSearch = $data;
+        unset($dataSearch['notes']);
+        unset($dataSearch['invoice_id']);
+
+        $v3JournalEvent = JournalEvent::where($dataSearch)->first();
+        if (!$v3JournalEvent){
+            $v3JournalEvent = JournalEvent::create($data);
+        }
+        $this->printf("JournalEvent done: {$v3JournalEvent->id}. Count= ".count($this->importedJournalEvents)." \n\n");
 
         if ($v3JournalEvent) {
-            $this->v2db->statement(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEvent->id, $v2JournalEvent->id));
+            $this->addV2SQL(sprintf("UPDATE `journal_events` SET `v3_journal_event_id`=%d WHERE `id`=%d", $v3JournalEvent->id, $v2JournalEvent->id));
             $this->importedJournalEvents[] = $v3JournalEvent->id;
         }
     }
