@@ -82,9 +82,15 @@ class MigrationBaseService extends MigrationService
         $result['success'] = TRUE;
         $result['error'] = NULL;
         $migrations = [
-            self::MIGRATE_DOMAINS => ['step' => 1],
-            self::MIGRATE_MERCHANTS => ['step' => 2],
+            self::MIGRATE_DOMAINS,
+            self::MIGRATE_MERCHANTS,
         ];
+
+        $arr = [];
+        foreach ($migrations as $key => $migration) {
+            $arr[$migration] = ['step' => $key + 1];
+        }
+        $migrations = $arr;
 
         $step = $args['step'] ?? 1;
         $nextStep = 0;
@@ -114,8 +120,6 @@ class MigrationBaseService extends MigrationService
                     break;
 
             }
-//            $migrations[self::MIGRATE_MERCHANTS] = $this->migrateMerchantsService->migrate();
-//            $migrations[self::MIGRATE_DOMAINS] = $this->migrateDomainsService->migrate();
 
 //            DB::commit();
         } catch (Exception $e) {
