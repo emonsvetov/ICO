@@ -25,7 +25,9 @@ class MigrationController extends Controller
     public function runArtisanMigrate()
     {
         try {
+            Artisan::call('route:clear');
             Artisan::call('migrate');
+
             $output = Artisan::output();
         } catch (\Exception $e) {
             $output = 'Errors with migrations' . PHP_EOL . PHP_EOL . $e->getMessage();
