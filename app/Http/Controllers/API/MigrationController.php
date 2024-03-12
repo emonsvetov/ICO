@@ -56,11 +56,14 @@ class MigrationController extends Controller
     /**
      * Run global migrations list.
      */
-    public function runGlobal()
+    public function runGlobal($step)
     {
         ini_set('max_execution_time', 360);
 
-        $result = $this->migrationBaseService->migrateGlobal();
+        $args = [];
+        $args['step'] = $step;
+
+        $result = $this->migrationBaseService->migrateGlobal($args);
         return response($result);
     }
 
