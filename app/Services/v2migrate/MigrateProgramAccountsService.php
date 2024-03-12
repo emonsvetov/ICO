@@ -244,9 +244,9 @@ class MigrateProgramAccountsService extends MigrationService
 
         // Fix.
         $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'] ?? FALSE;
-        $v2Settings['allow_award_peers_not_logged_into'] = $v2Settings['peer_award_seperation'];
-        $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'];
-        $v2Settings['bill_direct'] = !$v2Settings['bill_direct'];
+        $v2Settings['allow_award_peers_not_logged_into'] = $v2Settings['peer_award_seperation'] ?? FALSE;
+        $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'] ?? FALSE;
+        $v2Settings['bill_direct'] = !$v2Settings['bill_direct'] ?? FALSE;
 
         ksort($v2Settings);
 
