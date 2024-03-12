@@ -92,9 +92,8 @@ class MigrationBaseService extends MigrationService
         }
         $migrations = $arr;
 
-        $step = $args['step'] ?? 1;
+        $step = $args['step'];
         $nextStep = 0;
-
 
 //        DB::beginTransaction();
 
@@ -106,25 +105,29 @@ class MigrationBaseService extends MigrationService
 
                 case 1:
                     $result['migration'] = $this->migrateDomainsService->migrate();
-                    $nextStep = $step + 1;
                     break;
 
                 case 2:
                     $result['migration'] = $this->migrateMerchantsService->migrate();
-                    $nextStep = $step + 1;
                     break;
 
-                case 'stop':
                 default:
                     $nextStep = 0;
                     break;
 
             }
 
+            if ((int) $step < count($migrations)) {
+                $nextStep = $step == 'start' ? 1 : $step + 1;
+            }
+            else {
+                $nextStep = 0;
+            }
+
 //            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
-            $result['nextStep'] = 'stop';
+            $result['nextStep'] = 0;
             $result['error'] = $e->getMessage();
 //            DB::rollback();
         }
@@ -143,127 +146,124 @@ class MigrationBaseService extends MigrationService
         $result['success'] = TRUE;
         $result['error'] = NULL;
         $migrations = [
-            self::PROGRAM_HIERARCHY => ['step' => 2],
-            self::PROGRAM_ACCOUNTS => ['step' => 3],
-            self::SYNC_EVENTS_TO_PROGRAM => ['step' => 4],
-            self::USERS => ['step' => 5],
-            self::USER_ACCOUNTS => ['step' => 6],
-            self::USER_LOGS => ['step' => 7],
-            self::PROGRAM_GIFT_CODES => ['step' => 8],
-            self::SYNC_MERCHANTS_TO_PROGRAM => ['step' => 9],
-            self::SYNC_DOMAINS_TO_PROGRAM => ['step' => 10],
-            self::SYNC_AWARD_LEVELS_TO_PROGRAM => ['step' => 11],
-            self::SYNC_PROGRAM_HIERARCHY_SETTINGS => ['step' => 12],
-            self::EVENT_XML_DATA => ['step' => 13],
-            self::PROGRAM_AND_USER_JOURNAL_EVENTS => ['step' => 14],
-            self::PROGRAM_AND_USER_POSTINGS => ['step' => 15],
-            self::SYNC_INVOICES_TO_PROGRAM => ['step' => 16],
+            self::PROGRAM_HIERARCHY,
+            self::PROGRAM_ACCOUNTS,
+            self::SYNC_EVENTS_TO_PROGRAM,
+            self::USERS,
+            self::USER_ACCOUNTS,
+            self::USER_LOGS,
+            self::PROGRAM_GIFT_CODES,
+            self::SYNC_MERCHANTS_TO_PROGRAM,
+            self::SYNC_DOMAINS_TO_PROGRAM,
+            self::SYNC_AWARD_LEVELS_TO_PROGRAM,
+            self::SYNC_PROGRAM_HIERARCHY_SETTINGS,
+            self::EVENT_XML_DATA,
+            self::PROGRAM_AND_USER_JOURNAL_EVENTS,
+            self::PROGRAM_AND_USER_POSTINGS,
+            self::SYNC_INVOICES_TO_PROGRAM,
         ];
+
+        $arr = [];
+        foreach ($migrations as $key => $migration) {
+            $arr[$migration] = ['step' => $key + 1];
+        }
+        $migrations = $arr;
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
         $step = $args['step'] ?? 1;
+        $nextStep = 0;
 
 //        DB::beginTransaction();
 
         try {
             switch ($step) {
+                case 'start':
+                    $nextStep = 1;
+                    break;
+
                 case 1:
+                    $result['migration'] = $this->migrateProgramsService->migrate($v2AccountHolderID);
                     break;
 
                 case 2:
-                    $migrations[self::PROGRAM_HIERARCHY] = $this->migrateProgramsService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateProgramAccountsService->migrate($v2AccountHolderID);
                     break;
 
                 case 3:
-                    $migrations[self::PROGRAM_ACCOUNTS] = $this->migrateProgramAccountsService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateEventService->migrate($v2AccountHolderID);
                     break;
 
                 case 4:
-                    $migrations[self::SYNC_EVENTS_TO_PROGRAM] = $this->migrateEventService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateUsersService->migrate($v2AccountHolderID);
                     break;
 
                 case 5:
-                    $migrations[self::USERS] = $this->migrateUsersService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateUserAccountsService->migrate($v2AccountHolderID);
                     break;
 
                 case 6:
-                    $migrations[self::USER_ACCOUNTS] = $this->migrateUserAccountsService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateUserLogsService->migrate($v2AccountHolderID);
                     break;
 
                 case 7:
-                    $migrations[self::USER_LOGS] = $this->migrateUserLogsService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
                     break;
 
                 case 8:
-                    $migrations[self::PROGRAM_GIFT_CODES] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
                     break;
 
                 case 9:
-                    $migrations[self::SYNC_AWARD_LEVELS_TO_PROGRAM] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
                     break;
 
                 case 10:
-                    $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
+                    $result['migration'] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
                     break;
 
                 case 11:
-                    $migrations[self::SYNC_DOMAINS_TO_PROGRAM] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
+                    $result['migration'] = $this->migrateProgramAccountsService->syncProgramHierarchySettings($v2AccountHolderID);
                     break;
 
                 case 12:
-                    $migrations[self::SYNC_PROGRAM_HIERARCHY_SETTINGS] = $this->migrateProgramAccountsService->syncProgramHierarchySettings($v2AccountHolderID);
+                    $result['migration'] = $this->migrateEventXmlDataService->migrate($v2AccountHolderID);
                     break;
 
                 case 13:
-                    $migrations[self::EVENT_XML_DATA] = $this->migrateEventXmlDataService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateJournalEventService->migrate($v2AccountHolderID);
                     break;
 
                 case 14:
-                    $migrations[self::PROGRAM_AND_USER_JOURNAL_EVENTS] = $this->migrateJournalEventService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migratePostingService->migrate($v2AccountHolderID);
                     break;
 
                 case 15:
-                    $migrations[self::PROGRAM_AND_USER_POSTINGS] = $this->migratePostingService->migrate($v2AccountHolderID);
+//                    $result['migration'] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
                     break;
 
-                case 16:
-                    $migrations[self::SYNC_INVOICES_TO_PROGRAM] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
-                    break;
-
-//            DB::commit();
                 default:
-                    $step = 0;
+                    $nextStep = 0;
                     break;
             }
 
-
-//            $migrations[self::PROGRAM_HIERARCHY] = $this->migrateProgramsService->migrate($v2AccountHolderID);
-//            $migrations[self::PROGRAM_ACCOUNTS] = $this->migrateProgramAccountsService->migrate($v2AccountHolderID);
-//            $migrations[self::SYNC_EVENTS_TO_PROGRAM] = $this->migrateEventService->migrate($v2AccountHolderID);
-//            $migrations[self::USERS] = $this->migrateUsersService->migrate($v2AccountHolderID);
-//            $migrations[self::USER_ACCOUNTS] = $this->migrateUserAccountsService->migrate($v2AccountHolderID);
-//            $migrations[self::USER_LOGS] = $this->migrateUserLogsService->migrate($v2AccountHolderID);
-//            $migrations[self::PROGRAM_GIFT_CODES] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
-//            $migrations[self::SYNC_AWARD_LEVELS_TO_PROGRAM] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
-//            $migrations[self::SYNC_MERCHANTS_TO_PROGRAM] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
-//            $migrations[self::SYNC_DOMAINS_TO_PROGRAM] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
-//            $migrations[self::SYNC_PROGRAM_HIERARCHY_SETTINGS] = $this->migrateProgramAccountsService->syncProgramHierarchySettings($v2AccountHolderID);
-//            $migrations[self::EVENT_XML_DATA] = $this->migrateEventXmlDataService->migrate($v2AccountHolderID);
-//            $migrations[self::PROGRAM_AND_USER_JOURNAL_EVENTS] = $this->migrateJournalEventService->migrate($v2AccountHolderID);
-//            $migrations[self::PROGRAM_AND_USER_POSTINGS] = $this->migratePostingService->migrate($v2AccountHolderID);
-//            $migrations[self::SYNC_INVOICES_TO_PROGRAM] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
-
+            if ((int) $step < count($migrations)) {
+                $nextStep = $step == 'start' ? 1 : $step + 1;
+            }
+            else {
+                $nextStep = 0;
+            }
 
 //            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
+            $result['nextStep'] = 0;
             $file = basename($e->getFile());
             $result['error'] = $e->getMessage(). ". File: {$file}" . ". Line: {$e->getLine()}";
 //            DB::rollback();
         }
 
         $result['migrations'] = $migrations;
-        $result['nextStep'] = $step ? ($step + 1) : 0;
+        $result['nextStep'] = $nextStep;
         return $result;
     }
 
