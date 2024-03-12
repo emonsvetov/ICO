@@ -614,8 +614,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Goal plans
      Route::get('/v1/organization/{organization}/program/{program}/read-active-goalplans-by-program', [App\Http\Controllers\API\GoalPlanController::class, 'readActiveByProgram'])->name('api.v1.organization.program.goalplan.readActiveByProgram')->middleware('can:readActiveByProgram,App\GoalPlan,organization,program');
-
-     //Referrals - Manage Recipients
+     //Referrals
      Route::post('/v1/organization/{organization}/program/{program}/referral-notification-recipient', [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'store'])->middleware('can:create,App\ReferralNotificationRecipient,organization,program');
 
      Route::get('/v1/organization/{organization}/program/{program}/referral-notification-recipient',
@@ -710,7 +709,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/push-notification-token',[App\Http\Controllers\API\PushNotificationController::class, 'store'])->middleware('can:create,App\PushNotification,organization,program');
     //Push notification for mobileApp
     Route::post('/v1/organization/{organization}/program/{program}/send-push-notification',[App\Http\Controllers\API\PushNotificationController::class, 'send'])->middleware('can:create,App\PushNotification,organization,program');
-    Route::get('/v1/v2-deprecated/migrate-global', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate/{account_holder_id}/{step}', [App\Http\Controllers\API\MigrationController::class, 'run'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate-global/{step}', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate-artisan', [App\Http\Controllers\API\MigrationController::class, 'runArtisanMigrate'])->middleware('can:viewAny,App\V2Deprecated');
 });
 
