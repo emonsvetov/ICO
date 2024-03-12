@@ -232,7 +232,7 @@ class MigrateProgramGiftCodesService extends MigrationService
 
         // Hard Code:
         if ($v2GiftCode->code) {
-            $v3GiftCodeByCode = $this->getGiftCodeByCode($v2GiftCode->code);
+            $v3GiftCodeByCode = Giftcode::where('code', $v2GiftCode->code);
             if ($v3GiftCodeByCode) {
                 // in the V3 project, the “code” column is unique!
                 $code = $v2GiftCode->code . $this->generateCode(10);

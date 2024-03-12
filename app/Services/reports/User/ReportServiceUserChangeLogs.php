@@ -86,6 +86,12 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
         return $query;
     }
 
+    protected function setGroupBy(Builder $query): Builder
+    {
+        $query->groupBy(['users_log.id']);
+        return $query;
+    }
+
     protected function setDefaultParams() {
         parent::setDefaultParams ();
         $this->params[self::PROGRAMS] = request()->get('programs');
