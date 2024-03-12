@@ -99,22 +99,12 @@ class MigrateProgramGiftCodesService extends MigrationService
         foreach ($v2GiftCodes as $v2GiftCode) {
             $v2Updates = [];
             $v3Updates = [];
-            $v3GiftCode = null;
             if ($v2GiftCode->redemption_datetime == '0000-00-00 00:00:00') {
                 $v2GiftCode->redemption_datetime = null;
             }
-            if ($v2GiftCode->v3_medium_info_id) {
-                $v3GiftCode = Giftcode::find($v2GiftCode->v3_medium_info_id);
-                if ($v3GiftCode) {
-                    if (!$v3GiftCode->v2_medium_info_id) {
-                        $v3Updates['v2_medium_info_id'] = $v2GiftCode->id;
-                    }
-                }
-            } else {
-                $v3GiftCode = Giftcode::where('v2_medium_info_id', $v2GiftCode->id)->first();
-                if ($v3GiftCode) {
-                    $v2Updates['v3_medium_info_id'] = $v3GiftCode->id;
-                }
+            $v3GiftCode = Giftcode::where('v2_medium_info_id', $v2GiftCode->id)->first();
+            if ($v3GiftCode) {
+                $v2Updates['v3_medium_info_id'] = $v3GiftCode->id;
             }
 
             if (!$v3GiftCode) {
