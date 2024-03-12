@@ -55,7 +55,11 @@ class MigrateProgramGiftCodesService extends MigrationService
             throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
         }
 
-        $this->migrateGiftCodes($v2RootPrograms);
+        try {
+            $this->migrateGiftCodes($v2RootPrograms);
+        } catch(Exception $e) {
+            throw new Exception("Error migrating program gift codes. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+        }
 
         return [
             'success' => TRUE,
