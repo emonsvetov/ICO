@@ -136,6 +136,7 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             $table[$program->account_holder_id]->YTD = 0;
         }
 
+
         // Get the Eligible Participants for each program
         $userStatuses = [
             config('global.user_status_pending_activation'),
@@ -231,9 +232,26 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
                 $newTable[$item->id] = clone $item;
             } else {
                 $tmpPath = explode(',', $item->dinamicPath);
+                $isset = null;
                 if (isset($newTable[$tmpPath[0]])) {
-                    $newTable[$tmpPath[0]]->subRows[] = $item;
+                    if (count($tmpPath) === 1) {
+                        $newTable[$tmpPath[0]]->subRows[] = $item;
+                        $isset = true;
+                    }
+                    if (count($tmpPath) === 2) {
+                        $key = array_search($tmpPath[1], array_column($newTable[$tmpPath[0]]->subRows, 'id'));
+                        $newTable[$tmpPath[0]]->subRows[$key]->subRows[] = $item;
+                        $isset = true;
+                    }
+                    if (count($tmpPath) === 3) {
+                        $key = array_search($tmpPath[1], array_column($newTable[$tmpPath[0]]->subRows, 'id'));
+                        $key2 = array_search($tmpPath[2], array_column($newTable[$tmpPath[0]]->subRows[$key]->subRows, 'id'));
+                        $newTable[$tmpPath[0]]->subRows[$key]->subRows[$key2]->subRows[] = $item;
+                        $isset = true;
+                    }
+                }
 
+                if ($isset){
                     $newTable[$tmpPath[0]]->participants_count += $this->amountFormat($item->participants_count);
                     $newTable[$tmpPath[0]]->month_1 += $this->amountFormat($item->month_1);
                     $newTable[$tmpPath[0]]->month_2 += $this->amountFormat($item->month_2);

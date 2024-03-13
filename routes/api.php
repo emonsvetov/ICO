@@ -129,10 +129,13 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::post('/v1/sso-add-token', [App\Http\Controllers\API\AuthController::class, 'ssoAddToken'])->name('api.v1.ssoAddToken');
     Route::post('/v1/login', [App\Http\Controllers\API\AuthController::class, 'login'])->name('api.v1.login');
     Route::post('/v1/admin/login', [App\Http\Controllers\API\AuthController::class, 'adminLogin'])->name('api.v1.adminLogin');
+    Route::post('/v1/mobileapp-login', [App\Http\Controllers\API\AuthController::class, 'mobileAppLogin'])->name('api.v1.mobileLogin');
     Route::post('/v1/register', [App\Http\Controllers\API\AuthController::class, 'register'])->name('api.v1.register');
     Route::post('/v1/generate-2fa-secret', [App\Http\Controllers\API\AuthController::class, 'generate2faSecret'])->name('api.v1.generate2faSecret');
     Route::post('/v1/password/forgot', [App\Http\Controllers\API\PasswordController::class, 'forgotPassword']);
     Route::post('/v1/password/reset', [App\Http\Controllers\API\PasswordController::class, 'reset']);
+    Route::post('/v1/forgot/code', [App\Http\Controllers\API\PasswordController::class, 'sendResetCode']);
+    Route::post('/v1/forgot/verify-code', [App\Http\Controllers\API\PasswordController::class, 'verifyResetCode']);
 
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
@@ -458,6 +461,12 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mypoints',[App\Http\Controllers\API\ParticipantController::class, 'myPoints'])->middleware('can:readPoints,App\Participant,organization,program,user');
 
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/point-history',[App\Http\Controllers\API\ParticipantController::class, 'pointHistory'])->middleware('can:readPoints,App\Participant,organization,program,user');
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/unread-notifications-count',[App\Http\Controllers\API\ParticipantController::class, 'unreadNotificationCount'])->middleware('can:readPoints,App\Participant,organization,program,user');
+
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/mark-notifications-read',[App\Http\Controllers\API\ParticipantController::class, 'markNotificationsRead'])->middleware('can:markNotificationRead,App\Participant,organization,program,user');
+
     // Giftcodes
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}/gift-codes',[App\Http\Controllers\API\ProgramParticipantGiftCodeController::class, 'index'])->middleware('can:viewAny,App\ProgramParticipantGiftCode,organization,program,user');
 
@@ -620,6 +629,10 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
      Route::delete('/v1/organization/{organization}/program/{program}/referral-notification-recipient/{referralNotificationRecipient}',
      [App\Http\Controllers\API\ReferralNotificationRecipientController::class, 'delete'])->name('api.v1.referralNotificationRecipient.delete')->middleware('can:delete,App\ReferralNotificationRecipient,organization,program,referralNotificationRecipient');
 
+    // Referrals - Send
+
+    Route::post('/v1/organization/{organization}/program/{program}/refer', [App\Http\Controllers\API\ReferralController::class, 'store'])->middleware('can:create,App\Referral,organization,program');
+
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');
 
@@ -698,7 +711,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // v2 Routes
     Route::get('/v1/v2-deprecated/program', [App\Http\Controllers\API\V2DeprecatedProgramController::class, 'index'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate/{account_holder_id}', [App\Http\Controllers\API\MigrationController::class, 'run'])->middleware('can:viewAny,App\V2Deprecated');
-    Route::get('/v1/v2-deprecated/migrate-global', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
+
+    //Push notification for mobileApp
+    Route::post('/v1/organization/{organization}/program/{program}/push-notification-token',[App\Http\Controllers\API\PushNotificationController::class, 'store'])->middleware('can:create,App\PushNotification,organization,program');
+    //Push notification for mobileApp
+    Route::post('/v1/organization/{organization}/program/{program}/send-push-notification',[App\Http\Controllers\API\PushNotificationController::class, 'send'])->middleware('can:create,App\PushNotification,organization,program');
+    Route::get('/v1/v2-deprecated/migrate/{account_holder_id}/{step}', [App\Http\Controllers\API\MigrationController::class, 'run'])->middleware('can:viewAny,App\V2Deprecated');
+    Route::get('/v1/v2-deprecated/migrate-global/{step}', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate-artisan', [App\Http\Controllers\API\MigrationController::class, 'runArtisanMigrate'])->middleware('can:viewAny,App\V2Deprecated');
 });
 

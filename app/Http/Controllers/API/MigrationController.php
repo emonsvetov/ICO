@@ -24,8 +24,14 @@ class MigrationController extends Controller
      */
     public function runArtisanMigrate()
     {
-        Artisan::call('migrate');
-        $output = Artisan::output();
+        try {
+            Artisan::call('route:clear');
+            Artisan::call('migrate');
+
+            $output = Artisan::output();
+        } catch (\Exception $e) {
+            $output = 'Errors with migrations' . PHP_EOL . PHP_EOL . $e->getMessage();
+        }
 
         return response([
             'info' => nl2br($output)
@@ -37,12 +43,13 @@ class MigrationController extends Controller
      *
      * @param $account_holder_id
      */
-    public function run($account_holder_id)
+    public function run($account_holder_id, $step)
     {
         ini_set('max_execution_time', 360);
 
         $args = [];
         $args['v2AccountHolderID'] = $account_holder_id;
+        $args['step'] = $step;
         $result = $this->migrationBaseService->migrate($args);
 
         return response($result);
@@ -51,11 +58,14 @@ class MigrationController extends Controller
     /**
      * Run global migrations list.
      */
-    public function runGlobal()
+    public function runGlobal($step)
     {
         ini_set('max_execution_time', 360);
 
-        $result = $this->migrationBaseService->migrateGlobal();
+        $args = [];
+        $args['step'] = $step;
+
+        $result = $this->migrationBaseService->migrateGlobal($args);
         return response($result);
     }
 

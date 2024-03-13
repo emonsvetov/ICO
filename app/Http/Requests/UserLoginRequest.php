@@ -11,6 +11,8 @@ use Illuminate\Validation\Rule;
 
 class UserLoginRequest extends FormRequest
 {
+    protected DomainService $domainService;
+
     public function __construct(DomainService $domainService)
     {
         $this->domainService = $domainService;

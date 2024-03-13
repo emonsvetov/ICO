@@ -176,6 +176,9 @@ class PermissionSeeder extends Seeder
             'import-list',
             'import-download-template',
             'import-csv-upload',
+            'can-refer',
+            'mark-notifications-read',
+            'push-notification-create',
         ];
 
         foreach ($permissions as $permission) {

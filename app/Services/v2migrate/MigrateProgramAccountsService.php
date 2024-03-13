@@ -3,6 +3,7 @@
 namespace App\Services\v2migrate;
 
 use App\Models\Address;
+use App\Models\Invoice;
 use App\Models\ProgramExtra;
 use App\Models\ProgramTransactionFee;
 use App\Services\ProgramService;
@@ -242,7 +243,11 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Settings = array_merge($v2Program, $v2ProgramConfigFields, $v2ProgramExtraInfo, $v2Address);
 
         // Fix.
-        $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'];
+        $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'] ?? FALSE;
+        $v2Settings['allow_award_peers_not_logged_into'] = $v2Settings['peer_award_seperation'] ?? FALSE;
+        $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'] ?? FALSE;
+        $v2Settings['bill_direct'] = !$v2Settings['bill_direct'] ?? FALSE;
+
         ksort($v2Settings);
 
         $v3ProgramAttributes = Schema::getColumnListing((new Program)->getTable());
@@ -317,6 +322,21 @@ class MigrateProgramAccountsService extends MigrationService
             'city',
             'zip',
             'state_id',
+            'events_has_limits',
+            'event_has_category',
+            'has_promotional_award',
+            'enable_uploads_while_awarding',
+            'enable_schedule_awards',
+            'custom_expire_offset',
+            'custom_expire_units',
+            'annual_expire_month',
+            'annual_expire_day',
+            'send_points_expire_notices',
+            'allocate',
+            'amount_override_limit_percent',
+            'awards_limit_amount_override',
+//            'expiration_rule_id',
+//            'unknown',
         ];
 
         $canUpdate = [];
@@ -411,6 +431,24 @@ class MigrateProgramAccountsService extends MigrationService
          * default_user
          */
 
+        /**
+         * events_has_limits +
+         * event_has_category +
+         * has_promotional_award +
+         * enable_schedule_awards +
+         * custom_expire_offset +
+         * custom_expire_units +
+         * annual_expire_month +
+         * annual_expire_day +
+         * send_points_expire_notices +
+         * amount_override_limit_percent +
+         * awards_limit_amount_override +
+         * expiration_rule_id +??
+         * unknown
+         * allocate
+         * enable_uploads_while_awarding
+         */
+
         try {
             $v3ProgramExtraData = [];
             $v3ProgramData = [];
@@ -430,6 +468,7 @@ class MigrateProgramAccountsService extends MigrationService
                     $v3ProgramAddressData[$field] = $v2Settings[$field];
                 }
             }
+
             $v3Program->programExtras()->updateOrCreate(['program_account_holder_id' => $v3Program->v2_account_holder_id], $v3ProgramExtraData);
             $v3ProgramAddressData['account_holder_id'] = $v3Program->account_holder_id;
             $v3Program->address()->updateOrCreate(['account_holder_id' => $v3Program->account_holder_id], $v3ProgramAddressData);

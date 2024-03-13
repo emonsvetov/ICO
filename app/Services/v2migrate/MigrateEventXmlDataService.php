@@ -1,130 +1,148 @@
 <?php
+
 namespace App\Services\v2migrate;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Event;
+use App\Models\EventXmlData;
+use App\Models\User;
+use App\Models\UserV2User;
 use Exception;
 
-use App\Models\EventXmlData;
+use App\Models\Program;
 
 class MigrateEventXmlDataService extends MigrationService
 {
-    public $offset = 0;
-    public $limit = 1000;
-    public $iteration = 0;
-    public $count = 0;
+    public array $importedEventXmlData = [];
+    private MigrateUsersService $migrateUsersService;
 
-    public function __construct()
+    public function __construct(MigrateUsersService $migrateUsersService)
     {
         parent::__construct();
+        $this->migrateUsersService = $migrateUsersService;
     }
 
-    public function migrate()  {
-        $this->v2db->statement("SET SQL_MODE=''");
-        $this->setDebug(true);
-        $this->migrateEventXmlData();
+    /**
+     * @param int $v2AccountHolderID
+     * @return array
+     * @throws Exception
+     */
+    public function migrate(int $v2AccountHolderID): array
+    {
+        if (!$v2AccountHolderID) {
+            throw new Exception("Wrong data provided. v2AccountHolderID: {$v2AccountHolderID}");
+        }
+        $programArgs = ['program' => $v2AccountHolderID];
+
+        $this->printf("Starting event xml data migration\n\n",);
+        $v2RootPrograms = $this->read_list_all_root_program_ids($programArgs);
+        if (!$v2RootPrograms) {
+            throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
+        }
+
+        $this->migrateEventXmlData($v2RootPrograms);
+        $this->executeV2SQL();
+
+        return [
+            'success' => TRUE,
+            'info' => "migrated " . count($this->importedEventXmlData) . " items",
+        ];
+
     }
 
-    public function migrateEventXmlDataByV2Event($v2Event) {
-        $eventXmlData = $this->getV2EventXmlDataByV2Event($v2Event);
-        if( $eventXmlData ) {
-            $this->printf(" -- %s eventXmlData rows found for v2Event:%s. Importing..", $v2Event->id, count($eventXmlData));
-            foreach( $eventXmlData as $v2EventXmlDataRow)    {
-                $this->migrateEventXmlDataRow($v2EventXmlDataRow);
+    public function migrateEventXmlData(array $v2RootPrograms): void
+    {
+        foreach ($v2RootPrograms as $v2RootProgram) {
+            $this->migrateForSingleProgram($v2RootProgram);
+
+            $subPrograms = $this->read_list_children_heirarchy(( int )$v2RootProgram->account_holder_id);
+            foreach ($subPrograms as $subProgram) {
+                $this->migrateForSingleProgram($subProgram);
             }
-        }   else {
-            $this->printf(" -- No eventXmlData rows found for v2Event:%s.", $v2Event->id);
         }
     }
 
-    public function getV2EventXmlDataByV2Event($v2Event) {
-        $sql = sprintf("SELECT exd.*, e.v3_event_id, u.v3_user_id, u.account_holder_id AS v2_user_account_holder_id FROM `event_xml_data` exd LEFT JOIN event_templates e ON e.id = exd.event_template_id LEFT JOIN users u ON u.account_holder_id=exd.awarder_account_holder_id WHERE exd.`event_template_id`=%d", $v2Event->id);
-        return $this->v2db->select($sql);
+    /**
+     * @throws Exception
+     */
+    public function migrateForSingleProgram($v2Program)
+    {
+        $v3Program = Program::findOrFail($v2Program->v3_program_id);
+        $v2UserIds = [];
+        $v2Users = $this->v2_read_list_by_program($v2Program->account_holder_id);
+        foreach ($v2Users as $v2User) {
+            $v2UserIds[] = $v2User->account_holder_id;
+        }
+
+        $v2EventXmlList = $this->getEventXmlDataByAccountHolderId(array_merge([$v2Program->account_holder_id], $v2UserIds));
+        foreach ($v2EventXmlList as $v2Data) {
+            $this->syncOrCreateEventXmlData($v2Data, $v3Program);
+        }
     }
 
-    // public function migrateEventXmlData() {
-    //     $eventXmlData = $this->getEventXmlDataToMigrate();
-    //     foreach( $eventXmlData as $v2EventXmlDataRow) {
-    //         try {
-    //             $this->migrateEventXmlDataRow($v2EventXmlDataRow);
-    //         } catch(Exception $e) {
-    //             print($e->getMessage());
-    //         }
-    //         $this->printf("--------------------------------------------------\n");
-    //     }
-    //     $this->executeV2SQL();
-    //     $this->executeV3SQL();
-    //     if( $this->iteration > 1 )
-    //     if( count($eventXmlData) >= $this->limit ) {
-    //         $this->offset = $this->offset + $this->limit;
-    //         $this->migrateEventXmlData();
-    //     }
-    // }
+    public function syncOrCreateEventXmlData($v2Data, $v3Program)
+    {
+        $userV2User = UserV2User::where('v2_user_account_holder_id', $v2Data->awarder_account_holder_id)->first();
+        $v3UserTmp = $userV2User ? User::find($userV2User->user_id)->first() : null;
+        if (!$v3UserTmp) {
+            $v2User = $this->v2GetUserById($v2Data->awarder_account_holder_id);
+            $v3UserTmp = $this->migrateUsersService->migrateOnlyUser($v2User, $v3Program);
+        }
+        $awarderAccountHolderId = $v3UserTmp->account_holder_id;
 
-    public function migrateEventXmlDataRow( $v2EventXmlDataRow )  {
-        $createEventXmlData = true;
-        if( (int) $v2EventXmlDataRow->v3_id ) {
-            $this->printf(" -  - V2Event:\$v2EventXmlDataRow->v3_id NOT NULL. Confirming..\n");
-
-            $v3EventXmlDataRow = EventXmlData::find( $v2EventXmlDataRow->v3_id );
-            if( $v3EventXmlDataRow ) {
-                $this->printf(" -  - EventXmlData:{$v2EventXmlDataRow->id} exists in v3 as: {$v3EventXmlDataRow->id}. Skipping..\n");
-                if( !$v3EventXmlDataRow->v2_id ) { //patch missing link
-                    $v3EventXmlDataRow->v2_id = $v2EventXmlDataRow->id;
-                    pr($v3EventXmlDataRow->toArray());
-                    $v3EventXmlDataRow->save();
+        $v3EventId = 0;
+        if ($v2Data->event_template_id) {
+            $v3EventTmp = Event::where('v2_event_id', $v2Data->event_template_id)->first();
+            if ($v3EventTmp) {
+                $v3EventId = $v3EventTmp->id;
+            } else {
+                $v2EventTmp = $this->getEventById($v2Data->event_template_id);
+                if ($v2EventTmp) {
+                    throw new Exception("V2 Event not imported: {$v2Data->event_template_id}");
                 }
-                $createEventXmlData = false;
-            }
-            //TODO: update?!
-        }   else {
-            $this->printf(" -  - V2Event:\$v2EventXmlDataRow->v3_id IS NULL. Finding by v2_id now..\n");
-            //find by v2 id
-            $v3EventXmlDataRow = EventXmlData::where('v2_id', $v2EventXmlDataRow->id )->first();
-            if( $v3EventXmlDataRow )   {
-                $this->printf(" - EventXmlDataRow \"%d\" v3:v2_id exists for v2:\"%d\".\n Updating null v2:v3_event_id value.\n", $v3EventXmlDataRow->id, $v2EventXmlDataRow->v3_event_id);
-                $this->v2db->statement("UPDATE `event_xml_data` SET `v3_id` = {$v3EventXmlDataRow->id} WHERE `id` = {$v2EventXmlDataRow->id}");
-                $createEventXmlData = false;
-                //Update??
-            }   else {
-                $this->printf(" -  - Not found by v2_id..\n");
+                $v3EventId = $this->minusPrefix . $v2Data->event_template_id;
             }
         }
 
-        if( $createEventXmlData )   {
-            $this->printf(" -  - Preparing to create EventXmlData for  v2_id:%s..\n", $v2EventXmlDataRow->id);
-            // pr($v2EventXmlDataRow);
-            //
-            $awarder_accout_holder_id = $v2EventXmlDataRow->v3_user_id ?: $this->idPrefix . $v2EventXmlDataRow->v2_user_account_holder_id;
-            $v3Id = EventXmlData::insertGetId([
-                'v2_id' => $v2EventXmlDataRow->id,
-                'awarder_account_holder_id' => $awarder_accout_holder_id,
-                'name' => $v2EventXmlDataRow->name,
-                'award_level_name' => $v2EventXmlDataRow->award_level_name,
-                'amount_override' => $v2EventXmlDataRow->amount_override,
-                'notification_body' => $v2EventXmlDataRow->notification_body,
-                'notes' => $v2EventXmlDataRow->notes,
-                'referrer' => $v2EventXmlDataRow->referrer,
-                'email_template_id' => $v2EventXmlDataRow->email_template_id,
-                'event_type_id' => $v2EventXmlDataRow->event_type_id,
-                'event_template_id' => $v2EventXmlDataRow->v3_event_id,
-                'icon' => $v2EventXmlDataRow->icon,
-                'xml' => $v2EventXmlDataRow->xml,
-                'award_transaction_id' => $v2EventXmlDataRow->award_transaction_id,
-                'lease_number' => $v2EventXmlDataRow->lease_number,
-                'token' => $v2EventXmlDataRow->token
-            ]);
+        $data = [
+            'v2_id' => $v2Data->id,
+            'awarder_account_holder_id' => $awarderAccountHolderId,
+            'name' => $v2Data->name,
+            'award_level_name' => $v2Data->award_level_name,
+            'amount_override' => $v2Data->amount_override,
+            'notification_body' => $v2Data->notification_body,
+            'notes' => $v2Data->notes,
+            'referrer' => $v2Data->referrer,
+            'email_template_id' => $this->minusPrefix . $v2Data->email_template_id,
+            'event_type_id' => $v2Data->event_type_id,
+            'event_template_id' => $v3EventId,
+            'icon' => $v2Data->icon,
+            'xml' => $v2Data->xml,
+            'award_transaction_id' => $v2Data->award_transaction_id,
+            'lease_number' => $v2Data->lease_number,
+            'token' => $v2Data->token
+        ];
+        $dataSearch = $data;
+        unset($dataSearch['award_level_name']);
+        unset($dataSearch['notification_body']);
+        unset($dataSearch['notes']);
+        unset($dataSearch['referrer']);
+        unset($dataSearch['email_template_id']);
+        unset($dataSearch['event_type_id']);
+        unset($dataSearch['event_template_id']);
+        unset($dataSearch['xml']);
+        unset($dataSearch['award_transaction_id']);
+        unset($dataSearch['lease_number']);
+        unset($dataSearch['token']);
 
-            if( $v3Id ) {
-                $this->printf("EventXmlData imported into v3 as \"%d\"\n", $v3Id);
-                $this->v2db->statement(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d;", $v3Id, $v2EventXmlDataRow->id));
-            }
+        $v3EventXmlData = EventXmlData::where($dataSearch)->first();
+        if (!$v3EventXmlData){
+            $v3EventXmlData = EventXmlData::create($data);
+        }
+        $this->printf("EventXmlData done: {$v3EventXmlData->id}. Count= ".count($this->importedEventXmlData)." \n\n");
+
+        if ($v3EventXmlData) {
+            $this->addV2SQL(sprintf("UPDATE `event_xml_data` SET `v3_id`=%d WHERE `id`=%d", $v3EventXmlData->id, $v2Data->id));
+            $this->importedEventXmlData[] = $v3EventXmlData->id;
         }
     }
-
-    // public function getEventXmlDataToMigrate() {
-    //     printf("EventXmlData migration iteration:%d\n", ++$this->iteration);
-    //     $sql = sprintf("SELECT exd.*, e.v3_event_id, u.v3_user_id  FROM `event_xml_data` exd LEFT JOIN event_templates e ON e.id = exd.event_template_id LEFT JOIN users u ON u.account_holder_id=exd.awarder_account_holder_id where exd.v3_id IS NULL LIMIT {$this->offset},{$this->limit}");
-    //     $this->printf("SQL:%s\n", $sql);
-    //     return $this->v2db->select($sql);
-    // }
 }

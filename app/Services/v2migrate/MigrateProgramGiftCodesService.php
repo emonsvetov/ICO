@@ -55,7 +55,11 @@ class MigrateProgramGiftCodesService extends MigrationService
             throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
         }
 
-        $this->migrateGiftCodes($v2RootPrograms);
+        try {
+            $this->migrateGiftCodes($v2RootPrograms);
+        } catch(Exception $e) {
+            throw new Exception("Error migrating program gift codes. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+        }
 
         return [
             'success' => TRUE,
@@ -95,22 +99,12 @@ class MigrateProgramGiftCodesService extends MigrationService
         foreach ($v2GiftCodes as $v2GiftCode) {
             $v2Updates = [];
             $v3Updates = [];
-            $v3GiftCode = null;
             if ($v2GiftCode->redemption_datetime == '0000-00-00 00:00:00') {
                 $v2GiftCode->redemption_datetime = null;
             }
-            if ($v2GiftCode->v3_medium_info_id) {
-                $v3GiftCode = Giftcode::find($v2GiftCode->v3_medium_info_id);
-                if ($v3GiftCode) {
-                    if (!$v3GiftCode->v2_medium_info_id) {
-                        $v3Updates['v2_medium_info_id'] = $v2GiftCode->id;
-                    }
-                }
-            } else {
-                $v3GiftCode = Giftcode::where('v2_medium_info_id', $v2GiftCode->id)->first();
-                if ($v3GiftCode) {
-                    $v2Updates['v3_medium_info_id'] = $v3GiftCode->id;
-                }
+            $v3GiftCode = Giftcode::where('v2_medium_info_id', $v2GiftCode->id)->first();
+            if ($v3GiftCode) {
+                $v2Updates['v3_medium_info_id'] = $v3GiftCode->id;
             }
 
             if (!$v3GiftCode) {
@@ -228,7 +222,7 @@ class MigrateProgramGiftCodesService extends MigrationService
 
         // Hard Code:
         if ($v2GiftCode->code) {
-            $v3GiftCodeByCode = $this->getGiftCodeByCode($v2GiftCode->code);
+            $v3GiftCodeByCode = Giftcode::where('code', $v2GiftCode->code);
             if ($v3GiftCodeByCode) {
                 // in the V3 project, the “code” column is unique!
                 $code = $v2GiftCode->code . $this->generateCode(10);
