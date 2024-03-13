@@ -145,7 +145,7 @@ class MigrateInvoiceService extends MigrationService
 
                 $v2JournalEvents = $this->getV2JournalEvent($v2Invoice);
                 foreach ($v2JournalEvents as $v2JournalEvent) {
-                    $journalEventsID = $this->addToJournalEvents($v3Invoice, $v2Invoice, $v2JournalEvent);
+                    $journalEventsID = $this->getJournalEvent($v3Invoice, $v2Invoice, $v2JournalEvent);
                     $this->addToInvoiceJournalEvent($v3Invoice, $journalEventsID);
                 }
 
@@ -156,6 +156,25 @@ class MigrateInvoiceService extends MigrationService
                 $this->countUpdatedInvoices++;
             }
         }
+    }
+
+    /**
+     * Get v3 Journal Even
+     *
+     * @param $v3Invoice
+     * @param $v2Invoice
+     * @param $v2JournalEvent
+     * @return mixed
+     * @throws Exception
+     */
+    public function getJournalEvent($v3Invoice, $v2Invoice, $v2JournalEvent)
+    {
+        $journalEvent = JournalEvent::where('v2_journal_event_id', $v2JournalEvent->id)->first();
+        if (blank($journalEvent)) {
+            throw new Exception("v3 journal event not found. The v2 journal event ID {$v2JournalEvent->id}");
+        }
+
+        return $journalEvent->id;
     }
 
     /**
@@ -170,30 +189,6 @@ class MigrateInvoiceService extends MigrationService
             'journal_event_id' => $journalEventsID,
             'invoice_id' => $v3Invoice->id,
         ]);
-    }
-
-    /**
-     * Add record to journal events.
-     * @throws Exception
-     */
-    public function addToJournalEvents($v3Invoice, $v2Invoice, $v2JournalEvent)
-    {
-        $v2UserID = $v2JournalEvent->prime_account_holder_id;
-
-        $journalEvent = JournalEvent::create([
-            'prime_account_holder_id' => $v2UserID ? $this->getV3UserID($v2UserID) : 0,
-            'journal_event_type_id' => $v2JournalEvent->journal_event_type_id,
-            'notes' => $v2JournalEvent->notes,
-            'event_xml_data_id' => NULL, //TODO?
-            'invoice_id' => NULL,
-            'is_read' => $v2JournalEvent->is_read,
-            'parent_journal_event_id' => 0,
-            'v2_journal_event_id' => $v2JournalEvent->id,
-            'v2_prime_account_holder_id' => $v2JournalEvent->prime_account_holder_id,
-            'v2_parent_journal_event_id' => $v2JournalEvent->parent_journal_event_id,
-        ]);
-
-        return $journalEvent->id;
     }
 
 }
