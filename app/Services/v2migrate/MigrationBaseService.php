@@ -238,7 +238,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 15:
-//                    $result['migration'] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
                     break;
 
                 default:
