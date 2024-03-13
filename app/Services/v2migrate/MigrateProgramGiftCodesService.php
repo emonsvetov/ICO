@@ -206,7 +206,7 @@ class MigrateProgramGiftCodesService extends MigrationService
 
         if (count($v2GiftCodes) >= $this->limit) {
             $this->offset = $this->offset + $this->limit;
-            $this->syncOrCreateGiftCode();
+//            $this->syncOrCreateGiftCode();
         }
 
     }

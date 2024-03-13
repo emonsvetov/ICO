@@ -86,24 +86,6 @@ class MigrateInvoiceService extends MigrationService
     }
 
     /**
-     * Get invoice types.
-     *
-     * @return array
-     */
-    public function getV2InvoiceTypes()
-    {
-        $result = [];
-        $v2Sql = "SELECT * from invoice_types";
-
-        $v2Invoices = $this->v2db->select($v2Sql);
-        foreach ($v2Invoices as $v2Invoice) {
-            $result[$v2Invoice->id] = $v2Invoice->type;
-        }
-
-        return $result;
-    }
-
-    /**
      * Get v3 invoice type ID.
      */
     public function getV3InvoiceTypeID($v2InvoiceTypeID)
@@ -163,7 +145,7 @@ class MigrateInvoiceService extends MigrationService
 
                 $v2JournalEvents = $this->getV2JournalEvent($v2Invoice);
                 foreach ($v2JournalEvents as $v2JournalEvent) {
-                    $journalEventsID = $this->addToJournalEvents($v3Invoice, $v2Invoice, $v2JournalEvent);
+                    $journalEventsID = $this->getJournalEvent($v3Invoice, $v2Invoice, $v2JournalEvent);
                     $this->addToInvoiceJournalEvent($v3Invoice, $journalEventsID);
                 }
 
@@ -174,6 +156,25 @@ class MigrateInvoiceService extends MigrationService
                 $this->countUpdatedInvoices++;
             }
         }
+    }
+
+    /**
+     * Get v3 Journal Even
+     *
+     * @param $v3Invoice
+     * @param $v2Invoice
+     * @param $v2JournalEvent
+     * @return mixed
+     * @throws Exception
+     */
+    public function getJournalEvent($v3Invoice, $v2Invoice, $v2JournalEvent)
+    {
+        $journalEvent = JournalEvent::where('v2_journal_event_id', $v2JournalEvent->id)->first();
+        if (blank($journalEvent)) {
+            throw new Exception("v3 journal event not found. The v2 journal event ID {$v2JournalEvent->id}");
+        }
+
+        return $journalEvent->id;
     }
 
     /**
@@ -188,95 +189,6 @@ class MigrateInvoiceService extends MigrationService
             'journal_event_id' => $journalEventsID,
             'invoice_id' => $v3Invoice->id,
         ]);
-    }
-
-    /**
-     * Get v2 journal event.
-     *
-     * @param $v2Invoice
-     */
-    public function getV2JournalEvent($v2Invoice)
-    {
-        $v2Sql = "
-            SELECT je.* FROM journal_events je
-            LEFT JOIN invoice_journal_events ije ON je.id = ije.journal_event_id
-            WHERE ije.invoice_id = {$v2Invoice->id}";
-
-        return $this->v2db->select($v2Sql);
-    }
-
-    /**
-     * Add record to journal events.
-     * @throws Exception
-     */
-    public function addToJournalEvents($v3Invoice, $v2Invoice, $v2JournalEvent)
-    {
-        $v2UserID = $v2JournalEvent->prime_account_holder_id;
-
-        $journalEvent = JournalEvent::create([
-            'prime_account_holder_id' => $v2UserID ? $this->getV3UserID($v2UserID) : 0,
-            'journal_event_type_id' => $v2JournalEvent->journal_event_type_id,
-            'notes' => $v2JournalEvent->notes,
-            'event_xml_data_id' => NULL, //TODO?
-            'invoice_id' => $v3Invoice->id,
-            'is_read' => $v2JournalEvent->is_read,
-            'parent_journal_event_id' => 0,
-            'v2_journal_event_id' => $v2JournalEvent->id,
-            'v2_prime_account_holder_id' => $v2JournalEvent->prime_account_holder_id,
-            'v2_parent_journal_event_id' => $v2JournalEvent->parent_journal_event_id,
-        ]);
-
-        return $journalEvent->id;
-    }
-
-    /**
-     * Get v3 user ID.
-     *
-     * @param $v2UserID
-     * @return mixed
-     * @throws Exception
-     */
-    public function getV3UserID($v2UserID)
-    {
-        $v2Sql = "SELECT u.* FROM users u WHERE u.account_holder_id = {$v2UserID} LIMIT 1";
-        $result = $this->v2db->select($v2Sql);
-        $v2User = reset($result);
-
-        $v3UserID = $v2User->v3_user_id ?? FALSE;
-        if (!$v3UserID) {
-            $v3User = User::where('email', $v2User->email)->first();
-            $v3UserID = $v3User->id ?? FALSE;
-        }
-
-        if (!$v3UserID) {
-            throw new Exception("Sync invoices is failed. User for v3 not found.");
-        }
-
-        return $v3UserID;
-    }
-
-    /**
-     * v2 read_list_invoices_by_program.
-     *
-     * @param $v2AccountHolderID
-     * @return array
-     */
-    public function getV2Invoices($v2AccountHolderID)
-    {
-        $v2Sql = "
-            SELECT
-                i.*,
-                concat(i.key, '-', i.seq) as invoice_number
-            FROM
-                invoices i
-                join invoice_types t on (i.invoice_type_id = t.id)
-			WHERE program_account_holder_id = {$v2AccountHolderID}
-            ORDER BY
-                i.`id` DESC
-        ;
-        ";
-
-        return $this->v2db->select($v2Sql);
     }
 
 }

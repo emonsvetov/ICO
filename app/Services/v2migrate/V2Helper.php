@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\User;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -921,6 +922,90 @@ class V2Helper
                 postings.posting_timestamp ASC
 		";
         return $this->v2db->select($sql);
+    }
+
+    /**
+     * v2 read_list_invoices_by_program.
+     *
+     * @param $v2AccountHolderID
+     * @return array
+     */
+    public function getV2Invoices($v2AccountHolderID)
+    {
+        $v2Sql = "
+            SELECT
+                i.*,
+                concat(i.key, '-', i.seq) as invoice_number
+            FROM
+                invoices i
+                join invoice_types t on (i.invoice_type_id = t.id)
+			WHERE program_account_holder_id = {$v2AccountHolderID}
+            ORDER BY
+                i.`id` DESC
+        ;
+        ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get v3 user ID.
+     *
+     * @param $v2UserID
+     * @return mixed
+     * @throws Exception
+     */
+    public function getV3UserID($v2UserID)
+    {
+        $v2Sql = "SELECT u.* FROM users u WHERE u.account_holder_id = {$v2UserID} LIMIT 1";
+        $result = $this->v2db->select($v2Sql);
+        $v2User = reset($result);
+
+        $v3UserID = $v2User->v3_user_id ?? FALSE;
+        if (!$v3UserID) {
+            $v3User = User::where('email', $v2User->email)->first();
+            $v3UserID = $v3User->id ?? FALSE;
+        }
+
+        if (!$v3UserID) {
+            throw new Exception("Sync invoices is failed. User for v3 not found. The user on v2 has an ID = {$v2UserID} and email = {$v2User->email}");
+        }
+
+        return $v3UserID;
+    }
+
+    /**
+     * Get v2 journal event.
+     *
+     * @param $v2Invoice
+     * @return array
+     */
+    public function getV2JournalEvent($v2Invoice)
+    {
+        $v2Sql = "
+            SELECT je.* FROM journal_events je
+            LEFT JOIN invoice_journal_events ije ON je.id = ije.journal_event_id
+            WHERE ije.invoice_id = {$v2Invoice->id}";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get invoice types.
+     *
+     * @return array
+     */
+    public function getV2InvoiceTypes()
+    {
+        $result = [];
+        $v2Sql = "SELECT * from invoice_types";
+
+        $v2Invoices = $this->v2db->select($v2Sql);
+        foreach ($v2Invoices as $v2Invoice) {
+            $result[$v2Invoice->id] = $v2Invoice->type;
+        }
+
+        return $result;
     }
 
 
