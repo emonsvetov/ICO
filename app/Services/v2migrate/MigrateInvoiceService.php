@@ -218,7 +218,7 @@ class MigrateInvoiceService extends MigrationService
             'journal_event_type_id' => $v2JournalEvent->journal_event_type_id,
             'notes' => $v2JournalEvent->notes,
             'event_xml_data_id' => NULL, //TODO?
-            'invoice_id' => $v3Invoice->id,
+            'invoice_id' => NULL,
             'is_read' => $v2JournalEvent->is_read,
             'parent_journal_event_id' => 0,
             'v2_journal_event_id' => $v2JournalEvent->id,
