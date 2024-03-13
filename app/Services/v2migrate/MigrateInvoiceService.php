@@ -249,7 +249,7 @@ class MigrateInvoiceService extends MigrationService
         }
 
         if (!$v3UserID) {
-            throw new Exception("Sync invoices is failed. User for v3 not found.");
+            throw new Exception("Sync invoices is failed. User for v3 not found. The user on v2 has an ID = {$v2UserID} and email = {$v2User->email}");
         }
 
         return $v3UserID;
