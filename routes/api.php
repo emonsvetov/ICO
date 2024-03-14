@@ -690,8 +690,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Imports
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
-    Route::post('/v1/organization/{organization}/program/{program}/import', [App\Http\Controllers\API\ImportController::class, 'store'])->middleware('can:create,App\Import,organization,program');
-    Route::post('/v1/organization/{organization}/program/{program}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
     Route::post('/v1/organization/{organization}/program/{program}/{userimport}', [App\Http\Controllers\API\UserImportController::class, 'userFileImport'])->where('userimport', 'userimport|awarduserimport|addandawarduserimport');
     Route::post('/v1/organization/{organization}/program/{program}/csv-import-setting', [App\Http\Controllers\API\CsvImportSettingController::class, 'store']);
     Route::get('/v1/organization/{organization}/program/{program}/csv-import-setting/{type?}', [App\Http\Controllers\API\CsvImportSettingController::class, 'index']);
