@@ -152,7 +152,7 @@ class MigrationBaseService extends MigrationService
             self::USERS,
             self::USER_ACCOUNTS,
             self::USER_LOGS,
-//            self::PROGRAM_GIFT_CODES,
+            self::PROGRAM_GIFT_CODES,
             self::SYNC_MERCHANTS_TO_PROGRAM,
             self::SYNC_DOMAINS_TO_PROGRAM,
             self::SYNC_AWARD_LEVELS_TO_PROGRAM,
@@ -206,7 +206,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 7:
-//                    $result['migration'] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
                     break;
 
                 case 8:
