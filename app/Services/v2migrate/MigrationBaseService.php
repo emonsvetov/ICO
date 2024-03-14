@@ -97,7 +97,7 @@ class MigrationBaseService extends MigrationService
         $migrations = $arr;
 
         $step = $args['step'];
-        $nextStep = FALSE;
+        $nextStep = 0;
 
 //        DB::beginTransaction();
 
@@ -116,7 +116,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 default:
-                    $nextStep = FALSE;
+                    $nextStep = 0;
                     break;
 
             }
@@ -125,13 +125,13 @@ class MigrationBaseService extends MigrationService
                 $nextStep = $step == 'start' ? 1 : $step + 1;
             }
             else {
-                $nextStep = FALSE;
+                $nextStep = 0;
             }
 
 //            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
-            $result['nextStep'] = FALSE;
+            $result['nextStep'] = 0;
             $result['error'] = $e->getMessage();
 //            DB::rollback();
         }
@@ -165,6 +165,7 @@ class MigrationBaseService extends MigrationService
             self::PROGRAM_AND_USER_JOURNAL_EVENTS,
             self::PROGRAM_AND_USER_POSTINGS,
             self::SYNC_INVOICES_TO_PROGRAM,
+            self::LEADERBOARDS,
         ];
 
         $arr = [];
@@ -175,7 +176,7 @@ class MigrationBaseService extends MigrationService
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
         $step = $args['step'] ?? 1;
-        $nextStep = FALSE;
+        $nextStep = 0;
 
 //        DB::beginTransaction();
 
@@ -250,7 +251,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 default:
-                    $nextStep = FALSE;
+                    $nextStep = 0;
                     break;
             }
 
@@ -264,7 +265,7 @@ class MigrationBaseService extends MigrationService
 //            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
-            $result['nextStep'] = FALSE;
+            $result['nextStep'] = 0;
             $file = basename($e->getFile());
             $result['error'] = $e->getMessage(). ". File: {$file}" . ". Line: {$e->getLine()}";
 //            DB::rollback();

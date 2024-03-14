@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Models\GoalPlan;
 use App\Models\InvoiceType;
 use App\Models\Leaderboard;
 use App\Models\Program;
@@ -56,7 +57,7 @@ class MigrateLeaderBoardsService extends MigrationService
     }
 
     /**
-     *
+     * Get sub program.
      */
     public function getSubPrograms($v3Program)
     {
@@ -102,7 +103,7 @@ class MigrateLeaderBoardsService extends MigrationService
                 'name' => $v2LeaderBoard->name,
                 'leaderboard_type_id' => $v2LeaderBoard->leaderboard_type_id, // matches with v3.
                 'status_id' => $v2LeaderBoard->state_type_id, // matches with v3.
-                'organization_id' => 1,
+                'organization_id' => $v3Program->organization_id,
                 'program_id' => $v3Program->id,
                 'visible' => $v2LeaderBoard->visible,
                 'one_leaderboard' => $v2LeaderBoard->one_leaderboard,
@@ -119,9 +120,6 @@ class MigrateLeaderBoardsService extends MigrationService
                 $v3LeaderBoard->update($v3LeaderBoardData);
                 $this->countUpdatedLeaderBoards++;
             }
-
         }
-
     }
-
 }
