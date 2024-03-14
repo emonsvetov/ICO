@@ -23,7 +23,7 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
             `medium_info`.*
             , DATE(`medium_info`.redemption_date) as date
             , `merchants`.name
-            , `medium_info`.redemption_value as amount
+            , `medium_info`.redemption_value/`medium_info`.factor_valuation as amount
             , `medium_info`.code
         ");
         return $query;
