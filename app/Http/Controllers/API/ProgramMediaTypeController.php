@@ -47,6 +47,22 @@ class ProgramMediaTypeController extends Controller
         return response()->json($programMediaType);
     }
 
+    public function getMediaType(Request $request, Organization $organization, Program $program, $id)
+    {       
+        try {
+            $programMediaType = ProgramMediaType::where([
+                'deleted' => 0,
+                'program_id' => $program->id,
+                'program_media_type_id' => $id,
+            ])->get();
+    
+        } catch (\Exception $e) {
+            return response(['errors' => $e->getMessage()], 422);
+        }
+
+        return response($programMediaType);
+    }
+
     public function saveLink(Request $request, Organization $organization, Program $program,ProgramMediaType $programMediaType)
     {       
         try {
