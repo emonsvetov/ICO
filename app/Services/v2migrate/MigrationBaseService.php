@@ -206,7 +206,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 7:
-                    $result['migration'] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
+//                    $result['migration'] = $this->migrateProgramGiftCodesService->migrate($v2AccountHolderID);
                     break;
 
                 case 8:
