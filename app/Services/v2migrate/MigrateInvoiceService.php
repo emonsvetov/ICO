@@ -112,15 +112,15 @@ class MigrateInvoiceService extends MigrationService
     {
         $v2Invoices = $this->getV2Invoices($v2AccountHolderID);
 
+        $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
+        $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
+
+        // Checking if v3 program is exists.
+        if (empty($v3AccountHolderID)) {
+            throw new Exception("v3 program with ID: " . $v2AccountHolderID . " not found.");
+        }
+
         foreach ($v2Invoices as $v2Invoice) {
-
-            $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
-            $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
-
-            // Checking if v3 program is exists.
-            if (empty($v3AccountHolderID)) {
-                throw new Exception("v3 program with ID: " . $v2AccountHolderID . " not found.");
-            }
 
             $v3InvoiceData = [
                 'program_id' => $v3Program->id,

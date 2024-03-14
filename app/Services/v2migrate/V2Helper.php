@@ -1043,4 +1043,23 @@ class V2Helper
         return $this->v2db->select($v2Sql);
     }
 
+    /**
+     * Get v2 Leaderboards goals.
+     *
+     * @param $v2LeaderBoardID
+     * @return array
+     */
+    public function getV2leaderboardsGoals($v2LeaderBoardID)
+    {
+        $v2Sql = "
+            SELECT
+                gp.*
+            FROM leaderboards_goals lbg
+            LEFT JOIN goal_plans gp ON lbg.goal_plan_id = gp.id
+            WHERE lbg.leaderboard_id = {$v2LeaderBoardID}
+        ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
 }
