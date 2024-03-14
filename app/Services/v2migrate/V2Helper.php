@@ -1017,6 +1017,30 @@ class V2Helper
         return $result;
     }
 
+    /**
+     * v2 read_list_leaderboards.
+     *
+     * @param $v2AccountHolderID
+     * @return array
+     */
+    public function getV2LeaderBoards($v2AccountHolderID)
+    {
+        $v2Sql = "
+            SELECT
+                leaderboards.*
+                 , leaderboard_types.type
+                 , state_types.state as state_type_name
+            FROM
+                leaderboards
+                    JOIN leaderboard_types on leaderboard_type_id = leaderboard_types.id
+                    JOIN state_types on state_type_id = state_types.id
 
+            WHERE
+                    leaderboards.`program_account_holder_id` = {$v2AccountHolderID}
+              AND state_types.`state` not in ('Deleted')
+            ";
+
+        return $this->v2db->select($v2Sql);
+    }
 
 }

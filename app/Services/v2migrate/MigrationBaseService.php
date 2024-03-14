@@ -21,6 +21,7 @@ class MigrationBaseService extends MigrationService
     private MigrateEventXmlDataService $migrateEventXmlDataService;
     private MigrateJournalEventService $migrateJournalEventService;
     private MigratePostingService $migratePostingService;
+    private MigrateLeaderBoardsService $migrateLeaderBoardsService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const SYNC_DOMAINS_TO_PROGRAM = 'Sync domains to a program';
@@ -39,6 +40,7 @@ class MigrationBaseService extends MigrationService
     const EVENT_XML_DATA= 'Event Xml Data';
     const PROGRAM_AND_USER_JOURNAL_EVENTS= 'Program and User Journal Events';
     const PROGRAM_AND_USER_POSTINGS= 'Program and User Postings';
+    const LEADERBOARDS= 'LeaderBoards';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
@@ -54,7 +56,8 @@ class MigrationBaseService extends MigrationService
         MigrateInvoiceService $migrateInvoiceService,
         MigrateEventXmlDataService $migrateEventXmlDataService,
         MigrateJournalEventService $migrateJournalEventService,
-        MigratePostingService $migratePostingService
+        MigratePostingService $migratePostingService,
+        MigrateLeaderBoardsService $migrateLeaderBoardsService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
@@ -71,6 +74,7 @@ class MigrationBaseService extends MigrationService
         $this->migrateEventXmlDataService = $migrateEventXmlDataService;
         $this->migrateJournalEventService = $migrateJournalEventService;
         $this->migratePostingService = $migratePostingService;
+        $this->migrateLeaderBoardsService = $migrateLeaderBoardsService;
     }
 
     /**
@@ -161,6 +165,7 @@ class MigrationBaseService extends MigrationService
             self::PROGRAM_AND_USER_JOURNAL_EVENTS,
             self::PROGRAM_AND_USER_POSTINGS,
             self::SYNC_INVOICES_TO_PROGRAM,
+            self::LEADERBOARDS,
         ];
 
         $arr = [];
@@ -239,6 +244,10 @@ class MigrationBaseService extends MigrationService
 
                 case 15:
                     $result['migration'] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
+                    break;
+
+                case 16:
+                    $result['migration'] = $this->migrateLeaderBoardsService->migrate($v2AccountHolderID);
                     break;
 
                 default:
