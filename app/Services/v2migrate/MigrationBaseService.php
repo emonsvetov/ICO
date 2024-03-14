@@ -21,6 +21,7 @@ class MigrationBaseService extends MigrationService
     private MigrateEventXmlDataService $migrateEventXmlDataService;
     private MigrateJournalEventService $migrateJournalEventService;
     private MigratePostingService $migratePostingService;
+    private MigrateLeaderBoardsService $migrateLeaderBoardsService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const SYNC_DOMAINS_TO_PROGRAM = 'Sync domains to a program';
@@ -39,6 +40,7 @@ class MigrationBaseService extends MigrationService
     const EVENT_XML_DATA= 'Event Xml Data';
     const PROGRAM_AND_USER_JOURNAL_EVENTS= 'Program and User Journal Events';
     const PROGRAM_AND_USER_POSTINGS= 'Program and User Postings';
+    const LEADERBOARDS= 'LeaderBoards';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
@@ -54,7 +56,8 @@ class MigrationBaseService extends MigrationService
         MigrateInvoiceService $migrateInvoiceService,
         MigrateEventXmlDataService $migrateEventXmlDataService,
         MigrateJournalEventService $migrateJournalEventService,
-        MigratePostingService $migratePostingService
+        MigratePostingService $migratePostingService,
+        MigrateLeaderBoardsService $migrateLeaderBoardsService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
@@ -71,6 +74,7 @@ class MigrationBaseService extends MigrationService
         $this->migrateEventXmlDataService = $migrateEventXmlDataService;
         $this->migrateJournalEventService = $migrateJournalEventService;
         $this->migratePostingService = $migratePostingService;
+        $this->migrateLeaderBoardsService = $migrateLeaderBoardsService;
     }
 
     /**
@@ -93,7 +97,7 @@ class MigrationBaseService extends MigrationService
         $migrations = $arr;
 
         $step = $args['step'];
-        $nextStep = 0;
+        $nextStep = FALSE;
 
 //        DB::beginTransaction();
 
@@ -112,7 +116,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 default:
-                    $nextStep = 0;
+                    $nextStep = FALSE;
                     break;
 
             }
@@ -121,13 +125,13 @@ class MigrationBaseService extends MigrationService
                 $nextStep = $step == 'start' ? 1 : $step + 1;
             }
             else {
-                $nextStep = 0;
+                $nextStep = FALSE;
             }
 
 //            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
-            $result['nextStep'] = 0;
+            $result['nextStep'] = FALSE;
             $result['error'] = $e->getMessage();
 //            DB::rollback();
         }
@@ -171,7 +175,7 @@ class MigrationBaseService extends MigrationService
 
         $v2AccountHolderID = $args['v2AccountHolderID'] ?? null;
         $step = $args['step'] ?? 1;
-        $nextStep = 0;
+        $nextStep = FALSE;
 
 //        DB::beginTransaction();
 
@@ -241,8 +245,12 @@ class MigrationBaseService extends MigrationService
                     $result['migration'] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
                     break;
 
+                case 16:
+                    $result['migration'] = $this->migrateLeaderBoardsService->migrate($v2AccountHolderID);
+                    break;
+
                 default:
-                    $nextStep = 0;
+                    $nextStep = FALSE;
                     break;
             }
 
@@ -256,7 +264,7 @@ class MigrationBaseService extends MigrationService
 //            DB::commit();
         } catch (Exception $e) {
             $result['success'] = FALSE;
-            $result['nextStep'] = 0;
+            $result['nextStep'] = FALSE;
             $file = basename($e->getFile());
             $result['error'] = $e->getMessage(). ". File: {$file}" . ". Line: {$e->getLine()}";
 //            DB::rollback();
