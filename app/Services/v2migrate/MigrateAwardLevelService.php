@@ -69,7 +69,7 @@ class MigrateAwardLevelService extends MigrationService
         )[0];
         $program = Program::where('name', $v2Program->name)->first();
 
-        if ($program) {
+        if (!$program) {
             return [
                 'success' => $res,
                 'itemsCount' => $itemsCount,
