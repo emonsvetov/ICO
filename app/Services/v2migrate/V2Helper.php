@@ -737,7 +737,7 @@ class V2Helper
         return $this->v2db->select($sql);
     }
 
-    public function getProgramGiftCodes(array $v3ProgramIds): array
+    public function getProgramGiftCodes(array $programIds): array
     {
         $this->v2db->statement("SET SQL_MODE=''");
 
@@ -759,7 +759,15 @@ class V2Helper
                 gc.redeemed_program_account_holder_id,
                 gc.redeemed_merchant_account_holder_id,
                 gc.redeemed_account_holder_id AS redeemed_user_account_holder_id,
+                gc.medium_info_is_test,
+                gc.expiration_date,
+                gc.hold_until,
+                gc.encryption,
+                gc.tango_request_id,
+                gc.tango_reference_order_id,
+                gc.virtual_inventory,
                 m.v3_merchant_id,
+                m.website,
                 p.v3_program_id AS v3_redeemed_program_id,
                 mr.v3_merchant_id AS v3_redeemed_merchant_id,
                 u.v3_user_id AS v3_redeemed_user_id
@@ -773,10 +781,11 @@ class V2Helper
                 m.v3_merchant_id != 0
                 AND m.v3_merchant_id IS NOT NULL
                 AND gc.redemption_date IS NOT NULL
-                AND p.v3_program_id IN(" . implode(",", $v3ProgramIds) . ")
-                AND mr.v3_merchant_id IS NOT NULL AND u.v3_user_id IS NOT NULL
-            LIMIT
-                {$this->offset}, {$this->limit}
+                AND p.account_holder_id IN(" . implode(",", $programIds) . ")
+                AND mr.v3_merchant_id IS NOT NULL
+                AND u.v3_user_id IS NOT NULL
+            GROUP BY
+                gc.id
         ";
 
         return $this->v2db->select($sql);
