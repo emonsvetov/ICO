@@ -9,7 +9,8 @@ class UnitNumber extends Model
 {
     use HasFactory;
 
-    protected $table = null;
+    protected $guarded = [];
+    public $timestamp = true;
 
     public function program()   {
         $this->belongsTo(Program::class);

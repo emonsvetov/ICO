@@ -712,5 +712,11 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/v2-deprecated/migrate/{account_holder_id}/{step}', [App\Http\Controllers\API\MigrationController::class, 'run'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate-global/{step}', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate-artisan', [App\Http\Controllers\API\MigrationController::class, 'runArtisanMigrate'])->middleware('can:viewAny,App\V2Deprecated');
+    // UnitNumber
+    Route::get('/v1/organization/{organization}/program/{program}/unitnumber',[App\Http\Controllers\API\UnitNumberController::class, 'index'])->middleware('can:viewAny,App\UnitNumber,organization,program');
+    Route::post('/v1/organization/{organization}/program/{program}/unitnumber',[App\Http\Controllers\API\UnitNumberController::class, 'store'])->middleware('can:create,App\UnitNumber,organization,program');
+    Route::put('/v1/organization/{organization}/program/{program}/unitnumber/{unitnumber}',[App\Http\Controllers\API\UnitNumberController::class, 'update'])->middleware('can:update,App\UnitNumber,organization,program,unitnumber');
+    Route::delete('/v1/organization/{organization}/program/{program}/unitnumber/{unitnumber}',[App\Http\Controllers\API\UnitNumberController::class, 'delete'])->middleware('can:delete,App\UnitNumber,organization,program,unitnumber');
+    Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitnumber}/assign',[App\Http\Controllers\API\UnitNumberController::class, 'assign'])->middleware('can:assign,App\UnitNumber,organization,program,unitnumber');
 });
 
