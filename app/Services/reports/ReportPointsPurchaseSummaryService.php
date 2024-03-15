@@ -91,6 +91,8 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
 
     protected function calc(): array
     {
+        $this->params[self::TARGET] = 100;
+
         $table = [];
         $this->table = [];
 
@@ -148,6 +150,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         foreach ($countParticipants as $program_id => $participant_count) {
             if (isset($table[$program_id])) {
                 $table[$program_id]->participants_count = $participant_count;
+
+                $table[$program_id]->annual_target = $this->params [self::TARGET] * ( int ) $participant_count;
+                $table[$program_id]->monthly_target = $table[$program_id]->annual_target/12;
+                $table[$program_id]->quarterly_target = $table[$program_id]->annual_target/4;
             }
         }
 
@@ -164,7 +170,7 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         $args['months'] = true;
         $args['isCredit'] = true;
         $args['programAccountHolderIds'] = $programAccountHolderIds;
-        $credits_report = $this->reportHelper->sumPostsByAccountAndJournalEventAndCredit($dateBegin, $dateEnd, $args);
+        $credits_report = $this->reportHelper->sumProgramAwardPoints($dateBegin, $dateEnd, $args);
 
         foreach ($credits_report as $program_account_holder_id => $programs_credits_report_table) {
             $program = $table[$program_account_holder_id];
@@ -183,10 +189,11 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
 
         // Get Reclaims
         $args = [];
-        $args['accountTypes'] = [];
+        $args['accountTypes'] = [
+            AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
+        ];
         $args['journalEventTypes'] = [
             JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS,
-            JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES
         ];
         $args['months'] = true;
         $args['isCredit'] = true;
@@ -198,13 +205,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             foreach ($programs_credits_report_table as $account_type_name => $account) {
                 foreach ($account as $journal_event_type => $months) {
                     foreach ($months as $month => $amount) {
-                        $table[$program->account_holder_id]->{'month_' . $month} -= $table[$program->account_holder_id]->{'month_' . $month} > $amount ?
-                            $this->amountFormat($amount) : 0;
+                        $table[$program->account_holder_id]->{'month_' . $month} -= $this->amountFormat($amount);
                         $quarter = ceil($month / 3);
-                        $table[$program->account_holder_id]->{'Q' . $quarter} -= $table[$program->account_holder_id]->{'Q' . $quarter} > $amount ?
-                            $this->amountFormat($amount) : 0;
-                        $table[$program->account_holder_id]->YTD -= $table[$program->account_holder_id]->YTD > $amount ?
-                            $this->amountFormat($amount) : 0;
+                        $table[$program->account_holder_id]->{'Q' . $quarter} -= $this->amountFormat($amount);
+                        $table[$program->account_holder_id]->YTD -= $this->amountFormat($amount);
                     }
                 }
             }
