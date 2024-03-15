@@ -11,6 +11,7 @@ abstract class ReportServiceAbstract
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
     const YEAR = 'year';
+    const TARGET = 'target';
     const MONTH = 'month';
     const CODES = 'codes';
     const INVENTORY_TYPE = 'inventoryType';
