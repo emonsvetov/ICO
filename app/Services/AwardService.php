@@ -428,7 +428,7 @@ class AwardService
         {
             $notification['awarder_first_name'] = $awarder->first_name;
             $notification['awarder_last_name'] = $awarder->last_name;
-            $notification['availableAwardPoints'] = $awardee->readAvailableBalance($program);
+            $notification['availableAwardPoints'] = $awardee->readAvailableBalance($program) * $factor_valuation;
         }
 
         // If the event template used has post to social wall turned on. Create a new social wall post
