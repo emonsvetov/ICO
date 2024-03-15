@@ -25,10 +25,14 @@ class UnitNumberController extends Controller
         return response( (new \App\Services\UnitNumberService)->create($data + ['program_id' => $program->id]) );
     }
 
+    public function show(Organization $organization, Program $program, UnitNumber $unitNumber)
+    {
+        return response( $unitNumber );
+    }
+
     public function update(UnitNumberRequest $unitNumberRequest, Organization $organization, Program $program, UnitNumber $unitNumber)
     {
         $data = $unitNumberRequest->validated();
-        return $data;
         return response( (new \App\Services\UnitNumberService)->update($unitNumber, $data) );
     }
 

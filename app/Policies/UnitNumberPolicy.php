@@ -51,6 +51,22 @@ class UnitNumberPolicy
         return $authUser->can('unit-number-create');
     }
     /**
+     * Determine whether the user can view any models.
+     *
+     * @param  \App\Models\User  $authuser
+     * @param  \App\Models\Organization  $organization
+     * @param  \App\Models\Program  $program
+     * @param  \App\Models\UnitNumber  $unitNumber
+     * @return mixed
+     */
+    public function view(User $authUser, Organization $organization, Program $program, UnitNumber $unitNumber)
+    {
+        if(!$this->__preAuthCheck($authUser, $organization, $program, $unitNumber)) return false;
+        if($authUser->isAdmin()) return true;
+        if($authUser->isManagerToProgram($program)) return true;
+        return $authUser->can('unit-number-view');
+    }
+    /**
      * Determine whether the user can update a model.
      *
      * @param  \App\Models\User  $authuser

@@ -715,8 +715,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // UnitNumber
     Route::get('/v1/organization/{organization}/program/{program}/unitnumber',[App\Http\Controllers\API\UnitNumberController::class, 'index'])->middleware('can:viewAny,App\UnitNumber,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber',[App\Http\Controllers\API\UnitNumberController::class, 'store'])->middleware('can:create,App\UnitNumber,organization,program');
-    Route::put('/v1/organization/{organization}/program/{program}/unitnumber/{unitnumber}',[App\Http\Controllers\API\UnitNumberController::class, 'update'])->middleware('can:update,App\UnitNumber,organization,program,unitnumber');
-    Route::delete('/v1/organization/{organization}/program/{program}/unitnumber/{unitnumber}',[App\Http\Controllers\API\UnitNumberController::class, 'delete'])->middleware('can:delete,App\UnitNumber,organization,program,unitnumber');
-    Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitnumber}/assign',[App\Http\Controllers\API\UnitNumberController::class, 'assign'])->middleware('can:assign,App\UnitNumber,organization,program,unitnumber');
+    Route::get('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}',[App\Http\Controllers\API\UnitNumberController::class, 'show'])->middleware('can:view,App\UnitNumber,organization,program,unitNumber');
+    Route::put('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}',[App\Http\Controllers\API\UnitNumberController::class, 'update'])->middleware('can:update,App\UnitNumber,organization,program,unitNumber');
+    Route::delete('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}',[App\Http\Controllers\API\UnitNumberController::class, 'delete'])->middleware('can:delete,App\UnitNumber,organization,program,unitNumber');
+    Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}/assign',[App\Http\Controllers\API\UnitNumberController::class, 'assign'])->middleware('can:assign,App\UnitNumber,organization,program,unitNumber');
 });
 
