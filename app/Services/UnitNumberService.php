@@ -22,4 +22,8 @@ class UnitNumberService
     {
         return $unitNumber->delete();
     }
+    public static function assign( UnitNumber $unitNumber )
+    {
+        return $unitNumber->delete();
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 // use Illuminate\Http\Request;
 
+use App\Http\Requests\UnitNumberAssignRequest;
 use App\Http\Requests\UnitNumberRequest;
 // use App\Services\UnitNumberService;
 
@@ -40,5 +41,11 @@ class UnitNumberController extends Controller
     {
         $data = $unitNumberRequest->validated();
         return response( (new \App\Services\UnitNumberService)->delete($unitNumber, $data) );
+    }
+
+    public function assign(UnitNumberAssignRequest $unitNumberAssignRequest, Organization $organization, Program $program, UnitNumber $unitNumber)
+    {
+        $data = $unitNumberAssignRequest->validated();
+        return response( (new \App\Services\UnitNumberService)->assign($unitNumber, $data) );
     }
 }
