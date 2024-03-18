@@ -42,6 +42,7 @@ class LeaderboardController extends Controller
         {
             return response(['errors' => 'Leaderboard creation failed'], 422);
         }
+        $newLeaderboard->load('status');
 
         return response([ 'leaderboard' => $newLeaderboard ]);
     }
