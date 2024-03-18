@@ -29,6 +29,7 @@ class UnitNumberController extends Controller
 
     public function show(Organization $organization, Program $program, UnitNumber $unitNumber)
     {
+        $unitNumber->load('users');
         return response( $unitNumber );
     }
 
