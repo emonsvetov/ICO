@@ -7,9 +7,22 @@ use Illuminate\Support\Facades\Validator;
 use Exception;
 
 use App\Models\UnitNumber;
+use App\Models\Program;
 
 class UnitNumberService
 {
+    public function index(Program $program) {
+        $ignore_uses_units = request()->get('ignore_uses_units', false);
+        if( !$ignore_uses_units && !$program->uses_units )   {
+            return response([]);
+        }
+        $query =  $program->unit_numbers()->withCount('users');
+        $assignable = request()->get('assignable', false);
+        if( $assignable && !$program->allow_multiple_participants_per_unit )    {
+            $query =  $query->having('users_count', '=', 0);
+        }
+        return $query->get();
+    }
     public static function create($data)
     {
         return UnitNumber::create($data);

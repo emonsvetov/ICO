@@ -17,12 +17,8 @@ class UnitNumberController extends Controller
 {
     public function index(Organization $organization, Program $program)
     {
-        $query =  $program->unit_numbers()->withCount('users');
-        $assignable = request()->get('assignable', false);
-        if( $assignable && !$program->allow_multiple_participants_per_unit )    {
-            $query =  $query->having('users_count', '=', 0);
-        }
-        return response( $query->get() );
+
+        return response( (new \App\Services\UnitNumberService)->index($program) );
     }
 
     public function store(UnitNumberRequest $unitNumberRequest, Organization $organization, Program $program)
