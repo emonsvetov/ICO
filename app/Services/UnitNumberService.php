@@ -22,8 +22,20 @@ class UnitNumberService
     {
         return $unitNumber->delete();
     }
-    public static function assign( UnitNumber $unitNumber )
+    public static function assign( UnitNumber $unitNumber, array $data )
     {
-        return $unitNumber->delete();
+        $userIds = $data['user_id'] ?: null;
+        if( $userIds )
+        {
+            return $unitNumber->users()->sync( $userIds );
+        }
+    }
+    public static function unassign( UnitNumber $unitNumber, array $data )
+    {
+        $userIds = $data['user_id'] ?: null;
+        if( $userIds )
+        {
+            return $unitNumber->users()->detach( $userIds );
+        }
     }
 }

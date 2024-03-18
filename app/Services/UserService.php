@@ -30,9 +30,9 @@ class UserService
     const EXPIRATION_RULES_SPECIFIED = 6;             // ,Specified
     const EXPIRATION_RULES_TWO_YEARS = 7;             // ,2 Years
 
-    public function __construct(AccountService $accountService)
+    public function __construct()
     {
-        $this->accountService = $accountService;
+        $this->accountService = new \App\Services\AccountService;
     }
 
     public function getIndexData($organization)
@@ -138,16 +138,15 @@ class UserService
      * @param User $user
      * @return User|null
      */
-    public function update(UserRequest $request, User $user): ?User
+    public function update( User $user, $validated)
     {
-        $validated = $request->validated();
         $fieldsToUpdate = array_filter(
             $validated,
             fn($key) => ! in_array($key, $user->getImageFields()),
             ARRAY_FILTER_USE_KEY
         );
 
-        $uploads = $this->handleMediaUpload($request, $user, true);
+        $uploads = $this->handleMediaUpload(app('App\Http\Requests\UserRequest'), $user, true);
         if ($uploads) {
             foreach ($uploads as $key => $upload) {
                 if (in_array($key, $user->getImageFields())) {
@@ -160,6 +159,10 @@ class UserService
 
         if ( ! empty($validated['roles'])) {
             $this->updateRoles($user, $validated['roles']);
+        }
+
+        if ( ! empty($validated['unit_number']) ) {
+            $this->updateUnitNumber($user, $validated['unit_number']);
         }
 
         return $user;
@@ -595,5 +598,25 @@ class UserService
             'errorCode' => $errorCode,
             'errorData' => $errorData,
         ];
+    }
+
+    /**
+     * @param User $user
+     * @param array $roles
+     * @return void
+     */
+    public function updateUnitNumber(User $user, int $newUnitNumber)
+    {
+        $currentUnitNumber = $user->unitNumber ? $user->unitNumber->id : null;
+
+        if( $newUnitNumber === $currentUnitNumber ) return;
+
+        if( $currentUnitNumber )
+        {
+            $user->unit_numbers()->where('unit_number', '=', $currentUnitNumber)->detach();
+        }
+
+        $user->unit_numbers()->attach([$newUnitNumber]);
+        return $newUnitNumber;
     }
 }

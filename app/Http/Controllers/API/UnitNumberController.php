@@ -17,7 +17,12 @@ class UnitNumberController extends Controller
 {
     public function index(Organization $organization, Program $program)
     {
-        return response( $program->unit_numbers()->get() );
+        $query =  $program->unit_numbers()->withCount('users');
+        $assignable = request()->get('assignable', false);
+        if( $assignable && !$program->allow_multiple_participants_per_unit )    {
+            $query =  $query->having('users_count', '=', 0);
+        }
+        return response( $query->get() );
     }
 
     public function store(UnitNumberRequest $unitNumberRequest, Organization $organization, Program $program)
@@ -47,5 +52,11 @@ class UnitNumberController extends Controller
     {
         $data = $unitNumberAssignRequest->validated();
         return response( (new \App\Services\UnitNumberService)->assign($unitNumber, $data) );
+    }
+
+    public function unassign(UnitNumberAssignRequest $unitNumberAssignRequest, Organization $organization, Program $program, UnitNumber $unitNumber)
+    {
+        $data = $unitNumberAssignRequest->validated();
+        return response( (new \App\Services\UnitNumberService)->unassign($unitNumber, $data) );
     }
 }
