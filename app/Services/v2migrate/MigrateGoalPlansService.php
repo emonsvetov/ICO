@@ -101,16 +101,16 @@ class MigrateGoalPlansService extends MigrationService
                 'goal_plan_type_id' => $v2GoalPlan->goal_plan_type_id, // matches
                 'state_type_id' => $v2GoalPlan->state_type_id, // matches is statuses on v3
                 'default_target' => $v2GoalPlan->default_target,
-                'email_template_id' => $v2GoalPlan->email_template_id, //
-                'notification_body' => $v2GoalPlan->notification_body,
-                'achieved_callback_id' => $v2GoalPlan->achieved_callback_id,
-                'exceeded_callback_id' => $v2GoalPlan->exceeded_callback_id,
+                'email_template_id' => NULL, // all NULL on v2
+                'notification_body' => NULL, // all NULL on v2
+                'achieved_callback_id' => NULL, // all NULL on v2
+                'exceeded_callback_id' => NULL, // all NULL on v2
                 'achieved_event_id' => $v2GoalPlan->achieved_event_template_id, // TODO
                 'exceeded_event_id' => $v2GoalPlan->exceeded_event_template_id, // TODO
                 'automatic_progress' => $v2GoalPlan->automatic_progress,
                 'automatic_frequency' => $v2GoalPlan->automatic_frequency,
                 'automatic_value' => $v2GoalPlan->automatic_value,
-                'expiration_rule_id' => $v2GoalPlan->expiration_rule_id, //
+                'expiration_rule_id' => $v2GoalPlan->expiration_rule_id, // matches
                 'custom_expire_offset' => $v2GoalPlan->custom_expire_offset,
                 'custom_expire_units' => $v2GoalPlan->custom_expire_units,
                 'annual_expire_month' => $v2GoalPlan->annual_expire_month,
@@ -131,7 +131,6 @@ class MigrateGoalPlansService extends MigrationService
                 'v2_goal_plan_id' => $v2GoalPlan->id,
             ];
 
-            $a = 1;
         }
     }
 
