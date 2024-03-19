@@ -255,6 +255,10 @@ class MigrationBaseService extends MigrationService
                     $result['migration'] = $this->migrateLeaderBoardsService->migrate($v2AccountHolderID);
                     break;
 
+                case 17:
+                    $result['migration'] = $this->migrateGoalPlansService->migrate($v2AccountHolderID);
+                    break;
+
                 default:
                     $nextStep = 0;
                     break;
