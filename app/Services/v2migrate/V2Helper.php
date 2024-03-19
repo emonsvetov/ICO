@@ -1062,4 +1062,21 @@ class V2Helper
         return $this->v2db->select($v2Sql);
     }
 
+    /**
+     * Get V2 goal plan.
+     *
+     * @param $v2AccountHolderID
+     * @return array
+     */
+    public function getV2GoalPlans($v2AccountHolderID)
+    {
+        $v2Sql = "
+            SELECT gp.*
+            FROM goal_plans gp
+            WHERE gp.program_account_holder_id = {$v2AccountHolderID}
+        ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
 }
