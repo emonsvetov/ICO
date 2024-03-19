@@ -16,6 +16,9 @@ class MigrateGoalPlansService extends MigrationService
 {
     private ProgramService $programService;
 
+    public $countUpdateGoalPlans = 0;
+    public $countCreateGoalPlans = 0;
+
     public function __construct(ProgramService $programService)
     {
         parent::__construct();
@@ -48,7 +51,7 @@ class MigrateGoalPlansService extends MigrationService
 
         try {
             $result['success'] = TRUE;
-            $result['info'] = "";
+            $result['info'] = "update $this->countUpdateGoalPlans items, create $this->countCreateGoalPlans items";
         } catch (\Exception $exception) {
             throw new Exception("Migrate goal plans is failed.");
         }
@@ -88,8 +91,12 @@ class MigrateGoalPlansService extends MigrationService
         $v2GoalPlans = $this->getV2GoalPlans($v2AccountHolderID);
         foreach ($v2GoalPlans as $v2GoalPlan) {
 
-            $nextGoalPlan = !blank($v2GoalPlan->next_goal_id) ? GoalPlan::where('v2_goal_plan_id', $v2GoalPlan->next_goal_id)->first() : NULL;
-            $previousGoalPlan = !blank($v2GoalPlan->previous_goal_id) ? GoalPlan::where('v2_goal_plan_id', $v2GoalPlan->previous_goal_id)->first() : NULL;
+            try {
+                $nextGoalPlan = !blank($v2GoalPlan->next_goal_id) ? GoalPlan::where('v2_goal_plan_id', $v2GoalPlan->next_goal_id)->first() : NULL;
+                $previousGoalPlan = !blank($v2GoalPlan->previous_goal_id) ? GoalPlan::where('v2_goal_plan_id', $v2GoalPlan->previous_goal_id)->first() : NULL;
+            } catch(\Exception $e) {
+                throw new Exception("dont find v2_goal_plan_id, please run php artisan migrate");
+            }
 
             $v3GoalPlanData = [
                 'next_goal_id' => !blank($nextGoalPlan) ? $nextGoalPlan->id : NULL,
@@ -125,11 +132,22 @@ class MigrateGoalPlansService extends MigrationService
                 'progress_requires_unique_ref_num' => $v2GoalPlan->progress_requires_unique_ref_num,
                 'progress_notification_email_id' => NULL, // for now set any number, TO DO to make it dynamic
                 'assign_goal_all_participants_default' => $v2GoalPlan->assign_goal_all_participants_default,
-                'created_by' => NULL,
-                'modified_by' => NULL,
+                'created_by' => 0,
+                'modified_by' => 0,
                 'expired' => $v2GoalPlan->expired,
                 'v2_goal_plan_id' => $v2GoalPlan->id,
             ];
+
+            $v3GoalPlan = GoalPlan::where('v2_goal_plan_id', $v2GoalPlan->id)->first();
+
+            if (blank($v3GoalPlan)) {
+                $v3GoalPlan = GoalPlan::create($v3GoalPlanData);
+                $this->countCreateGoalPlans++;
+            }
+            else {
+                $v3GoalPlan->update($v3GoalPlanData);
+                $this->countUpdateGoalPlans++;
+            }
 
         }
     }
