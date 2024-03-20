@@ -41,6 +41,7 @@ class ReportFactory
         $paginate = false;
         $server = $params['server'] ?? null;
         $year = $params['year'] ?? null;
+        $targetParticipant = $params['targetParticipant'] ?? null;
         $month = $params['month'] ?? null;
         $codes = $params['codes'] ?? null;
         $inventoryType = $params['inventoryType'] ?? null;
@@ -73,6 +74,7 @@ class ReportFactory
             'paginate' => $paginate,
             'server' => $server,
             'year' => $year,
+            'targetParticipant' => $targetParticipant,
             'month' => $month,
             'codes' => $codes,
             'inventoryType' => $inventoryType,
