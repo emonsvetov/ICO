@@ -208,7 +208,7 @@ class ProgramController extends Controller
     public function getBalanceInformation(Organization $organization, Program $program, AccountService $accountService)
     {
         $total_financial_balance = $accountService->readAvailableBalanceForProgram($program);
-        $financial_detail = $accountService->readAvailableBalanceForOwner($program);
+        //$financial_detail = $accountService->readAvailableBalanceForOwner($program);
         return response(
             ["financial_detail" => $total_financial_balance, "total_financial_balance" => $total_financial_balance]
         );

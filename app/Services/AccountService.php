@@ -70,13 +70,13 @@ class AccountService
      * @param array $journal_event_types
      * @return float
      */
-    public static function readBalance($account_holder_id, $account_type, array $journal_event_types = []): float
+    public static function readBalance($account_holder_id, $account_type, array $journal_event_types = [],$allProgramAccounts = false): float
     {
         $credits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 1
+            $account_holder_id, $account_type, $journal_event_types, 1,null,null,$allProgramAccounts
         );
         $debits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 0
+            $account_holder_id, $account_type, $journal_event_types, 0,null,null,$allProgramAccounts
         );
         return (float)(number_format(($credits->total - $debits->total), 2, '.', ''));
     }
@@ -230,13 +230,15 @@ class AccountService
      * @return float
      */
 
-    public static function readAvailableBalanceForProgram( $program ) {
+    public static function readAvailableBalanceForProgram($program)
+    {
         $account_type = AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE;
-		$journal_event_types = array (); // leave $journal_event_types empty to get all journal events
-		if ( $program->programIsInvoiceForAwards() ) {
-			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
-		}
-		return self::readBalance ( $program->account_holder_id, $account_type, $journal_event_types );
+        $journal_event_types = array(); // leave $journal_event_types empty to get all journal events
+        if ($program->programIsInvoiceForAwards()) {
+            $account_type = AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
+        }
+
+        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types,true);
     }
     /**
      * Alias for "readAvailableBalanceForProgram"
