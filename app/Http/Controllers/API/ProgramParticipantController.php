@@ -22,7 +22,7 @@ class ProgramParticipantController extends Controller
         foreach ($users as $key=>$user){
             $users[$key]['pointBalance'] = AccountService::readAvailableBalanceForUser($program, $user) + $userService->readAvailablePeerBalance($user, $program);
             $users[$key]['redeemedBalance'] = AccountService::readRedeemedTotalForParticipant($program, $user);
-            $users[$key]['peerBalance'] = $userService->readAvailablePeerBalance($user, $program);
+            $users[$key]['peerBalance'] = 0;//todo
 
             $users[$key]['totalPointsRewarded'] = AccountService::readAwardedTotalForUser($program, $user);
         }
