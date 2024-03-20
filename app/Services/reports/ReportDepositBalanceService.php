@@ -65,8 +65,14 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                 if ($extra->program_id == $programID) {
                     $programsArray[$programID]['name'] = $extra->name;
                     $programsArray[$programID]['programID'] = $extra->id;
-                    if (($extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_PAYS_FOR_MONIES_PENDING && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE)
-                        or ($extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE)) {
+                    if (($extra->is_credit
+                            && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_PAYS_FOR_MONIES_PENDING
+                            && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE
+                        )
+                        or ($extra->is_credit
+                            && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE
+                            && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE
+                        )) {
                         $depositTotal += $extra->posting_amount;
                         $programsArray[$programID]['deposit'] = $depositTotal;
                     }
@@ -96,6 +102,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                     }
                 }
             }
+            $programsArray[$programID]['deposit'] = $depositTotal - $transferTotal;
 
             foreach ($extras['balance'] as $extraBalance) {
                 if ($extraBalance->account_holder_id == $programID) {
