@@ -11,18 +11,30 @@ class EventTypeController extends Controller
 {
     public function index(Organization $organization, Program $program)
     {
-        $query = EventType::query();
-        if( !$program->allow_milestone_award )   {
-            $query->where('type', '!=', EventType::EVENT_TYPE_MILESTONE_AWARD);
-            $query->where('type', '!=', EventType::EVENT_TYPE_MILESTONE_BADGE);
+        $excludedEventTypes = [];
+
+        if (!$program->allow_milestone_award) {
+            $excludedEventTypes[] = EventType::EVENT_TYPE_MILESTONE_AWARD;
+            $excludedEventTypes[] = EventType::EVENT_TYPE_MILESTONE_BADGE;
         }
-        $eventTypes = $query->get();
-        if ( $eventTypes->isNotEmpty() )
-        {
-            return response( $eventTypes );
+        if (!$program->uses_peer2peer) {
+            $excludedEventTypes[] = EventType::EVENT_TYPE_PEER2PEER;
         }
-        return response( [] );
+
+        $excludedEventTypes = array_merge($excludedEventTypes, [
+            EventType::EVENT_TYPE_PROMOTIONAL_AWARD,
+            EventType::EVENT_TYPE_AUTO_AWARD,
+        ]);
+
+        $eventTypes = EventType::whereNotIn('type', $excludedEventTypes)->get();
+
+        if ($eventTypes->isNotEmpty()) {
+            return response($eventTypes);
+        }
+
+        return response([]);
     }
+
     public function milestoneFrequency(Organization $organization, Program $program)
     {
         if( !$program->allow_milestone_award )   {

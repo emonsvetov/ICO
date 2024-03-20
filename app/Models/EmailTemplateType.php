@@ -26,6 +26,7 @@ class EmailTemplateType extends Model
     const EMAIL_TEMPLATE_TYPE_PEER_AWARD = 'Peer Award';
     const EMAIL_TEMPLATE_TYPE_REWARD_EXPIRATION_NOTICE = 'Reward Expiration Notice';
     const EMAIL_TEMPLATE_TYPE_WELCOME = 'Welcome';
+    const EMAIL_TEMPLATE_TYPE_NEW_REFERRAL = 'New Referral';
 
     const EMAIL_TEMPLATE_TYPE_CLASS_MAP = [
         self::EMAIL_TEMPLATE_TYPE_ACTIVATION_REMINDER => 'ActivationReminderEmail',
@@ -39,7 +40,8 @@ class EmailTemplateType extends Model
         self::EMAIL_TEMPLATE_TYPE_PEER_ALLOCATION => 'PeerAllocationEmail',
         self::EMAIL_TEMPLATE_TYPE_PEER_AWARD => 'PeerAwardEmail',
         self::EMAIL_TEMPLATE_TYPE_REWARD_EXPIRATION_NOTICE => 'RewardExpirationNoticeEmail',
-        self::EMAIL_TEMPLATE_TYPE_WELCOME => 'WelcomeEmail'
+        self::EMAIL_TEMPLATE_TYPE_WELCOME => 'WelcomeEmail',
+        self::EMAIL_TEMPLATE_TYPE_NEW_REFERRAL => 'NewReferralEmail'
     ];
 
     public static function getIdByType( $type, $insert = false ) {

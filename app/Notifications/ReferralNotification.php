@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Mail\templates\ReferralEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -41,15 +42,17 @@ class ReferralNotification extends Notification
      */
     public function toMail($notifiable)
     {
-        return (new MailMessage)
-            ->line(sprintf('A new referral was sent by %s', $this->data->sender_name))
-            ->line(sprintf('First name: %s', $this->data->recipient_first_name))
-            ->line(sprintf('Last name: %s', $this->data->recipient_last_name))
-            ->line(sprintf('email: %s', $this->data->recipient_email))
-            ->line(sprintf('area code: %s', $this->data->recipient_area_code))
-            ->line(sprintf('phone: %s', $this->data->recipient_phone))
-            ->action('Go to the App', url('/'))
-            ->line('Thank you!');
+        return (new ReferralEmail(
+            $this->data->contactFirstName,
+            $this->data->sender_first_name,
+            $this->data->sender_last_name,
+            $this->data->recipient_first_name,
+            $this->data->recipient_last_name,
+            $this->data->recipient_email,
+            $this->data->recipient_area_code,
+            $this->data->recipient_phone,
+            $this->data->program,
+        ))->convertToMailMessage();
     }
 
     /**

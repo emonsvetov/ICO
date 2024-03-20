@@ -69,6 +69,13 @@ class MigrateAwardLevelService extends MigrationService
         )[0];
         $program = Program::where('name', $v2Program->name)->first();
 
+        if (!$program) {
+            return [
+                'success' => $res,
+                'itemsCount' => $itemsCount,
+            ];
+        }
+
         $awardLevels = $this->v2db->select(
             sprintf("select * from award_level where program_account_holder_id = %d", $v2AccountHolderID)
         );

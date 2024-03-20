@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\User;
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -736,7 +737,7 @@ class V2Helper
         return $this->v2db->select($sql);
     }
 
-    public function getProgramGiftCodes(array $v3ProgramIds): array
+    public function getProgramGiftCodes(array $programIds): array
     {
         $this->v2db->statement("SET SQL_MODE=''");
 
@@ -758,7 +759,15 @@ class V2Helper
                 gc.redeemed_program_account_holder_id,
                 gc.redeemed_merchant_account_holder_id,
                 gc.redeemed_account_holder_id AS redeemed_user_account_holder_id,
+                gc.medium_info_is_test,
+                gc.expiration_date,
+                gc.hold_until,
+                gc.encryption,
+                gc.tango_request_id,
+                gc.tango_reference_order_id,
+                gc.virtual_inventory,
                 m.v3_merchant_id,
+                m.website,
                 p.v3_program_id AS v3_redeemed_program_id,
                 mr.v3_merchant_id AS v3_redeemed_merchant_id,
                 u.v3_user_id AS v3_redeemed_user_id
@@ -772,10 +781,11 @@ class V2Helper
                 m.v3_merchant_id != 0
                 AND m.v3_merchant_id IS NOT NULL
                 AND gc.redemption_date IS NOT NULL
-                AND p.v3_program_id IN(" . implode(",", $v3ProgramIds) . ")
-                AND mr.v3_merchant_id IS NOT NULL AND u.v3_user_id IS NOT NULL
-            LIMIT
-                {$this->offset}, {$this->limit}
+                AND p.account_holder_id IN(" . implode(",", $programIds) . ")
+                AND mr.v3_merchant_id IS NOT NULL
+                AND u.v3_user_id IS NOT NULL
+            GROUP BY
+                gc.id
         ";
 
         return $this->v2db->select($sql);
@@ -923,6 +933,150 @@ class V2Helper
         return $this->v2db->select($sql);
     }
 
+    /**
+     * v2 read_list_invoices_by_program.
+     *
+     * @param $v2AccountHolderID
+     * @return array
+     */
+    public function getV2Invoices($v2AccountHolderID)
+    {
+        $v2Sql = "
+            SELECT
+                i.*,
+                concat(i.key, '-', i.seq) as invoice_number
+            FROM
+                invoices i
+                join invoice_types t on (i.invoice_type_id = t.id)
+			WHERE program_account_holder_id = {$v2AccountHolderID}
+            ORDER BY
+                i.`id` DESC
+        ;
+        ";
 
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get v3 user ID.
+     *
+     * @param $v2UserID
+     * @return mixed
+     * @throws Exception
+     */
+    public function getV3UserID($v2UserID)
+    {
+        $v2Sql = "SELECT u.* FROM users u WHERE u.account_holder_id = {$v2UserID} LIMIT 1";
+        $result = $this->v2db->select($v2Sql);
+        $v2User = reset($result);
+
+        $v3UserID = $v2User->v3_user_id ?? FALSE;
+        if (!$v3UserID) {
+            $v3User = User::where('email', $v2User->email)->first();
+            $v3UserID = $v3User->id ?? FALSE;
+        }
+
+        if (!$v3UserID) {
+            throw new Exception("Sync invoices is failed. User for v3 not found. The user on v2 has an ID = {$v2UserID} and email = {$v2User->email}");
+        }
+
+        return $v3UserID;
+    }
+
+    /**
+     * Get v2 journal event.
+     *
+     * @param $v2Invoice
+     * @return array
+     */
+    public function getV2JournalEvent($v2Invoice)
+    {
+        $v2Sql = "
+            SELECT je.* FROM journal_events je
+            LEFT JOIN invoice_journal_events ije ON je.id = ije.journal_event_id
+            WHERE ije.invoice_id = {$v2Invoice->id}";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get invoice types.
+     *
+     * @return array
+     */
+    public function getV2InvoiceTypes()
+    {
+        $result = [];
+        $v2Sql = "SELECT * from invoice_types";
+
+        $v2Invoices = $this->v2db->select($v2Sql);
+        foreach ($v2Invoices as $v2Invoice) {
+            $result[$v2Invoice->id] = $v2Invoice->type;
+        }
+
+        return $result;
+    }
+
+    /**
+     * v2 read_list_leaderboards.
+     *
+     * @param $v2AccountHolderID
+     * @return array
+     */
+    public function getV2LeaderBoards($v2AccountHolderID)
+    {
+        $v2Sql = "
+            SELECT
+                leaderboards.*
+                 , leaderboard_types.type
+                 , state_types.state as state_type_name
+            FROM
+                leaderboards
+                    JOIN leaderboard_types on leaderboard_type_id = leaderboard_types.id
+                    JOIN state_types on state_type_id = state_types.id
+
+            WHERE
+                    leaderboards.`program_account_holder_id` = {$v2AccountHolderID}
+              AND state_types.`state` not in ('Deleted')
+            ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get v2 Leaderboards goals.
+     *
+     * @param $v2LeaderBoardID
+     * @return array
+     */
+    public function getV2leaderboardsGoals($v2LeaderBoardID)
+    {
+        $v2Sql = "
+            SELECT
+                gp.*
+            FROM leaderboards_goals lbg
+            LEFT JOIN goal_plans gp ON lbg.goal_plan_id = gp.id
+            WHERE lbg.leaderboard_id = {$v2LeaderBoardID}
+        ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get V2 goal plan.
+     *
+     * @param $v2AccountHolderID
+     * @return array
+     */
+    public function getV2GoalPlans($v2AccountHolderID)
+    {
+        $v2Sql = "
+            SELECT gp.*
+            FROM goal_plans gp
+            WHERE gp.program_account_holder_id = {$v2AccountHolderID}
+        ";
+
+        return $this->v2db->select($v2Sql);
+    }
 
 }

@@ -55,11 +55,7 @@ class MigrateProgramGiftCodesService extends MigrationService
             throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
         }
 
-        try {
-            $this->migrateGiftCodes($v2RootPrograms);
-        } catch(Exception $e) {
-            throw new Exception("Error migrating program gift codes. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
-        }
+        $this->migrateGiftCodes($v2RootPrograms);
 
         return [
             'success' => TRUE,
@@ -74,27 +70,28 @@ class MigrateProgramGiftCodesService extends MigrationService
      */
     public function migrateGiftCodes(array $v2RootPrograms): void
     {
+        $programIds = [];
         foreach ($v2RootPrograms as $v2RootProgram) {
-            $this->syncOrCreateGiftCode($v2RootProgram);
+            if (!$v2RootProgram->v3_program_id) {
+                throw new Exception("V2 Program: {$v2RootProgram->account_holder_id} does not have v3_program_id: {$v2RootProgram->v3_program_id}");
+            }
+            $programIds[] = $v2RootProgram->account_holder_id;
 
             $subPrograms = $this->read_list_children_heirarchy(( int )$v2RootProgram->account_holder_id);
             foreach ($subPrograms as $subProgram) {
-                $this->syncOrCreateGiftCode($subProgram);
+                if (!$subProgram->v3_program_id) {
+                    throw new Exception("V2 Program: {$subProgram->account_holder_id} does not have v3_program_id: {$subProgram->v3_program_id}");
+                }
+                $programIds[] = $subProgram->account_holder_id;
             }
         }
+
+        $this->syncOrCreateGiftCode($programIds);
     }
 
-    public function syncOrCreateGiftCode(object $v2Program)
+    public function syncOrCreateGiftCode(array $programIds)
     {
-        $v3Program = Program::findOrFail($v2Program->v3_program_id);
-
-        $this->iteration++;
-        $v3ProgramIds = Program::whereNotNull('v2_account_holder_id')->where('id', $v3Program->id)->get()->pluck('id');
-        if (!$v3ProgramIds) {
-            throw new Exception('No v2 programs found');
-        }
-
-        $v2GiftCodes = $this->getProgramGiftCodes($v3ProgramIds->toArray());
+        $v2GiftCodes = $this->getProgramGiftCodes($programIds);
 
         foreach ($v2GiftCodes as $v2GiftCode) {
             $v2Updates = [];
@@ -106,26 +103,18 @@ class MigrateProgramGiftCodesService extends MigrationService
             if ($v3GiftCode) {
                 $v2Updates['v3_medium_info_id'] = $v3GiftCode->id;
             }
+            $this->printf("Starting import of code v2:{$v2GiftCode->id} to v3.\n");
+            $merchant = $this->getSetCachedV3Model("Merchant", $v2GiftCode->v3_merchant_id);
+            if (!$merchant) throw new Exception("Cannot proceed without v2merchant");
 
-            if (!$v3GiftCode) {
-                $this->printf("Starting import of code v2:{$v2GiftCode->id} to v3.\n");
-                $merchant = $this->getSetCachedV3Model("Merchant", $v2GiftCode->v3_merchant_id);
-                if (!$merchant) throw new Exception("Cannot proceed without v2merchant");
-
-                $v3GiftCode = $this->createGiftCode($v2GiftCode, $merchant);
-                if ($v3GiftCode) {
-                    $this->printf("Code imported, v2:{$v2GiftCode->id}=>v3:{$v3GiftCode->id}. \n");
-                    $v2Updates['v3_medium_info_id'] = $v3GiftCode->id;
-                }
+            if (!$v2GiftCode->redemption_datetime) {
+                $v2GiftCode->redemption_datetime = $v2GiftCode->redemption_date;
             }
 
-            if (!empty($v3GiftCode)) {
+            if ($v3GiftCode) {
                 $this->importedGiftCodes[] = $v3GiftCode->id;
                 //Check for redemption updates
                 if ($v2GiftCode->redemption_date) {
-                    if (!$v2GiftCode->redemption_datetime) {
-                        $v2GiftCode->redemption_datetime = $v2GiftCode->redemption_date;
-                    }
                     //check redemption_date
                     if (!$v3GiftCode->redemption_date) {
                         //The code used in v2 but not updated in v3
@@ -187,42 +176,40 @@ class MigrateProgramGiftCodesService extends MigrationService
                         $v2Updates['redeemed_user_account_holder_id'] = $v3RedeemedUser->v2_account_holder_id;
                     }
                 }
+            } else {
+                $this->printf("Starting import of code v2:{$v2GiftCode->id} to v3.\n");
 
-                if ($v3Updates) {
-                    $v3GiftCode->update($v3Updates);
+                $v3GiftCodeId = $this->createGiftCode($v2GiftCode);
+                if ($v3GiftCodeId) {
+                    $this->importedGiftCodes[] = $v3GiftCodeId;
+                    $this->printf("Code imported, v2:{$v2GiftCode->id}=>v3:{$v3GiftCodeId}. \n");
+                    $v2Updates['v3_medium_info_id'] = $v3GiftCodeId;
                 }
-                if ($v2Updates) {
-                    $v3GiftCode->update($v3Updates);
-                    $v2UpdatePieces = [];
-                    foreach ($v2Updates as $v2Field => $v2Value) {
-                        $v2UpdatePieces[] = "`$v2Field`='$v2Value'";
-                    }
-                    $this->addV2SQL("UPDATE `medium_info` SET " . implode(',', $v2UpdatePieces) . " WHERE `id` = {$v2GiftCode->id}");
-                }
-                $this->count++;
             }
-        }
-        $this->executeV2SQL();
 
-        if (count($v2GiftCodes) >= $this->limit) {
-            $this->offset = $this->offset + $this->limit;
-            $this->syncOrCreateGiftCode();
+            if ($v3Updates) {
+                $v3GiftCode->update($v3Updates);
+            }
+            if ($v2Updates) {
+                $v2UpdatePieces = [];
+                foreach ($v2Updates as $v2Field => $v2Value) {
+                    $v2UpdatePieces[] = "`$v2Field`='$v2Value'";
+                }
+                $this->addV2SQL("UPDATE `medium_info` SET " . implode(',', $v2UpdatePieces) . " WHERE `id` = {$v2GiftCode->id}");
+            }
+            $this->executeV2SQL();
         }
-
     }
 
     /**
      * @throws ValidationException
-     * @throws RandomException
+     * @throws Exception
      */
-    public function createGiftCode(object $v2GiftCode, Merchant $merchant)
+    public function createGiftCode(object $v2GiftCode)
     {
-        $v3GiftCode = null;
         $code = $this->generateCode();
-
-        // Hard Code:
         if ($v2GiftCode->code) {
-            $v3GiftCodeByCode = Giftcode::where('code', $v2GiftCode->code);
+            $v3GiftCodeByCode = Giftcode::where('code', $v2GiftCode->code)->first();
             if ($v3GiftCodeByCode) {
                 // in the V3 project, the “code” column is unique!
                 $code = $v2GiftCode->code . $this->generateCode(10);
@@ -233,15 +220,13 @@ class MigrateProgramGiftCodesService extends MigrationService
 
         $data = [
             'purchase_date' => $v2GiftCode->purchase_date,
-            'redemption_date' => $v2GiftCode->redemption_date,
             'redemption_value' => (float)$v2GiftCode->redemption_value,
-            'redemption_datetime' => $v2GiftCode->redemption_datetime,
             'cost_basis' => (float)$v2GiftCode->cost_basis,
             'discount' => (float)$v2GiftCode->discount,
             'sku_value' => (float)$v2GiftCode->sku_value,
             'code' => $code,
             'pin' => $v2GiftCode->pin,
-            'redemption_url' => $v2GiftCode->redemption_url ?: $merchant->website,
+            'redemption_url' => $v2GiftCode->redemption_url ?: $v2GiftCode->website,
             'factor_valuation' => $v2GiftCode->factor_valuation
         ];
 
@@ -252,17 +237,26 @@ class MigrateProgramGiftCodesService extends MigrationService
         }
         $validated = $validator->validated();
 
-        $response = Giftcode::createGiftcode(
-            User::find(1),
-            $merchant,
-            $validated + ['v2_medium_info_id' => $v2GiftCode->id]
+        $giftCodeId = Giftcode::insertGetId(
+            $validated +
+            [
+                'v2_medium_info_id' => $v2GiftCode->id,
+                'redemption_date' => $v2GiftCode->redemption_date,
+                'redemption_datetime' => $v2GiftCode->redemption_datetime,
+                'merchant_id' => $v2GiftCode->v3_merchant_id,
+                'redeemed_merchant_id' => $v2GiftCode->v3_redeemed_merchant_id,
+                'redeemed_program_id' => $v2GiftCode->v3_redeemed_program_id,
+                'redeemed_user_id' => $v2GiftCode->v3_redeemed_user_id,
+                'medium_info_is_test' => $v2GiftCode->medium_info_is_test,
+                'expiration_date' => $v2GiftCode->expiration_date,
+                'hold_until' => $v2GiftCode->hold_until,
+                'encryption' => $v2GiftCode->encryption,
+                'tango_request_id' => $v2GiftCode->tango_request_id,
+                'tango_reference_order_id' => $v2GiftCode->tango_reference_order_id,
+                'virtual_inventory' => $v2GiftCode->virtual_inventory,
+            ]
         );
-
-        if (isset($response['success'])) {
-            $giftCodeId = $response['gift_code_id'] ?? null;
-            $v3GiftCode = Giftcode::find($giftCodeId);
-        }
-        return $v3GiftCode;
+        return $giftCodeId;
     }
 
     public function generateCode(int $length = 20)
