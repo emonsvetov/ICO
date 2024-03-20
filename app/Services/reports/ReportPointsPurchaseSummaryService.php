@@ -91,8 +91,6 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
 
     protected function calc(): array
     {
-        $this->params[self::TARGET] = 100;
-
         $table = [];
         $this->table = [];
 
@@ -150,8 +148,7 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         foreach ($countParticipants as $program_id => $participant_count) {
             if (isset($table[$program_id])) {
                 $table[$program_id]->participants_count = $participant_count;
-
-                $table[$program_id]->annual_target = $this->params [self::TARGET] * ( int ) $participant_count;
+                $table[$program_id]->annual_target = $this->params [self::TARGET_PARTICIPANT] * ( int ) $participant_count;
                 $table[$program_id]->monthly_target = $table[$program_id]->annual_target/12;
                 $table[$program_id]->quarterly_target = $table[$program_id]->annual_target/4;
             }
