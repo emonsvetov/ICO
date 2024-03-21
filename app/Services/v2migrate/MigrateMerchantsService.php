@@ -245,7 +245,6 @@ class MigrateMerchantsService extends MigrationService
                 $this->countUpdatedMerchants++;
             }
 
-//            $this->migrateAvailableCodes($parentMerchant);
             $this->updateMerchantMedia($v2Merchant, $parentMerchant);
 
             if (
@@ -528,11 +527,55 @@ class MigrateMerchantsService extends MigrationService
     }
 
     /**
-     * Migrate available gift codes.
+     * Migrate wrapper available gift codes.
      */
     public function availableGiftCodes()
     {
+        $merchantTree = [];
+        try {
+            $v2MerchantHierarchyList = $this->read_list_hierarchy();
 
+            if (!blank($v2MerchantHierarchyList)) {
+                $v2MerchantHierarchy = sort_result_by_rank($merchantTree, $v2MerchantHierarchyList, 'merchant');
+                foreach ($v2MerchantHierarchy as $v2MerchantNode) {
+                    $this->migrateGiftCodeMerchant($v2MerchantNode);
+                }
+            }
+
+            return [
+                'success' => TRUE,
+                'info' => "created $this->countCreatedMerchantCodes items, updated $this->countUpdatedMerchantCodes items.",
+            ];
+        } catch(Exception $e) {
+            throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+        }
+    }
+
+    /**
+     * Migrate available gift codes to a merchant.
+     *
+     * @param $v2MerchantNode
+     * @param  null  $parent_id
+     * @throws Exception
+     */
+    public function migrateGiftCodeMerchant($v2MerchantNode, $parent_id = null)
+    {
+        if(isset($v2MerchantNode['merchant']) ) {
+
+            $v2Merchant = $v2MerchantNode['merchant'];
+            $parentMerchant = Merchant::where('v2_account_holder_id', $v2Merchant->account_holder_id)->first();
+
+            $this->migrateAvailableCodes($parentMerchant);
+
+            if (
+                isset($v2MerchantNode['sub_merchant']) &&
+                !blank($v2MerchantNode['sub_merchant'])
+            ) {
+                foreach( $v2MerchantNode['sub_merchant'] as $v2SubMerchant ) {
+                    $this->migrateGiftCodeMerchant($v2SubMerchant, $parentMerchant->id);
+                }
+            }
+        }
     }
 
 }
