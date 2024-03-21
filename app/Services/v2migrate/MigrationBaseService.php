@@ -43,6 +43,7 @@ class MigrationBaseService extends MigrationService
     const PROGRAM_AND_USER_POSTINGS= 'Program and User Postings';
     const LEADERBOARDS= 'LeaderBoards';
     const GOALPLANS= 'Goal Plans';
+    const MERCHANTS_AVAILABLE_GIFT_CODES = 'Merchants Available Gift Codes';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
@@ -92,6 +93,7 @@ class MigrationBaseService extends MigrationService
         $migrations = [
             self::MIGRATE_DOMAINS,
             self::MIGRATE_MERCHANTS,
+            self::MERCHANTS_AVAILABLE_GIFT_CODES,
         ];
 
         $arr = [];
@@ -117,6 +119,10 @@ class MigrationBaseService extends MigrationService
 
                 case 2:
                     $result['migration'] = $this->migrateMerchantsService->migrate();
+                    break;
+
+                case 3:
+                    $result['migration'] = $this->migrateMerchantsService->availableGiftCodes();
                     break;
 
                 default:
