@@ -247,6 +247,7 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Settings['allow_award_peers_not_logged_into'] = $v2Settings['peer_award_seperation'] ?? FALSE;
         $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'] ?? FALSE;
         $v2Settings['bill_direct'] = !$v2Settings['bill_direct'] ?? FALSE;
+        $v2Settings['account_holder_id'] = $v3Program->account_holder_id;
 
         ksort($v2Settings);
 
@@ -470,9 +471,7 @@ class MigrateProgramAccountsService extends MigrationService
             }
 
             $v3Program->programExtras()->updateOrCreate(['program_account_holder_id' => $v3Program->v2_account_holder_id], $v3ProgramExtraData);
-            $v3ProgramAddressData['account_holder_id'] = $v3Program->account_holder_id;
             $v3Program->address()->updateOrCreate(['account_holder_id' => $v3Program->account_holder_id], $v3ProgramAddressData);
-            $v3ProgramData['account_holder_id'] = $v3Program->account_holder_id;
             $v3Program->update($v3ProgramData);
 
             $v3ProgramTransactionFee = [];
