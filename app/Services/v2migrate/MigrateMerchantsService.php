@@ -407,7 +407,7 @@ class MigrateMerchantsService extends MigrationService
                     $v3Program->merchants()->sync($programMerchants, false);
                     $countProgramMerchants = count($programMerchants);
                     $result['success'] = TRUE;
-                    $result['info'] = "sync $countProgramMerchants items. created $this->countCreatedMerchantCodes items, updated $this->countUpdatedMerchantCodes items (merchant available codes).";
+                    $result['info'] = "sync $countProgramMerchants items.";
                 } catch (\Exception $exception) {
                     throw new Exception("Sync merchants to a program is failed.");
                 }

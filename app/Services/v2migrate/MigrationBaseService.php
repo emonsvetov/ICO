@@ -226,15 +226,15 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 8:
-                    $result['migration'] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
-                    break;
-
-                case 9:
                     $result['migration'] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
                     break;
 
-                case 10:
+                case 9:
                     $result['migration'] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
+                    break;
+
+                case 10:
+                    $result['migration'] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
                     break;
 
                 case 11:
