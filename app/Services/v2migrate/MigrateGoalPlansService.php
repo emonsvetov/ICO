@@ -14,15 +14,13 @@ use Exception;
 
 class MigrateGoalPlansService extends MigrationService
 {
-    private ProgramService $programService;
 
     public $countUpdateGoalPlans = 0;
     public $countCreateGoalPlans = 0;
 
-    public function __construct(ProgramService $programService)
+    public function __construct()
     {
         parent::__construct();
-        $this->programService = $programService;
     }
 
     /**
@@ -64,14 +62,11 @@ class MigrateGoalPlansService extends MigrationService
      */
     public function getSubPrograms($v3Program)
     {
-        $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
-        $subPrograms = $programs[0]["children"] ?? FALSE;
-
-        $v3SubProgram = Program::find($v3Program->id);
-        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? FALSE;
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
 
         if ($v2AccountHolderID) {
-            $this->migrateGoalPlans($v2AccountHolderID, $v3SubProgram);
+            $this->migrateGoalPlans($v2AccountHolderID, $v3Program);
         }
 
         if (!empty($subPrograms)) {

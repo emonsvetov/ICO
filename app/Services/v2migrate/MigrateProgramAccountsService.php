@@ -148,14 +148,11 @@ class MigrateProgramAccountsService extends MigrationService
      */
     public function syncSubProgram($v3Program)
     {
-        $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
-        $subPrograms = $programs[0]["children"] ?? FALSE;
-
-        $v3SubProgram = Program::find($v3Program->id);
-        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? FALSE;
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
 
         if ($v2AccountHolderID) {
-            $this->updateProgramSettings($v3SubProgram, [
+            $this->updateProgramSettings($v3Program, [
                 'v2ProgramConfigFields' => $this->readConfigFieldsByName($v2AccountHolderID),
                 'v2ProgramExtraInfo' => $this->readExtraProgramInfo($v2AccountHolderID),
                 'v2Program' => $this->get_program_info($v2AccountHolderID),
@@ -181,6 +178,7 @@ class MigrateProgramAccountsService extends MigrationService
      * @param $v3Program
      * @param $v2ProgramConfigFields
      * @param $v2ProgramExtraInfo
+     * @throws Exception
      */
     public function  updateProgramSettings($v3Program, $v2ProgramData)
     {
@@ -199,6 +197,10 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Settings['bill_direct'] = !$v2Settings['bill_direct'] ?? FALSE;
         $v2Settings['account_holder_id'] = $v3Program->account_holder_id;
         $v2Settings['remove_social_from_pending_deactivation'] = $v2Settings['social_wall_remove_social'] ?? FALSE;
+        $v2Settings['social_wall_separation'] = $v2Settings['social_wall_seperation'] ?? FALSE;
+        $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'] ?? FALSE;
+        $v2Settings['allow_award_peers_not_logged_into'] = $v2Settings['peer_award_seperation'] ?? FALSE;
+        $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'] ?? FALSE;
 
         ksort($v2Settings);
 
@@ -419,6 +421,13 @@ class MigrateProgramAccountsService extends MigrationService
                 if (isset($v2Settings[$field])) {
                     $v3ProgramAddressData[$field] = $v2Settings[$field];
                 }
+            }
+
+            if ($v3Program->v2_account_holder_id == 892368) {
+                $a = 1;
+            }
+            if ($v3Program->v2_account_holder_id == 829739) {
+                $a = 1;
             }
 
             $v3Program->programExtras()->updateOrCreate(['program_account_holder_id' => $v3Program->v2_account_holder_id], $v3ProgramExtraData);
