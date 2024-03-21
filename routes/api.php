@@ -632,6 +632,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Referrals - Send
 
     Route::post('/v1/organization/{organization}/program/{program}/refer', [App\Http\Controllers\API\ReferralController::class, 'store'])->middleware('can:create,App\Referral,organization,program');
+    
+    // Feeling
+    Route::post('/v1/organization/{organization}/program/{program}/feeling-survey', [App\Http\Controllers\API\FeelingSurveyController::class, 'store'])->middleware('can:create,App\FeelingSurvey,organization,program');
 
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');

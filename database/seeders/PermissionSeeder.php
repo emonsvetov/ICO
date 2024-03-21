@@ -176,6 +176,7 @@ class PermissionSeeder extends Seeder
             'can-refer',
             'mark-notifications-read',
             'push-notification-create',
+            'can-feeling-survey',
         ];
 
         foreach ($permissions as $permission) {
