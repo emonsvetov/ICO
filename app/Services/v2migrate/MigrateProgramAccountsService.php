@@ -190,7 +190,7 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Address = (array) reset($v2ProgramData['v2Address']);
         $v2ProgramTransactionFees = (array) $v2ProgramData['v2ProgramTransactionFees'];
 
-        $v2Settings = array_merge($v2Program, $v2ProgramConfigFields, $v2ProgramExtraInfo, $v2Address);
+        $v2Settings = array_merge($v2ProgramExtraInfo, $v2Program, $v2ProgramConfigFields, $v2Address);
 
         // Fix.
         $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'] ?? FALSE;
@@ -198,6 +198,7 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'] ?? FALSE;
         $v2Settings['bill_direct'] = !$v2Settings['bill_direct'] ?? FALSE;
         $v2Settings['account_holder_id'] = $v3Program->account_holder_id;
+        $v2Settings['remove_social_from_pending_deactivation'] = $v2Settings['social_wall_remove_social'] ?? FALSE;
 
         ksort($v2Settings);
 
