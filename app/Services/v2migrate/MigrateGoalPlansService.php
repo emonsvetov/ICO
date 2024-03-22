@@ -2,6 +2,7 @@
 namespace App\Services\v2migrate;
 
 use App\Models\Domain;
+use App\Models\Event;
 use App\Models\GoalPlan;
 use App\Models\Invoice;
 use App\Models\InvoiceJournalEvent;
@@ -107,8 +108,8 @@ class MigrateGoalPlansService extends MigrationService
                 'notification_body' => NULL, // all NULL on v2
                 'achieved_callback_id' => NULL, // all NULL on v2
                 'exceeded_callback_id' => NULL, // all NULL on v2
-                'achieved_event_id' => $v2GoalPlan->achieved_event_template_id, // TODO
-                'exceeded_event_id' => $v2GoalPlan->exceeded_event_template_id, // TODO
+                'achieved_event_id' => $this->getV3EventID($v2GoalPlan->achieved_event_template_id),
+                'exceeded_event_id' => $this->getV3EventID($v2GoalPlan->exceeded_event_template_id),
                 'automatic_progress' => $v2GoalPlan->automatic_progress,
                 'automatic_frequency' => $v2GoalPlan->automatic_frequency,
                 'automatic_value' => $v2GoalPlan->automatic_value,
@@ -145,6 +146,18 @@ class MigrateGoalPlansService extends MigrationService
             }
 
         }
+    }
+
+    /**
+     * Get v3 event ID.
+     *
+     * @param $v2EventID
+     * @return null
+     */
+    public function getV3EventID($v2EventID)
+    {
+        $event = Event::where('v2_event_id', $v2EventID)->first();
+        return $event->id ?? NULL;
     }
 
 }
