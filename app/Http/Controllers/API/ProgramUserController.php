@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\AccountType;
 use App\Models\Role;
 use App\Services\reports\User\ReportServiceUserHistory;
 use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
@@ -84,11 +83,9 @@ class ProgramUserController extends Controller
 
     public function store(UserRequest $request, ProgramUserService $programUserService, Organization $organization, Program $program)
     {
-        DB::beginTransaction();
         try{
             $validated = $request->validated();
             $user = $programUserService->create($program, $validated);
-            DB::commit();
             return response(['user' => $user]);
         } catch (\Exception $e )    {
             DB::rollBack();
@@ -155,16 +152,10 @@ class ProgramUserController extends Controller
         return response($report->getReport());
     }
 
-    public function update(UserRequest $request, Organization $organization, Program $program, User $user)
+    public function update(UserRequest $request, Organization $organization, Program $program, User $user, ProgramUserService $programUserService)
     {
-
         $validated = $request->validated();
-        $user->update($validated);
-
-        if ( ! empty($validated['roles'])) {
-            $user->syncProgramRoles($program->id, $validated['roles']);
-        }
-
+        $user = $programUserService->update( $program, $user, $validated );
         return response(['user' => $user]);
     }
 
@@ -222,8 +213,10 @@ class ProgramUserController extends Controller
         ));
     }
 
-    protected function userResponse(User $user): UserResource
+    protected function userResponse(User $user)
     {
+        // $user->load('unit_numbers');
+        // pr($user->unitNumber());
         return new UserResource($user->load('roles'));
     }
 

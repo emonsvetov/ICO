@@ -3,9 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class InvitationRequest extends FormRequest
+class UnitNumberRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -14,9 +13,8 @@ class InvitationRequest extends FormRequest
      */
     public function authorize()
     {
-        return true;
+      return true;
     }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -25,12 +23,17 @@ class InvitationRequest extends FormRequest
     public function rules()
     {
         return [
-            //'program_id' => 'required|integer',
-            'first_name' => 'required|string',
-			'last_name' =>  'required|string',
-            'email' => 'required|email|unique:users',
-            'unit_number'=> 'sometimes|nullable|integer',
-            //award level
+            'name' => 'required|string',
+            'description'=> 'required|string'
+        ];
+    }
+
+    public function importRules()
+    {
+        return [
+            'name' => 'required|string',
+            'description'=> 'required|string',
+            'program_id'=> 'mustExistInModel:Program|use:id|hide:true|provided:true'
         ];
     }
 }

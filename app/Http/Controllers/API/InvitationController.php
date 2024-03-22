@@ -43,6 +43,9 @@ class InvitationController extends Controller
                 $program->users()->sync([$user->id], false);
                 $user->syncProgramRoles($program->id, $roles);
             }
+            if ( ! empty($validated['unit_number']) ) {
+                (new \App\Services\UserService)->updateUnitNumber($user, $validated['unit_number']);
+            }
             event(new UserInvited($user, $program, $token));
             DB::commit();
             return response(['user' => $user]);
