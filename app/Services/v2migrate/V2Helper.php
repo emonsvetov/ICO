@@ -1520,4 +1520,80 @@ class V2Helper
         return cast_fieldtypes ($row, $field_types);
     }
 
+    public function getSocialWallPostsByIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    social_wall_posts.*,
+                sender.v3_user_id AS v3_sender_id,
+                receiver.v3_user_id AS v3_receiver_id,
+                programs.v3_program_id AS v3_program_id,
+                awarder.v3_program_id AS v3_awarder_program_id,
+                event_xml_data.v3_id AS v3_event_xml_data_id,
+                deleted_by.v3_user_id AS v3_deleted_by_id
+            FROM
+                social_wall_posts
+                LEFT JOIN users sender on sender.account_holder_id=social_wall_posts.sender_user_account_holder_id
+                LEFT JOIN users receiver on receiver.account_holder_id=social_wall_posts.receiver_user_account_holder_id
+                LEFT JOIN users deleted_by on deleted_by.account_holder_id=social_wall_posts.deleted_by
+                LEFT JOIN programs on programs.account_holder_id = social_wall_posts.program_account_holder_id
+                LEFT JOIN programs awarder on awarder.account_holder_id = social_wall_posts.awarder_program_id
+                LEFT JOIN event_xml_data on event_xml_data.id = social_wall_posts.event_xml_data_id
+            WHERE
+                social_wall_posts.program_account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+            GROUP BY
+                social_wall_posts.id
+            ORDER BY
+                social_wall_posts.created ASC
+		";
+        return $this->v2db->select($sql);
+    }
+
+    public function getSocialWallPostsLogByIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    social_wall_posts_log.*,
+                sender.v3_user_id AS v3_sender_id,
+                receiver.v3_user_id AS v3_receiver_id,
+                programs.v3_program_id AS v3_program_id,
+                awarder.v3_program_id AS v3_awarder_program_id,
+                event_xml_data.v3_id AS v3_event_xml_data_id,
+                deleted_by.v3_user_id AS v3_deleted_by_id
+            FROM
+                social_wall_posts_log
+                LEFT JOIN users sender on sender.account_holder_id=social_wall_posts_log.sender_user_account_holder_id
+                LEFT JOIN users receiver on receiver.account_holder_id=social_wall_posts_log.receiver_user_account_holder_id
+                LEFT JOIN users deleted_by on deleted_by.account_holder_id=social_wall_posts_log.deleted_by
+                LEFT JOIN programs on programs.account_holder_id = social_wall_posts_log.program_account_holder_id
+                LEFT JOIN programs awarder on awarder.account_holder_id = social_wall_posts_log.awarder_program_id
+                LEFT JOIN event_xml_data on event_xml_data.id = social_wall_posts_log.event_xml_data_id
+            WHERE
+                social_wall_posts_log.program_account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+                or social_wall_posts_log.awarder_program_id IN (" . implode(',', $accountHolderIds) . ")
+            GROUP BY
+                social_wall_posts_log.id
+            ORDER BY
+                social_wall_posts_log.created ASC
+		";
+        return $this->v2db->select($sql);
+    }
+
+    public function getSocialWallPost(int $id): ?object
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+                *
+			FROM
+				social_wall_posts
+			WHERE
+			    id = '$id'
+		";
+        $result = $this->v2db->select($sql);
+        return $result[0] ?? null;
+    }
+
 }
