@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Requests\ProgramParticipantStatusRequest;
 use App\Http\Controllers\Controller;
+use App\Models\AwardLevel;
 use App\Services\ProgramService;
 use App\Services\AccountService;
 use App\Services\UserService;
@@ -23,7 +24,12 @@ class ProgramParticipantController extends Controller
             $users[$key]['pointBalance'] = AccountService::readAvailableBalanceForUser($program, $user) + $userService->readAvailablePeerBalance($user, $program);
             $users[$key]['redeemedBalance'] = AccountService::readRedeemedTotalForParticipant($program, $user);
             $users[$key]['peerBalance'] = 0;//todo
-
+            $awardLevel = AwardLevel::find($user->award_level);
+            if ($awardLevel) {
+                $user->award_level = $awardLevel->name;
+            } else {
+                $user->award_level = '';
+            }
             $users[$key]['totalPointsRewarded'] = AccountService::readAwardedTotalForUser($program, $user);
         }
         if( $users ) {
