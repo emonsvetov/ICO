@@ -17,11 +17,20 @@ class ReportOrdersService extends ReportServiceAbstract
         $query = DB::table('medium_info');
 
         $query->leftJoin('users', 'users.id', '=', 'medium_info.redeemed_user_id');
+        $query->leftJoin('merchants', 'merchants.id', '=', 'medium_info.redeemed_merchant_id');
+        $query->leftJoin('programs', 'programs.id', '=', 'medium_info.redeemed_program_id');
 
         $query->selectRaw("
-            medium_info.*,
-            CONCAT(users.email) as redeemed_by
-        ");
+        medium_info.*,
+        users.email as user_email,
+        CONCAT(users.first_name, ' ', users.last_name) as redeemed_by_user_name,
+        users.id as redeemed_user_id,
+        merchants.name as redeemed_merchant_name,
+        merchants.id as redeemed_merchant_id,
+        programs.name as redeemed_program_name,
+        programs.id as redeemed_program_id
+    ");
+
 
         return $query;
     }
