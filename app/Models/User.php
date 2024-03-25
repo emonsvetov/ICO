@@ -179,6 +179,11 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         ->withTimestamps();
     }
 
+    public function award_levels()
+    {
+        return $this->hasMany(AwardLevel::class);
+    }
+
     public function readAvailableBalance( $program, $user = null )  {
         $program_id = self::extractId($program);
         if( $user ) {
