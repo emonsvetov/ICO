@@ -158,7 +158,7 @@ class MigrateSocialWallPostService extends MigrationService
         $this->printf("SocialWallPost done: {$v3SocialWallPost->id}. Count= " . count($this->importedSocialWallPosts) . " \n\n");
 
         if ($v3SocialWallPost) {
-            $this->addV2SQL(sprintf("UPDATE `social_wall_posts` SET `v3_id`=%d WHERE `id`=%d", $v3SocialWallPost->id, $v2SocialWallPost->id));
+//            $this->addV2SQL(sprintf("UPDATE `social_wall_posts` SET `v3_id`=%d WHERE `id`=%d", $v3SocialWallPost->id, $v2SocialWallPost->id));
             $this->importedSocialWallPosts[] = $v3SocialWallPost->id;
         }
     }
