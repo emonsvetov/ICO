@@ -80,7 +80,7 @@ class MerchantGiftcodeController extends Controller
         }elseif($type == 'available'){
             $query->where(function ($q) {
                 $q->whereNull('redemption_datetime');
-                $q->where('purchased_by_v2', '=' , 0);
+//                $q->where('purchased_by_v2', '=' , 0);
                 $q->where('virtual_inventory', '=' , 0);
                 $q->where('medium_info_is_test', '=' , 0);
             });
@@ -125,6 +125,7 @@ class MerchantGiftcodeController extends Controller
         } elseif (request()->has('allmerch')) {
             $giftcodes = $query->get();
         } else {
+            $sql = RawSql($query);
             $giftcodes = $query->paginate(request()->get('limit', config('global.paginate_limit')));
         }
 
