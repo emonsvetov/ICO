@@ -1596,4 +1596,24 @@ class V2Helper
         return $result[0] ?? null;
     }
 
+    public function getBudgetsByIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    program_budget.*,
+			    programs.v3_program_id AS v3_program_id
+            FROM
+                program_budget
+                LEFT JOIN programs on programs.account_holder_id = program_budget.program_account_holder_id
+            WHERE
+                program_budget.program_account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+            GROUP BY
+                program_budget.program_account_holder_id
+            ORDER BY
+                program_budget.year ASC
+		";
+        return $this->v2db->select($sql);
+    }
+
 }
