@@ -50,7 +50,7 @@ class GoalPlanService
 
 		// check if we have a valid $goal_plan->name format and that it is unique
 		if ($this->isValidGoalPlanByName ( $program->id, $data['name'] )) {
-			throw new \InvalidArgumentException ( 'Invalid goal plan name passed.Goal plan name ' . $data['name'] . ' is already taken', 400 );
+//			throw new \InvalidArgumentException ( 'Invalid goal plan name passed.Goal plan name ' . $data['name'] . ' is already taken', 400 );
 		}
 		$data['organization_id'] = $organization->id;
 		$data['program_id'] = $program->id;
@@ -161,7 +161,7 @@ class GoalPlanService
 		]);
 		// check if we have a valid $goal_plan->name format and that it is unique
 		if (! $this->isValidGoalPlanByNameNotThisId ( $goalPlan->program_id, $data['name'], $goalPlan->id )) {
-			throw new \InvalidArgumentException ( 'Invalid goal plan name passed. Goal plan name ' . $data['name'] . ' is already taken', 400 );
+//			throw new \InvalidArgumentException ( 'Invalid goal plan name passed. Goal plan name ' . $data['name'] . ' is already taken', 400 );
 		}
 
 		$response=[];
