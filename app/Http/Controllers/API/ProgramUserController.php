@@ -157,12 +157,15 @@ class ProgramUserController extends Controller
 
     public function update(UserRequest $request, Organization $organization, Program $program, User $user)
     {
-
         $validated = $request->validated();
         $user->update($validated);
 
         if ( ! empty($validated['roles'])) {
             $user->syncProgramRoles($program->id, $validated['roles']);
+        }
+
+        if (!empty($validated['award_level'])) {
+            $user->syncAwardLevelsHasUsers($program->id, $validated['award_level']);
         }
 
         return response(['user' => $user]);
@@ -199,7 +202,7 @@ class ProgramUserController extends Controller
             'points' => $pointsEarned,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
-            'peerBalance' => $peerBalance,
+            'peerBalance' => 0, //todo
             'redeemedBalance' => $redeemedBalance,
             'expiredBalance' => $expiredBalance,
         ]);

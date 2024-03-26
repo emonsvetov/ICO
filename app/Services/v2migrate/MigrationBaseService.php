@@ -23,6 +23,7 @@ class MigrationBaseService extends MigrationService
     private MigratePostingService $migratePostingService;
     private MigrateLeaderBoardsService $migrateLeaderBoardsService;
     private MigrateGoalPlansService $migrateGoalPlansService;
+    private MigrateSocialWallPostService $migrateSocialWallPostService;
 
     const SYNC_MERCHANTS_TO_PROGRAM = 'Sync merchants to a program';
     const SYNC_DOMAINS_TO_PROGRAM = 'Sync domains to a program';
@@ -43,6 +44,8 @@ class MigrationBaseService extends MigrationService
     const PROGRAM_AND_USER_POSTINGS= 'Program and User Postings';
     const LEADERBOARDS= 'LeaderBoards';
     const GOALPLANS= 'Goal Plans';
+    const MERCHANTS_AVAILABLE_GIFT_CODES = 'Merchants Available Gift Codes';
+    const SOCIAL_WALL_POSTS = 'Social Wall Posts';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
@@ -60,7 +63,8 @@ class MigrationBaseService extends MigrationService
         MigrateJournalEventService $migrateJournalEventService,
         MigratePostingService $migratePostingService,
         MigrateLeaderBoardsService $migrateLeaderBoardsService,
-        MigrateGoalPlansService $migrateGoalPlansService
+        MigrateGoalPlansService $migrateGoalPlansService,
+        MigrateSocialWallPostService $migrateSocialWallPostService
     )
     {
         $this->migrateMerchantsService = $migrateMerchantsService;
@@ -79,6 +83,7 @@ class MigrationBaseService extends MigrationService
         $this->migratePostingService = $migratePostingService;
         $this->migrateLeaderBoardsService = $migrateLeaderBoardsService;
         $this->migrateGoalPlansService = $migrateGoalPlansService;
+        $this->migrateSocialWallPostService = $migrateSocialWallPostService;
     }
 
     /**
@@ -92,6 +97,7 @@ class MigrationBaseService extends MigrationService
         $migrations = [
             self::MIGRATE_DOMAINS,
             self::MIGRATE_MERCHANTS,
+            self::MERCHANTS_AVAILABLE_GIFT_CODES,
         ];
 
         $arr = [];
@@ -117,6 +123,10 @@ class MigrationBaseService extends MigrationService
 
                 case 2:
                     $result['migration'] = $this->migrateMerchantsService->migrate();
+                    break;
+
+                case 3:
+                    $result['migration'] = $this->migrateMerchantsService->availableGiftCodes();
                     break;
 
                 default:
@@ -171,6 +181,7 @@ class MigrationBaseService extends MigrationService
             self::SYNC_INVOICES_TO_PROGRAM,
             self::LEADERBOARDS,
             self::GOALPLANS,
+            self::SOCIAL_WALL_POSTS,
         ];
 
         $arr = [];
@@ -220,15 +231,15 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 8:
-                    $result['migration'] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
-                    break;
-
-                case 9:
                     $result['migration'] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
                     break;
 
-                case 10:
+                case 9:
                     $result['migration'] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
+                    break;
+
+                case 10:
+                    $result['migration'] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
                     break;
 
                 case 11:
@@ -257,6 +268,10 @@ class MigrationBaseService extends MigrationService
 
                 case 17:
                     $result['migration'] = $this->migrateGoalPlansService->migrate($v2AccountHolderID);
+                    break;
+
+                case 18:
+                    $result['migration'] = $this->migrateSocialWallPostService->migrate($v2AccountHolderID);
                     break;
 
                 default:

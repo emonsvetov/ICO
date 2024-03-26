@@ -14,17 +14,15 @@ use Exception;
 class MigrateInvoiceService extends MigrationService
 {
 
-    private ProgramService $programService;
 
     public $countUpdatedInvoices = 0;
     public $countCreateInvoices = 0;
     public $v2InvoiceTypes = [];
     public $v3InvoiceTypes = [];
 
-    public function __construct(ProgramService $programService)
+    public function __construct()
     {
         parent::__construct();
-        $this->programService = $programService;
     }
 
     /**
@@ -68,11 +66,8 @@ class MigrateInvoiceService extends MigrationService
      */
     public function getSubPrograms($v3Program)
     {
-        $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
-        $subPrograms = $programs[0]["children"] ?? FALSE;
-
-        $v3SubProgram = Program::find($v3Program->id);
-        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? FALSE;
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
 
         if ($v2AccountHolderID) {
             $this->syncInvoices($v2AccountHolderID);

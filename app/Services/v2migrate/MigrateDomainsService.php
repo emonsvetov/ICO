@@ -14,13 +14,11 @@ class MigrateDomainsService extends MigrationService
     public $countCreatedDomains = 0;
     public $countUpdatedDomains = 0;
     public $v3DomainIDs = [];
-    private ProgramService $programService;
     public $countV3ProgramDomains = 0;
 
-    public function __construct(ProgramService $programService)
+    public function __construct()
     {
         parent::__construct();
-        $this->programService = $programService;
     }
 
     /**
@@ -186,20 +184,17 @@ class MigrateDomainsService extends MigrationService
      */
     function syncSubProgram($v3Program) {
 
-        $v3SubProgram = Program::find($v3Program->id);
-        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? NULL;
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? NULL;
+        $subPrograms = $v3Program->children ?? [];
 
         if (empty($v2AccountHolderID)) {
-            $v2AccountHolderID = $this->getV2AccountHolderID($v3SubProgram->id);
+            $v2AccountHolderID = $this->getV2AccountHolderID($v3Program->id);
         }
 
         // Checking.
         if (empty($v2AccountHolderID)) {
             throw new Exception("v3 program or v2_account_holder_id not found.");
         }
-
-        $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
-        $subPrograms = $programs[0]["children"] ?? FALSE;
 
         $this->syncSubProgramDomainRelations($v2AccountHolderID);
 

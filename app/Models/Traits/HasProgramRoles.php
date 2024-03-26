@@ -1,9 +1,11 @@
 <?php
 namespace App\Models\Traits;
 
+use App\Models\AwardLevelHasUser;
 use App\Models\Program;
 use App\Models\Domain;
 use FontLib\TrueType\Collection;
+use Illuminate\Support\Facades\DB;
 
 trait HasProgramRoles
 {
@@ -304,6 +306,28 @@ trait HasProgramRoles
             $this->roles()->attach( $newRoles );
         }
     }
+
+    public function syncAwardLevelsHasUsers($programId, $awardLevelId)
+    {
+       $res = DB::table('award_levels_has_users')
+            ->join('award_levels', 'award_levels_has_users.award_levels_id', '=', 'award_levels.id')
+            ->where('award_levels_has_users.users_id', $this->id)
+            ->where('award_levels.program_id', $programId)
+            ->get();
+
+        foreach ($res->toArray() as $item){
+            AwardLevelHasUser::where('award_levels_id', $item->award_levels_id)
+                ->where('users_id', $item->users_id)
+                ->delete();
+        }
+
+        $newRecord = new AwardLevelHasUser();
+        $newRecord->award_levels_id = $awardLevelId;
+        $newRecord->users_id = $this->id;
+
+        return $newRecord->save();
+    }
+
     public function getManagers()   {
         die;
         if( $this->id ) {
