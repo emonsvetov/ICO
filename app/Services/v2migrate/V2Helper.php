@@ -1080,6 +1080,23 @@ class V2Helper
     }
 
     /**
+     * Get V2 events goal plan.
+     *
+     * @param $v2GoalPlanID
+     * @return array
+     */
+    public function getV2GoalPlanEvents($v2GoalPlanID)
+    {
+        $v2Sql = "
+            SELECT gpe.*
+            FROM goal_plans_events gpe
+            WHERE gpe.goal_plans_id = {$v2GoalPlanID}
+        ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
      * v2 Returns a programs custom field.
      *
      * @return array|void
