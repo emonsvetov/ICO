@@ -1,7 +1,7 @@
 <?php
 namespace App\Services;
 
-use App\Services\UserGoalService; 
+use App\Services\UserGoalService;
 
 use Illuminate\Database\Query\Builder;
 use App\Http\Requests\GoalPlanRequest;
@@ -26,7 +26,7 @@ use DB;
 //use App\Services\EmailTemplateService;
 use DateTime;
 
-class GoalPlanService 
+class GoalPlanService
 {
 
     public function __construct(
@@ -38,14 +38,14 @@ class GoalPlanService
 		$this->userGoalService = $userGoalService;
     }
 	public function create( $data, $organization, $program)
-    {   
+    {
 		//$custom_expire_offset = 12, $custom_expire_units = 'month', $annual_expire_month = 0, $annual_expire_day = 0
 		 //TO DO
 		/*if (! isset ( $goal_plan->goal_measurement_label )) {
 			$goal_plan->goal_measurement_label = '';
 		}*/
 		//$data['state_type_id'] = GoalPlan::calculateStatusId($data['date_begin'], $data['date_end']);
-		
+
 		//'progress_notification_email_id'=>1, //for now set any number, TO DO to make it dynamic
 
 		// check if we have a valid $goal_plan->name format and that it is unique
@@ -61,11 +61,11 @@ class GoalPlanService
 		$state_future_id = Status::get_goal_future_state ();
 		$newGoalPlan = self::_insert($data, $state_future_id,$expiration_rule);
 		$response['goal_plan'] = $newGoalPlan;
-		 
+
         if (!empty($newGoalPlan->id)) {
 			//this goal has been activated
 			/*TO DO - If someone create goal plan in future or expired then need check and set them also. Currently it is like old system
-			TO DO Get statusid from date_begin & date_end and then apply activate/future/expire goal plan function accordingly*/ 
+			TO DO Get statusid from date_begin & date_end and then apply activate/future/expire goal plan function accordingly*/
 			self::activateGoalPlan ( $newGoalPlan->program_id, $newGoalPlan );
             // Assign goal plans after goal plan created based on INC-206
             //if assign all current participants then run now
@@ -75,7 +75,7 @@ class GoalPlanService
 				$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
 				//$response['assign_all_participants']=$assignResponse;
             }
-			
+
 			//redirect('/manager/program-settings/edit-goal-plan/' . $result);
 		}
 		return $response;
@@ -99,7 +99,7 @@ class GoalPlanService
 	}
 	public function editGoalPlan(GoalPlan $goalPlan, $data, $program, $organization) {
 		$response=[];
-		
+
 		$data['modified_by']=auth()->user()->id;
 
 		//set any fields here
@@ -107,34 +107,48 @@ class GoalPlanService
 		if(isset($data['assign_goal_all_participants_default']) && $data['assign_goal_all_participants_default'])	{
 			$assignResponse =self::assignAllParticipantsNow($goalPlan, $program);
 			$response['assign_msg'] = self::assignAllParticipantsRes($assignResponse);
-		}	
+		}
 		//Update
 		try {
+            $goalPlanEvents = (array) $data['events'];
+            unset($data['events']);
+
 			$result = $this->update($goalPlan, $data);
+
+            GoalPlansEvent::where('goal_plans_id', $goalPlan->id)->delete();
+            if (!empty($goalPlanEvents)) {
+                foreach ($goalPlanEvents as $goalPlanEventID) {
+                    GoalPlansEvent::create([
+                        'goal_plans_id' => $goalPlan->id,
+                        'event_id' => $goalPlanEventID,
+                    ]);
+                }
+            }
+
 			return $result;
 			/* TO DO
-			
+
 			* // If the event template was created redirect the user to the edit page
 			TO DO if (has_resource_permission(RESOURCE_GOAL_PLANS_TIE_EVENT)) {*/
 				/*try {
 					$gpes = self::readListGoalPlanEvents($program->id,[$goalPlanId]);
 					$gpe = $gpes[(int) $goalPlanId];
-					//TO DO 
+					//TO DO
 					$this->update_tied_goal_plan_events($goalPlanId, $gpe, $assigned_events, $unassigned_events);
 				} catch (Exception $e) {
 					$this->_add_error_message($e->getMessage());
 				}
 			}*/
-			
+
 			//php_includes\application\controllers\manager\program_settings.php
 			//TO DO - Find if goal plan is editable
 			//TO DO - Event goals event_goals code unassigned_events/assigned_events
 			//TO DO - Load events which is different from create goalplan(Pending to discusss)
 		 }
 		catch (Exception $e) {
-			return response(['errors' => $e->getMessage()], 422);	
+			return response(['errors' => $e->getMessage()], 422);
 		}
-		
+
 	}
 	private function update($goalPlan, $data)
     {
@@ -152,7 +166,7 @@ class GoalPlanService
 
 		$response=[];
 		$currentGoalPlan = clone $goalPlan;
-		
+
 		$active_state_id = Status::get_goal_active_state ();
 		$future_state_id = Status::get_goal_future_state ();
 		$expired_state_id = Status::get_goal_expired_state ();
@@ -160,9 +174,9 @@ class GoalPlanService
 		// This means only the most recent expired plan can be edited
 		if ($currentGoalPlan->state_type_id == $expired_state_id) {
 			if ($data['is_recurring'] && !empty ( $currentGoalPlan->next_goal_id )) {
-				$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id); 
+				$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id);
 				//$this->read ( $program_account_holder_id, ( int ) $goalPlan->next_goal_id );
-				if(!empty($nextGoalPlan)) { 
+				if(!empty($nextGoalPlan)) {
 					if ($nextGoalPlan->state_type_id != $active_state_id && $nextGoalPlan->state_type_id != $future_state_id) {
 						throw new \RuntimeException ( 'Only the most recent expired goal plan can be edited.' );
 					}
@@ -173,7 +187,7 @@ class GoalPlanService
 		$expirationRule = ExpirationRule::getExpirationRule ($currentGoalPlan->expiration_rule_id );
 		// Don't allow the goal start date to overlap with the previous goal cycle
 		if ($data['is_recurring'] && ! empty ( $currentGoalPlan->previous_goal_id )) {
-			$previousGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->previous_goal_id); 
+			$previousGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->previous_goal_id);
 			if (isset ( $previousGoalPlan )) {
 				//pr($previousGoalPlan);
 				$date1 = new DateTime ( $previousGoalPlan->date_end );
@@ -184,7 +198,7 @@ class GoalPlanService
 			}
 		}
 
-		// $goalPlan updated here 
+		// $goalPlan updated here
 		$update_result  = $goalPlan->update( $data );
 		$response['goal_plan']= $goalPlan;
 		// If the goal is set to active....
@@ -207,21 +221,21 @@ class GoalPlanService
 			}
 		}
 
-		//In future goal plan creation some fieds are updated 
+		//In future goal plan creation some fieds are updated
 		$currentGoalPlan = GoalPlan::getGoalPlan($goalPlan->id);
 		if (self::needsActivated($currentGoalPlan)) {
-			self::activateGoalPlan( $currentGoalPlan->program_id, $currentGoalPlan ); // TO DO 
+			self::activateGoalPlan( $currentGoalPlan->program_id, $currentGoalPlan ); // TO DO
 		}
 		if (self::needsExpired ( $currentGoalPlan )) {
-			self::expireGoalPlan ( $currentGoalPlan->program_id, $currentGoalPlan ); // TO DO 
+			self::expireGoalPlan ( $currentGoalPlan->program_id, $currentGoalPlan ); // TO DO
 		}
 		if (self::needsFutured ( $currentGoalPlan )) {
-			self::futureGoalPlan( $currentGoalPlan->program_id, $currentGoalPlan ); // TO DO 
+			self::futureGoalPlan( $currentGoalPlan->program_id, $currentGoalPlan ); // TO DO
 		}
 
 		// RULES FOR MOVING THE DATES ON THE FUTURE GOAL PLAN
 		if ($goalPlan->is_recurring && !empty( $currentGoalPlan->next_goal_id )) {
-			$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id); 
+			$nextGoalPlan = GoalPlan::getGoalPlan( $currentGoalPlan->next_goal_id);
 			if (isset ( $nextGoalPlan )) {
 				$date1 = new DateTime ( $nextGoalPlan->date_begin );
 				$date2 = new DateTime ( $goalPlan->date_end );
@@ -266,8 +280,8 @@ class GoalPlanService
 				}
 			}
 		}
-        
-		
+
+
 
 		return $response;
     }
@@ -290,7 +304,7 @@ class GoalPlanService
 		if(!empty($users)) {
         	$users->load('status');
 		}
-       //TO DO to implement this large function 
+       //TO DO to implement this large function
 	   //$data = $this->users_model->readParticipantListWithProgramAwardLevelObject((int) $account_holder_id, 0, '', 0, $max, 'last_name', 'asc', array());
 	    $available_statuses = array("Active","TO DO Activation","New");
         $added_info = [];
@@ -300,7 +314,7 @@ class GoalPlanService
 			$user_goal=[];
 			// Copy the submitted info into the user's goal plan array
 			/*
-				Already in create function 
+				Already in create function
 				$date_begin = new DateTime ( $user_goal['date_begin'] );
 				$date_end = new DateTime ( $user_goal['date_end'] );
 
@@ -314,7 +328,7 @@ class GoalPlanService
 			unset($user_goal['date_end']);*/
 
 			$user_goal = $this->userGoalService::_copyUserGoalDataFromGoalPlan($goalPlan);
-			
+
             foreach($users as $user){
 				if (!in_array($user->status->status, $available_statuses)) {
 				 continue;
@@ -325,7 +339,7 @@ class GoalPlanService
 					foreach($added_info as $val){
 						if($val['goal_plan_id']==$goalPlan->id && $val['users_id']==$user_id){
 							continue 2; //if already added then continue outer users loop
-						}  
+						}
 					}
 				}
                 $user_goal['user_id'] = $user_id;
@@ -342,14 +356,14 @@ class GoalPlanService
 					$success_user[]=$user_id;
 				}
 				//$goalPlan is_recurring
-				if(isset($response['future_user_goal'])) { 
+				if(isset($response['future_user_goal'])) {
 					if($response['future_user_goal'])
 						$success_future_user[]=$user_id;
 					else
 						$fail_future_user[]=$user_id;
-				} //else no need of future goal	
+				} //else no need of future goal
     		}
-			//create response 
+			//create response
 			$response['success_count']=count($success_user);
 			$response['fail_count']=count($fail_user);
         }
@@ -360,7 +374,7 @@ class GoalPlanService
 	public static function readActiveByProgram($program, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
 		$state = Status::get_goal_active_state();
 		return self::readListByProgramAndState ( $program, $state, $offset, $limit, $order_column, $order_direction );
-	
+
 	}
 	//Alias to read_list_by_program_and_state
 	public static function readListByProgramAndState($program, $goal_plan_state_id = 0, $offset = 0, $limit = 10, $order_column = 'name', $order_direction = 'asc') {
@@ -428,15 +442,15 @@ class GoalPlanService
 			'gp.exceeded_callback_id',
 			'gp.achieved_event_id',
 			'gp.exceeded_event_id',
-			
+
 			'gp.achieved_event_id',
 			'ae.name as achieved_event_name',
 			'ae.event_icon_id as achieved_event_icon',
-			
+
 			'gp.exceeded_event_id',
 			'ee.name as  exceeded_event_name',
 			'ee.event_icon_id as exceeded_event_icon',
-			
+
 			'gp.factor_before',
 			'gp.factor_after',
 			'gp.date_begin',
@@ -475,11 +489,11 @@ class GoalPlanService
 			$builder->from('user_goal_progress')->selectRaw('count(*) as has_participant_progress')->whereColumn('user_goal_progress.goal_plan_id', 'gp.id');
 		}]);
 		$query->join('goal_plan_types AS gt', 'gt.id', '=', 'gp.goal_plan_type_id');
-		$query->leftJoin('statuses AS st', 'st.id', '=', 'gp.state_type_id'); 
-		$query->leftJoin('expiration_rules AS er', 'er.id', '=', 'gp.expiration_rule_id'); 
+		$query->leftJoin('statuses AS st', 'st.id', '=', 'gp.state_type_id');
+		$query->leftJoin('expiration_rules AS er', 'er.id', '=', 'gp.expiration_rule_id');
 		$query->join('events AS ae', 'ae.id', '=', 'gp.achieved_event_id');
 		$query->leftJoin('events AS ee', 'ee.id', '=', 'gp.exceeded_event_id');
-		
+
 		return $query;
 	}
 	//Alias for  needs_activated
@@ -558,12 +572,12 @@ class GoalPlanService
 				if (! isset ( $goalPlan->next_goal_id ) || $goalPlan->next_goal_id <= 0) {
 					// goal plan is recurring, but there is no future goal plan defined
 					$expirationRule = ExpirationRule::getExpirationRule ($goalPlan->expiration_rule_id );
-					$futureGoalPlan =$this->createFuturePlan ($goalPlan, $expirationRule ); 
+					$futureGoalPlan =$this->createFuturePlan ($goalPlan, $expirationRule );
 				}
 			}
 			return true;
 		}
-	
+
 	}
 	//Alias for future_goal_plan
 	public function futureGoalPlan($program_id, $goalPlan) {
@@ -574,8 +588,8 @@ class GoalPlanService
 		$result = GoalPlan::where(['id'=>$goalPlan->id])->update(['state_type_id'=>$future_state_id,'expired'=>null]);
 
 		if (isset ( $goalPlan->next_goal_id ) && $goalPlan->next_goal_id > 0) {
-			// advance the future goal to be active 
-			$nextGoalPlan = GoalPlan::getGoalPlan( $goalPlan->next_goal_id); 
+			// advance the future goal to be active
+			$nextGoalPlan = GoalPlan::getGoalPlan( $goalPlan->next_goal_id);
 			//$next_goal_plan = $this->read ( $program_id, $next_goal_id );
 			// Only allow 1 future goal plan
 			try {
@@ -599,13 +613,13 @@ class GoalPlanService
 			if (isset ( $goalPlan->next_goal_id ) && $goalPlan->next_goal_id ) {
 				// advance the future goal to be active
 				$nextGoalId = ( int ) $goalPlan->next_goal_id;
-				$nextGoalPlan = GoalPlan::getGoalPlan( $nextGoalId); 
+				$nextGoalPlan = GoalPlan::getGoalPlan( $nextGoalId);
 				$goalPlan->load('goalPlanType');
-				
+
 				if($goalPlan->goal_plan_type_id == GoalPlanType::getIdByTypeEventcount()) {
 					// re-link the events TO DO
 					$goalPlanEvents = $this->readListGoalPlanEvents ( ( int ) $programId, array (
-							( int ) $goalPlan->id 
+							( int ) $goalPlan->id
 					) );
 					foreach ( $goalPlanEvents [$goalPlan->id]->events as $eventGoal ) {
 						$this->tieEventToGoalPlan ( ( int ) $programId, ( int ) $nextGoalId, ( int ) $eventGoal->event_id );
@@ -621,15 +635,15 @@ class GoalPlanService
 				// create a new future goal and tie it back to this one.
 				$expirationRule = ExpirationRule::find( $goalPlan->expirations_rule_id);
 				$futureGoalPlan = $this->createFuturePlan ( $goalPlan, $expirationRule );
-				$nextGoalPlan = GoalPlan::getGoalPlan( $futureGoalPlan->id); 
+				$nextGoalPlan = GoalPlan::getGoalPlan( $futureGoalPlan->id);
 				self::activateGoalPlan( $programId, $nextGoalPlan );
 			}
 		}
-	
+
 	}
 	//Alias for create_future_plan
 	public function createFuturePlan($goalPlan, $expirationRule) {
-		
+
 		if (! isset ( $expirationRule )) {
 			// if we were not given an expiration rule, go get it from the goal_plan
 			$expirationRule = ExpirationRule::find($goalPlan->expiration_rule_id);
@@ -637,7 +651,7 @@ class GoalPlanService
 		$nextGoalPlan = self::_newFutureGoal($goalPlan);
 		$activeGoalPlanId = $goalPlan->id;
 
-		// Create the Future Goal Plan 
+		// Create the Future Goal Plan
 		$state_future_id = Status::get_goal_future_state ();
 		$futureGoalPlan = self::_insert ( $nextGoalPlan->toArray(), $state_future_id, $expirationRule );
 		//pr($nextGoalPlan);Check data here
@@ -665,7 +679,7 @@ class GoalPlanService
 		}
 		// All of the participants that were assigned to the goal plan, need to also be assigned to the future goal
 		$userGoalsToProjectIntoTheFuture = $this->userGoalService->readListByProgramAndGoal ($goalPlan->program_id, $goalPlan->id );
-	
+
 		if (!empty ( $userGoalsToProjectIntoTheFuture ) && $userGoalsToProjectIntoTheFuture->count() > 0) {
 			foreach ( $userGoalsToProjectIntoTheFuture as $UserGoal ) {
 				$userGoalData = $this->userGoalService::_convertUserGoalData($UserGoal);
@@ -701,7 +715,7 @@ class GoalPlanService
 		// Update the active goal plan's next goal id with the future goal plan id
 		// build the query to INSERT an event then run it!
 		$result = GoalPlan::where(['id'=>$goalPlan->id])->update(['next_goal_id'=>null]);
-		
+
 		// Delete all of the participant goal plans that were assigned to this future plan - Happens via Cascading delete in the DB,
 		//TO DO IN DATABASE MIGRATION - Cascading delete
 		// but we need to null out the "next_user_goal_id" column on the active goal plan
@@ -715,7 +729,7 @@ class GoalPlanService
 			'events.name as event_name',
 			'events.id as event_id'
 		]);
-		$query->leftJoin('goal_plans_events AS gpe', 'gpe.goal_plans_id', '=', 'gp.id'); 
+		$query->leftJoin('goal_plans_events AS gpe', 'gpe.goal_plans_id', '=', 'gp.id');
 		$query->leftJoin('events AS events', 'events.id', '=', 'gpe.event_id');
 		$query->whereIn('gp.id', $goalPlanIds );
 		$query->where('gp.program_id', '=', $programId);
@@ -748,7 +762,7 @@ class GoalPlanService
 
 	//Alias for tie_event_to_goal_plan
 	public function tieEventToGoalPlan($programId = 0, $goalPlanId = 0, $eventId = 0) {
-		
+
 		/*if (! $this->is_valid_goal_plan ( $program_account_holder_id, $goal_plan_id )) {
 			throw new InvalidArgumentException ( 'Invalid "goal_plan_id" passed, record not found (' . $goal_plan_id . ')', 400 );
 		}
@@ -768,7 +782,7 @@ class GoalPlanService
 			throw new \InvalidArgumentException ( 'Invalid "event_id" passed, only events of these types can be assigned to a leaderboard: ' . implode ( ', ', $allowed_event_types ), 400 );
 		}
 		// Do not allow an event to be tied more than once
-		
+
 		$goalPlans = self::readListGoalPlanEvents($programId,[$goalPlanId]);
 		//TO DO testing
 		$goalPlan = $goalPlans [$goalPlanId];
@@ -807,7 +821,7 @@ class GoalPlanService
 
 	//Alias for is_valid_goal_plan_by_name_not_this_id
 	public function isValidGoalPlanByNameNotThisId($programId = 0, $goalPlanName = '', $goalPlanId = 0) {
-		
+
 		$linkedListIds = implode ( ',', $this->getGoalPlanList ( $goalPlanId ) );
 		// build the query statement to check if we have this $goalPlanId
 		$query = GoalPlan::from( 'goal_plans as gp' );
@@ -830,7 +844,7 @@ class GoalPlanService
 	protected function getGoalPlanList($goalPlanId) {
 		$linkedListIds = array ();
 		// Select all of the id's descending the linked list
-		$sql = " SELECT  
+		$sql = " SELECT
                      @r AS _id,
                      (
                         SELECT  @r := next_goal_id
@@ -838,7 +852,7 @@ class GoalPlanService
                         WHERE   id = _id
                      ) AS parent,
                      @l := @l + 1 AS lvl
-                    FROM    
+                    FROM
                         (
                          SELECT  @r := {$goalPlanId},
                                  @l := 0
@@ -856,7 +870,7 @@ class GoalPlanService
 			}
 		}
 		// Select all of the id's descending the linked list
-		$sql = "     SELECT  
+		$sql = "     SELECT
                      @r AS _id,
                      (
                         SELECT  @r := previous_goal_id
@@ -864,7 +878,7 @@ class GoalPlanService
                         WHERE   id = _id
                      ) AS parent,
                      @l := @l + 1 AS lvl
-                    FROM    
+                    FROM
                         (
                          SELECT  @r := {$goalPlanId},
                                  @l := 0
@@ -882,9 +896,9 @@ class GoalPlanService
 			}
 		}
 		return array_unique ( $linkedListIds );
-	
+
 	}
-	
+
 	//Alias for is_valid_goal_plan_by_name
 	public function isValidGoalPlanByName($programId = 0, $goalPlanName = '') {
 		// build the query statement to check if we have this $goal_plan_id

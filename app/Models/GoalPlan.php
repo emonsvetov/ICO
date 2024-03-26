@@ -15,6 +15,11 @@ class GoalPlan extends BaseModel
     protected $guarded = [];
     const CONFIG_PROGRAM_USES_GOAL_TRACKER = 1;
 
+    public function events()
+    {
+        return $this->hasMany(GoalPlansEvent::class, 'goal_plans_id');
+    }
+
     public function goalPlanType()
     {
         return $this->belongsTo(GoalPlanType::class, 'goal_plan_type_id');
@@ -31,8 +36,8 @@ class GoalPlan extends BaseModel
 
     public static function getStatusIdByName( $status ) {
         return Status::getSetByContextAndName('Goals', $status);
-    }   
-    
+    }
+
     public static function getActiveStatusId() {
         $status = self::getByNameAndContext('Active', 'Goals');
         if( $status->exists()) return  $status->id;
@@ -66,6 +71,6 @@ class GoalPlan extends BaseModel
     {
         $goal_plan = self::find($id);
        //$goal_plan =  self::where('program_id', $program_id)->where('id', $id)->first();
-        return $goal_plan; 
+        return $goal_plan;
     }
 }
