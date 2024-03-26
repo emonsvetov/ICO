@@ -66,6 +66,7 @@ class UserRequest extends FormRequest
     public function importRules()
     {
         return [
+            'user_id' => 'mustComeFromModel:User|matchWith:id|use:id',
             'user_status_id' => 'mustComeFromModel:Status|matchWith:status|use:id|filter:context,=,Users',
             'organization_id'=> 'mustExistInModel:Organization|use:id|hide:true|provided:true',
             'update_id'=> 'mustExistInModel:User|use:id|hide:true|provided:true',
@@ -78,6 +79,7 @@ class UserRequest extends FormRequest
             'roles' => 'mustComeFromModel:Role|matchWith:name|use:id|filterConstant:organization_id,=,organization_id|filterOrNull:organization_id|dataType:array',
             // 'roles' => 'hide:true',
             'roles.*' => 'hide:true',
+            'email' => 'hideByImportType:true'
         ];
     }
 

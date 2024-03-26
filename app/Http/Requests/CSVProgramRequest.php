@@ -21,7 +21,7 @@ class CSVProgramRequest extends FormRequest
         return [
             'external_id'   => 'mustExistInModel:Program|matchWith:external_id|use:external_id|filter:organization_id,=,organization_id',
             // 'program_name'  => 'mustExistInModel:Program|matchWith:name|use:name|filter:organization_id,=,organization_id',
-            'program_id'    => 'mustComeFromModel:Program|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
+            'program_id'    => 'mustComeFromModel:Program|matchWith:id|use:id|filterConstant:organization_id,=,organization_id',
         ];
     }
 

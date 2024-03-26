@@ -46,6 +46,9 @@ Route::get('/v1/organization/{organization}/csv-import-setting/{type?}', [App\Ht
 Route::post('/v1/organization/{organization}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
 Route::post('/v1/organization/{organization}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
 
+Route::post('/v1/organization/{organization}/program/{program}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
+Route::post('/v1/organization/{organization}/program/{program}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
+
 // Route::post('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'addAwardUserFileImport']);
 // Route::get('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'index']);
 // Route::get('/v1/organization/{organization}/addawarduserimport/{csvImport}', [App\Http\Controllers\API\AddAwardUserImportController::class, 'show']);

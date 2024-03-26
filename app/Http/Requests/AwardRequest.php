@@ -37,9 +37,9 @@ class AwardRequest extends FormRequest
             ],
             'user_id' => 'required|array',
             'user_id.*' => 'required|integer',
+            // 'user_id_single' => 'required|integer',
         ];
     }
-
 
     public function importRules()
     {
@@ -47,7 +47,8 @@ class AwardRequest extends FormRequest
             'email_template_id' => 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
             'event_id'          => 'mustComeFromModel:Event|matchWith:name|use:id',
             'documentationFile' => 'hide:true',
-            // 'user_id'           => 'required|array',
+            'user_id'           => 'hide:true',
+            'user_id.*'         => 'hide:true',
         ];
     }
 

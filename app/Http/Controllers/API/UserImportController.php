@@ -171,7 +171,10 @@ class UserImportController extends Controller
         $setups = json_decode($validated['setups'], true);
         $userModel = isset($setups['UserRequest']) ? 'UserRequest' : 'UserUpdateRequest';
         $requestType = isset($setups['UserRequest']) ? $setups['UserRequest']['type'] : $setups['UserUpdateRequest']['type'];
-        $type = CsvImportType::getIdByType($requestType);
+        $type = CsvImportType::where( function($query) use ($requestType)    {
+            $query->orWhere('type', 'LIKE', $requestType);
+            $query->orWhere('name', 'LIKE', $requestType);
+        })->first();
 
         if (empty($type))
         {
@@ -193,21 +196,20 @@ class UserImportController extends Controller
         $csvImport = new CsvImport;
         $newCsvImport = $csvImport->createCsvImport($fileUpload + [
             'organization_id'       => $organization->id,
-            'csv_import_type_id'    => $type
+            'csv_import_type_id'    => $type->id
         ]);
 
         // ImportUserForProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants, $validated['setups']);
 
         // remove after test
         $csvService = new CSVimportService;
+        $csvService->setImportType( $type );
         $importData =  $csvService->importFile($newCsvImport, $request->fieldsToMap, $supplied_constants, $request->setups);
         // return $importData;
 
         if ( empty($importData['errors']) )
         {
-            $type = CsvImportType::find( $newCsvImport->csv_import_type_id)->type;
-
-            switch ($type)
+            switch ($type->type)
             {
                 case 'add_participants':
                     $this->addUser($newCsvImport, $importData, $supplied_constants);
@@ -234,7 +236,7 @@ class UserImportController extends Controller
             return response(['message'=>'Errors while validating import data', 'errors' => $importData['errors']], 422);
 
             $notifData = [
-                'csv_import_id' => $csvImportId,
+                'csv_import_id' => $newCsvImport->id,
                 'errors' => $importData['errors']
             ];
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\CSVImportAlert;
 use App\Http\Traits\UserImportTrait;
 use App\Models\CsvImport;
 use App\Models\CsvImportSettings;
@@ -26,6 +27,13 @@ class CSVimportService
     private int $line = 0;
     private array $headers = [];
     private array $saveData = [];
+    private CsvImportType $csvImportType;
+    private array $hideRuleByTypeMapping = [
+        'email' => ['award_users']
+    ];
+    private array $mergeRulesByType = [
+        'AwardRequest' => ['award_users']
+    ];
 
     /*
     1. open file
@@ -50,7 +58,7 @@ class CSVimportService
             if ($file instanceof \App\Models\CsvImport) {
                 $filepath = $file['path'];
                 if (config('app.env') == 'local') {
-                    $filepath = '../storage/app/public/' . $filepath;
+                    $filepath = storage_path() . '/app/' . $filepath;
                 }
             }
         }
@@ -94,6 +102,7 @@ class CSVimportService
                     // return $mapArray;
 
                     foreach ($mapArray as $formRequest => $fieldsToMap) {
+                        // pr($formRequest);
                         #instantiate the form request
                         $requestClassPath = "App\Http\Requests\\" . $formRequest;
                         $formRequestClass = new $requestClassPath;
@@ -135,7 +144,8 @@ class CSVimportService
                         //     $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestClass->rules() );
                         // }
 
-                        $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
+                        $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules, $formRequest);
+                        pr( $formRequestRules );
 
                         $validator = Validator::make($saveData[$formRequest][$line], $formRequestRules);
 
@@ -203,12 +213,36 @@ class CSVimportService
 
     }
 
-
-    public function filterRules($rules, $importRules)
+    private function isHideFieldByImportType( $key )
     {
+        foreach( $this->hideRuleByTypeMapping as $field => $importTypes)    {
+            if( $field == $key && in_array( $this->csvImportType->type, $importTypes))    {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function filterRules($rules, $importRules, $formRequest)
+    {
+
+        // foreach( $this->mergeRulesByType as $formRequestType => $csvImportTypes)    {
+        //     if( $formRequestType === $formRequest)  {
+        //         if( in_array($this->csvImportType->type, $csvImportTypes) )    {
+        //             $rules = array_merge_recursive($rules, $importRules);
+        //         }
+        //     }
+        // }
+
         foreach ($importRules as $key => $importRule) {
             if (str_contains($importRule, 'create:true')) {
                 unset($rules[$key]);
+            }
+            if (str_contains($importRule, 'hideByImportType:true')) {
+                if( $this->isHideFieldByImportType($key) )
+                {
+                    unset($rules[$key]);
+                }
             }
         }
         return $rules;
@@ -777,7 +811,9 @@ class CSVimportService
                         $this->currentRowData[$dbField] = $this->saveData[$formRequest][$this->line][$dbField];
                     }
 
-                    $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
+                    $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules, $formRequest);
+
+                    pr($formRequestRules);
                     $validator = Validator::make($this->saveData[$formRequest][$this->line], $formRequestRules);
 
                     if ($validator->fails()) {
@@ -871,6 +907,10 @@ class CSVimportService
                 }
             }
         }
+    }
+
+    public function setImportType( CsvImportType $csvImportType ) {
+        $this->csvImportType = $csvImportType;
     }
 }
 
