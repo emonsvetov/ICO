@@ -4,6 +4,7 @@ namespace App\Services\v2migrate;
 use App\Models\Domain;
 use App\Models\Event;
 use App\Models\GoalPlan;
+use App\Models\GoalPlansEvent;
 use App\Models\Invoice;
 use App\Models\InvoiceJournalEvent;
 use App\Models\InvoiceType;
@@ -143,6 +144,21 @@ class MigrateGoalPlansService extends MigrationService
             else {
                 $v3GoalPlan->update($v3GoalPlanData);
                 $this->countUpdateGoalPlans++;
+            }
+
+            $v2GoalPlanEvents = $this->getV2GoalPlanEvents($v2GoalPlan->id);
+            if (!empty($v2GoalPlanEvents)) {
+                  $v2EventIDs = [];
+                  foreach ($v2GoalPlanEvents as $v2GoalPlanEvent) {
+                      $v2EventIDs[] = $v2GoalPlanEvent->event_template_id;
+                  }
+                  $v3Events = Event::whereIn('v2_event_id', $v2EventIDs)->get();
+                  foreach ($v3Events as $v3Event) {
+                      GoalPlansEvent::create([
+                          'goal_plans_id' => $v3GoalPlan->id,
+                          'event_id' => $v3Event->id,
+                      ]);
+                  }
             }
 
         }
