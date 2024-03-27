@@ -21,6 +21,11 @@ class ReportParticipantStatusSummaryService extends ReportServiceAbstract
     protected function calc(): array
     {
         $programs = Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray();
+        $organizationId = 0;
+        if($programs){
+            $program = Program::find($programs[0]);
+            $organizationId = $program->organization_id;
+        }
 
         // Get user ids for report query to optimise query execution time
         $query = DB::table('users');
@@ -47,6 +52,10 @@ class ReportParticipantStatusSummaryService extends ReportServiceAbstract
         $subQuery->leftJoin('roles', 'roles.id', '=', 'model_has_roles.role_id');
         $subQuery->leftJoin('statuses', 'statuses.id', '=', 'users.user_status_id');
         $subQuery->whereIn('programs.id', $programs);
+        $subQuery->whereIn('model_has_roles.program_id', $programs);
+        $subQuery->where('users.organization_id', $organizationId);
+        $subQuery->where('roles.name', 'LIKE', config('roles.participant'));
+        $subQuery->groupBy('account_holder_id', 'program_name', 'user_status_id', 'status');
 
         // subQuery2
         $subQuery2 = DB::table(DB::raw("({$subQuery->toSql()}) as sub"));

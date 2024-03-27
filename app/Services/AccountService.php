@@ -70,13 +70,13 @@ class AccountService
      * @param array $journal_event_types
      * @return float
      */
-    public static function readBalance($account_holder_id, $account_type, array $journal_event_types = []): float
+    public static function readBalance($account_holder_id, $account_type, array $journal_event_types = [],$allProgramAccounts = false): float
     {
         $credits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 1
+            $account_holder_id, $account_type, $journal_event_types, 1,null,null,$allProgramAccounts
         );
         $debits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 0
+            $account_holder_id, $account_type, $journal_event_types, 0,null,null,$allProgramAccounts
         );
         return (float)(number_format(($credits->total - $debits->total), 2, '.', ''));
     }
@@ -230,13 +230,15 @@ class AccountService
      * @return float
      */
 
-    public static function readAvailableBalanceForProgram( $program ) {
+    public static function readAvailableBalanceForProgram($program)
+    {
         $account_type = AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE;
-		$journal_event_types = array (); // leave $journal_event_types empty to get all journal events
-		if ( $program->programIsInvoiceForAwards() ) {
-			$account_type = AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
-		}
-		return self::readBalance ( $program->account_holder_id, $account_type, $journal_event_types );
+        $journal_event_types = array(); // leave $journal_event_types empty to get all journal events
+        if ($program->programIsInvoiceForAwards()) {
+            $account_type = AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
+        }
+
+        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types,true);
     }
     /**
      * Alias for "readAvailableBalanceForProgram"
@@ -366,6 +368,12 @@ class AccountService
      */
     public static function readEventHistoryByProgramByParticipant(Program $program, User $participant, $extraArgs=[]) {
 
+        // DB::enableQueryLog();
+
+        $sortby = request()->get('sortby', 'journal_events.created_at');
+        $direction = request()->get('direction', 'desc');
+        $orderByRaw = "{$sortby} {$direction}";
+
         $query = DB::table('accounts');
 
         $query->addSelect(
@@ -385,6 +393,7 @@ class AccountService
                 'event_xml_data.xml',
                 'event_xml_data.token',
                 'event_xml_data.email_template_id',
+                'journal_event_types.type AS journal_event_type'
             ]
         );
 
@@ -393,7 +402,7 @@ class AccountService
         $query->join('postings', 'postings.account_id', '=', 'accounts.id');
         $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
         $query->join('journal_event_types', 'journal_events.journal_event_type_id', '=', 'journal_event_types.id');
-        $query->join('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
 
         $query->where('users.account_holder_id', '=', $participant->account_holder_id);
         $query->whereIn('account_types.name', ['Points Awarded', 'Monies Awarded']);
@@ -407,7 +416,9 @@ class AccountService
             $query->where('journal_events.created_at', '>=', $AY);
         }
         try {
+            $query->orderByRaw($orderByRaw);
             $result = $query->get();
+            // pr(toSql(DB::getQueryLog()));
             return $result;
         } catch (Exception $e) {
             throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
@@ -598,4 +609,122 @@ class AccountService
 		}
         return self::readSumDebits ( $user->account_holder_id, $account_type, $journal_event_types );
     }
+
+    public static function pointHistory(Program $program, User $user )  {
+        $factor = $program->factor_valuation;
+        $prevBalance = self::readAvailableBalanceForParticipant($program, $user) * $factor;
+        // pr($prevBalance * $factor);
+        $res =[];
+        $pointHistory = self::readEventHistoryByProgramByParticipant($program, $user);
+        foreach($pointHistory as $event)   {//01725055355
+            $item = (object)[];
+            //pr($event);
+            // pr($event->name);
+            // pr($event->amount);
+            if( $event->name=='Redeem points for gift codes' OR  $event->name == 'Redeem points for international shopping' OR $event->name == 'Reclaim points' OR $event->name == 'Redeem monies for gift codes') {
+                $item->balance = $prevBalance;
+                $points_spent = abs($event->amount * $factor);
+                $item->title = sprintf('You redeemed %d points', $points_spent);
+                $prevBalance = $prevBalance + $points_spent;
+            }   else if ( $event->award_level_name == 'default' OR $event->award_level_name == 'CORT Employee' ) {
+
+                // $awardedBy = 'Gerry';
+                // if( (int) $event->event_xml_data_id )   { //valid user id
+                //     $awardedBy = User::find( (int) $event->event_xml_data_id )->name;
+                // }
+
+                $item->balance = $prevBalance;
+                $points_awarded = abs($event->amount * $factor);
+                $item->title = sprintf('You were rewarded with %d points', $points_awarded);
+                $prevBalance = $prevBalance - $points_awarded;
+            }
+
+            // pr($item);
+
+            list($date, $time) = explode(' ', $event->created_at);
+            if( $date ) {
+                //pr($date);
+                //add one day since we are having issue for US timezone
+                //TODO . Fix in App and remove this code
+                //starts
+                $date1 = str_replace('-', '/', $date);
+                $date = date('Y-m-d', strtotime($date1 . "+1 days"));
+                //ends
+
+                list($y, $m, $d)    = explode('-', $date);
+                if(checkdate($m, $d, $y))   {
+                    if( !isset ( $res[$date]) ) {
+                        $res[$date] = [];
+                    }
+                    $dateObj = (object)[
+                        'm'=>$m, 'd'=>$d, 'y'=>$y
+                    ];
+                    $item->date = $dateObj;
+                    array_push($res[$date], $item);
+                }   else {
+                    array_push($res, $item);
+                }
+            }
+            // pr($item);
+        }
+        //pr($res);
+        //exit;
+
+        $new_history = [];
+        foreach( $res as $key=>$items )  {
+            array_push($new_history, ['date'=>$key, 'items'=>$items]);
+        }
+        return (array) $new_history;
+    }
+
+	public static function getUnreadNotificationCount(Program $program, User $user) {
+
+        $query = DB::table('accounts');
+        $query->addSelect(
+            [
+                DB::raw("COUNT(`journal_events`.`id`) AS `unread_count`")
+            ]
+        );
+
+        $query->join('account_types', 'accounts.account_type_id', '=', 'account_types.id');
+        $query->join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('journal_event_types', 'journal_events.journal_event_type_id', '=', 'journal_event_types.id');
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+
+        $query->where('users.account_holder_id', '=', $user->account_holder_id);
+        $query->whereIn('account_types.name', ['Points Awarded', 'Monies Awarded']);
+        $query->where('journal_events.is_read', '=', 0);
+
+        try {
+            $result = $query->get();
+            // pr(toSql(DB::getQueryLog()));
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+    	return count($result) ? $result[0]->unread_count : 0;
+	}
+
+	public static function markNotificationsRead(Program $program, User $user) {
+
+        $query = DB::table('accounts');
+        $query->join('account_types', 'accounts.account_type_id', '=', 'account_types.id');
+        $query->join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('journal_event_types', 'journal_events.journal_event_type_id', '=', 'journal_event_types.id');
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+
+        $query->where('users.account_holder_id', '=', $user->account_holder_id);
+        $query->whereIn('account_types.name', ['Points Awarded', 'Monies Awarded']);
+        $query->where('journal_events.is_read', '=', 0);
+
+        try {
+            return $query->update([ 'journal_events.is_read' => 1 ]);
+            // pr(toSql(DB::getQueryLog()));
+        } catch (Exception $e) {
+            throw new Exception(sprintf('DB query failed for "%s" in line %d', $e->getMessage(), $e->getLine()), 500);
+        }
+	}
 }

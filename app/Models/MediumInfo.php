@@ -125,6 +125,7 @@ class MediumInfo extends BaseModel
             );
         }
         $query->where('redeemed_user_id', '=', $userId);
+        $query->orderBy('redemption_date', 'DESC');
 
         try {
             return $limit ? $query->limit($limit)->offset($offset)->get() : $query->get();

@@ -3,6 +3,7 @@ namespace App\Services\v2migrate;
 
 use App\Models\Domain;
 use App\Models\Program;
+use App\Services\ProgramService;
 use Exception;
 
 class MigrateDomainsService extends MigrationService
@@ -12,6 +13,8 @@ class MigrateDomainsService extends MigrationService
 
     public $countCreatedDomains = 0;
     public $countUpdatedDomains = 0;
+    public $v3DomainIDs = [];
+    public $countV3ProgramDomains = 0;
 
     public function __construct()
     {
@@ -104,28 +107,13 @@ class MigrateDomainsService extends MigrationService
     }
 
     /**
-     * Sync domains to a program.
+     * Sync sub program.
      *
      * @param $v2AccountHolderID
-     * @return array
      * @throws Exception
      */
-    function syncProgramDomainRelations($v2AccountHolderID) {
-        $result = [
-            'success' => FALSE,
-            'info' => '',
-        ];
-
-        $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
-        $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
-
-        // Checking if v3 program is exists.
-        if (empty($v3AccountHolderID)) {
-            throw new Exception("v3 program or v2_account_holder_id not found.");
-        }
-
-        $v3DomainIDs = Domain::all()->pluck('id', 'v2_domain_id')->toArray();
-
+    public function syncSubProgramDomainRelations($v2AccountHolderID)
+    {
         $v2ProgramDomains = $this->v2db->select(
             sprintf("
             SELECT
@@ -152,8 +140,8 @@ class MigrateDomainsService extends MigrationService
 
         if (!blank($v2ProgramDomains)) {
             foreach ($v2ProgramDomains as $v2ProgramDomain) {
-                if ($v3DomainIDs[$v2ProgramDomain->access_key] ?? FALSE) {
-                    $v3ProgramDomains[] = $v3DomainIDs[$v2ProgramDomain->access_key];
+                if ($this->v3DomainIDs[$v2ProgramDomain->access_key] ?? FALSE) {
+                    $v3ProgramDomains[] = $this->v3DomainIDs[$v2ProgramDomain->access_key];
                 }
                 else {
                     throw new Exception("Domain $v2ProgramDomain->name not found in V3. Please run global migrations for migrate a new domains.");
@@ -162,10 +150,87 @@ class MigrateDomainsService extends MigrationService
         }
 
         try {
+            $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
             $v3Program->domains()->sync($v3ProgramDomains);
+            $this->countV3ProgramDomains += count($v3ProgramDomains);
+        } catch (\Exception $exception) {
+            throw new Exception("Sync domains to a program is failed.");
+        }
+    }
+
+    /**
+     * Get v2 account holder ID.
+     */
+    function getV2AccountHolderID($v3ProgramID) {
+        $v2Sql = "
+            SELECT
+                account_holder_id
+            FROM
+                programs
+            WHERE
+                v3_program_id = " . $v3ProgramID . " LIMIT 1";
+
+        $result = $this->v2db->select($v2Sql);
+        $v2Programs = reset($result);
+
+        return $v2Programs->account_holder_id ?? FALSE;
+    }
+
+    /**
+     * Sync sub programs.
+     *
+     * @param $v3Program
+     * @throws Exception
+     */
+    function syncSubProgram($v3Program) {
+
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? NULL;
+        $subPrograms = $v3Program->children ?? [];
+
+        if (empty($v2AccountHolderID)) {
+            $v2AccountHolderID = $this->getV2AccountHolderID($v3Program->id);
+        }
+
+        // Checking.
+        if (empty($v2AccountHolderID)) {
+            throw new Exception("v3 program or v2_account_holder_id not found.");
+        }
+
+        $this->syncSubProgramDomainRelations($v2AccountHolderID);
+
+        if (!empty($subPrograms)) {
+            foreach ($subPrograms as $subProgram) {
+                $this->syncSubProgram($subProgram);
+            }
+        }
+    }
+
+    /**
+     * Sync domains to a program.
+     *
+     * @param $v2AccountHolderID
+     * @return array
+     * @throws Exception
+     */
+    function syncProgramDomainRelations($v2AccountHolderID) {
+        $result = [
+            'success' => FALSE,
+            'info' => '',
+        ];
+
+        $this->v3DomainIDs = Domain::all()->pluck('id', 'v2_domain_id')->toArray();
+
+        try {
+            $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
+
+            // Checking.
+            if (empty($v3Program)) {
+                throw new Exception("v3 program not found.");
+            }
+
+            $this->syncSubProgram($v3Program);
             $result['success'] = TRUE;
-            $countV3ProgramDomains = count($v3ProgramDomains);
-            $result['info'] = "sync $countV3ProgramDomains items";
+            $result['info'] = "sync " . $this->countV3ProgramDomains . " items";
         } catch (\Exception $exception) {
             throw new Exception("Sync domains to a program is failed.");
         }

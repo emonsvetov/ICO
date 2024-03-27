@@ -458,9 +458,20 @@ class AwardService
             $awardee->notify(new AwardNotification((object)$notification));
         }
 
+        (new \App\Services\PushNotificationService)->notifyUser( $awardee, [
+            'title'=>"You have a new reward!",
+            'body'=>$notificationBody,
+            'data'=>[ //to be consumed by the mobile app
+                'points_awarded'=>[
+                    'points' => (int) $awardPoints,
+                    'amount' => $awardAmount
+                ]
+            ]
+        ]);
+
         // DB::rollBack();
         DB::commit();
-//        DB::statement("UNLOCK TABLES;");
+        // DB::statement("UNLOCK TABLES;");
     }
     public function awardPeer2Peer(array $data, Event $event, Program $program, User $awarder)
     {
@@ -609,6 +620,16 @@ class AwardService
                 'awardNotificationBody' => $notificationBody,
                 'program' => $program
             ]));
+            (new \App\Services\PushNotificationService)->notifyUser( $awardee, [
+                'title'=>"You have a new peer reward!",
+                'body'=>$notificationBody,
+                'data'=>[ //to be consumed by the mobile app
+                    'points_awarded'=>[
+                        'points' => (int) $awardPoints,
+                        'amount' => $amount
+                    ]
+                ]
+            ]);
             DB::commit();
         } catch (\RuntimeException $e)  {
             cronlog( sprintf( 'ERROR: could not award user:%d for error:%s', $awardee->id, $e->getMessage()));

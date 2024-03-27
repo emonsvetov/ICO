@@ -100,24 +100,14 @@ class MigrateProgramsService extends MigrationService
      */
     public function getV3Program(object $v2Program): ?Program
     {
-        if ($v2Program->v3_program_id) {
-            $v3Program = Program::find($v2Program->v3_program_id);
-            if ($v3Program) {
-                if ($v3Program->v2_account_holder_id !== $v2Program->account_holder_id) {
-                    $v3Program->v2_account_holder_id = $v2Program->account_holder_id;
-                    $v3Program->save();
-                }
-            }
-        } else {
-            $v3Program = Program::where('v2_account_holder_id', $v2Program->account_holder_id)->first();
-            if ($v3Program) {
-                $this->v2db->statement("
-                    UPDATE `programs`
-                    SET `v3_program_id` = ?
-                    WHERE `account_holder_id` = ?",
-                    [$v3Program->id, $v2Program->account_holder_id]
-                );
-            }
+        $v3Program = Program::where('v2_account_holder_id', $v2Program->account_holder_id)->first();
+        if ($v3Program) {
+            $this->v2db->statement("
+                UPDATE `programs`
+                SET `v3_program_id` = ?
+                WHERE `account_holder_id` = ?",
+                [$v3Program->id, $v2Program->account_holder_id]
+            );
         }
         return $v3Program;
     }

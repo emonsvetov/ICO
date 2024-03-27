@@ -46,7 +46,7 @@ class CheckoutService
 		$Logger = Log::channel('redemption');
 
 		$response = [];
-        $gift_codes = $cart['items'];
+        $gift_codes = & $cart['items'];
 		$order_address = !empty($cart['order_address']) ? (object) $cart['order_address'] : null;
 
 		if( !$gift_codes ) return ['errors' => "No cart items in CheckoutService:processOrder"];
@@ -101,13 +101,17 @@ class CheckoutService
 
 		// pr($merchantsCostToProgram);
 
-        foreach ( $gift_codes as &$gift_code_array ) {
-			$gift_code = (object) $gift_code_array;
+        foreach ( $gift_codes as &$gift_code ) {
+			// $gift_code = (object) $gift_code_array;
+            $gift_code = (object) $gift_code;
             $redemptionValue = 0;
 			$redemptionFee = 0;
             $all_merchants[$gift_code->merchant_id] = $merchant = get_merchant_by_id($merchants, $gift_code->merchant_id);
 
+            $gift_code->merchant_account_holder_id = $merchant->account_holder_id;
+
 			// pr($merchant);
+            // exit;
 
             if (in_array ( $merchant->id, $merchantsCostToProgram )) {
                 $where = [
@@ -149,7 +153,6 @@ class CheckoutService
             $merchants_info[$merchant->account_holder_id] = $merchant;
 			if ($merchant->get_gift_codes_from_root) {
                 $topMerchant = Merchant::get_top_level_merchant ( $gift_code->merchant_id ) ;
-
 				$gift_code->gift_code_provider_account_holder_id = $topMerchant->account_holder_id ;
 				// $topMerchant = Merchant::read( $gift_code->gift_code_provider_account_holder_id );
 			    $merchants_info [$topMerchant->account_holder_id] = $topMerchant;
@@ -226,6 +229,9 @@ class CheckoutService
 					}
 					// Flag to indicate whether or not the redemption value was found in the denomination list
 					$found_denomination = false;
+                    // pr($denomination_list->toArray());
+                    // pr( $gift_code );
+                    // exit;
 					foreach ( $denomination_list as $denomination_info ) {
 						if ($denomination_info->redemption_value == $gift_code->redemption_value && $denomination_info->sku_value == $gift_code->sku_value) {
 							$found_denomination = true;
@@ -247,6 +253,8 @@ class CheckoutService
         }
 
 		$current_balance = $user->readAvailableBalance( $program, $user);
+
+        // die($redemption_value_total);
 
         // $Logger->info("\$current_balance:$current_balance");
         // $Logger->info("\$redemption_value_total:$redemption_value_total");
@@ -416,7 +424,7 @@ class CheckoutService
 			}
 		}
 		try {
-			// I am not sure why some of the database transactions above are exempted from the rollback. Probably we need to move the DB::beginTransaction(); to the very top of this function ; Arvind
+			// I am not sure why some of the database transactions above are exempted from the rollback. Probably we need to move the DB::beginTransaction(); to the very top of this function - Arvind
 			DB::statement("LOCK TABLES postings WRITE, medium_info WRITE, journal_events WRITE;");
 			DB::beginTransaction();
 			$commit = true;

@@ -99,6 +99,10 @@ class ProgramUserController extends Controller
 
     public function show(Organization $organization, Program $program, User $user): UserResource
     {
+        $include_balance = request('include_balance', false);
+        if( $include_balance )   {
+            $user = (new \App\Services\Program\ProgramUserService)->attachBalanceToUser($user, $program);
+        }
         return $this->UserResponse($user);
     }
 
@@ -153,12 +157,15 @@ class ProgramUserController extends Controller
 
     public function update(UserRequest $request, Organization $organization, Program $program, User $user)
     {
-
         $validated = $request->validated();
         $user->update($validated);
 
         if ( ! empty($validated['roles'])) {
             $user->syncProgramRoles($program->id, $validated['roles']);
+        }
+
+        if (!empty($validated['award_level'])) {
+            $user->syncAwardLevelsHasUsers($program->id, $validated['award_level']);
         }
 
         return response(['user' => $user]);
@@ -183,18 +190,19 @@ class ProgramUserController extends Controller
         UserService $userService,
         AccountService $accountService
     ) {
-        $amount_balance = $user->readAvailableBalance($program, $user);
         $pointsEarned = $accountService->read_awarded_total_for_participant($program, $user);
         $factor_valuation = $program->factor_valuation;
-        $points_balance = $amount_balance * $program->factor_valuation;
         $peerBalance = $userService->readAvailablePeerBalance($user, $program);
+        $amount_balance = $user->readAvailableBalance($program, $user) + $peerBalance;
+        $pointBalance = $amount_balance * $program->factor_valuation;
         $expiredBalance = $accountService->readExpiredBalance($user, $program);
         $redeemedBalance = $accountService->readRedeemedBalance($user, $program);
         return response([
+            'pointBalance' => $pointBalance,
             'points' => $pointsEarned,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
-            'peerBalance' => $peerBalance,
+            'peerBalance' => 0, //todo
             'redeemedBalance' => $redeemedBalance,
             'expiredBalance' => $expiredBalance,
         ]);

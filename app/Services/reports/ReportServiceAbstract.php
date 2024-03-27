@@ -11,6 +11,7 @@ abstract class ReportServiceAbstract
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
     const YEAR = 'year';
+    const TARGET_PARTICIPANT = 'targetParticipant';
     const MONTH = 'month';
     const CODES = 'codes';
     const INVENTORY_TYPE = 'inventoryType';
@@ -118,6 +119,7 @@ abstract class ReportServiceAbstract
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
         $this->params[self::MONTH] = $params[self::MONTH] ?? null;
         $this->params[self::CODES] = $params[self::CODES] ?? null;
+        $this->params[self::TARGET_PARTICIPANT] = $params[self::TARGET_PARTICIPANT] ?? null;
         if (isset($params[self::ACCOUNT_TYPES])) {
             $temp = array();
             foreach( $params[self::ACCOUNT_TYPES] as $param) {

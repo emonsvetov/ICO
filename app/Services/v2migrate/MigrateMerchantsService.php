@@ -2,7 +2,10 @@
 namespace App\Services\v2migrate;
 
 use App\Models\AccountHolder;
+use App\Models\Giftcode;
+use App\Models\MediumInfo;
 use App\Models\TangoOrdersApi;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Exception;
@@ -22,16 +25,21 @@ class MigrateMerchantsService extends MigrationService
     public $createDuplicateName = false;
     public $v2TangoAPIList = [];
     public $v3TangoUserID;
+    public $v3Merchants = [];
+    public $v2DublicateCodes = [];
 
     public $countCreatedMerchants = 0;
     public $countUpdatedMerchants = 0;
     public $countCreatedTangoApi = 0;
     public $countUpdatedTangoApi = 0;
+    public $countCreatedMerchantCodes = 0;
+    public $countUpdatedMerchantCodes = 0;
 
     public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
         $this->merchantService = $merchantService;
         $this->migrateGiftcodesService = $migrateGiftcodesService;
+        $this->v3Merchants = Merchant::all()->pluck('id', 'v2_account_holder_id')->toArray();
         parent::__construct();
     }
 
@@ -237,19 +245,7 @@ class MigrateMerchantsService extends MigrationService
                 $this->countUpdatedMerchants++;
             }
 
-            $icons = [];
-            foreach(Merchant::MEDIA_FIELDS as $mediaField) {
-                if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
-                    $icons[$mediaField] = $v2Merchant->{$mediaField};
-                }
-            }
-
-            if( $icons ) {
-                $uploads = $this->handleMerchantMediaUpload( null, $parentMerchant, false, $icons );
-                if( $uploads )   {
-                    $parentMerchant->update($uploads);
-                }
-            }
+            $this->updateMerchantMedia($v2Merchant, $parentMerchant);
 
             if (
                 isset($v2MerchantNode['sub_merchant']) &&
@@ -258,6 +254,26 @@ class MigrateMerchantsService extends MigrationService
                 foreach( $v2MerchantNode['sub_merchant'] as $v2SubMerchant ) {
                     $this->migrateMerchant($v2SubMerchant, $parentMerchant->id);
                 }
+            }
+        }
+    }
+
+    /**
+     * Update merchant media.
+     */
+    public function updateMerchantMedia($v2Merchant, $parentMerchant)
+    {
+        $icons = [];
+        foreach(Merchant::MEDIA_FIELDS as $mediaField) {
+            if( property_exists($v2Merchant, $mediaField) && $v2Merchant->{$mediaField}) {
+                $icons[$mediaField] = $v2Merchant->{$mediaField};
+            }
+        }
+
+        if( $icons ) {
+            $uploads = $this->handleMerchantMediaUpload( null, $parentMerchant, false, $icons );
+            if( $uploads )   {
+                $parentMerchant->update($uploads);
             }
         }
     }
@@ -285,83 +301,6 @@ class MigrateMerchantsService extends MigrationService
         }
     }
 
-    /**
-     * Get merchants from v2.
-     *
-     * @param  int  $offset
-     * @param  int  $limit
-     * @param  string  $order_column
-     * @param  string  $order_direction
-     * @return array
-     * @throws Exception
-     */
-    public function read_list_hierarchy($offset = 0, $limit = 9999999, $order_column = 'name', $order_direction = 'asc') {
-		$statement = "
-			SELECT
-            *,
-	       (SELECT
-                COALESCE(GROUP_CONCAT(DISTINCT ranking_merchant.account_holder_id
-                    ORDER BY `" . MERCHANT_PATHS . "`.path_length DESC), `" . MERCHANTS . "`.account_holder_id ) AS 'rank'
-            FROM
-                merchant_paths
-            LEFT JOIN
-                `" . MERCHANTS . "` AS ranking_merchant ON `" . MERCHANT_PATHS . "`.ancestor = ranking_merchant.account_holder_id
-            WHERE `" . MERCHANT_PATHS . "`.descendant = `" . MERCHANTS . "`.account_holder_id
-                ) as 'rank'
-        , ( SELECT
-            MAX(COALESCE(`ranking_path_length`.path_length, 0)) as path_length
-        FROM
-            `" . MERCHANT_PATHS . "`
-        LEFT JOIN
-            `" . MERCHANT_PATHS . "` AS ranking_path_length ON `" . MERCHANT_PATHS . "`.descendant = ranking_path_length.descendant and `" . MERCHANT_PATHS . "`.ancestor != ranking_path_length.ancestor
-
-        WHERE `" . MERCHANT_PATHS . "`.descendant = `" . MERCHANTS . "`.account_holder_id
-            ) as path_length
-			FROM
-
-				`" . MERCHANTS . "`
-            WHERE `" . MERCHANTS . "`.`deleted` = 0";
-
-        $statement .= " GROUP BY
-                " . MERCHANTS . ".account_holder_id
-            ORDER BY
-                `{$order_column}` {$order_direction}, " . MERCHANTS . ".name
-			LIMIT
-				{$offset}, {$limit};
-			";
-
-        try {
-            $this->v2db->statement("SET SQL_MODE=''");
-            $result = $this->v2db->select($statement);
-        } catch(\Exception $e) {
-            throw new Exception( sprintf("Error fetching v2 merchants. Error:%s", $e->getMessage()));
-        }
-        $return_data = [];
-		foreach ( $result as $row ) {
-			$row = $this->cast_merchant_fieldtypes ( $row );
-			$return_data[] = $row;
-		}
-		return $return_data;
-	}
-
-    /**
-     * @param $row
-     * @return mixed
-     */
-	private function cast_merchant_fieldtypes($row) {
-		$field_types = array (
-            'account_holder_id' => 'int',
-            'website_is_redemption_url' => 'int',
-            'get_gift_codes_from_root' => 'bool',
-            'is_default' => 'bool',
-            'giftcodes_require_pin' => 'bool',
-            'display_rank_by_priority' => 'int',
-            'display_rank_by_redemptions' => 'int',
-            'requires_shipping' => 'bool',
-            'physical_order' => 'bool'
-		);
-		return cast_fieldtypes ($row, $field_types);
-	}
     protected function fixAccountHolderIds()    {
         $v3Merchants = Merchant::whereNotNull('account_holder_id')->get();
         if( $v3Merchants )   {
@@ -370,6 +309,7 @@ class MigrateMerchantsService extends MigrationService
             }
         }
     }
+
     protected function fixBrokenAccountHolderByMerchant( $v3Merchant )    {
         //Find and Confirm stored account holder id in v2 db
         //I needed to do this as I found some very large account holder ids in v3 which did not exist in the v2 database. Probably they were created in some old version of v3 db then AUTO INCREMENT key was reset??
@@ -467,7 +407,7 @@ class MigrateMerchantsService extends MigrationService
                     $v3Program->merchants()->sync($programMerchants, false);
                     $countProgramMerchants = count($programMerchants);
                     $result['success'] = TRUE;
-                    $result['info'] = "was sync $countProgramMerchants items";
+                    $result['info'] = "sync $countProgramMerchants items.";
                 } catch (\Exception $exception) {
                     throw new Exception("Sync merchants to a program is failed.");
                 }
@@ -476,4 +416,166 @@ class MigrateMerchantsService extends MigrationService
 
         return $result;
     }
+
+    /**
+     * Migrate available codes to a merchant.
+     *
+     * @param $v3Merchant
+     * @throws Exception
+     */
+    public function migrateAvailableCodes($v3Merchant)
+    {
+        $v2AvailableMerchantCodes = $this->getV2AvailableMerchantCodes($v3Merchant);
+        if (!empty($v2AvailableMerchantCodes)) {
+            foreach ($v2AvailableMerchantCodes as $v2AvailableMerchantCode) {
+
+                $v2MerchantID = $v2AvailableMerchantCode->merchant_account_holder_id;
+                $v2RedeemedMerchantID = $v2AvailableMerchantCode->redeemed_merchant_account_holder_id;
+                $v2RedeemedUserID = $v2AvailableMerchantCode->redeemed_account_holder_id;
+
+                $code = $v2AvailableMerchantCode->code;
+                $this->v2DublicateCodes[$code] = isset($this->v2DublicateCodes[$code]) ? ($this->v2DublicateCodes[$code] + 1) : 1;
+                $countCode = $this->v2DublicateCodes[$code];
+
+                // Fix for duplicate code as FXXXXXX.
+                if ($countCode > 1) {
+                    $code .= '_' . $countCode;
+                }
+
+                $v3MediumInfoData = [
+                    'purchase_date' => $v2AvailableMerchantCode->purchase_date,
+                    'redemption_date' => $v2AvailableMerchantCode->redemption_date,
+                    'expiration_date' => $v2AvailableMerchantCode->expiration_date,
+                    'hold_until' => $v2AvailableMerchantCode->hold_until,
+                    'redemption_value' => $v2AvailableMerchantCode->redemption_value,
+                    'cost_basis' => $v2AvailableMerchantCode->cost_basis,
+                    'discount' => $v2AvailableMerchantCode->discount,
+                    'sku_value' => $v2AvailableMerchantCode->sku_value,
+                    'pin' => $v2AvailableMerchantCode->pin,
+                    'redemption_url' => $v2AvailableMerchantCode->redemption_url,
+                    'encryption' => $v2AvailableMerchantCode->encryption,
+                    'code' => $code,
+                    'merchant_id' => (int) $v2MerchantID ? $this->getV3MerchantID($v2MerchantID) : NULL,
+                    'redeemed_merchant_id' => (int) $v2RedeemedMerchantID ? $this->getV3MerchantID($v2MerchantID) : NULL,
+                    'redeemed_program_id' => NULL, // all column NULL in v2
+                    'redeemed_user_id' => (int) $v2RedeemedUserID ? $this->getV3RedeemedUserID($v2RedeemedUserID) : NULL,
+                    'factor_valuation' => $v2AvailableMerchantCode->factor_valuation,
+                    'medium_info_is_test' => $v2AvailableMerchantCode->medium_info_is_test,
+                    'redemption_datetime' => $v2AvailableMerchantCode->redemption_datetime,
+                    'purchased_by_v2' => TRUE,
+                    'tango_request_id' => $v2AvailableMerchantCode->tango_request_id,
+                    'tango_reference_order_id' => $v2AvailableMerchantCode->tango_reference_order_id,
+                    'v2_medium_info_id' => $v2AvailableMerchantCode->id,
+                    'virtual_inventory' => $v2AvailableMerchantCode->virtual_inventory,
+                    'v2_sync_status' => Giftcode::SYNC_STATUS_SUCCESS,
+                ];
+
+                $m3MediumInfo = MediumInfo::where('v2_medium_info_id', $v2AvailableMerchantCode->id)->first();
+                if (blank($m3MediumInfo)) {
+                    MediumInfo::create($v3MediumInfoData);
+                    $this->countCreatedMerchantCodes++;
+                }
+                else {
+                    $m3MediumInfo->update($v3MediumInfoData);
+                    $this->countUpdatedMerchantCodes++;
+                }
+
+            }
+        }
+    }
+
+    /**
+     * Get v3 merchant ID.
+     *
+     * @param $v2MerchantID
+     * @return mixed
+     * @throws Exception
+     */
+    public function getV3MerchantID($v2MerchantID)
+    {
+        try {
+            return $this->v3Merchants[$v2MerchantID];
+        } catch (\Exception $e)  {
+            throw new Exception("v2 merchant in v3 not found.");
+        }
+    }
+
+    /**
+     * Get v3 User ID.
+     *
+     * @param $v2UserID
+     * @return mixed
+     * @throws Exception
+     */
+    public function getV3RedeemedUserID($v2UserID)
+    {
+        $v2Sql = "SELECT u.* FROM users u WHERE u.account_holder_id = {$v2UserID} LIMIT 1";
+        $result = $this->v2db->select($v2Sql);
+        $v2User = reset($result);
+
+        $v3UserID = $v2User->v3_user_id ?? FALSE;
+        if (!$v3UserID) {
+            $v3User = User::where('email', $v2User->email)->first();
+            $v3UserID = $v3User->id ?? FALSE;
+        }
+
+        if (!$v3UserID) {
+            throw new Exception("Sync available codes for merchants is failed.");
+        }
+
+        return $v3UserID;
+    }
+
+    /**
+     * Migrate wrapper available gift codes.
+     */
+    public function availableGiftCodes()
+    {
+        $merchantTree = [];
+        try {
+            $v2MerchantHierarchyList = $this->read_list_hierarchy();
+
+            if (!blank($v2MerchantHierarchyList)) {
+                $v2MerchantHierarchy = sort_result_by_rank($merchantTree, $v2MerchantHierarchyList, 'merchant');
+                foreach ($v2MerchantHierarchy as $v2MerchantNode) {
+                    $this->migrateGiftCodeMerchant($v2MerchantNode);
+                }
+            }
+
+            return [
+                'success' => TRUE,
+                'info' => "created $this->countCreatedMerchantCodes items, updated $this->countUpdatedMerchantCodes items.",
+            ];
+        } catch(Exception $e) {
+            throw new Exception("Error migrating merchants. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+        }
+    }
+
+    /**
+     * Migrate available gift codes to a merchant.
+     *
+     * @param $v2MerchantNode
+     * @param  null  $parent_id
+     * @throws Exception
+     */
+    public function migrateGiftCodeMerchant($v2MerchantNode, $parent_id = null)
+    {
+        if(isset($v2MerchantNode['merchant']) ) {
+
+            $v2Merchant = $v2MerchantNode['merchant'];
+            $parentMerchant = Merchant::where('v2_account_holder_id', $v2Merchant->account_holder_id)->first();
+
+            $this->migrateAvailableCodes($parentMerchant);
+
+            if (
+                isset($v2MerchantNode['sub_merchant']) &&
+                !blank($v2MerchantNode['sub_merchant'])
+            ) {
+                foreach( $v2MerchantNode['sub_merchant'] as $v2SubMerchant ) {
+                    $this->migrateGiftCodeMerchant($v2SubMerchant, $parentMerchant->id);
+                }
+            }
+        }
+    }
+
 }

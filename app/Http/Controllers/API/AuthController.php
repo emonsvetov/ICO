@@ -14,6 +14,7 @@ use Illuminate\Auth\Events\Registered;
 use App\Events\OrganizationCreated;
 
 use App\Http\Requests\UserRegisterRequest;
+use App\Http\Requests\MobileLoginRequest;
 use App\Http\Requests\UserLoginRequest;
 use App\Services\DomainService;
 use App\Models\Organization;
@@ -185,6 +186,12 @@ class AuthController extends Controller
                 ],
                 422);
         }
+    }
+
+    public function mobileAppLogin(MobileLoginRequest $request)
+    {
+        $validated = $request->validated();
+        return (new \App\Services\LoginService)->mobileAppLogin( $validated );
     }
 
     public function generate2faSecret(TokenCreationRequest $request, UserService $service)

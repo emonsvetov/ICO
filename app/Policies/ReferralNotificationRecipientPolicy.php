@@ -32,10 +32,10 @@ class ReferralNotificationRecipientPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
-        return $authUser->isManagerToProgram( $program ) || $authUser->can('referral-create');
+        return $authUser->isManagerToProgram( $program ) || $authUser->isParticipantToProgram( $program ) || $authUser->can('referral-create');
     }
      /**
      * Determine whether the user can view all records of the model.
@@ -51,7 +51,7 @@ class ReferralNotificationRecipientPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('referral-list');
@@ -71,7 +71,7 @@ class ReferralNotificationRecipientPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('referral-view');
@@ -91,7 +91,7 @@ class ReferralNotificationRecipientPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('referral-update');
@@ -111,7 +111,7 @@ class ReferralNotificationRecipientPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('referral-delete');
