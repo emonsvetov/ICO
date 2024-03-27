@@ -126,7 +126,7 @@ class GenerateVirtualInventoryJob implements ShouldQueue
                             $giftcode['virtual_inventory'] = 1;
 
                             if(env('APP_ENV') != 'production'){
-                                $extra_args['medium_info_is_test'] = true;
+                                $giftcode['medium_info_is_test'] = true;
                             }
 
                             $length = 20;
