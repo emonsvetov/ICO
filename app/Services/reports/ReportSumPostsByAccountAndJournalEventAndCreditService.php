@@ -7,7 +7,11 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 	protected $is_credit = 1;
 
 	public function __construct($params) {
-		parent::__construct ( $params );
+	    parent::__construct ( $params );
+
+        $this->params[self::ACCOUNT_TYPES] = $params[self::ACCOUNT_TYPES];
+        $this->params[self::JOURNAL_EVENT_TYPES] = $params[self::JOURNAL_EVENT_TYPES];
+
 		if (isset ( $params [self::IS_CREDIT] )) {
 			$this->is_credit = $params [self::IS_CREDIT];
 		}
