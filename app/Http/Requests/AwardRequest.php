@@ -47,7 +47,7 @@ class AwardRequest extends FormRequest
             'email_template_id' => 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
             'event_id'          => 'mustComeFromModel:Event|matchWith:name|use:id',
             'documentationFile' => 'hide:true',
-            'user_id'           => 'hide:true',
+            'user_id'           => 'override:true|required|integer',
             'user_id.*'         => 'hide:true',
         ];
     }

@@ -31,9 +31,6 @@ class CSVimportService
     private array $hideRuleByTypeMapping = [
         'email' => ['award_users']
     ];
-    private array $mergeRulesByType = [
-        'AwardRequest' => ['award_users']
-    ];
 
     /*
     1. open file
@@ -113,6 +110,9 @@ class CSVimportService
                             $fieldsWithImportRules = $formRequestClass->importRules();
                         }
 
+                        // pr($formRequest);
+                        // pr($fieldsWithImportRules);
+
                         //Initialize to avoid "Undefined array key" below (line 136, may change)
                         if ( ! isset($saveData[$formRequest][$line])) {
                             $saveData[$formRequest][$line] = [];
@@ -143,13 +143,15 @@ class CSVimportService
                         // {
                         //     $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestClass->rules() );
                         // }
-
                         $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules, $formRequest);
-                        pr( $formRequestRules );
 
                         $validator = Validator::make($saveData[$formRequest][$line], $formRequestRules);
 
                         if ($validator->fails()) {
+                            pr($saveData[$formRequest][$line]);
+                            pr($formRequest);
+                            pr($formRequestRules);
+                            // exit;
                             $this->errors['Line ' . $line][][$formRequest] = $validator->errors()->toArray();
                         } else {
                             $saveData[$formRequest][$line] = $validator->validated();
@@ -226,15 +228,13 @@ class CSVimportService
     public function filterRules($rules, $importRules, $formRequest)
     {
 
-        // foreach( $this->mergeRulesByType as $formRequestType => $csvImportTypes)    {
-        //     if( $formRequestType === $formRequest)  {
-        //         if( in_array($this->csvImportType->type, $csvImportTypes) )    {
-        //             $rules = array_merge_recursive($rules, $importRules);
-        //         }
-        //     }
-        // }
-
         foreach ($importRules as $key => $importRule) {
+            if (str_contains($importRule, 'override:true')) {
+                $rules[$key] = rtrim(ltrim(str_replace('override:true','', $importRule), '|'), '|');
+            }
+            if (str_contains($importRule, 'hide:true')) {
+                unset($rules[$key]);
+            }
             if (str_contains($importRule, 'create:true')) {
                 unset($rules[$key]);
             }
@@ -813,7 +813,6 @@ class CSVimportService
 
                     $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules, $formRequest);
 
-                    pr($formRequestRules);
                     $validator = Validator::make($this->saveData[$formRequest][$this->line], $formRequestRules);
 
                     if ($validator->fails()) {
