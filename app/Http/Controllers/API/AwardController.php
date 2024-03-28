@@ -116,9 +116,13 @@ class AwardController extends Controller
 
     public function createAwardLevel(Request $request, $organization, $program, AwardService $awardService)
     {
-        $awardLevel = new AwardLevel();
-        $awardLevel->program_id = $request->program_id;
-        $awardLevel->program_account_holder_id = null;
+        if ($request->id){
+            $awardLevel = AwardLevel::find($request->id);
+        }else{
+            $awardLevel = new AwardLevel();
+            $awardLevel->program_id = $request->program_id;
+            $awardLevel->program_account_holder_id = null;
+        }
         $awardLevel->name = $request->name;
 
         return response([
