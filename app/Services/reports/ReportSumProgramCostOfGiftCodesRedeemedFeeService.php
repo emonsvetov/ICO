@@ -19,6 +19,7 @@ class ReportSumProgramCostOfGiftCodesRedeemedFeeService extends ReportServiceAbs
 	protected function getDataDateRange() {
 		$data = $this->calcByDateRange ( $this->getParams () );
 		// Organize the data table so it is easier to look stuff up later
+        $this->table = [];
 		foreach ( $data as $row ) {
 			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_PREMIUM_FEE] = $row->{self::FIELD_PREMIUM_FEE};
 		}
@@ -29,7 +30,10 @@ class ReportSumProgramCostOfGiftCodesRedeemedFeeService extends ReportServiceAbs
     {
 		$sql = "
                 SELECT
-                    COALESCE(SUM(mi.redemption_value - mi.sku_value), 0) AS " . self::FIELD_PREMIUM_FEE . "
+                    COALESCE(SUM(mi.redemption_value - mi.sku_value), 0) AS " . self::FIELD_PREMIUM_FEE . ",
+                    a.account_holder_id as account_holder_id,
+                    atypes.name as account_type_name,
+                    jet.type as journal_event_type
                     FROM
                         " . POSTINGS . " AS posts
                             LEFT JOIN
@@ -45,11 +49,14 @@ class ReportSumProgramCostOfGiftCodesRedeemedFeeService extends ReportServiceAbs
                             INNER JOIN
                         " . MEDIUM_INFO . " mi ON mi.id = merchant_posts.medium_info_id
                             INNER JOIN
+                            programs p ON p.account_holder_id = a.account_holder_id
+                            INNER JOIN
                         " . ACCOUNTS . " merchant_account ON merchant_account.id = merchant_posts.account_id
                             INNER JOIN
                         " . MERCHANTS . " m ON m.account_holder_id = merchant_account.account_holder_id
                         	INNER JOIN
-						" . PROGRAM_MERCHANT . " pm ON pm.merchant_id = m.account_holder_id AND pm.program_id IN ('" . implode ( "','", $this->params [self::PROGRAMS] ) . "')
+						" . PROGRAM_MERCHANT . " pm ON pm.merchant_id = m.id
+						AND pm.program_id = p.id
 	 "
                         ;
 		return $sql;

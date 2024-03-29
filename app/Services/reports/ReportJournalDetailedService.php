@@ -14,16 +14,17 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         $subreport_params [self::DATE_BEGIN] = $this->params [self::DATE_BEGIN];
         $subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 
-		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
+        $programAccountHolderIds = $this->params[self::PROGRAMS];
+        $programs = Program::whereIn('account_holder_id', $programAccountHolderIds)->get();
+        if ($programs) {
+            $programIds = $programs->pluck('id')->toArray();
+            $topLevelProgramData = $programs[0]->getRoot(['id', 'name']);
+            $topLevelProgram = Program::find($topLevelProgramData->id);
 
-			$total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
-            if ($this->params[self::SQL_OFFSET] && $this->params[self::SQL_LIMIT]) {
-                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false, $this->params[self::SQL_OFFSET], $this->params[self::SQL_LIMIT]);
-            } else {
-                $ranked_programs = Program::read_programs($this->params [self::PROGRAMS], false);
-            }
+            $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+            $programs = _tree_flatten($programs);
 
-			if ( $ranked_programs->isNotEmpty() ) {
+			if ( $programs->isNotEmpty() ) {
 				$account_holder_ids = [];
 				$defaultValues = [
 					'fixed_fee' => 0,
@@ -55,15 +56,17 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'program_funds_net_transfers' => 0,
 					'program_refunds_for_monies_pending' => 0
 				];
-				foreach ( $ranked_programs as $program ) {
-					array_push($account_holder_ids, $program->account_holder_id);
+				foreach ( $programs as $program ) {
+					$account_holder_ids[] = $program->account_holder_id;
                     $program = (object)$program->toArray();
-					$this->table[$program->account_holder_id] = $program;
+					$table[$program->account_holder_id] = $program;
                     foreach ($defaultValues as $key => $value) {
-                        $this->table[$program->account_holder_id]->$key = $value;
+                        $table[$program->account_holder_id]->$key = $value;
                     }
 				}
-				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees, they will be grouped by type, so we can pick which one we want
+
+				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees,
+                // they will be grouped by type, so we can pick which one we want
 				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
 				$subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
 				$subreport_params [ReportSumPostsByAccountAndJournalEventAndCreditService::IS_CREDIT] = 1;
@@ -109,7 +112,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
 					foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
 						// Get an easier reference to the program
-						$program = $this->table [$program_account_holder_id];
+						$program = $table [$program_account_holder_id];
 						if (is_array ( $programs_credits_report_table ) && count ( $programs_credits_report_table ) > 0) {
 							foreach ( $programs_credits_report_table as $account_type_name => $account ) {
 								if (is_array ( $account ) && count ( $account ) > 0) {
@@ -123,7 +126,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 													case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT :
 													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE :
 													case JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD :
-														$this->table[$program->account_holder_id]->points_purchased = $amount;
+														$table[$program->account_holder_id]->points_purchased = $amount;
 														break;
 												}
 												break;
@@ -131,63 +134,63 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 												switch ($journal_event_type) {
 													case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT :
 														if ($program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->transaction_fee = $amount;
+															$table[$program->account_holder_id]->transaction_fee = $amount;
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT :
 														if (! $program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->transaction_fee = $amount;
+															$table[$program->account_holder_id]->transaction_fee = $amount;
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_FIXED_FEE :
-														$this->table[$program->account_holder_id]->fixed_fee = $amount;
+														$table[$program->account_holder_id]->fixed_fee = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_SETUP_FEE :
-														$this->table[$program->account_holder_id]->setup_fee = $amount;
+														$table[$program->account_holder_id]->setup_fee = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_ADMIN_FEE :
-														$this->table[$program->account_holder_id]->admin_fee = $amount;
+														$table[$program->account_holder_id]->admin_fee = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONTHLY_USAGE_FEE :
-														$this->table[$program->account_holder_id]->usage_fee = $amount;
+														$table[$program->account_holder_id]->usage_fee = $amount;
 														break;
 												}
 												break;
 											case AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER :
 												switch ($journal_event_type) {
-                                                    case JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SAAS_FEES :
-                                                        $this->table [( int ) $program->account_holder_id]->program_pays_for_saas_fees = $amount;
+                                                    case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SAAS_FEES :
+                                                        $table [( int ) $program->account_holder_id]->program_pays_for_saas_fees = $amount;
                                                         break;
-                                                    case JOURNAL_EVENT_TYPES_CHARGE_SAAS_FEES :
-                                                        $this->table [( int ) $program->account_holder_id]->charge_program_for_saas_fees = $amount;
+                                                    case JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_SAAS_FEES :
+                                                        $table [( int ) $program->account_holder_id]->charge_program_for_saas_fees = $amount;
                                                         break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_DEPOSIT_FEE :
-														$this->table[$program->account_holder_id]->deposit_fee = $amount;
+														$table[$program->account_holder_id]->deposit_fee = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_CONVENIENCE_FEE :
-														$this->table[$program->account_holder_id]->convenience_fees = $amount;
+														$table[$program->account_holder_id]->convenience_fees = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_POINTS_TRANSACTION_FEE :
-														$this->table[$program->account_holder_id]->refunded_transaction_fee = $amount;
+														$table[$program->account_holder_id]->refunded_transaction_fee = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS :
-														$this->table[$program->account_holder_id]->reclaims = $amount;
+														$table[$program->account_holder_id]->reclaims = $amount;
 														break;
                                                     case JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS :
-                                                        $this->table [$program->account_holder_id]->award_credit_reclaims = $amount;
+                                                        $table [$program->account_holder_id]->award_credit_reclaims = $amount;
                                                         break;
 												}
 												break;
 											case AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE :
 												switch ($journal_event_type) {
 													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING :
-														$this->table[$program->account_holder_id]->deposits = $amount;
+														$table[$program->account_holder_id]->deposits = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES :
-														$this->table[$program->account_holder_id]->reclaims = $amount;
+														$table[$program->account_holder_id]->reclaims = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_MONIES_TRANSACTION_FEE :
-														$this->table[$program->account_holder_id]->refunded_transaction_fee = $amount;
+														$table[$program->account_holder_id]->refunded_transaction_fee = $amount;
 														break;
 												}
 												break;
@@ -196,36 +199,36 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
 													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
 														if ($program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
+															$table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
 														if (! $program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
+															$table[$program->account_holder_id]->discount_rebate_credited_to_program = $amount;
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_POINTS :
 														if ($program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+															$table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_EXPIRE_MONIES :
 														if (! $program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+															$table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS :
 														if ($program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+															$table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES :
 														if (! $program->invoice_for_awards) {
-															$this->table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
+															$table[$program->account_holder_id]->expiration_rebate_credited_to_program += $amount; // Add so expire and deactive are summed
 														}
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_TOTAL_SPEND_REBATE :
-														$this->table[$program->account_holder_id]->total_spend_rebate = $amount;
+														$table[$program->account_holder_id]->total_spend_rebate = $amount;
 														break;
 												}
 											break;
@@ -236,6 +239,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 						}
 					}
 				}
+
 				// TODO: Include deposit reversals and subtract from the deposits row
 				// Get all types of fees, etc where we are interested in them being debits
 				$subreport_params[ReportSumPostsByAccountAndJournalEventAndCreditService::IS_CREDIT] = 0;
@@ -264,7 +268,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				if (is_array ( $debits_report_table ) && count ( $debits_report_table ) > 0) {
 					foreach ( $debits_report_table as $program_account_holder_id => $programs_debits_report_table ) {
 						// Get an easier reference to the program
-						$program = $this->table [$program_account_holder_id];
+						$program = $table [$program_account_holder_id];
 						if (is_array ( $programs_debits_report_table ) && count ( $programs_debits_report_table ) > 0) {
 							foreach ( $programs_debits_report_table as $account_type_name => $account ) {
 								if (is_array ( $account ) && count ( $account ) > 0) {
@@ -277,12 +281,12 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
 													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
 														if ($program->invoice_for_awards) {
-															$this->table [( int ) $program->account_holder_id]->points_redeemed = $amount;
+															$table [( int ) $program->account_holder_id]->points_redeemed = $amount;
 														}
 													break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
 														if (! $program->invoice_for_awards) {
-															$this->table [( int ) $program->account_holder_id]->points_redeemed = $amount;
+															$table [( int ) $program->account_holder_id]->points_redeemed = $amount;
 														}
 													break;
 												}
@@ -291,7 +295,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 												switch ($journal_event_type) {
 													case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING :
 														if (! $program->invoice_for_awards) {
-															$this->table [( int ) $program->account_holder_id]->deposits -= $amount;
+															$table [( int ) $program->account_holder_id]->deposits -= $amount;
 														}
 													break;
 												}
@@ -301,25 +305,25 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 													case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_POINTS :
 														if ($program->invoice_for_awards) {
 															// Not sure if we need this as we aren't including payments that were made..
-															// $this->table[(int)$program->account_holder_id]->points_purchased -= $amount;
+															// $table[(int)$program->account_holder_id]->points_purchased -= $amount;
 														}
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_SETUP_FEE:
-                                                            $this->table[(int)$program->account_holder_id]->program_setup_fee -= $amount;
+                                                            $table[(int)$program->account_holder_id]->program_setup_fee -= $amount;
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_FIXED_FEE:
-                                                            $this->table[(int)$program->account_holder_id]->program_fixed_fee -= $amount;
-    //                                                        $this->table[(int)$program->account_holder_id]->fixed_fee_reversal = $amount;
+                                                            $table[(int)$program->account_holder_id]->program_fixed_fee -= $amount;
+    //                                                        $table[(int)$program->account_holder_id]->fixed_fee_reversal = $amount;
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE:
-                                                            $this->table[(int)$program->account_holder_id]->usage_fee -= $amount;
+                                                            $table[(int)$program->account_holder_id]->usage_fee -= $amount;
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE:
-                                                            $this->table[(int)$program->account_holder_id]->deposit_fee -= $amount;
-    //                                                        $this->table[(int)$program->account_holder_id]->deposit_fee_reversal = $amount;
+                                                            $table[(int)$program->account_holder_id]->deposit_fee -= $amount;
+    //                                                        $table[(int)$program->account_holder_id]->deposit_fee_reversal = $amount;
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_CONVENIENCE_FEE:
-                                                            $this->table[(int)$program->account_holder_id]->convenience_fees -= $amount;
-    //                                                        
+                                                            $table[(int)$program->account_holder_id]->convenience_fees -= $amount;
+    //
 													break;
 												}
 											break;
@@ -341,7 +345,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				if (is_array ( $cost_of_redeemed_report_table ) && count ( $cost_of_redeemed_report_table ) > 0) {
 					foreach ( $cost_of_redeemed_report_table as $program_account_holder_id => $programs_cost_of_redeemed_report_table ) {
 						// Get an easier reference to the program
-						$program = $this->table [$program_account_holder_id];
+						$program = $table [$program_account_holder_id];
 						if (is_array ( $programs_cost_of_redeemed_report_table ) && count ( $programs_cost_of_redeemed_report_table ) > 0) {
 							foreach ( $programs_cost_of_redeemed_report_table as $account_type_name => $account ) {
 								if (is_array ( $account ) && count ( $account ) > 0) {
@@ -358,12 +362,12 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 																	case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
 																	case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
 																		if ($program->invoice_for_awards) {
-																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_cost = $amount;
+																			$table [( int ) $program->account_holder_id]->codes_redeemed_cost = $amount;
 																		}
 																		break;
 																	case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
 																		if (! $program->invoice_for_awards) {
-																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_cost = $amount;
+																			$table [( int ) $program->account_holder_id]->codes_redeemed_cost = $amount;
 																		}
 																		break;
 																}
@@ -378,12 +382,12 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 																	case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES :
 																	case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING :
 																		if ($program->invoice_for_awards) {
-																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_premium = $amount;
+																			$table [( int ) $program->account_holder_id]->codes_redeemed_premium = $amount;
 																		}
 																		break;
 																	case JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES :
 																		if (! $program->invoice_for_awards) {
-																			$this->table [( int ) $program->account_holder_id]->codes_redeemed_premium = $amount;
+																			$table [( int ) $program->account_holder_id]->codes_redeemed_premium = $amount;
 																		}
 																		break;
 																}
@@ -411,9 +415,9 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				if (is_array ( $points_report_table ) && count ( $points_report_table ) > 0) {
 					foreach ( $points_report_table as $program_account_holder_id => $programs_points_report_table ) {
 						// Get an easier reference to the program
-						$program = $this->table [$program_account_holder_id];
+						$program = $table [$program_account_holder_id];
 						if (! $program->invoice_for_awards) {
-							$this->table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [AccountType::ACCOUNT_TYPE_MONIES_AWARDED] [JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT];
+							$table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [AccountType::ACCOUNT_TYPE_MONIES_AWARDED] [JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT];
 						}
 					}
 				}
@@ -426,25 +430,27 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				if (is_array ( $points_report_table ) && count ( $points_report_table ) > 0) {
 					foreach ( $points_report_table as $program_account_holder_id => $programs_points_report_table ) {
 						// Get an easier reference to the program
-						$program = $this->table [$program_account_holder_id];
+						$program = $table [$program_account_holder_id];
 						if ($program->invoice_for_awards) {
-							$this->table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [AccountType::ACCOUNT_TYPE_POINTS_AWARDED] [JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT];
+							$table [( int ) $program->account_holder_id]->points_purchased += $programs_points_report_table [AccountType::ACCOUNT_TYPE_POINTS_AWARDED] [JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT];
 						}
 					}
 				}
 
-				// Get the points awards
-				$subreport_params[self::ACCOUNT_TYPES] = [];
-				$subreport_params[self::JOURNAL_EVENT_TYPES] = [];
+				// Get the points awards @TODO: V2 is broken
+				$subreport_params[self::ACCOUNT_TYPES] = [AccountType::ACCOUNT_TYPE_POINTS_REDEEMED];
+				$subreport_params[self::JOURNAL_EVENT_TYPES] = [JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES];
 				$premium_fee = new ReportSumProgramCostOfGiftCodesRedeemedFeeService ( $subreport_params );
 				$premium_fee_report_table = $premium_fee->getTable ();
+
+
 
 				if (is_array ( $premium_fee_report_table ) && count ( $premium_fee_report_table ) > 0) {
 					foreach ( $premium_fee_report_table as $program_account_holder_id => $programs_points_report_table ) {
 						// Get an easier reference to the program
-						$program = $this->table [$program_account_holder_id];
+						$program = $table [$program_account_holder_id];
 						if ($program->invoice_for_awards) {
-							$this->table [( int ) $program->account_holder_id]->premium_fee += $programs_points_report_table ['Points Redeemed']['Redeem points for gift codes']['premium_fee'];
+							$table [( int ) $program->account_holder_id]->premium_fee += $programs_points_report_table ['Points Redeemed']['Redeem points for gift codes']['premium_fee'];
 						}
 					}
 				}
@@ -452,40 +458,50 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 		}
 
         //Remove entries with 0 total
-        foreach($this->table as $program_account_holder_id => $program) {
+        foreach($table as $program_account_holder_id => $program) {
             $rowTotal = 0;
             foreach($defaultValues as $key => $value) {
                 $rowTotal += $program->{$key};
             }
             if( $rowTotal < 0) {
-                unset($this->table[$program_account_holder_id]);
+                unset($table[$program_account_holder_id]);
             }
         }
 
         //Calculate and add "net_points_purchased"
-        foreach( $this->table as $i => $program) {
-            $this->table[$i]->net_points_purchased = $this->table[$i]->points_purchased - $this->table[$i]->reclaims - $this->table[$i]->award_credit_reclaims;
+        foreach( $table as $i => $program) {
+            $table[$i]->net_points_purchased = $table[$i]->points_purchased - $table[$i]->reclaims - $table[$i]->award_credit_reclaims;
         }
 		$temp = array();
-		foreach( $this->table as $i => $program) {
+		foreach( $table as $i => $program) {
 			array_push($temp, $program);
 		}
-		$this->table = $temp;
-		sort($this->table);
+		$table = $temp;
+		sort($table);
         $newTable = [];
-        foreach ($this->table as $key => $item) {
+
+        foreach ($table as $key => $item) {
             if (empty($item->dinamicPath)) {
                 $newTable[$item->id] = clone $item;
+
+                foreach ($defaultValues as $key => $value) {
+                    $newTable[$item->id]->$key = $this->amountFormat($item->$key);
+                }
             } else {
                 $tmpPath = explode(',', $item->dinamicPath);
                 if (isset($newTable[$tmpPath[0]])) {
-                    $newTable[$tmpPath[0]]->subRows[] = $item;
+                    $newTable = $this->tableToTree($newTable, $item, $tmpPath);
                 }
+
+                foreach ($defaultValues as $key => $value) {
+                    $newTable[$tmpPath[0]]->$key = $this->amountFormat($newTable[$tmpPath[0]]->$key + $this->amountFormat($item->$key));
+                }
+
             }
         }
         $this->table = [];
         $this->table['data'] = array_values($newTable);
-        $this->table['total'] = count($total_programs);
+        $this->table['total'] = count($newTable);
         return $this->table;
 	}
 
@@ -598,7 +614,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         $temp = array();
         foreach ($table['data'] as $key => $item) {
             array_push($temp, $item);
-            
+
             if (isset($item->subRows)) {
                 foreach($item->subRows as $sub => $subItem) {
                     array_push($temp, $subItem);
