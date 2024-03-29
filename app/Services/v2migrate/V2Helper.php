@@ -1044,6 +1044,23 @@ class V2Helper
     }
 
     /**
+     * Get v2 leader board events.
+     */
+    public function getV2LeaderBoardEvents($v2LeaderBoardID)
+    {
+        $v2Sql = "
+            SELECT
+                le.*
+            FROM
+                leaderboards_events le
+            WHERE
+                le.`leaderboard_id` = {$v2LeaderBoardID}
+            ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
      * Get v2 Leaderboards goals.
      *
      * @param $v2LeaderBoardID

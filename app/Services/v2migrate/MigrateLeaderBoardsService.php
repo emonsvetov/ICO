@@ -1,6 +1,7 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Models\Event;
 use App\Models\GoalPlan;
 use App\Models\InvoiceType;
 use App\Models\Leaderboard;
@@ -114,6 +115,29 @@ class MigrateLeaderBoardsService extends MigrationService
                 $v3LeaderBoard->update($v3LeaderBoardData);
                 $this->countUpdatedLeaderBoards++;
             }
+
+            $this->migrateLeaderBoardEvents($v3LeaderBoard);
         }
     }
+
+    /**
+     * Migrate leader board events.
+     *
+     * @param $v3LeaderBoard
+     */
+    public function migrateLeaderBoardEvents($v3LeaderBoard)
+    {
+        $v2LeaderBoardEvents = $this->getV2LeaderBoardEvents($v3LeaderBoard->v2_leaderboard_id);
+        if (!empty($v2LeaderBoardEvents)) {
+            $v2EventIDs = [];
+            foreach ($v2LeaderBoardEvents as $v2LeaderBoardEvent) {
+                $v2EventIDs[] = $v2LeaderBoardEvent->event_template_id;
+            }
+
+            $v3Events = Event::whereIn('v2_event_id', $v2EventIDs)->get();
+            $v3LeaderBoard->events()->sync($v3Events);
+
+        }
+    }
+
 }
