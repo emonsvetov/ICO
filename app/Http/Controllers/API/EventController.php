@@ -44,7 +44,7 @@ class EventController extends Controller
         $event->eventIcon;
         $event->eventType;
         $event->eventAwardsLevel = $programEventService->getEventAwardsLevel($event->id);
-        if ($event->eventAwardsLevel){
+        if (count($event->eventAwardsLevel)) {
             $event->max_awardable_amount = $event->eventAwardsLevel[0]->amount;
         }
 
