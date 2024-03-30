@@ -290,9 +290,4 @@ class LeaderboardService
         }
     }
 
-    public function read_event_leaders_awards_by_user()
-    {
-
-    }
-
 }
