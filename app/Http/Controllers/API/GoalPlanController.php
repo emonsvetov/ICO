@@ -26,7 +26,7 @@ class GoalPlanController extends Controller
         if ($program->isShellProgram()) {
             return response(['errors' => "Invalid program id passed, you cannot create a goal plan in a shell program"], 422);
         }
-        
+
         $data = $request->validated();
         try{
             $response= $goalPlanService->create($data,$organization,$program);
@@ -50,7 +50,7 @@ class GoalPlanController extends Controller
         ];
 
         $status =  request()->get('status');
-        
+
         if( $status )
         {
             $status_id = GoalPlan::getStatusIdByName($status);
@@ -71,7 +71,7 @@ class GoalPlanController extends Controller
 
         return response( [] );
     }
-    
+
     public function show( Organization $organization, Program $program, GoalPlan $goalPlan )
     {
         if ( !( $organization->id == $program->organization_id && $program->id == $goalPlan->program_id ) )
@@ -81,10 +81,16 @@ class GoalPlanController extends Controller
 
         if ( $goalPlan )
         {
-            $goalPlan->load('GoalPlanType');
-            return response( $goalPlan );
+            $result = $goalPlan->load('GoalPlanType', 'events')->toArray();
+
+            if (!empty($result['events'])) {
+                foreach ($result['events'] as $event) {
+                    $result['event' . $event['event_id']] = TRUE;
+                }
+            }
+
+            return response( $result );
         }
-    
 
         return response( [] );
     }
@@ -96,10 +102,11 @@ class GoalPlanController extends Controller
         }
         try{
         $data = $request->validated();
-            
+
         $response= $goalPlanService->editGoalPlan($goalPlan, $data + [
-            'organization_id' => $organization->id, 
-            'program_id' => $program->id
+            'organization_id' => $organization->id,
+            'program_id' => $program->id,
+            'events' => $request->get('events'),
         ], $program, $organization);
        // $response = $update_goal_plan;
         /*if (!empty($goalplan->id)) { //already done on service

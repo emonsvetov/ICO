@@ -299,8 +299,7 @@ class ReportHelper
         return $query->get();
     }
 
-
-    public function sumPostsByAccountAndJournalEventAndCredit(
+    public function sumProgramAwardPoints(
         string $dateBegin,
         string $dateEnd,
         array $args = []
@@ -349,6 +348,67 @@ class ReportHelper
         }
 
         $query->groupBy('programs.account_holder_id');
+        $query->groupBy('account_types.name');
+        $query->groupBy('journal_event_types.type');
+        if ($months){
+            $query->groupBy('month');
+        }
+
+        $result = $query->get();
+        $table = [];
+        foreach ($result as $row) {
+            if ($months){
+                $table[$row->account_holder_id][$row->account_type_name][$row->journal_event_type][$row->month] = $row->value;
+            } else {
+                $table[$row->account_holder_id][$row->account_type_name][$row->journal_event_type] = $row->value;
+            }
+        }
+
+        return $table;
+    }
+
+    public function sumPostsByAccountAndJournalEventAndCredit(
+        string $dateBegin,
+        string $dateEnd,
+        array $args = []
+    ): array {
+        $accountTypes = $args['accountTypes'] ?? null;
+        $journalEventTypes = $args['journalEventTypes'] ?? null;
+        $isCredit = $args['isCredit'] ?? false;
+        $programAccountHolderIds = $args['programAccountHolderIds'] ?? false;
+        $months = $args['months'] ?? false;
+
+        $query = Account::selectRaw("
+            COALESCE(SUM(postings.posting_amount * postings.qty), 0) AS value,
+            journal_event_types.type as journal_event_type,
+            account_types.name as 'account_type_name',
+            accounts.account_holder_id
+        ");
+
+        if ($months){
+            $query->addSelect(
+                DB::raw("MONTH(`postings`.created_at) as 'month'")
+            );
+        }
+
+        $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->join('postings', 'postings.account_id', '=', 'accounts.id');
+        $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
+        $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
+
+        $query->whereBetween('postings.created_at', [$dateBegin, $dateEnd]);
+        $query->where('postings.is_credit', '=', (bool)$isCredit);
+        if ($accountTypes) {
+            $query->whereIn('account_types.name', $accountTypes);
+        }
+        if ($journalEventTypes) {
+            $query->whereIn('journal_event_types.type', $journalEventTypes);
+        }
+        if ($programAccountHolderIds) {
+            $query->whereIn('accounts.account_holder_id', $programAccountHolderIds);
+        }
+
+        $query->groupBy('accounts.account_holder_id');
         $query->groupBy('account_types.name');
         $query->groupBy('journal_event_types.type');
         if ($months){

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Notifications\ReferralNotification;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -35,5 +36,11 @@ class ReferralNotificationRecipient extends BaseModel
             ->where('program_id', $program->id);
         return $query->orderBy('referral_notification_recipient_name')
             ->get();
+    }
+
+    public function sendReferralNotification($notification)
+    {
+        $user = User::where('email', $this->referral_notification_recipient_email)->first();
+        $user->notify(new ReferralNotification($notification));
     }
 }

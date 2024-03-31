@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Models\AwardLevel;
 use App\Models\Program;
 use App\Models\Role;
 use App\Services\reports\ReportServiceAbstract;
@@ -64,6 +65,13 @@ class UserController extends Controller
     {
         $user->load('roles');
         $user->programRoles = $user->compileProgramRoles($user->getAllProgramRoles());
+        $awardLevel = AwardLevel::find($user->award_level);
+        if ($awardLevel) {
+            $user->award_level_nane = $awardLevel->name;
+        } else {
+            $user->award_level_nane = '';
+        }
+
         return new UserResource($user);
     }
 

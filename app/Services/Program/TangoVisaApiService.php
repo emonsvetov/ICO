@@ -86,14 +86,18 @@ class TangoVisaApiService
                     $code = $result['reward']['credentials']['Redemption Link'];
                 }elseif(isset($result['reward']['credentials']['Redemption URL'])){
                     $code = $result['reward']['credentials']['Redemption URL'];
+                }elseif(isset($result['reward']['credentials']['Landing Page'])){
+                    $code = $result['reward']['credentials']['Landing Page'];
                 }elseif(isset($result['reward']['credentials']['Gift Code'])){
                     $code = $result['reward']['credentials']['Gift Code'];
                 }elseif(isset($result['reward']['credentials']['E-Gift Card Number'])){
                     $code = $result['reward']['credentials']['E-Gift Card Number'];
                 }elseif(isset($result['reward']['credentials']['Card Number'])){
                     $code = $result['reward']['credentials']['Card Number'];
+                }elseif(isset($result['reward']['credentials']['Code'])){
+                    $code = $result['reward']['credentials']['Code'];
                 }else{
-                    throw new RuntimeException ('Internal query failed, please contact API administrator', 500 );
+                    throw new Exception ('Internal query failed, please contact API administrator', 500 );
                 }
 
                 if(isset($result['reward']['credentials']['Security Code'])){

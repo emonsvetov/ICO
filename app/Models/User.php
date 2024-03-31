@@ -189,6 +189,11 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return $this->unit_numbers()->where('user_id', $this->id)->first();
     }
 
+    public function award_levels()
+    {
+        return $this->hasMany(AwardLevel::class);
+    }
+
     public function readAvailableBalance( $program, $user = null )  {
         $program_id = self::extractId($program);
         if( $user ) {

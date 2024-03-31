@@ -14,17 +14,15 @@ use Exception;
 class MigrateInvoiceService extends MigrationService
 {
 
-    private ProgramService $programService;
 
     public $countUpdatedInvoices = 0;
     public $countCreateInvoices = 0;
     public $v2InvoiceTypes = [];
     public $v3InvoiceTypes = [];
 
-    public function __construct(ProgramService $programService)
+    public function __construct()
     {
         parent::__construct();
-        $this->programService = $programService;
     }
 
     /**
@@ -68,11 +66,8 @@ class MigrateInvoiceService extends MigrationService
      */
     public function getSubPrograms($v3Program)
     {
-        $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
-        $subPrograms = $programs[0]["children"] ?? FALSE;
-
-        $v3SubProgram = Program::find($v3Program->id);
-        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? FALSE;
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
 
         if ($v2AccountHolderID) {
             $this->syncInvoices($v2AccountHolderID);
@@ -112,15 +107,15 @@ class MigrateInvoiceService extends MigrationService
     {
         $v2Invoices = $this->getV2Invoices($v2AccountHolderID);
 
+        $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
+        $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
+
+        // Checking if v3 program is exists.
+        if (empty($v3AccountHolderID)) {
+            throw new Exception("v3 program with ID: " . $v2AccountHolderID . " not found.");
+        }
+
         foreach ($v2Invoices as $v2Invoice) {
-
-            $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
-            $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
-
-            // Checking if v3 program is exists.
-            if (empty($v3AccountHolderID)) {
-                throw new Exception("v3 program with ID: " . $v2AccountHolderID . " not found.");
-            }
 
             $v3InvoiceData = [
                 'program_id' => $v3Program->id,

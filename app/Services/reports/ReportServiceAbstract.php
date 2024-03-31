@@ -11,6 +11,7 @@ abstract class ReportServiceAbstract
     const DATE_FROM = 'dateFrom';
     const DATE_TO = 'dateTo';
     const YEAR = 'year';
+    const TARGET_PARTICIPANT = 'targetParticipant';
     const MONTH = 'month';
     const CODES = 'codes';
     const INVENTORY_TYPE = 'inventoryType';
@@ -118,41 +119,27 @@ abstract class ReportServiceAbstract
         $this->params[self::YEAR] = $params[self::YEAR] ?? null;
         $this->params[self::MONTH] = $params[self::MONTH] ?? null;
         $this->params[self::CODES] = $params[self::CODES] ?? null;
+        $this->params[self::TARGET_PARTICIPANT] = $params[self::TARGET_PARTICIPANT] ?? null;
         if (isset($params[self::ACCOUNT_TYPES])) {
             $temp = array();
             foreach( $params[self::ACCOUNT_TYPES] as $param) {
-                array_push($temp, $param[0]);
+                $temp[] = is_array($param) ? $param[0] : $param;
             }
             $this->params[self::ACCOUNT_TYPES] = $temp;
         }
         else {
             $this->params[self::ACCOUNT_TYPES] = null;
         }
-        // $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
-        //     is_array ( $params[self::ACCOUNT_TYPES] ) ?
-        //     foreach( $params[self::ACCOUNT_TYPES] as $param) {
-        //         array_push($temp, $param[0]);
-        //     }
-        //     :
-        //     array (
-        //         $params[self::ACCOUNT_TYPES]
-        //     )
-        // ) : null;
         if (isset($params[self::JOURNAL_EVENT_TYPES])) {
             $temp = array();
             foreach( $params[self::JOURNAL_EVENT_TYPES] as $param) {
-                array_push($temp, $param[0]);
+                $temp[] = is_array($param) ? $param[0] : $param;
             }
             $this->params[self::JOURNAL_EVENT_TYPES] = $temp;
         }
         else {
             $this->params[self::JOURNAL_EVENT_TYPES] = null;
         }
-        // $this->params[self::JOURNAL_EVENT_TYPES] = isset($params[self::JOURNAL_EVENT_TYPES]) ? (
-        //     is_array ( $params[self::JOURNAL_EVENT_TYPES] ) ? $params[self::JOURNAL_EVENT_TYPES] : array (
-        //         $params[self::JOURNAL_EVENT_TYPES]
-        //     )
-        // ) : null;
 
         $this->params[self::INVENTORY_TYPE] = $params[self::INVENTORY_TYPE] ?? null;
         $this->params[self::KEYWORD] = $params[self::KEYWORD] ?? null;
@@ -411,4 +398,19 @@ abstract class ReportServiceAbstract
     public function amountFormat($value){
         return number_format((float)$value, 2, '.', '');
     }
+
+    public function tableToTree($newTable, $item, $path, $level = 0)
+    {
+        $first = array_shift($path);
+        $tableKey = $level === 0 ? $first : array_search($first, array_column($newTable, 'id'));
+
+        if (count($path) === 0) {
+            $newTable[$tableKey]->subRows[] = $item;
+        } else {
+            $level++;
+            $newTable[$tableKey]->subRows = $this->tableToTree($newTable[$tableKey]->subRows, $item, $path, $level);
+        }
+        return $newTable;
+    }
+
 }

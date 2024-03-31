@@ -18,12 +18,12 @@ class ReportSumProgramAwardsMoniesService extends ReportSumProgramAwardsPointsSe
 			$where [] = "posts.created_at <= '{$this->params[self::DATE_END]}'";
 		}
 		if (is_array ( $this->params [self::PROGRAMS] ) && count ( $this->params [self::PROGRAMS] ) > 0) {
-			$where [] = "p.id IN (" . implode ( ',', $this->params [self::PROGRAMS] ) . ")";
+			$where [] = "p.account_holder_id IN (" . implode ( ',', $this->params [self::PROGRAMS] ) . ")";
 		}
 		if (isset ($this->params [self::YEAR]) && $this->params [self::YEAR] > 0) {
 			$where [] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
 		}
-		
+
 		return $where;
 	}
 }

@@ -21,7 +21,7 @@ class ReportDepositTransfersService extends ReportServiceAbstract
         $query->join('accounts', 'accounts.id', '=', 'postings.account_id');
         $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
         $query->join('programs as from_program', 'from_program.account_holder_id', '=', 'accounts.account_holder_id');
-        $query->leftJoin('users', 'users.account_holder_id', '=', 'journal_events.prime_account_holder_id');
+        $query->leftJoin('users', 'users.id', '=', 'journal_events.prime_account_holder_id');
         $query->join('postings as to_postings', function($join) {
             $join->on('to_postings.journal_event_id', '=', 'postings.journal_event_id');
             $join->on('to_postings.is_credit', '=', DB::raw("'1'"));
@@ -41,7 +41,7 @@ class ReportDepositTransfersService extends ReportServiceAbstract
             users.last_name,
             CONCAT(`users`.first_name, ' ', `users`.last_name) as name,
             users.email,
-            " . DB::raw("DATE_FORMAT(postings.created_at, '%d/%m/%Y') AS posting_timestamp") . "
+            " . DB::raw("DATE_FORMAT(postings.created_at, '%m/%d/%Y') AS posting_timestamp") . "
         "
         );
 

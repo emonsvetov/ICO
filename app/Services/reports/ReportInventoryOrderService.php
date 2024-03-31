@@ -39,7 +39,8 @@ class ReportInventoryOrderService extends ReportServiceAbstract
             $table[$row->account_holder_id]->optimal_values[$reportRow->denomination] = $reportRow;
         }
         foreach ($table as $merchantId => $values) {
-            $inventory = MediumInfo::getRedeemableDenominationsByMerchant((int)$merchantId);
+            $merchant = Merchant::where('account_holder_id', $merchantId)->first();
+            $inventory = MediumInfo::getRedeemableDenominationsByMerchant((int)$merchant->id);
             foreach ($inventory as $inventoryRow) {
                 $skuValue = number_format($inventoryRow->sku_value, 2);
                 if (!isset ($values->optimal_values[$skuValue])) {

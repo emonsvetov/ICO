@@ -11,7 +11,7 @@ class ReferralController extends Controller
     public function store(ReferralRequest $request, Organization $organization, Program $program )
     {
         $data = $request->validated();
-        $newReferral = (new \App\Services\ReferralService)->refer($program,
+        $newReferral = (new \App\Services\ReferralService)->refer($organization, $program,
             $data +
             [
                 'organization_id' => $organization->id,
