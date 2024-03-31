@@ -2,17 +2,10 @@
 
 namespace App\Services\v2migrate;
 
-use App\Models\EventXmlData;
 use App\Models\SocialWallPost;
-use App\Models\User;
-use App\Models\UserV2User;
-use Illuminate\Support\Facades\DB;
 use Exception;
 
-use App\Models\JournalEvent;
 use App\Models\Program;
-use App\Models\Account;
-use App\Models\Posting;
 
 class MigrateSocialWallPostService extends MigrationService
 {
@@ -35,7 +28,7 @@ class MigrateSocialWallPostService extends MigrationService
         }
         $programArgs = ['program' => $v2AccountHolderID];
 
-        $this->printf("Starting posting migration\n\n",);
+        $this->printf("Starting Social Wall Post migration\n\n",);
         $v2RootPrograms = $this->read_list_all_root_program_ids($programArgs);
         if (!$v2RootPrograms) {
             throw new Exception("No program found. v2AccountHolderID: {$v2AccountHolderID}");
@@ -158,7 +151,7 @@ class MigrateSocialWallPostService extends MigrationService
         $this->printf("SocialWallPost done: {$v3SocialWallPost->id}. Count= " . count($this->importedSocialWallPosts) . " \n\n");
 
         if ($v3SocialWallPost) {
-//            $this->addV2SQL(sprintf("UPDATE `social_wall_posts` SET `v3_id`=%d WHERE `id`=%d", $v3SocialWallPost->id, $v2SocialWallPost->id));
+            $this->addV2SQL(sprintf("UPDATE `social_wall_posts` SET `v3_id`=%d WHERE `id`=%d", $v3SocialWallPost->id, $v2SocialWallPost->id));
             $this->importedSocialWallPosts[] = $v3SocialWallPost->id;
         }
     }

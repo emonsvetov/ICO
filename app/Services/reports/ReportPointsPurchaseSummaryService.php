@@ -322,20 +322,6 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         return [];
     }
 
-    private function tableToTree($newTable, $item, $path, $level = 0)
-    {
-        $first = array_shift($path);
-        $tableKey = $level === 0 ? $first : array_search($first, array_column($newTable, 'id'));
-
-        if (count($path) === 0) {
-            $newTable[$tableKey]->subRows[] = $item;
-        } else {
-            $level++;
-            $newTable[$tableKey]->subRows = $this->tableToTree($newTable[$tableKey]->subRows, $item, $path, $level);
-        }
-        return $newTable;
-    }
-
     public function getCsvHeaders(): array
     {
         return [

@@ -1,9 +1,12 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Models\Event;
 use App\Models\GoalPlan;
 use App\Models\InvoiceType;
+use App\Models\JournalEvent;
 use App\Models\Leaderboard;
+use App\Models\LeaderboardJournalEvent;
 use App\Models\Program;
 use App\Services\ProgramService;
 use Exception;
@@ -114,6 +117,55 @@ class MigrateLeaderBoardsService extends MigrationService
                 $v3LeaderBoard->update($v3LeaderBoardData);
                 $this->countUpdatedLeaderBoards++;
             }
+
+            $this->migrateLeaderBoardEvents($v3LeaderBoard);
+            $this->migrateLeaderboardJournalEvents($v3LeaderBoard);
         }
     }
+
+    /**
+     * Migrate leader board events.
+     *
+     * @param $v3LeaderBoard
+     */
+    public function migrateLeaderBoardEvents($v3LeaderBoard)
+    {
+        $v2LeaderBoardEvents = $this->getV2LeaderBoardEvents($v3LeaderBoard->v2_leaderboard_id);
+        if (!empty($v2LeaderBoardEvents)) {
+            $v2EventIDs = [];
+            foreach ($v2LeaderBoardEvents as $v2LeaderBoardEvent) {
+                $v2EventIDs[] = $v2LeaderBoardEvent->event_template_id;
+            }
+
+            $v3Events = Event::whereIn('v2_event_id', $v2EventIDs)->get();
+            $v3LeaderBoard->events()->sync($v3Events);
+        }
+    }
+
+    /**
+     * Migrate leader board journal events.
+     *
+     * @param $v3LeaderBoard
+     */
+    public function migrateLeaderboardJournalEvents($v3LeaderBoard)
+    {
+        $v2LeaderBoardJournalEvents = $this->getV2LeaderBoardJournalEvents($v3LeaderBoard->v2_leaderboard_id);
+        if (!empty($v2LeaderBoardJournalEvents)) {
+            $v2JournalEventIDs = [];
+            foreach ($v2LeaderBoardJournalEvents as $v2LeaderBoardJournalEvent) {
+                $v2JournalEventIDs[] = $v2LeaderBoardJournalEvent->journal_event_id;
+            }
+
+            $v3JournalEvents = JournalEvent::whereIn('v2_journal_event_id', $v2JournalEventIDs)->get();
+            if (!empty($v3JournalEvents)) {
+                foreach ($v3JournalEvents as $v3JournalEvent) {
+                    LeaderboardJournalEvent::create([
+                        'leaderboard_id' => $v3LeaderBoard->id,
+                        'journal_event_id' => $v3JournalEvent->id,
+                    ]);
+                }
+            }
+        }
+    }
+
 }

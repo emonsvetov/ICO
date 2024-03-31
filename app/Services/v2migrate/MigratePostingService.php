@@ -3,6 +3,7 @@
 namespace App\Services\v2migrate;
 
 use App\Models\EventXmlData;
+use App\Models\Merchant;
 use App\Models\User;
 use App\Models\UserV2User;
 use Illuminate\Support\Facades\DB;
@@ -72,6 +73,7 @@ class MigratePostingService extends MigrationService
                 }
             }
         }
+        $accountHolderIds = array_unique($accountHolderIds);
 
         $this->migratePostings($accountHolderIds);
     }
@@ -81,7 +83,13 @@ class MigratePostingService extends MigrationService
      */
     public function migratePostings($accountHolderIds)
     {
-        $v2Data = $this->getPostingsByAccountIds($accountHolderIds);
+        $journalEvents = $this->getJournalEventsByIds($accountHolderIds);
+        $journalEventIds = [];
+        foreach ($journalEvents as $journalEvent){
+            $journalEventIds[] = $journalEvent->id;
+        }
+
+        $v2Data = $this->getPostingsByJournalEventIds($journalEventIds);
 
         foreach ($v2Data as $item) {
             $this->syncOrCreatePosting($item);

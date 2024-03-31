@@ -57,6 +57,41 @@ class LeaderboardService
         return $leaderboards;
     }
 
+    public function readEventLeadersAwardsByUser($leaderboardID,  $userID)
+    {
+        $query = DB::table('leaderboards');
+        $query->join('leaderboard_journal_event',
+            'leaderboard_journal_event.leaderboard_id', '=', 'leaderboards.id');
+        $query->join('journal_events', 'journal_events.id', '=',
+            'leaderboard_journal_event.journal_event_id');
+        $query->join('event_xml_data AS exd', 'exd.id', '=', 'journal_events.event_xml_data_id');
+        $query->join('journal_event_types', 'journal_event_types.id', '=',
+            'journal_events.journal_event_type_id');
+        $query->join('postings', 'postings.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts', 'accounts.id', '=', 'postings.account_id');
+        $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
+        $query->join('programs', 'programs.id', '=', 'leaderboards.program_id');
+        $query->join('users', 'users.account_holder_id', '=', 'accounts.account_holder_id');
+        $query->join('users as fusers', 'fusers.account_holder_id', '=', 'exd.awarder_account_holder_id');
+        $query->where('leaderboards.id', '=', $leaderboardID);
+        $query->where('users.account_holder_id', '=', $userID);
+        $query->addSelect(
+            DB::raw("
+                    exd.name as `event`,
+                    exd.award_level_name as `award_level`,
+                    DATE_FORMAT(journal_events.created_at, '%m/%d/%Y') as `date`,
+                    CONCAT(users.first_name, ' ', users.last_name) as `to`,
+                    CONCAT(fusers.first_name, ' ', fusers.last_name) as `from`,
+                    exd.referrer as `referrer`,
+                    journal_events.notes as `notes`,
+                    (programs.factor_valuation * postings.posting_amount) as `value`,
+                    postings.posting_amount as `dollar_value`
+                    ")
+        );
+
+        return $query->get();
+    }
+
     public function readEventLeadersByAwards(int $leaderboardId, int $limit, int $offset)
     {
         DB::statement(DB::raw('SET @i= 0;'));

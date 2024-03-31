@@ -514,6 +514,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Leaderboard Leaders
     Route::get('/v1/organization/{organization}/program/{program}/leaderboard-leaders',[App\Http\Controllers\API\LeaderboardLeadersController::class, 'index'])->middleware('can:viewAny,App\LeaderboardLeaders,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/user/{user}/leaderboard/{leaderboard}/event-leaders-awards',[App\Http\Controllers\API\LeaderboardLeadersController::class, 'readEventLeadersAwardsByUser'])->middleware('can:viewAny,App\LeaderboardLeaders,organization,program');
 
     // LeaderboardType
 

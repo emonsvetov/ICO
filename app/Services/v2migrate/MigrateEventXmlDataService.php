@@ -82,7 +82,7 @@ class MigrateEventXmlDataService extends MigrationService
     public function syncOrCreateEventXmlData($v2Data, $v3Program)
     {
         $userV2User = UserV2User::where('v2_user_account_holder_id', $v2Data->awarder_account_holder_id)->first();
-        $v3UserTmp = $userV2User ? User::find($userV2User->user_id)->first() : null;
+        $v3UserTmp = $userV2User ? User::where('id', $userV2User->user_id)->first() : null;
         if (!$v3UserTmp) {
             $v2User = $this->v2GetUserById($v2Data->awarder_account_holder_id);
             $v3UserTmp = $this->migrateUsersService->migrateOnlyUser($v2User, $v3Program);

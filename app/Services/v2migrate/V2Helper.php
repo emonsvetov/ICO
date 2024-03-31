@@ -933,6 +933,76 @@ class V2Helper
         return $this->v2db->select($sql);
     }
 
+    public function getJournalEventsByIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    je.id
+            FROM
+                accounts
+                JOIN postings on postings.account_id=accounts.id
+                JOIN journal_events je ON je.id=postings.journal_event_id
+                LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id
+                LEFT JOIN event_xml_data on event_xml_data.id = je.event_xml_data_id
+                LEFT JOIN medium_info on medium_info.id = postings.medium_info_id
+            WHERE
+                accounts.account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+            GROUP BY
+                je.id
+		";
+        return $this->v2db->select($sql);
+    }
+
+    public function getPostingsByJournalEventIds(array $journalEventIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    postings.id,
+			    postings.qty,
+			    postings.posting_amount,
+			    postings.is_credit,
+			    postings.posting_timestamp,
+                je.v3_journal_event_id,
+                users.account_holder_id AS user_account_holder_id,
+                users.v3_user_id,
+                event_xml_data.v3_id as event_xml_data_v3_id,
+			    accounts.v3_account_id,
+			    medium_info.v3_medium_info_id,
+			    v3_posting_id
+            FROM
+                accounts
+                JOIN postings on postings.account_id=accounts.id
+                JOIN journal_events je ON je.id=postings.journal_event_id
+                LEFT JOIN users on users.account_holder_id=je.prime_account_holder_id
+                LEFT JOIN event_xml_data on event_xml_data.id = je.event_xml_data_id
+                LEFT JOIN medium_info on medium_info.id = postings.medium_info_id
+            WHERE
+                je.id IN (" . implode(',', $journalEventIds) . ")
+                AND accounts.v3_account_id IS NOT NULL
+		";
+        return $this->v2db->select($sql);
+    }
+
+    public function getProgramMerchantsByAccountIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    program_merchant.*,
+			    m.v3_merchant_id,
+			    p.v3_program_id
+            FROM
+                program_merchant
+                JOIN merchants m ON m.account_holder_id=program_merchant.merchant_id
+                JOIN programs p ON p.account_holder_id=program_merchant.program_id
+            WHERE
+                p.account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+		";
+        return $this->v2db->select($sql);
+    }
+
     /**
      * v2 read_list_invoices_by_program.
      *
@@ -1044,6 +1114,40 @@ class V2Helper
     }
 
     /**
+     * Get v2 leader board events.
+     */
+    public function getV2LeaderBoardEvents($v2LeaderBoardID)
+    {
+        $v2Sql = "
+            SELECT
+                le.*
+            FROM
+                leaderboards_events le
+            WHERE
+                le.`leaderboard_id` = {$v2LeaderBoardID}
+            ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get v2 leader board journal events.
+     */
+    public function getV2LeaderBoardJournalEvents($v2LeaderBoardID)
+    {
+        $v2Sql = "
+            SELECT
+                lje.*
+            FROM
+                leaderboards_journal_events lje
+            WHERE
+                lje.`leaderboard_id` = {$v2LeaderBoardID}
+            ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
      * Get v2 Leaderboards goals.
      *
      * @param $v2LeaderBoardID
@@ -1074,6 +1178,23 @@ class V2Helper
             SELECT gp.*
             FROM goal_plans gp
             WHERE gp.program_account_holder_id = {$v2AccountHolderID}
+        ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
+     * Get V2 events goal plan.
+     *
+     * @param $v2GoalPlanID
+     * @return array
+     */
+    public function getV2GoalPlanEvents($v2GoalPlanID)
+    {
+        $v2Sql = "
+            SELECT gpe.*
+            FROM goal_plans_events gpe
+            WHERE gpe.goal_plans_id = {$v2GoalPlanID}
         ";
 
         return $this->v2db->select($v2Sql);
@@ -1594,6 +1715,26 @@ class V2Helper
 		";
         $result = $this->v2db->select($sql);
         return $result[0] ?? null;
+    }
+
+    public function getBudgetsByIds(array $accountHolderIds): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+        $sql = "
+			SELECT
+			    program_budget.*,
+			    programs.v3_program_id AS v3_program_id
+            FROM
+                program_budget
+                LEFT JOIN programs on programs.account_holder_id = program_budget.program_account_holder_id
+            WHERE
+                program_budget.program_account_holder_id IN (" . implode(',', $accountHolderIds) . ")
+            GROUP BY
+                program_budget.program_account_holder_id
+            ORDER BY
+                program_budget.year ASC
+		";
+        return $this->v2db->select($sql);
     }
 
 }
