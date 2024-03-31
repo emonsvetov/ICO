@@ -98,7 +98,8 @@ class UserImportController extends Controller
             $validated['upload-file'], $supplied_constants,
             new \App\Http\Requests\CSVProgramRequest,
             new \App\Http\Requests\UserRequest,
-            new \App\Http\Requests\EventXmlDataRequest
+            new \App\Http\Requests\AwardRequest,
+            // new \App\Http\Requests\EventXmlDataRequest
         );
 
         return $csvHeaders;
@@ -119,7 +120,8 @@ class UserImportController extends Controller
             $validated['upload-file'], $supplied_constants,
             new \App\Http\Requests\CSVProgramRequest,
             new \App\Http\Requests\UserUpdateRequest,
-            new \App\Http\Requests\EventXmlDataRequest
+            new \App\Http\Requests\AwardRequest,
+            // new \App\Http\Requests\EventXmlDataRequest
         );
 
         return $csvHeaders;
