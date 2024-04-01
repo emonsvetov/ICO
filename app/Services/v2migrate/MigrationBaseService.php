@@ -197,8 +197,8 @@ class MigrationBaseService extends MigrationService
             self::PROGRAM_AND_USER_JOURNAL_EVENTS,
             self::PROGRAM_AND_USER_POSTINGS,
             self::SYNC_INVOICES_TO_PROGRAM,
-            self::LEADERBOARDS,
             self::GOALPLANS,
+            self::LEADERBOARDS,
             self::SOCIAL_WALL_POSTS,
             self::BUDGETS,
             self::PROGRAM_MERCHANTS,
@@ -291,11 +291,11 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 18:
-                     $result['migration'] = $this->migrateLeaderBoardsService->migrate($v2AccountHolderID);
+                     $result['migration'] = $this->migrateGoalPlansService->migrate($v2AccountHolderID);
                     break;
 
                 case 19:
-                     $result['migration'] = $this->migrateGoalPlansService->migrate($v2AccountHolderID);
+                     $result['migration'] = $this->migrateLeaderBoardsService->migrate($v2AccountHolderID);
                     break;
 
                 case 20:
