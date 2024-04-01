@@ -96,8 +96,8 @@ Route::group([
         'prefix' => '/event-award-level',
     ], function ()
     {
-        Route::put('/{event}', [App\Http\Controllers\API\EventController::class,'storeAwardLevel'])->name('api.v1.organization.program.event.storeAwardLevel')->middleware('can:storeAwardLevel,App\ProgramEvent,organization,program');
-        Route::delete('/{event}', [App\Http\Controllers\API\EventController::class,'deleteAwardLevel'])->name('api.v1.organization.program.event.deleteAwardLevel')->middleware('can:deleteAwardLevel,App\ProgramEvent,organization,program,event');
+        Route::put('/{event}', [App\Http\Controllers\API\EventController::class,'storeAwardLevel'])->name('api.v1.organization.program.event.storeAwardLevel');
+        Route::delete('/{event}', [App\Http\Controllers\API\EventController::class,'deleteAwardLevel'])->name('api.v1.organization.program.event.deleteAwardLevel');
     });
 });
 
