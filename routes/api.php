@@ -520,10 +520,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // LeaderboardEvent
 
     Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/event',[App\Http\Controllers\API\LeaderboardEventController::class, 'index'])->middleware('can:viewAny,App\LeaderboardEvent,organization,program,leaderboard');
+    Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/goal-plan',[App\Http\Controllers\API\LeaderboardGoalPlanController::class, 'index'])->middleware('can:viewAny,App\LeaderboardGoalPlan,organization,program,leaderboard');
 
     Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/assignableEvent',[App\Http\Controllers\API\LeaderboardEventController::class, 'assignable'])->middleware('can:viewAny,App\LeaderboardEvent,organization,program,leaderboard');
+    Route::get('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/assignableGoalPlan',[App\Http\Controllers\API\LeaderboardGoalPlanController::class, 'assignable'])->middleware('can:viewAny,App\LeaderboardGoalPlan,organization,program,leaderboard');
 
     Route::patch('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/event',[App\Http\Controllers\API\LeaderboardEventController::class, 'assign'])->middleware('can:assign,App\LeaderboardEvent,organization,program,leaderboard');
+    Route::patch('/v1/organization/{organization}/program/{program}/leaderboard/{leaderboard}/goal-plan',[App\Http\Controllers\API\LeaderboardGoalPlanController::class, 'assign'])->middleware('can:assign,App\LeaderboardGoalPlan,organization,program,leaderboard');
 
     Route::get('/v1/goalplantype',[App\Http\Controllers\API\GoalPlanTypeController::class, 'index'])->middleware('can:viewAny,App\GoalPlanType');
 

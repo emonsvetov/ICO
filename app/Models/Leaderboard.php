@@ -38,6 +38,11 @@ class Leaderboard extends BaseModel
         return $this->belongsToMany(Event::class, 'leaderboard_event')->withTimestamps();
     }
 
+    public function goalPlans()
+    {
+        return $this->belongsToMany(GoalPlan::class, 'leaderboard_goal');
+    }
+
     public function status()    {
         return $this->belongsTo(Status::class);
     }

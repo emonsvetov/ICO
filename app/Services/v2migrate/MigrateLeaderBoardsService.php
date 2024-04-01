@@ -120,6 +120,7 @@ class MigrateLeaderBoardsService extends MigrationService
 
             $this->migrateLeaderBoardEvents($v3LeaderBoard);
             $this->migrateLeaderboardJournalEvents($v3LeaderBoard);
+            $this->migrateLeaderboardGoalPlans($v3LeaderBoard);
         }
     }
 
@@ -165,6 +166,25 @@ class MigrateLeaderBoardsService extends MigrationService
                     ]);
                 }
             }
+        }
+    }
+
+    /**
+     * Migrate leader board goal plans.
+     *
+     * @param $v3LeaderBoard
+     */
+    public function migrateLeaderboardGoalPlans($v3LeaderBoard)
+    {
+        $v2LeaderBoardGoalPlans = $this->getV2LeaderBoardGoalPlans($v3LeaderBoard->v2_leaderboard_id);
+        if (!empty($v2LeaderBoardGoalPlans)) {
+            $v2GoalPlanIDs = [];
+            foreach ($v2LeaderBoardGoalPlans as $v2LeaderBoardGoalPlan) {
+                $v2GoalPlanIDs[] = $v2LeaderBoardGoalPlan->goal_plan_id;
+            }
+
+            $v3GoalPlans = GoalPlan::whereIn('v2_goal_plan_id', $v2GoalPlanIDs)->get();
+            $v3LeaderBoard->goalPlans()->sync($v3GoalPlans);
         }
     }
 
