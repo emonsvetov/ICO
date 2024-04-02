@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Traits\HasProgramRoles;
 use App\Models\Traits\GetModelByMixed;
@@ -138,7 +139,9 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     }
     protected function setPasswordAttribute($password)
     {
-        $this->attributes['password'] = bcrypt($password);
+        // Save md5 password from v2 when run migrate users.
+        $routeName = request()->route()->getName();
+        $this->attributes['password'] = $routeName == 'runMigrations' ? $password : bcrypt($password);
     }
     public function isAdmin()
     {
