@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use App\Models\AwardLevel;
 use App\Models\Event;
 use App\Models\EventAwardLevel;
 use App\Models\EventLedgerCode;
@@ -45,15 +46,16 @@ class MigrateEventService extends MigrationService
         if (count($v2ProgramEventAwardLevel)) {
             foreach ($v2ProgramEventAwardLevel as $item) {
                 $eventAwardLevel = EventAwardLevel::where('event_id', $eventIdV3)->first();
+                $awardLevel = AwardLevel::where('v2id', $item->award_level_id)->first();
 
                 if ($eventAwardLevel) {
                     $eventAwardLevel->amount = $item->amount;
-                    $eventAwardLevel->award_level_id = 0; //todo
+                    $eventAwardLevel->award_level_id = $awardLevel->id; //todo
                     $eventAwardLevel->save();
                 } else {
                     $eventAwardLevel = new EventAwardLevel();
                     $eventAwardLevel->event_id = $eventIdV3;
-                    $eventAwardLevel->award_level_id = 0; //todo
+                    $eventAwardLevel->award_level_id = $awardLevel->id; //todo
                     $eventAwardLevel->amount = $item->amount;
                     $eventAwardLevel->save();
                 }

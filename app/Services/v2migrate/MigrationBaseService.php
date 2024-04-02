@@ -182,9 +182,9 @@ class MigrationBaseService extends MigrationService
         $migrations = [
             self::PROGRAM_HIERARCHY,
             self::PROGRAM_ACCOUNTS,
-            self::SYNC_EVENTS_TO_PROGRAM,
             self::USERS,
             self::SYNC_AWARD_LEVELS_TO_PROGRAM,
+            self::SYNC_EVENTS_TO_PROGRAM,
             self::USER_ACCOUNTS,
             self::OWNER_ACCOUNTS,
             self::USER_LOGS,
@@ -225,18 +225,17 @@ class MigrationBaseService extends MigrationService
                 case 1:
                      $result['migration'] = $this->migrateProgramsService->migrate($v2AccountHolderID);
                     break;
-
                 case 2:
                      $result['migration'] = $this->migrateProgramAccountsService->migrate($v2AccountHolderID);
                     break;
                 case 3:
-                     $result['migration'] = $this->migrateEventService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateUsersService->migrate($v2AccountHolderID);
                     break;
                 case 4:
-                     $result['migration'] = $this->migrateUsersService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
                     break;
                 case 5:
-                    $result['migration'] = $this->migrateAwardLevelService->migrate($v2AccountHolderID);
+                     $result['migration'] = $this->migrateEventService->migrate($v2AccountHolderID);
                     break;
                 case 6:
                      $result['migration'] = $this->migrateUserAccountsService->migrate($v2AccountHolderID);
@@ -255,7 +254,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 10:
-                     $result['migration'] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
+                    $result['migration'] = $this->migrateMerchantsService->syncProgramMerchantRelations($v2AccountHolderID);
                     break;
 
                 case 11:
@@ -267,15 +266,15 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 13:
-                     $result['migration'] = $this->migrateProgramAccountsService->syncProgramHierarchySettings($v2AccountHolderID);
+                    $result['migration'] = $this->migrateProgramAccountsService->syncProgramHierarchySettings($v2AccountHolderID);
                     break;
 
                 case 14:
-                     $result['migration'] = $this->migrateEventXmlDataService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateEventXmlDataService->migrate($v2AccountHolderID);
                     break;
 
                 case 15:
-                     $result['migration'] = $this->migrateJournalEventService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateJournalEventService->migrate($v2AccountHolderID);
                     break;
 
                 case 16:
@@ -283,7 +282,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 17:
-                     $result['migration'] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateInvoiceService->migrate($v2AccountHolderID);
                     break;
 
                 case 18:
@@ -299,7 +298,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 21:
-                     $result['migration'] = $this->migrateBudgetService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateBudgetService->migrate($v2AccountHolderID);
                     break;
 
                 case 22:

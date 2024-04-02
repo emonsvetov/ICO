@@ -43,6 +43,12 @@ class MigrateAwardLevelService extends MigrationService
         $itemsCount = count($programUser->toArray());
 
         foreach ($programUser->toArray() as $value) {
+            $user = \App\Models\User::find($value->id);
+            if ($user) {
+                $user->award_level = $v3AwardLevelsId;
+                $user->save();
+            }
+
             $awardLevelModel = AwardLevelHasUser::where('award_levels_id', $v3AwardLevelsId)
                 ->where('users_id', $value->id)->first();
             if (!$awardLevelModel) {
