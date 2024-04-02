@@ -184,6 +184,7 @@ class MigrationBaseService extends MigrationService
             self::PROGRAM_ACCOUNTS,
             self::SYNC_EVENTS_TO_PROGRAM,
             self::USERS,
+            self::SYNC_AWARD_LEVELS_TO_PROGRAM,
             self::USER_ACCOUNTS,
             self::OWNER_ACCOUNTS,
             self::USER_LOGS,
@@ -191,7 +192,6 @@ class MigrationBaseService extends MigrationService
             self::SYNC_MERCHANTS_TO_PROGRAM,
             self::MERCHANT_ACCOUNTS,
             self::SYNC_DOMAINS_TO_PROGRAM,
-            self::SYNC_AWARD_LEVELS_TO_PROGRAM,
             self::SYNC_PROGRAM_HIERARCHY_SETTINGS,
             self::EVENT_XML_DATA,
             self::PROGRAM_AND_USER_JOURNAL_EVENTS,
@@ -263,7 +263,7 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 12:
-                     $result['migration'] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
+                    $result['migration'] = $this->migrateDomainsService->syncProgramDomainRelations($v2AccountHolderID);
                     break;
 
                 case 13:
