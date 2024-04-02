@@ -50,12 +50,21 @@ class MigrateEventService extends MigrationService
 
                 if ($eventAwardLevel) {
                     $eventAwardLevel->amount = $item->amount;
-                    $eventAwardLevel->award_level_id = $awardLevel->id; //todo
+                    if ($awardLevel){
+                        $eventAwardLevel->award_level_id = $awardLevel->id;
+                    }else{
+                        $eventAwardLevel->award_level_id = 0;
+                    }
+
                     $eventAwardLevel->save();
                 } else {
                     $eventAwardLevel = new EventAwardLevel();
                     $eventAwardLevel->event_id = $eventIdV3;
-                    $eventAwardLevel->award_level_id = $awardLevel->id; //todo
+                    if ($awardLevel){
+                        $eventAwardLevel->award_level_id = $awardLevel->id;
+                    }else{
+                        $eventAwardLevel->award_level_id = 0;
+                    }
                     $eventAwardLevel->amount = $item->amount;
                     $eventAwardLevel->save();
                 }
