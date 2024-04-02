@@ -46,7 +46,7 @@ class V2DeprecatedProgramController extends Controller
     public function migrate(Request $request, $account_holder_id, MigrateProgramsService $migrateProgramsService, MigrateMerchantsService $migrateMerchantsService)
     {
         $result = 'Error migrate';
-        ini_set('max_execution_time', 360);
+        ini_set('max_execution_time', 1800);
         ob_start();
         try {
             $migrateMerchantsService->migrate();

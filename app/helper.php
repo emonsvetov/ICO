@@ -515,3 +515,20 @@ if (! function_exists ( 'RawSql' ))
     }
 }
 
+if (! function_exists ( 'validateDate' ))
+{
+    /**
+     * @param $date
+     * @param string $format
+     * @return bool
+     */
+    function validateDate($date, string $format = 'Y-m-d'): bool
+    {
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) == $date;
+    }
+}
+
+
+
+

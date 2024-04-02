@@ -45,7 +45,7 @@ class MigrationController extends Controller
      */
     public function run($account_holder_id, $step)
     {
-        ini_set('max_execution_time', 360);
+        ini_set('max_execution_time', 1800);
 
         $args = [];
         $args['v2AccountHolderID'] = $account_holder_id;
