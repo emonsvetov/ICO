@@ -1749,8 +1749,6 @@ class V2Helper
                 LEFT JOIN programs on programs.account_holder_id = program_budget.program_account_holder_id
             WHERE
                 program_budget.program_account_holder_id IN (" . implode(',', $accountHolderIds) . ")
-            GROUP BY
-                program_budget.program_account_holder_id
             ORDER BY
                 program_budget.year ASC
 		";
