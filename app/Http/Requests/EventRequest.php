@@ -29,7 +29,7 @@ class EventRequest extends FormRequest
             'enable'=> 'sometimes|boolean|nullable',
             'event_type_id'=> 'required|numeric',
             'event_icon_id'=> 'sometimes|integer',
-            'max_awardable_amount' => 'sometimes|integer',
+            'max_awardable_amount' => 'sometimes|numeric',
             'post_to_social_wall'=> 'nullable|boolean',
             'message'=> 'required|string',
             'icon'=> 'string',
