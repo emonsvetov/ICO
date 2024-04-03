@@ -45,28 +45,22 @@ class MigrateEventService extends MigrationService
 
         if (count($v2ProgramEventAwardLevel)) {
             foreach ($v2ProgramEventAwardLevel as $item) {
-                $eventAwardLevel = EventAwardLevel::where('event_id', $eventIdV3)->first();
                 $awardLevel = AwardLevel::where('v2id', $item->award_level_id)->first();
-
-                if ($eventAwardLevel) {
-                    $eventAwardLevel->amount = $item->amount;
-                    if ($awardLevel){
+                if ($awardLevel) {
+                    $eventAwardLevel = EventAwardLevel::where('event_id', $eventIdV3)
+                        ->where('award_level_id', $awardLevel->id)
+                        ->first();
+                    if ($eventAwardLevel) {
+                        $eventAwardLevel->amount = $item->amount;
                         $eventAwardLevel->award_level_id = $awardLevel->id;
-                    }else{
-                        $eventAwardLevel->award_level_id = 0;
-                    }
-
-                    $eventAwardLevel->save();
-                } else {
-                    $eventAwardLevel = new EventAwardLevel();
-                    $eventAwardLevel->event_id = $eventIdV3;
-                    if ($awardLevel){
+                        $eventAwardLevel->save();
+                    } else {
+                        $eventAwardLevel = new EventAwardLevel();
+                        $eventAwardLevel->event_id = $eventIdV3;
                         $eventAwardLevel->award_level_id = $awardLevel->id;
-                    }else{
-                        $eventAwardLevel->award_level_id = 0;
+                        $eventAwardLevel->amount = $item->amount;
+                        $eventAwardLevel->save();
                     }
-                    $eventAwardLevel->amount = $item->amount;
-                    $eventAwardLevel->save();
                 }
             }
         }
