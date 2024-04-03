@@ -146,7 +146,7 @@ if(!function_exists('_tree_flatten'))  {
         if(!$resultCollection) $resultCollection = collect();
         $depth++;
         foreach( $collection as $key => $model ) {
-            if($depth === 1 && $model->parent_id) {
+            if($depth === 1 && $model->parent_id != $collection[0]->parent_id) {
                 continue;
             }
             $children = clone $model->children;

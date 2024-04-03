@@ -480,10 +480,12 @@ class Program extends BaseModel
     public function get_top_level_program_id($id = 0)
     {
         $program = self::where('id', $id)->first();
-        if (!$program->parent_id)
+        if (!$program->parent_id){
             return $id;
-        else
-            self::get_top_level_program_id($program->parent_id);
+        } else{
+            return $this->get_top_level_program_id($program->parent_id);
+        }
+
     }
 
     public function selected_reports()
