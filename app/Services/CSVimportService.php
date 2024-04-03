@@ -148,9 +148,9 @@ class CSVimportService
                         $validator = Validator::make($saveData[$formRequest][$line], $formRequestRules);
 
                         if ($validator->fails()) {
-                            pr($saveData[$formRequest][$line]);
-                            pr($formRequest);
-                            pr($formRequestRules);
+                            // pr($saveData[$formRequest][$line]);
+                            // pr($formRequest);
+                            // pr($formRequestRules);
                             // exit;
                             $this->errors['Line ' . $line][][$formRequest] = $validator->errors()->toArray();
                         } else {
@@ -312,6 +312,10 @@ class CSVimportService
     */
     public function rule_mustExistInModel($ruleSets, $csvValue)
     {
+        if (str_contains($ruleSets, 'override:true')) {
+            $ruleSets = rtrim(ltrim(str_replace('override:true','', $ruleSets), '|'), '|');
+        }
+
         $rules = explode('|', $ruleSets);
 
         $whereConditions = [];
@@ -360,6 +364,9 @@ class CSVimportService
 
     public function rule_mustComeFromModel($ruleSets, $csvValue)
     {
+        if (str_contains($ruleSets, 'override:true')) {
+            $ruleSets = rtrim(ltrim(str_replace('override:true','', $ruleSets), '|'), '|');
+        }
         //'mustComeFromModel:Status|matchWith:status|use:id|filter:context=Users'
         $rules = explode('|', $ruleSets);
 
@@ -480,6 +487,10 @@ class CSVimportService
 
     public function rule_mustComeFromList($ruleSets)
     {
+        if (str_contains($ruleSets, 'override:true')) {
+            $ruleSets = rtrim(ltrim(str_replace('override:true','', $ruleSets), '|'), '|');
+        }
+
         $rules = explode('|', $ruleSets);
 
         foreach ($rules as $ruleSet) {

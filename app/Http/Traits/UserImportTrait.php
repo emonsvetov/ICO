@@ -24,6 +24,9 @@ use DateTime;
 
 trait UserImportTrait
 {
+    public $userRequestTypes = [
+        'UserRequest', 'UserUpdateRequest', 'UserImportTypeRequest'
+    ];
 
     public function createUserPassword()
     {
@@ -449,6 +452,30 @@ trait UserImportTrait
 
             // print_r($csv);
             // exit;
+        }
+    }
+
+    public function getImportUserRequestType( $validated )
+    {
+        $setups = json_decode($validated['setups'], true);
+        if( $setups )   {
+            foreach($this->userRequestTypes as $requestType)   {
+                if( isset($setups[$requestType]) &&  isset($setups[$requestType]['type']))  {
+                    return $setups[$requestType]['type'];
+                }
+            }
+        }
+    }
+
+    public function getImportUserRequestKey( $validated )
+    {
+        $setups = json_decode($validated['setups'], true);
+        if( $setups )   {
+            foreach($this->userRequestTypes as $requestType)   {
+                if( isset($setups[$requestType]) )  {
+                    return $requestType;
+                }
+            }
         }
     }
 

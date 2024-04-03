@@ -118,8 +118,9 @@ class UserImportController extends Controller
 
         $csvHeaders = $csvService->getFieldsToMap(
             $validated['upload-file'], $supplied_constants,
-            new \App\Http\Requests\CSVProgramRequest,
-            new \App\Http\Requests\UserUpdateRequest,
+            // new \App\Http\Requests\CSVProgramRequest,
+            // new \App\Http\Requests\UserRequest,
+            new \App\Http\Requests\UserImportTypeRequest,
             new \App\Http\Requests\AwardRequest,
             // new \App\Http\Requests\EventXmlDataRequest
         );
@@ -171,8 +172,9 @@ class UserImportController extends Controller
 
         // Check type
         $setups = json_decode($validated['setups'], true);
-        $userModel = isset($setups['UserRequest']) ? 'UserRequest' : 'UserUpdateRequest';
-        $requestType = isset($setups['UserRequest']) ? $setups['UserRequest']['type'] : $setups['UserUpdateRequest']['type'];
+        $userModel = $this->getImportUserRequestKey($validated);
+        $requestType = $this->getImportUserRequestType($validated);
+
         $type = CsvImportType::where( function($query) use ($requestType)    {
             $query->orWhere('type', 'LIKE', $requestType);
             $query->orWhere('name', 'LIKE', $requestType);
@@ -202,12 +204,11 @@ class UserImportController extends Controller
         ]);
 
         // ImportUserForProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants, $validated['setups']);
-
         // remove after test
         $csvService = new CSVimportService;
         $csvService->setImportType( $type );
         $importData =  $csvService->importFile($newCsvImport, $request->fieldsToMap, $supplied_constants, $request->setups);
-        // return $importData;
+        // return [$request->fieldsToMap, $importData];
 
         if ( empty($importData['errors']) )
         {
