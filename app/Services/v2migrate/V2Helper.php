@@ -1148,6 +1148,26 @@ class V2Helper
     }
 
     /**
+     * Get v2 leader board goal plans.
+     *
+     * @param $v2LeaderBoardID
+     * @return array
+     */
+    public function getV2LeaderBoardGoalPlans($v2LeaderBoardID)
+    {
+        $v2Sql = "
+            SELECT
+                lbg.*
+            FROM
+                leaderboards_goals lbg
+            WHERE
+                lbg.`leaderboard_id` = {$v2LeaderBoardID}
+            ";
+
+        return $this->v2db->select($v2Sql);
+    }
+
+    /**
      * Get v2 Leaderboards goals.
      *
      * @param $v2LeaderBoardID
@@ -1729,8 +1749,6 @@ class V2Helper
                 LEFT JOIN programs on programs.account_holder_id = program_budget.program_account_holder_id
             WHERE
                 program_budget.program_account_holder_id IN (" . implode(',', $accountHolderIds) . ")
-            GROUP BY
-                program_budget.program_account_holder_id
             ORDER BY
                 program_budget.year ASC
 		";

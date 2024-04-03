@@ -38,7 +38,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'refunded_transaction_fee' => 0,
                     'program_pays_for_saas_fees' => 0,
                     'reversal_program_pays_for_saas_fees' => 0,
-                    'program_funds_net_transfers' => 0,
                     'program_refunds_for_monies_pending' => 0,
 					'deposits' => 0,
 					'points_purchased' => 0,
@@ -54,7 +53,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'premium_fee' => 0,
 					'net_points_purchased' => 0,
 					'program_funds_net_transfers' => 0,
-					'program_refunds_for_monies_pending' => 0
 				];
 				foreach ( $programs as $program ) {
 					$account_holder_ids[] = $program->account_holder_id;
@@ -103,7 +101,10 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES,
 					JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_TOTAL_SPEND_REBATE,
 					JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE,
-					JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD
+					JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD,
+                    JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SAAS_FEES,
+                    JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_SAAS_FEES,
+                    JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_TRANSFERS_MONIES_AVAILABLE
 				];
 				$credits_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
 
@@ -193,6 +194,9 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 														$table[$program->account_holder_id]->refunded_transaction_fee = $amount;
 														break;
 												}
+                                                if ($journal_event_type == JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_TRANSFERS_MONIES_AVAILABLE) {
+                                                    $table[$program->account_holder_id]->program_funds_net_transfers = $amount;
+                                                }
 												break;
 											case AccountType::ACCOUNT_TYPE_MONIES_SHARED :
 												switch ($journal_event_type) {
@@ -491,6 +495,15 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 $tmpPath = explode(',', $item->dinamicPath);
                 if (isset($newTable[$tmpPath[0]])) {
                     $newTable = $this->tableToTree($newTable, $item, $tmpPath);
+
+                    $firstChild = $newTable[$tmpPath[0]]->subRows[0] ?? null;
+                    if ($firstChild && $firstChild->id == $tmpPath[0]){
+                    } else {
+                        $tmpEl = clone $newTable[$tmpPath[0]];
+                        $tmpEl->dinamicDepth = 0;
+                        unset($tmpEl->subRows);
+                        array_unshift($newTable[$tmpPath[0]]->subRows, $tmpEl);
+                    }
                 }
 
                 foreach ($defaultValues as $key => $value) {

@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use DateTime;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\UserRequest;
 use App\Models\Program;
@@ -141,6 +142,9 @@ class MigrateUsersService extends MigrationService
     {
         if ((int)$v2User->birth_month && (int)$v2User->birth_day) {
             $dob = "1970-" . ((int)$v2User->birth_month < 10 ? "0" . (int)$v2User->birth_month : $v2User->birth_month) . "-" . ((int)$v2User->birth_day < 10 ? "0" . (int)$v2User->birth_day : $v2User->birth_day);
+            if (!validateDate($dob)){
+                $dob = "1970-01-01";
+            }
         } else {
             $dob = "1970-01-01";
         }

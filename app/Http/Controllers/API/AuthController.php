@@ -21,6 +21,7 @@ use App\Models\Organization;
 use App\Models\Domain;
 use App\Models\User;
 use App\Models\Role;
+use Illuminate\Support\Facades\Hash;
 
 
 class AuthController extends Controller
@@ -127,6 +128,9 @@ class AuthController extends Controller
         try {
 
             $validated = $request->validated();
+
+            $this->updateMD5PasswordToBcrypt($validated);
+
             if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                 return response(['message' => 'Invalid Credentials'], 422);
             }
@@ -185,6 +189,30 @@ class AuthController extends Controller
                     ]
                 ],
                 422);
+        }
+    }
+
+    /**
+     * Update md5 password to bcrypt.
+     *
+     * @param $credentials
+     */
+    public function updateMD5PasswordToBcrypt($credentials)
+    {
+        $email = $credentials['email'] ?? '';
+        $password = $credentials['password'] ?? '';
+        $userMD5Password = User::where([
+            ['email', $email],
+            ['password', md5($password)],
+        ])->first();
+
+        if (!empty($userMD5Password)) {
+            DB::table('users')
+                ->where([
+                    ['email', $email],
+                    ['password', md5($password)],
+                ])
+                ->update(['password' => Hash::make($password)]);
         }
     }
 
