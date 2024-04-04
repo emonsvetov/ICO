@@ -497,7 +497,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 $first = reset($tmpPath);
 
                 if (isset($newTable[$first])) {
-                    $newTable = $this->tableToTree($newTable, $item, $tmpPath);
+                    $newTable = $this->tableToTree($newTable, $item, $tmpPath, 0, $defaultValues);
 
                     $firstChild = $newTable[$first]->subRows[0] ?? null;
                     if ($firstChild && $firstChild->id == $first){
