@@ -40,7 +40,11 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
             users.user_status_id,
             programs.external_id,
             programs.name as program_name,
-            programs.account_holder_id as program_account_holder_id
+            CASE
+                WHEN programs.v2_account_holder_id is not null
+                THEN programs.v2_account_holder_id
+                ELSE programs.account_holder_id
+            END as program_account_holder_id
         "
         );
 
