@@ -82,6 +82,10 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
                 'key' => 'program_id',
             ],
             [
+                'label' => 'Program account ID',
+                'key' => 'program_account_holder_id',
+            ],
+            [
                 'label' => 'Program',
                 'key' => 'program_name',
             ],
