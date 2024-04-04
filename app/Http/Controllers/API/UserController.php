@@ -56,8 +56,8 @@ class UserController extends Controller
 
     public function update(UserRequest $request, Organization $organization, User $user )
     {
-        $newUser = $this->userService->update($request, $user);
-
+        $validated = $request->validated();
+        $newUser = $this->userService->update( $user, $validated);
         return response(['user' => $newUser]);
     }
 
