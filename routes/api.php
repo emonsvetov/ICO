@@ -704,6 +704,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/organization/{organization}/program/{program}/import/download-template', [App\Http\Controllers\API\ImportController::class, 'downloadTemplate'])->middleware('can:downloadTemplate,App\Import,organization,program');
 
+    Route::get('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'index']);
+
     // Dashboard
     Route::get('/v1/organization/{organization}/program/{program}/dashboard',[App\Http\Controllers\API\DashboardController::class, 'index'])->middleware('can:viewAny,App\Dashboard,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/dashboard/top-merchants/{duration}/{unit}',[App\Http\Controllers\API\DashboardController::class, 'topMerchants'])->middleware('can:viewAny,App\Dashboard,organization,program');
