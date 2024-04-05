@@ -12,7 +12,6 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 		// Setup the default params for the sub reports
 		$subreport_params = array ();
         $subreport_params [self::DATE_BEGIN] = $this->params [self::DATE_BEGIN];
-        $subreport_params [self::DATE_BEGIN] = '2023-04-01 00:00:00';
         $subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 
         $programAccountHolderIds = $this->params[self::PROGRAMS];
