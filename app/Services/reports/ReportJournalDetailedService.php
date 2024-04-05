@@ -12,6 +12,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 		// Setup the default params for the sub reports
 		$subreport_params = array ();
         $subreport_params [self::DATE_BEGIN] = $this->params [self::DATE_BEGIN];
+        $subreport_params [self::DATE_BEGIN] = '2023-04-01 00:00:00';
         $subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 
         $programAccountHolderIds = $this->params[self::PROGRAMS];
@@ -56,6 +57,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				];
 				foreach ( $programs as $program ) {
 					$account_holder_ids[] = $program->account_holder_id;
+                    $program->setShownId();
                     $program = (object)$program->toArray();
 					$table[$program->account_holder_id] = $program;
                     foreach ($defaultValues as $key => $value) {
@@ -312,7 +314,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 															// $table[(int)$program->account_holder_id]->points_purchased -= $amount;
 														}
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_SETUP_FEE:
-                                                            $table[(int)$program->account_holder_id]->program_setup_fee -= $amount;
+                                                            $table[(int)$program->account_holder_id]->setup_fee -= $amount;
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_FIXED_FEE:
                                                             $table[(int)$program->account_holder_id]->program_fixed_fee -= $amount;
