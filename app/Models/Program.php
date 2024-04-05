@@ -506,4 +506,8 @@ class Program extends BaseModel
         }
         return $hierarchy;
     }
+
+    public function setShownId(){
+        $this->shownId = $this->v2_account_holder_id ?: $this->account_holder_id;
+    }
 }

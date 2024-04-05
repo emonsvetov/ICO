@@ -24,11 +24,14 @@ class ReportSumProgramCostOfGiftCodesRedeemedService extends ReportServiceAbstra
 	protected function getDataDateRange() {
 		$data = $this->calcByDateRange ( $this->getParams () );
 		// Organize the data table so it is easier to look stuff up later
-		foreach ( $data as $i => $row ) {
-			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_COST_BASIS] = $row->{self::FIELD_COST_BASIS};
-			$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_PREMIUM] = $row->{self::FIELD_PREMIUM};
-            unset($this->table[$i]);
-		}
+        $table = [];
+        foreach ( $data as $i => $row ) {
+            $table[$row->{$this::FIELD_ID}][$row->{self::FIELD_ACCOUNT_TYPE}][$row->{self::FIELD_JOURNAL_EVENT_TYPE}][self::FIELD_COST_BASIS] =
+                $row->{self::FIELD_COST_BASIS};
+            $table[$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [self::FIELD_PREMIUM] =
+                $row->{self::FIELD_PREMIUM};
+        }
+        $this->table = $table;
 	}
 
 	/** basic sql without any filters */
