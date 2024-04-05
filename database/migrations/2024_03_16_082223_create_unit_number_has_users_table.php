@@ -13,12 +13,14 @@ class CreateUnitNumberHasUsersTable extends Migration
      */
     public function up()
     {
-        Schema::create('unit_number_has_users', function (Blueprint $table) {
-            $table->unsignedBigInteger('unit_number_id')->index();
-            $table->unsignedBigInteger('user_id')->index();
-            $table->timestamps();
-            $table->softDeletes();
-        });
+        if ( !Schema::hasTable('unit_number_has_users') ) {
+            Schema::create('unit_number_has_users', function (Blueprint $table) {
+                $table->unsignedBigInteger('unit_number_id')->index();
+                $table->unsignedBigInteger('user_id')->index();
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
     }
 
     /**
