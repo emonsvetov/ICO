@@ -5,6 +5,7 @@ namespace App\Services\reports;
 use App\Models\AccountType;
 use App\Models\EventType;
 use App\Models\JournalEventType;
+use App\Models\Program;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -42,6 +43,8 @@ class ReportDepositBalanceService extends ReportServiceAbstract
     {
         $programsArray = [];
         $programIDs = $this->params[self::PROGRAMS];
+        $programs = Program::whereIn('account_holder_id', $programIDs)->get()->keyBy('account_holder_id')->toArray();
+
         foreach ($programIDs as $programID) {
             $reversalTotal = $depositTotal = $transferTotal = $awardTotal = $reclaimTotal = $endBalanceTotalCredit = $endBalanceTotalDebit = $startBalanceTotalCredit = $startBalanceTotalDebit = 0;
             $programsArray[$programID]['name'] = (isset($this->programs[$programID]) && isset($this->programs[$programID]->name))
@@ -117,6 +120,9 @@ class ReportDepositBalanceService extends ReportServiceAbstract
 
             }
             $programsArray[$programID]['endBalanceTotal'] = $programsArray[$programID]['startBalanceTotal'] + $depositTotal - $awardTotal - $transferTotal + $reclaimTotal - $reversalTotal;
+            $programsArray[$programID]['account_holder_id'] = $programs[$programID]["account_holder_id"];
+            $programsArray[$programID]['v2_account_holder_id'] = $programs[$programID]["v2_account_holder_id"];
+            $programsArray[$programID]['name'] = $programs[$programID]["name"];
 
         }
 
