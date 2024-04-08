@@ -300,6 +300,7 @@ class ReportParticipantAccountSummaryService extends ReportServiceAbstract
             $subQuery->selectRaw("
             `programs`.id as program_id,
             `programs`.name as program_name,
+            `programs`.v2_account_holder_id as v2_account_holder_id,
             `users`.account_holder_id AS recipient_id,
             `users`.activated,
             `users`.created_at as created,
