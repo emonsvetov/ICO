@@ -436,7 +436,7 @@ class ProgramService
 
             $minimalFields = Program::MIN_FIELDS;
             $query = Program::query();
-            $query->whereNull('parent_id');
+            $query->where('parent_id', $program->parent_id);
             $query->whereIn('id', $programsId);
             $query = $query->select($minimalFields);
             $query = $query->with([

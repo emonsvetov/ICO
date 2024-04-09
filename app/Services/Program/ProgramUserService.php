@@ -2,6 +2,7 @@
 
 namespace App\Services\Program;
 
+use App\Services\UserService;
 use App\Events\UserInvited;
 use App\Models\Program;
 use App\Models\User;
@@ -21,6 +22,10 @@ class ProgramUserService
             if (isset($validated['roles'])) {
                 $user->syncProgramRoles($program->id, $validated['roles']);
             }
+            if ( ! empty($validated['unit_number']) ) {
+                $userService = new UserService;
+                $userService->updateUnitNumber($user, $validated['unit_number']);
+            }
             if (!empty($validated['send_invite'])) {
                 // $participantRoleId = Role::getParticipantRoleId();
                 // if( in_array($participantRoleId, $validated['roles']))
@@ -31,6 +36,22 @@ class ProgramUserService
             }
             return $user;
         }
+    }
+
+    public function update(Program $program, User $user, $validated )
+    {
+        $userService = new UserService;
+        if( !empty($validated['roles']) )   {
+            $validated['program_roles'] = $validated['roles'];
+            unset($validated['roles']);
+        }
+
+        $userService->update($user, $validated);
+
+        if ( ! empty($validated['program_roles'])) {
+            $user->syncProgramRoles($program->id, $validated['program_roles']);
+        }
+        return $user;
     }
 
     public function attachBalanceToUser(User $user, Program $program ) {

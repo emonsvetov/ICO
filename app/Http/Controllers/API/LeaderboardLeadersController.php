@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\Leaderboard;
 use App\Models\Program;
 use App\Services\LeaderboardService;
+use App\Services\UserService;
 use Illuminate\Support\Facades\DB;
 
 class LeaderboardLeadersController extends Controller
@@ -25,6 +26,12 @@ class LeaderboardLeadersController extends Controller
             return response($leaderboards);
         }
         return response([]);
+    }
+
+    public function readEventLeadersAwardsByUser(Organization $organization, Program $program, $userID, $leaderboardID, LeaderboardService $leaderboardService)
+    {
+        $eventLeadersAwards = $leaderboardService->readEventLeadersAwardsByUser($leaderboardID,  $userID);
+        return $eventLeadersAwards->isNotEmpty() ? response($eventLeadersAwards) : response([]);
     }
 
 }

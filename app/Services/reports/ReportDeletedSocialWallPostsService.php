@@ -44,7 +44,11 @@ class ReportDeletedSocialWallPostsService extends ReportServiceAbstract
             ,programs.name as program_name
             ,social_wall_post_types.type as social_wall_post_type
             ,event_xml_data.name as event_name
-            ,event_xml_data.notification_body as comment
+            ,CASE
+                WHEN social_wall_posts.social_wall_post_type_id = 2
+                THEN social_wall_posts.comment
+                ELSE event_xml_data.notification_body
+             END as comment
             ,event_xml_data.icon as icon
         ");
         return $query;
@@ -58,6 +62,9 @@ class ReportDeletedSocialWallPostsService extends ReportServiceAbstract
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
         $query->whereNotNull('social_wall_posts.deleted_at');
         $query->whereNull('social_wall_posts.social_wall_post_id');
+        if ($this->params[self::DATE_BEGIN] && $this->params[self::DATE_END]) {
+            $query->whereBetween('social_wall_posts.deleted_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
+        }
         return $query;
     }
 

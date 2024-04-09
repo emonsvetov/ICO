@@ -1,9 +1,12 @@
 <?php
 namespace App\Services\v2migrate;
 
+use App\Models\Event;
 use App\Models\GoalPlan;
 use App\Models\InvoiceType;
+use App\Models\JournalEvent;
 use App\Models\Leaderboard;
+use App\Models\LeaderboardJournalEvent;
 use App\Models\Program;
 use App\Services\ProgramService;
 use Exception;
@@ -11,15 +14,12 @@ use Exception;
 class MigrateLeaderBoardsService extends MigrationService
 {
 
-    private ProgramService $programService;
-
     public $countUpdatedLeaderBoards = 0;
     public $countCreatedLeaderBoards = 0;
 
-    public function __construct(ProgramService $programService)
+    public function __construct()
     {
         parent::__construct();
-        $this->programService = $programService;
     }
 
     /**
@@ -61,11 +61,8 @@ class MigrateLeaderBoardsService extends MigrationService
      */
     public function getSubPrograms($v3Program)
     {
-        $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
-        $subPrograms = $programs[0]["children"] ?? FALSE;
-
-        $v3SubProgram = Program::find($v3Program->id);
-        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? FALSE;
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
 
         if ($v2AccountHolderID) {
             $this->migrateLeaderBoardsToProgram($v2AccountHolderID);
@@ -120,6 +117,75 @@ class MigrateLeaderBoardsService extends MigrationService
                 $v3LeaderBoard->update($v3LeaderBoardData);
                 $this->countUpdatedLeaderBoards++;
             }
+
+            $this->migrateLeaderBoardEvents($v3LeaderBoard);
+            $this->migrateLeaderboardJournalEvents($v3LeaderBoard);
+            $this->migrateLeaderboardGoalPlans($v3LeaderBoard);
         }
     }
+
+    /**
+     * Migrate leader board events.
+     *
+     * @param $v3LeaderBoard
+     */
+    public function migrateLeaderBoardEvents($v3LeaderBoard)
+    {
+        $v2LeaderBoardEvents = $this->getV2LeaderBoardEvents($v3LeaderBoard->v2_leaderboard_id);
+        if (!empty($v2LeaderBoardEvents)) {
+            $v2EventIDs = [];
+            foreach ($v2LeaderBoardEvents as $v2LeaderBoardEvent) {
+                $v2EventIDs[] = $v2LeaderBoardEvent->event_template_id;
+            }
+
+            $v3Events = Event::whereIn('v2_event_id', $v2EventIDs)->get();
+            $v3LeaderBoard->events()->sync($v3Events);
+        }
+    }
+
+    /**
+     * Migrate leader board journal events.
+     *
+     * @param $v3LeaderBoard
+     */
+    public function migrateLeaderboardJournalEvents($v3LeaderBoard)
+    {
+        $v2LeaderBoardJournalEvents = $this->getV2LeaderBoardJournalEvents($v3LeaderBoard->v2_leaderboard_id);
+        if (!empty($v2LeaderBoardJournalEvents)) {
+            $v2JournalEventIDs = [];
+            foreach ($v2LeaderBoardJournalEvents as $v2LeaderBoardJournalEvent) {
+                $v2JournalEventIDs[] = $v2LeaderBoardJournalEvent->journal_event_id;
+            }
+
+            $v3JournalEvents = JournalEvent::whereIn('v2_journal_event_id', $v2JournalEventIDs)->get();
+            if (!empty($v3JournalEvents)) {
+                foreach ($v3JournalEvents as $v3JournalEvent) {
+                    LeaderboardJournalEvent::create([
+                        'leaderboard_id' => $v3LeaderBoard->id,
+                        'journal_event_id' => $v3JournalEvent->id,
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Migrate leader board goal plans.
+     *
+     * @param $v3LeaderBoard
+     */
+    public function migrateLeaderboardGoalPlans($v3LeaderBoard)
+    {
+        $v2LeaderBoardGoalPlans = $this->getV2LeaderBoardGoalPlans($v3LeaderBoard->v2_leaderboard_id);
+        if (!empty($v2LeaderBoardGoalPlans)) {
+            $v2GoalPlanIDs = [];
+            foreach ($v2LeaderBoardGoalPlans as $v2LeaderBoardGoalPlan) {
+                $v2GoalPlanIDs[] = $v2LeaderBoardGoalPlan->goal_plan_id;
+            }
+
+            $v3GoalPlans = GoalPlan::whereIn('v2_goal_plan_id', $v2GoalPlanIDs)->get();
+            $v3LeaderBoard->goalPlans()->sync($v3GoalPlans);
+        }
+    }
+
 }

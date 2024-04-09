@@ -60,6 +60,8 @@ class JournalEventType extends BaseModel
     const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_FIXED_FEE = 'Reversal program pays for fixed fee';
     const JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONTHLY_USAGE_FEE = 'Reversal program pays for monthly usage fee';
     const JOURNAL_EVENT_TYPES_PROGRAM_TRANSFERS_MONIES_AVAILABLE = 'Program transfers monies available';
+    const JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_SAAS_FEES = 'Program Pays for Saas Fees';
+    const JOURNAL_EVENT_TYPES_CHARGE_SAAS_FEES = 'Charge program for Saas Fees';
 
 
     public static function getTypeAllocatePeerPoints(): int

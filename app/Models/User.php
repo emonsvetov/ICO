@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\WithOrganizationScope;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Traits\HasProgramRoles;
 use App\Models\Traits\GetModelByMixed;
@@ -123,7 +124,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['name', 'isSuperAdmin', 'isAdmin'];
+    protected $appends = ['name', 'isSuperAdmin', 'isAdmin', 'unitNumber'];
     protected function getNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
@@ -138,7 +139,9 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     }
     protected function setPasswordAttribute($password)
     {
-        $this->attributes['password'] = bcrypt($password);
+        // Save md5 password from v2 when run migrate users.
+        $routeName = request()->route()->getName();
+        $this->attributes['password'] = $routeName == 'runMigrations' ? $password : bcrypt($password);
     }
     public function isAdmin()
     {
@@ -177,6 +180,21 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return $this->belongsToMany(Program::class, 'program_user')
         ->withTimestamps();
+    }
+
+    public function unit_numbers()
+    {
+        return $this->belongsToMany(UnitNumber::class, 'unit_number_has_users')->withTimestamps();
+    }
+
+    public function getUnitNumberAttribute()
+    {
+        return $this->unit_numbers()->where('user_id', $this->id)->first();
+    }
+
+    public function award_levels()
+    {
+        return $this->hasMany(AwardLevel::class);
     }
 
     public function readAvailableBalance( $program, $user = null )  {

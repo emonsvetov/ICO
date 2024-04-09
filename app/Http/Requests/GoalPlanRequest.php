@@ -15,17 +15,17 @@ class GoalPlanRequest extends FormRequest
 {
 
     public function __construct(ValidationFactory $validationFactory)
-    { 
+    {
         $sale_type_id = GoalPlanType::getIdByTypeSales();
-        //if(!empty($archived_event)) 
+        //if(!empty($archived_event))
         //$archived_event->load('eventType');
         $validationFactory->extend(
             'exceeded_event_type_check',
             function ($attribute, $value, $parameters) use($sale_type_id) {
-                $request = $this->all(); 
+                $request = $this->all();
                 if($request['goal_plan_type_id'] == $sale_type_id) {
                     $exceeded_event = Event::getEvent($request['exceeded_event_id']);
-                    if(!empty($exceeded_event)) 
+                    if(!empty($exceeded_event))
                     $exceeded_event->load('eventType');
                     if($exceeded_event->eventType->id != EventType::getIdByTypeStandard()) {
                         return false;
@@ -45,9 +45,9 @@ class GoalPlanRequest extends FormRequest
             function ($attribute, $value, $parameters) use($personel_type_id) {
                 $request = $this->all();
                 $achieved_event = Event::getEvent($request['achieved_event_id']);
-                if(!empty($achieved_event)) 
+                if(!empty($achieved_event))
                     $achieved_event->load('eventType');
-                
+
                if($request['goal_plan_type_id'] == $personel_type_id) {
                     if($achieved_event->eventType->id != EventType::getIdByTypeStandard()) {
                         return false;
@@ -64,7 +64,7 @@ class GoalPlanRequest extends FormRequest
             function ($attribute, $value, $parameters) use($recog_type_id) {
                 $request = $this->all();
                 $achieved_event = Event::getEvent($request['achieved_event_id']);
-                if(!empty($achieved_event)) 
+                if(!empty($achieved_event))
                     $achieved_event->load('eventType');
                 if($request['goal_plan_type_id'] == $recog_type_id) {
                     if(!empty($achieved_event)) {
@@ -74,7 +74,7 @@ class GoalPlanRequest extends FormRequest
                         }
                     }
                 }
-                
+
                  return true;
             },
             'Event type must be badge'
@@ -85,7 +85,7 @@ class GoalPlanRequest extends FormRequest
     }
     protected function prepareForValidation()
     {
-        $request = $this->all(); 
+        $request = $this->all();
         if(!$this->goalPlan) { //Create
             if( empty($request['date_begin']) )   {
                 $request['date_begin'] = date("Y-m-d"); //default goal plan start date to be today
@@ -94,7 +94,7 @@ class GoalPlanRequest extends FormRequest
             if( empty($request['date_end']) )   { //default custom expire date to 1 year from today
                 $request['date_end'] = date('Y-m-d', strtotime('+1 year'));
             }
-        
+
             switch (isset($request['goal_plan_type_id'])) {
                 case GoalPlanType::getIdByTypeEventcount() :
                     // Force the factors to 0 so we don't have to check the goal plan type when we do the awarding
@@ -116,7 +116,7 @@ class GoalPlanRequest extends FormRequest
                 $request['factor_before']=0.0;
                 $request['factor_after'] = 0.0;
                 $request['award_per_progress'] = false;
-                $request['award_email_per_progress'] = false; 
+                $request['award_email_per_progress'] = false;
             }
         }
         $this->merge(
@@ -142,7 +142,7 @@ class GoalPlanRequest extends FormRequest
     {
         return [
             'next_goal_id'=>'integer|sometimes|nullable',
-            'previous_goal_id'=>'integer|sometimes|nullable', 
+            'previous_goal_id'=>'integer|sometimes|nullable',
             'program_id'=>'required|integer',
             'organization_id'=>'required|integer',
             'name'=>[
@@ -165,8 +165,8 @@ class GoalPlanRequest extends FormRequest
             'automatic_frequency'=>'nullable|sometimes|string|required_if:automatic_progress,1',//|string',
             'automatic_value'=>'nullable|integer|required_if:automatic_progress,1|min:0',//|integer',
             'expiration_rule_id'=>'required|integer',
-            'custom_expire_offset'=>'nullable|sometimes|integer|required_if:expiration_rule_id,4|gt:0',//|integer', //if expiration_rule_id is custom
-            'custom_expire_units'=>'nullable|sometimes|string|required_if:expiration_rule_id,4',//|string', //if expiration_rule_id is custom 
+            'custom_expire_offset'=>'nullable|sometimes|integer|required_if:expiration_rule_id,4',//|integer', //if expiration_rule_id is custom
+            'custom_expire_units'=>'nullable|sometimes|string|required_if:expiration_rule_id,4',//|string', //if expiration_rule_id is custom
             'annual_expire_month'=>'sometimes|integer|required_if:expiration_rule_id,5|nullable',//|integer', //if expiration_rule_id is annual
             'annual_expire_day'=> 'sometimes|integer|required_if:expiration_rule_id,5|nullable',//|integer',  //if expiration_rule_id is annual integer
             'date_begin'=> 'required|date_format:Y-m-d',

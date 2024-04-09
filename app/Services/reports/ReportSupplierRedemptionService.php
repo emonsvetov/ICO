@@ -46,6 +46,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
      */
     protected function setWhereFilters(Builder $query): Builder
     {
+        $query->whereNull('merchants.deleted_at');
         $query->whereNotNull('medium_info.redemption_date');
         if ($this->params['programId']){
             $merchantIds = ProgramMerchant::where('program_id', $this->params['programId'])->pluck('merchant_id')->toArray();

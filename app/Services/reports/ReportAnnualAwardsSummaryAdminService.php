@@ -2,6 +2,9 @@
 
 namespace App\Services\reports;
 
+use App\Models\AccountType;
+use App\Models\JournalEventType;
+use App\Models\Program;
 use App\Services\Report\ReportServiceAwardAudit;
 use App\Services\Report\ReportServiceSumBudget;
 use App\Services\Report\ReportServiceSumByAccountAndJournalEvent;
@@ -67,6 +70,32 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
 
     public function getTable(): array
     {
+
+        $program = Program::find($this->params[self::PROGRAM_ID]);
+        $lastYear = ($this->params['year'] - 1) ?? date('Y');
+        $subreport_params = [];
+        $subreport_params [self::YEAR] = $lastYear;
+        $subreport_params [self::DATE_BEGIN] = $this->params [self::DATE_FROM];
+        $subreport_params [self::DATE_END] = $this->params [self::DATE_TO];
+        $subreport_params [self::PROGRAMS] = [$program->account_holder_id];
+        $subreport_params [self::ACCOUNT_TYPES] = [
+            AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
+            AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE,
+        ];
+        $subreport_params [self::JOURNAL_EVENT_TYPES] = [
+            JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS,
+            JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES,
+        ];
+
+        $previous_year_reclaims_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
+        $previous_year_reclaims_report_table = $previous_year_reclaims_report->getTable ();
+
+        $currentYear = ($this->params['year']) ?? date('Y');
+        $subreport_params [self::YEAR] = $currentYear;
+        $current_year_reclaims_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
+        $current_year_reclaims_report_table = $current_year_reclaims_report->getTable ();
+
+
         $yearMonthData = $this->getData([
             'account_holder_id' => $this->params['program_account_holder_ids'],
             'year' => (int)$this->params['year'] ?? date('Y'),
@@ -142,7 +171,7 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
                 $currentYear = self::sumValues($yearData);
             }
 
-            $awardsData[] = [
+            $row = [
                 'key' => $key,
                 'financial_summary' => $val,
                 strtolower($monthName . '_' . $year - 1) => (float)$previousMonthValue,
@@ -150,6 +179,53 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
                 $year - 1 => (float)$previousYearValue,
                 $year . '' => (float)$currentYear,
             ];
+
+            $previous_year_reclaims_report_sum = 0;
+            $current_year_reclaims_report_sum = 0;
+            if ($key == 'event_summary_program_reclaimed') {
+                if (is_array ( $previous_year_reclaims_report_table ) && count ( $previous_year_reclaims_report_table ) > 0) {
+                    foreach ( $previous_year_reclaims_report_table as $program_account_holder_id => $programs_previous_year_reclaims_report_table ) {
+                        // Reclaimed Points
+                        if (isset ( $programs_previous_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER] )) {
+                            if (isset ( $programs_previous_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER][self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS] )) {
+                                $row[$lastYear] += $programs_previous_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER] [self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS];
+                                $previous_year_reclaims_report_sum = $row[$lastYear] = ($row[$lastYear] * -1);
+
+                            }
+                        }
+                        // Reclaimed Monies
+                        if (isset ( $programs_previous_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_AVAILABLE] )) {
+                            if (isset ( $programs_previous_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_AVAILABLE] [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES] )) {
+                                $row[$lastYear] += $programs_previous_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_AVAILABLE] [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES];
+                                $previous_year_reclaims_report_sum = $row[$lastYear] = ($row[$lastYear] * -1);
+                            }
+                        }
+                    }
+                }
+
+                if (is_array ( $current_year_reclaims_report_table ) && count ( $current_year_reclaims_report_table ) > 0) {
+                    foreach ( $current_year_reclaims_report_table as $program_account_holder_id => $programs_current_year_reclaims_report_table ) {
+                        // Reclaimed Points
+                        if (isset ( $programs_current_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER] )) {
+                            if (isset ( $programs_current_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER][self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS] )) {
+                                $row[$year] += $programs_current_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER] [self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS];
+                                $current_year_reclaims_report_sum = $row[$year] = ($row[$year] * -1);
+
+                            }
+                        }
+                        // Reclaimed Monies
+                        if (isset ( $programs_current_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_AVAILABLE] )) {
+                            if (isset ( $programs_current_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_AVAILABLE] [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES] )) {
+                                $row[$year] += $programs_current_year_reclaims_report_table [self::ACCOUNT_TYPE_MONIES_AVAILABLE] [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES];
+                                $current_year_reclaims_report_sum = $row[$year] = ($row[$year] * -1);
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            $awardsData[] = $row;
         }
         $eventSummary = [];
         foreach ($awardsData as $key => $value) {
@@ -199,6 +275,8 @@ class ReportAnnualAwardsSummaryAdminService extends ReportAnnualAwardsSummarySer
             $previousYearAnnualTotal += isset($previousYearData[$key]) ? $previousYearData[$key] : 0;
             $annualTotal += isset($yearData[$key]) ? $yearData[$key] : 0;
         }
+        $previousYearAnnualTotal = $previousYearAnnualTotal + $previous_year_reclaims_report_sum;
+        $annualTotal = $annualTotal + $current_year_reclaims_report_sum;
 
         foreach ($eventSummary as $value) {
             $rewardData[] = $value;

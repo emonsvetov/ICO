@@ -177,6 +177,11 @@ class PermissionSeeder extends Seeder
             'mark-notifications-read',
             'push-notification-create',
             'can-feeling-survey',
+            'unit-number-list',
+            'unit-number-create',
+            'unit-number-update',
+            'unit-number-delete',
+            'unit-number-assign'
         ];
 
         foreach ($permissions as $permission) {

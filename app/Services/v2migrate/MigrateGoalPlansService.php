@@ -2,7 +2,9 @@
 namespace App\Services\v2migrate;
 
 use App\Models\Domain;
+use App\Models\Event;
 use App\Models\GoalPlan;
+use App\Models\GoalPlansEvent;
 use App\Models\Invoice;
 use App\Models\InvoiceJournalEvent;
 use App\Models\InvoiceType;
@@ -14,15 +16,13 @@ use Exception;
 
 class MigrateGoalPlansService extends MigrationService
 {
-    private ProgramService $programService;
 
     public $countUpdateGoalPlans = 0;
     public $countCreateGoalPlans = 0;
 
-    public function __construct(ProgramService $programService)
+    public function __construct()
     {
         parent::__construct();
-        $this->programService = $programService;
     }
 
     /**
@@ -64,14 +64,11 @@ class MigrateGoalPlansService extends MigrationService
      */
     public function getSubPrograms($v3Program)
     {
-        $programs = $this->programService->getHierarchyByProgramId($organization = FALSE, $v3Program->id)->toArray();
-        $subPrograms = $programs[0]["children"] ?? FALSE;
-
-        $v3SubProgram = Program::find($v3Program->id);
-        $v2AccountHolderID = $v3SubProgram->v2_account_holder_id ?? FALSE;
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
 
         if ($v2AccountHolderID) {
-            $this->migrateGoalPlans($v2AccountHolderID, $v3SubProgram);
+            $this->migrateGoalPlans($v2AccountHolderID, $v3Program);
         }
 
         if (!empty($subPrograms)) {
@@ -112,8 +109,8 @@ class MigrateGoalPlansService extends MigrationService
                 'notification_body' => NULL, // all NULL on v2
                 'achieved_callback_id' => NULL, // all NULL on v2
                 'exceeded_callback_id' => NULL, // all NULL on v2
-                'achieved_event_id' => $v2GoalPlan->achieved_event_template_id, // TODO
-                'exceeded_event_id' => $v2GoalPlan->exceeded_event_template_id, // TODO
+                'achieved_event_id' => $this->getV3EventID($v2GoalPlan->achieved_event_template_id),
+                'exceeded_event_id' => $this->getV3EventID($v2GoalPlan->exceeded_event_template_id),
                 'automatic_progress' => $v2GoalPlan->automatic_progress,
                 'automatic_frequency' => $v2GoalPlan->automatic_frequency,
                 'automatic_value' => $v2GoalPlan->automatic_value,
@@ -149,7 +146,34 @@ class MigrateGoalPlansService extends MigrationService
                 $this->countUpdateGoalPlans++;
             }
 
+            $v2GoalPlanEvents = $this->getV2GoalPlanEvents($v2GoalPlan->id);
+            if (!empty($v2GoalPlanEvents)) {
+                  $v2EventIDs = [];
+                  foreach ($v2GoalPlanEvents as $v2GoalPlanEvent) {
+                      $v2EventIDs[] = $v2GoalPlanEvent->event_template_id;
+                  }
+                  $v3Events = Event::whereIn('v2_event_id', $v2EventIDs)->get();
+                  foreach ($v3Events as $v3Event) {
+                      GoalPlansEvent::create([
+                          'goal_plans_id' => $v3GoalPlan->id,
+                          'event_id' => $v3Event->id,
+                      ]);
+                  }
+            }
+
         }
+    }
+
+    /**
+     * Get v3 event ID.
+     *
+     * @param $v2EventID
+     * @return null
+     */
+    public function getV3EventID($v2EventID)
+    {
+        $event = Event::where('v2_event_id', $v2EventID)->first();
+        return $event->id ?? NULL;
     }
 
 }
