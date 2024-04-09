@@ -56,6 +56,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				];
 				foreach ( $programs as $program ) {
 					$account_holder_ids[] = $program->account_holder_id;
+                    $program->setShownId();
                     $program = (object)$program->toArray();
 					$table[$program->account_holder_id] = $program;
                     foreach ($defaultValues as $key => $value) {
@@ -312,7 +313,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 															// $table[(int)$program->account_holder_id]->points_purchased -= $amount;
 														}
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_SETUP_FEE:
-                                                            $table[(int)$program->account_holder_id]->program_setup_fee -= $amount;
+                                                            $table[(int)$program->account_holder_id]->setup_fee -= $amount;
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_FIXED_FEE:
                                                             $table[(int)$program->account_holder_id]->program_fixed_fee -= $amount;
@@ -485,7 +486,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         $newTable = [];
 
         foreach ($table as $key => $item) {
-            if (empty($item->dinamicPath)) {
+            if ($item->parent_id == $programs[0]->parent_id) {
                 $newTable[$item->id] = clone $item;
 
                 foreach ($defaultValues as $key => $value) {
@@ -493,23 +494,25 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 }
             } else {
                 $tmpPath = explode(',', $item->dinamicPath);
-                if (isset($newTable[$tmpPath[0]])) {
-                    $newTable = $this->tableToTree($newTable, $item, $tmpPath);
+                $tmpPath = array_diff($tmpPath, explode(',',$programs[0]->dinamicPath));
+                $first = reset($tmpPath);
 
-                    $firstChild = $newTable[$tmpPath[0]]->subRows[0] ?? null;
-                    if ($firstChild && $firstChild->id == $tmpPath[0]){
+                if (isset($newTable[$first])) {
+                    $newTable = $this->tableToTree($newTable, $item, $tmpPath, 0, $defaultValues);
+
+                    $firstChild = $newTable[$first]->subRows[0] ?? null;
+                    if ($firstChild && $firstChild->id == $first){
                     } else {
-                        $tmpEl = clone $newTable[$tmpPath[0]];
+                        $tmpEl = clone $newTable[$first];
                         $tmpEl->dinamicDepth = 0;
                         unset($tmpEl->subRows);
-                        array_unshift($newTable[$tmpPath[0]]->subRows, $tmpEl);
+                        array_unshift($newTable[$first]->subRows, $tmpEl);
+                    }
+
+                    foreach ($defaultValues as $key => $value) {
+                        $newTable[$first]->$key = $this->amountFormat($newTable[$first]->$key + $this->amountFormat($item->$key));
                     }
                 }
-
-                foreach ($defaultValues as $key => $value) {
-                    $newTable[$tmpPath[0]]->$key = $this->amountFormat($newTable[$tmpPath[0]]->$key + $this->amountFormat($item->$key));
-                }
-
             }
         }
         $this->table = [];

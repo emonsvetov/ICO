@@ -71,7 +71,6 @@ class ProgramController extends Controller
         if ($programs->isNotEmpty()) {
             $result['data'] = _tree_flatten($programs);
             return response($result);
-//            return response($programs);
         }
 
         return response([]);

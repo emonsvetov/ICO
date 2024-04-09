@@ -180,5 +180,4 @@ class MediumInfo extends BaseModel
         $query->selectRaw("medium_info.*");
         return $query->get()->first();
     }
-
 }

@@ -60,6 +60,7 @@ class UserRequest extends FormRequest
             'avatar' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,ico|max:2048',
             'send_invite' => 'sometimes|boolean',
             'external_id'=> 'nullable|string',
+            'unit_number'=> 'sometimes|nullable|integer',
         ];
     }
 
