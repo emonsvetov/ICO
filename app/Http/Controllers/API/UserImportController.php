@@ -106,7 +106,7 @@ class UserImportController extends Controller
     }
 
 
-    public function awardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization, Program $program = null)
+    public function awardUsersHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization, Program $program = null)
     {
         //Use policies to determine if has rights and correct organization
         //Setup Request file
@@ -118,11 +118,7 @@ class UserImportController extends Controller
 
         $csvHeaders = $csvService->getFieldsToMap(
             $validated['upload-file'], $supplied_constants,
-            // new \App\Http\Requests\CSVProgramRequest,
-            // new \App\Http\Requests\UserRequest,
-            new \App\Http\Requests\UserImportTypeRequest,
-            new \App\Http\Requests\AwardRequest,
-            // new \App\Http\Requests\EventXmlDataRequest
+            new \App\Http\Requests\ImportAwardUsersRequest
         );
 
         return $csvHeaders;

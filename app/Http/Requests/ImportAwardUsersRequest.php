@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ImportAwardUserRequest extends FormRequest
+class ImportAwardUsersRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,7 +23,17 @@ class ImportAwardUserRequest extends FormRequest
      */
     public function rules()
     {
-        return [];
+        return [
+            'program_id' => 'required|integer',
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            'email' => 'required|email',
+            'event_id' => 'required|integer',
+            'override_cash_value' => 'nullable|numeric',
+            'referrer' => 'nullable|string',
+            'message' => 'required|string',
+            'notes' => 'nullable|string'
+        ];
     }
 
     public function importRules()
