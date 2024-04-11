@@ -123,38 +123,23 @@ abstract class ReportServiceAbstract
         if (isset($params[self::ACCOUNT_TYPES])) {
             $temp = array();
             foreach( $params[self::ACCOUNT_TYPES] as $param) {
-                array_push($temp, $param[0]);
+                $temp[] = is_array($param) ? $param[0] : $param;
             }
             $this->params[self::ACCOUNT_TYPES] = $temp;
         }
         else {
             $this->params[self::ACCOUNT_TYPES] = null;
         }
-        // $this->params[self::ACCOUNT_TYPES] = isset($params[self::ACCOUNT_TYPES]) ? (
-        //     is_array ( $params[self::ACCOUNT_TYPES] ) ?
-        //     foreach( $params[self::ACCOUNT_TYPES] as $param) {
-        //         array_push($temp, $param[0]);
-        //     }
-        //     :
-        //     array (
-        //         $params[self::ACCOUNT_TYPES]
-        //     )
-        // ) : null;
         if (isset($params[self::JOURNAL_EVENT_TYPES])) {
             $temp = array();
             foreach( $params[self::JOURNAL_EVENT_TYPES] as $param) {
-                array_push($temp, $param[0]);
+                $temp[] = is_array($param) ? $param[0] : $param;
             }
             $this->params[self::JOURNAL_EVENT_TYPES] = $temp;
         }
         else {
             $this->params[self::JOURNAL_EVENT_TYPES] = null;
         }
-        // $this->params[self::JOURNAL_EVENT_TYPES] = isset($params[self::JOURNAL_EVENT_TYPES]) ? (
-        //     is_array ( $params[self::JOURNAL_EVENT_TYPES] ) ? $params[self::JOURNAL_EVENT_TYPES] : array (
-        //         $params[self::JOURNAL_EVENT_TYPES]
-        //     )
-        // ) : null;
 
         $this->params[self::INVENTORY_TYPE] = $params[self::INVENTORY_TYPE] ?? null;
         $this->params[self::KEYWORD] = $params[self::KEYWORD] ?? null;
@@ -413,4 +398,30 @@ abstract class ReportServiceAbstract
     public function amountFormat($value){
         return number_format((float)$value, 2, '.', '');
     }
+
+    public function tableToTree($newTable, $item, $path, $level = 0, $defaultValues = [])
+    {
+        $first = array_shift($path);
+        $tableKey = $level === 0 ? $first : array_search($first, array_column($newTable, 'id'));
+
+        if (count($path) === 0) {
+            foreach ($defaultValues as $keyValue => $value) {
+                $item->$keyValue = $this->amountFormat($item->$keyValue);
+            }
+            $newTable[$tableKey]->subRows[] = $item;
+        } else {
+            $level++;
+
+            $subRows = $this->tableToTree($newTable[$tableKey]->subRows, $item, $path, $level, $defaultValues);
+            foreach ($subRows as $key => $subRow) {
+                foreach ($defaultValues as $keyValue => $value) {
+                    $subRows[$key]->$keyValue = $this->amountFormat($subRows[$key]->$keyValue);
+                }
+            }
+
+            $newTable[$tableKey]->subRows = $subRows;
+        }
+        return $newTable;
+    }
+
 }

@@ -3,9 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class InvitationRequest extends FormRequest
+class LeaderboardGoalPlansRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,12 +24,8 @@ class InvitationRequest extends FormRequest
     public function rules()
     {
         return [
-            //'program_id' => 'required|integer',
-            'first_name' => 'required|string',
-			'last_name' =>  'required|string',
-            'email' => 'required|email|unique:users',
-            'unit_number'=> 'sometimes|nullable|integer',
-            //award level
+            'goal_plan_id' => 'required|integer',
+            'action' => 'string|in:assign,unassign'
         ];
     }
 }

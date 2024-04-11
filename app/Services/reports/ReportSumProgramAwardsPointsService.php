@@ -23,18 +23,18 @@ class ReportSumProgramAwardsPointsService extends ReportServiceAbstract
 	protected function getDataDateRange() {
 		$data = $this->calcByDateRange ( $this->getParams () );
 		// Organize the data table so it is easier to look stuff up later
+        $table = [];
+
 		if (in_array ( self::FIELD_MONTH, $this->params [self::SQL_GROUP_BY] )) {
 			foreach ( $data as $i => $row ) {
-				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] [$row->{self::FIELD_MONTH}] = $row->{self::FIELD_VALUE};
-                unset($this->table[$i]);
+				$table[$row->{$this::FIELD_ID}][$row->{self::FIELD_ACCOUNT_TYPE}][$row->{self::FIELD_JOURNAL_EVENT_TYPE}][$row->{self::FIELD_MONTH}] = $row->{self::FIELD_VALUE};
 			}
 		} else {
 			foreach ( $data as $i => $row ) {
-				$this->table [$row->{$this::FIELD_ID}] [$row->{self::FIELD_ACCOUNT_TYPE}] [$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
-                unset($this->table[$i]);
+                $table[$row->{$this::FIELD_ID}][$row->{self::FIELD_ACCOUNT_TYPE}][$row->{self::FIELD_JOURNAL_EVENT_TYPE}] = $row->{self::FIELD_VALUE};
 			}
 		}
-
+        $this->table = $table;
 	}
 
 	/** basic sql without any filters */
@@ -69,22 +69,22 @@ class ReportSumProgramAwardsPointsService extends ReportServiceAbstract
 	 * @return array */
 	protected function getWhereFilters() {
 		$where = array ();
-		$where [] = "(`atypes`.`name` = 'Points Awarded')";
-		$where [] = "(`jet`.`type` = 'Award points to recipient')";
-		$where [] = "`posts`.`is_credit` = 1";
-		if (isset ( $this->params [self::DATE_BEGIN] ) && $this->params [self::DATE_BEGIN] != '') {
-			$where [] = "posts.created_at >= '{$this->params[self::DATE_BEGIN]}'";
+		$where[] = "(`atypes`.`name` = 'Points Awarded')";
+		$where[] = "(`jet`.`type` = 'Award points to recipient')";
+		$where[] = "`posts`.`is_credit` = 1";
+		if (isset ( $this->params[self::DATE_BEGIN] ) && $this->params[self::DATE_BEGIN] != '') {
+			$where[] = "posts.created_at >= '{$this->params[self::DATE_BEGIN]}'";
 		}
-		if (isset ( $this->params [self::DATE_END] ) && $this->params [self::DATE_END] != '') {
-			$where [] = "posts.created_at <= '{$this->params[self::DATE_END]}'";
+		if (isset ( $this->params[self::DATE_END] ) && $this->params[self::DATE_END] != '') {
+			$where[] = "posts.created_at <= '{$this->params[self::DATE_END]}'";
 		}
-		if (is_array ( $this->params [self::PROGRAMS] ) && count ( $this->params [self::PROGRAMS] ) > 0) {
-			$where [] = "p.account_holder_id IN (" . implode ( ',', $this->params [self::PROGRAMS] ) . ")";
+		if (is_array ( $this->params[self::PROGRAMS] ) && count ( $this->params[self::PROGRAMS] ) > 0) {
+			$where[] = "p.account_holder_id IN (" . implode ( ',', $this->params[self::PROGRAMS] ) . ")";
 		}
-		if (isset ($this->params [self::YEAR]) && $this->params [self::YEAR] > 0) {
-			$where [] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
+		if (isset ($this->params[self::YEAR]) && $this->params[self::YEAR] > 0) {
+			$where[] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
 		}
-		
+
 		return $where;
 
 	}

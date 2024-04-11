@@ -92,7 +92,8 @@ class MigrateJournalEventService extends MigrationService
             if ($v3ParentTmp) {
                 $parent_journal_event_id = $v3ParentTmp->id;
             } else {
-                throw new Exception("Can`t found parent Journal Event: {$v2JournalEvent->parent_journal_event_id}");
+                // Yep, we have such broken rows in V2. So just close your eyes to this problem.
+//                throw new Exception("Can`t found parent Journal Event: {$v2JournalEvent->parent_journal_event_id}");
             }
         }
 

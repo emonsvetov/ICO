@@ -23,7 +23,7 @@ class ProgramParticipantController extends Controller
         foreach ($users as $key=>$user){
             $users[$key]['pointBalance'] = AccountService::readAvailableBalanceForUser($program, $user) + $userService->readAvailablePeerBalance($user, $program);
             $users[$key]['redeemedBalance'] = AccountService::readRedeemedTotalForParticipant($program, $user);
-            $users[$key]['peerBalance'] = 0;//todo
+            $users[$key]['peerBalance'] = $userService->readAvailablePeerBalance($user, $program);//todo
             $awardLevel = AwardLevel::find($user->award_level);
             if ($awardLevel) {
                 $user->award_level = $awardLevel->name;

@@ -86,6 +86,8 @@ class TangoVisaApiService
                     $code = $result['reward']['credentials']['Redemption Link'];
                 }elseif(isset($result['reward']['credentials']['Redemption URL'])){
                     $code = $result['reward']['credentials']['Redemption URL'];
+                }elseif(isset($result['reward']['credentials']['Landing Page'])){
+                    $code = $result['reward']['credentials']['Landing Page'];
                 }elseif(isset($result['reward']['credentials']['Gift Code'])){
                     $code = $result['reward']['credentials']['Gift Code'];
                 }elseif(isset($result['reward']['credentials']['E-Gift Card Number'])){

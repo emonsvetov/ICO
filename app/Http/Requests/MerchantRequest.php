@@ -52,7 +52,8 @@ class MerchantRequest extends FormRequest
             'status' => 'sometimes|integer',
             'display_popup' => 'sometimes|boolean',
             'deleted' => 'sometimes|boolean',
-            'v2_merchant_id' => 'sometimes|integer'
+            'v2_merchant_id' => 'sometimes|integer',
+            'set_second_email_from_tango' => 'sometimes|integer'
         ];
     }
 }

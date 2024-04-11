@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\AccountType;
 use App\Models\Role;
 use App\Services\reports\User\ReportServiceUserHistory;
 use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
@@ -84,11 +83,9 @@ class ProgramUserController extends Controller
 
     public function store(UserRequest $request, ProgramUserService $programUserService, Organization $organization, Program $program)
     {
-        DB::beginTransaction();
         try{
             $validated = $request->validated();
             $user = $programUserService->create($program, $validated);
-            DB::commit();
             return response(['user' => $user]);
         } catch (\Exception $e )    {
             DB::rollBack();
@@ -155,10 +152,11 @@ class ProgramUserController extends Controller
         return response($report->getReport());
     }
 
-    public function update(UserRequest $request, Organization $organization, Program $program, User $user)
+    public function update(UserRequest $request, Organization $organization, Program $program, User $user, ProgramUserService $programUserService)
     {
         $validated = $request->validated();
-        $user->update($validated);
+
+        $user = $programUserService->update( $program, $user, $validated );
 
         if ( ! empty($validated['roles'])) {
             $user->syncProgramRoles($program->id, $validated['roles']);
@@ -202,7 +200,7 @@ class ProgramUserController extends Controller
             'points' => $pointsEarned,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
-            'peerBalance' => 0, //todo
+            'peerBalance' => $peerBalance, //todo
             'redeemedBalance' => $redeemedBalance,
             'expiredBalance' => $expiredBalance,
         ]);
@@ -225,8 +223,10 @@ class ProgramUserController extends Controller
         ));
     }
 
-    protected function userResponse(User $user): UserResource
+    protected function userResponse(User $user)
     {
+        // $user->load('unit_numbers');
+        // pr($user->unitNumber());
         return new UserResource($user->load('roles'));
     }
 

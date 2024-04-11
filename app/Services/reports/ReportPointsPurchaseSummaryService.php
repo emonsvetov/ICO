@@ -100,6 +100,7 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
         $dateEnd = date('Y-m-d 23:59:59', strtotime($this->params[self::DATE_TO]));
         $programAccountHolderIds = $this->params[self::PROGRAMS];
         $programs = Program::whereIn('account_holder_id', $programAccountHolderIds)->get();
+
         if ($programs) {
             $programIds = $programs->pluck('id')->toArray();
             $topLevelProgramData = $programs[0]->getRoot(['id', 'name']);
@@ -282,58 +283,47 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
 
             $newTable = [];
             foreach ($table as $key => $item) {
-                if (empty($item->dinamicPath)) {
+                if ($item->parent_id == $programs[0]->parent_id) {
                     $newTable[$item->id] = clone $item;
                 } else {
                     $tmpPath = explode(',', $item->dinamicPath);
-                    if (isset($newTable[$tmpPath[0]])) {
-                        $newTable = $this->tableToTree($newTable, $item, $tmpPath);
-                    }
+                    $tmpPath = array_diff($tmpPath, explode(',',$programs[0]->dinamicPath));
+                    $first = reset($tmpPath);
 
-                    $newTable[$tmpPath[0]]->participants_count += $this->amountFormat($item->participants_count);
-                    $newTable[$tmpPath[0]]->month_1 += $this->amountFormat($item->month_1);
-                    $newTable[$tmpPath[0]]->month_2 += $this->amountFormat($item->month_2);
-                    $newTable[$tmpPath[0]]->month_3 += $this->amountFormat($item->month_3);
-                    $newTable[$tmpPath[0]]->month_4 += $this->amountFormat($item->month_4);
-                    $newTable[$tmpPath[0]]->month_5 += $this->amountFormat($item->month_5);
-                    $newTable[$tmpPath[0]]->month_6 += $this->amountFormat($item->month_6);
-                    $newTable[$tmpPath[0]]->month_7 += $this->amountFormat($item->month_7);
-                    $newTable[$tmpPath[0]]->month_8 += $this->amountFormat($item->month_8);
-                    $newTable[$tmpPath[0]]->month_9 += $this->amountFormat($item->month_9);
-                    $newTable[$tmpPath[0]]->month_10 += $this->amountFormat($item->month_10);
-                    $newTable[$tmpPath[0]]->month_11 += $this->amountFormat($item->month_11);
-                    $newTable[$tmpPath[0]]->month_12 += $this->amountFormat($item->month_12);
-                    $newTable[$tmpPath[0]]->per_participant += $this->amountFormat($item->per_participant);
-                    $newTable[$tmpPath[0]]->avg_per_month += $this->amountFormat($item->avg_per_month);
-                    $newTable[$tmpPath[0]]->avg_per_quarter += $this->amountFormat($item->avg_per_quarter);
-                    $newTable[$tmpPath[0]]->monthly_target += $this->amountFormat($item->monthly_target);
-                    $newTable[$tmpPath[0]]->quarterly_target += $this->amountFormat($item->quarterly_target);
-                    $newTable[$tmpPath[0]]->annual_target += $this->amountFormat($item->annual_target);
-                    $newTable[$tmpPath[0]]->Q1 += $this->amountFormat($item->Q1);
-                    $newTable[$tmpPath[0]]->Q2 += $this->amountFormat($item->Q2);
-                    $newTable[$tmpPath[0]]->Q3 += $this->amountFormat($item->Q3);
-                    $newTable[$tmpPath[0]]->Q4 += $this->amountFormat($item->Q4);
-                    $newTable[$tmpPath[0]]->YTD += $this->amountFormat($item->YTD);
+                    if (isset($newTable[$first])) {
+                        $newTable = $this->tableToTree($newTable, $item, $tmpPath);
+
+                        $newTable[$first]->participants_count += $this->amountFormat($item->participants_count);
+                        $newTable[$first]->month_1 += $this->amountFormat($item->month_1);
+                        $newTable[$first]->month_2 += $this->amountFormat($item->month_2);
+                        $newTable[$first]->month_3 += $this->amountFormat($item->month_3);
+                        $newTable[$first]->month_4 += $this->amountFormat($item->month_4);
+                        $newTable[$first]->month_5 += $this->amountFormat($item->month_5);
+                        $newTable[$first]->month_6 += $this->amountFormat($item->month_6);
+                        $newTable[$first]->month_7 += $this->amountFormat($item->month_7);
+                        $newTable[$first]->month_8 += $this->amountFormat($item->month_8);
+                        $newTable[$first]->month_9 += $this->amountFormat($item->month_9);
+                        $newTable[$first]->month_10 += $this->amountFormat($item->month_10);
+                        $newTable[$first]->month_11 += $this->amountFormat($item->month_11);
+                        $newTable[$first]->month_12 += $this->amountFormat($item->month_12);
+                        $newTable[$first]->per_participant += $this->amountFormat($item->per_participant);
+                        $newTable[$first]->avg_per_month += $this->amountFormat($item->avg_per_month);
+                        $newTable[$first]->avg_per_quarter += $this->amountFormat($item->avg_per_quarter);
+                        $newTable[$first]->monthly_target += $this->amountFormat($item->monthly_target);
+                        $newTable[$first]->quarterly_target += $this->amountFormat($item->quarterly_target);
+                        $newTable[$first]->annual_target += $this->amountFormat($item->annual_target);
+                        $newTable[$first]->Q1 += $this->amountFormat($item->Q1);
+                        $newTable[$first]->Q2 += $this->amountFormat($item->Q2);
+                        $newTable[$first]->Q3 += $this->amountFormat($item->Q3);
+                        $newTable[$first]->Q4 += $this->amountFormat($item->Q4);
+                        $newTable[$first]->YTD += $this->amountFormat($item->YTD);
+                    }
                 }
             }
             $this->table = array_values($newTable);
         }
 
         return [];
-    }
-
-    private function tableToTree($newTable, $item, $path, $level = 0)
-    {
-        $first = array_shift($path);
-        $tableKey = $level === 0 ? $first : array_search($first, array_column($newTable, 'id'));
-
-        if (count($path) === 0) {
-            $newTable[$tableKey]->subRows[] = $item;
-        } else {
-            $level++;
-            $newTable[$tableKey]->subRows = $this->tableToTree($newTable[$tableKey]->subRows, $item, $path, $level);
-        }
-        return $newTable;
     }
 
     public function getCsvHeaders(): array

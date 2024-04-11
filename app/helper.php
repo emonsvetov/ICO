@@ -146,7 +146,7 @@ if(!function_exists('_tree_flatten'))  {
         if(!$resultCollection) $resultCollection = collect();
         $depth++;
         foreach( $collection as $key => $model ) {
-            if($depth === 1 && $model->parent_id) {
+            if($depth === 1 && $model->parent_id != $collection[0]->parent_id) {
                 continue;
             }
             $children = clone $model->children;
@@ -514,4 +514,21 @@ if (! function_exists ( 'RawSql' ))
         return vsprintf(str_replace(['?'], ['\'%s\''], $query->toSql()), $query->getBindings());
     }
 }
+
+if (! function_exists ( 'validateDate' ))
+{
+    /**
+     * @param $date
+     * @param string $format
+     * @return bool
+     */
+    function validateDate($date, string $format = 'Y-m-d'): bool
+    {
+        $d = DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) == $date;
+    }
+}
+
+
+
 

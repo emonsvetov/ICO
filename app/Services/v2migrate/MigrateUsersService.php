@@ -2,6 +2,7 @@
 
 namespace App\Services\v2migrate;
 
+use DateTime;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Requests\UserRequest;
 use App\Models\Program;
@@ -141,6 +142,9 @@ class MigrateUsersService extends MigrationService
     {
         if ((int)$v2User->birth_month && (int)$v2User->birth_day) {
             $dob = "1970-" . ((int)$v2User->birth_month < 10 ? "0" . (int)$v2User->birth_month : $v2User->birth_month) . "-" . ((int)$v2User->birth_day < 10 ? "0" . (int)$v2User->birth_day : $v2User->birth_day);
+            if (!validateDate($dob)){
+                $dob = "1970-01-01";
+            }
         } else {
             $dob = "1970-01-01";
         }
@@ -149,7 +153,7 @@ class MigrateUsersService extends MigrationService
         $data = [
             'first_name' => $v2User->first_name,
             'last_name' => $v2User->last_name,
-            'email' => trim($v2User->email),
+            'email' => str_replace('’', '', trim($v2User->email)),
             'password' => $v2User->password,
             'password_confirmation' => $v2User->password,
             'organization_id' => $v3Program->organization_id,
@@ -177,7 +181,7 @@ class MigrateUsersService extends MigrationService
         $formRequest = new UserRequest();
         $validator = Validator::make($data, $formRequest->rules());
         if ($validator->fails()) {
-            throw new Exception($validator->errors()->toJson());
+            throw new Exception($validator->errors()->toJson() . print_r($data,true));
         }
         return User::createAccount($data);
     }

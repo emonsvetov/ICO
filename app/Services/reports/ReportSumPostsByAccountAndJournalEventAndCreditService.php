@@ -7,7 +7,11 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 	protected $is_credit = 1;
 
 	public function __construct($params) {
-		parent::__construct ( $params );
+	    parent::__construct ( $params );
+
+        $this->params[self::ACCOUNT_TYPES] = $params[self::ACCOUNT_TYPES];
+        $this->params[self::JOURNAL_EVENT_TYPES] = $params[self::JOURNAL_EVENT_TYPES];
+
 		if (isset ( $params [self::IS_CREDIT] )) {
 			$this->is_credit = $params [self::IS_CREDIT];
 		}
@@ -85,9 +89,23 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 		$where [] = "a.account_holder_id IN (" . implode ( ',', $this->params [self::PROGRAM_ACCOUNT_HOLDER_IDS] ) . ")";
 		$where [] = "posts.is_credit = {$this->is_credit}";
 		if (isset ( $this->params [self::ACCOUNT_TYPES] ) && count ( $this->params [self::ACCOUNT_TYPES] ) > 0) {
+            $this->params [self::ACCOUNT_TYPES] = array_map(function ($item) {
+                if (is_array($item)) {
+                    return $item[0];
+                } else {
+                    return $item;
+                }
+            }, $this->params [self::ACCOUNT_TYPES]);
 			$where [] = "atypes.name IN ('" . implode ( "','", $this->params [self::ACCOUNT_TYPES] ) . "')";
 		}
 		if (isset ( $this->params [self::JOURNAL_EVENT_TYPES] ) && count ( $this->params [self::JOURNAL_EVENT_TYPES] ) > 0) {
+            $this->params [self::JOURNAL_EVENT_TYPES] = array_map(function ($item) {
+                if (is_array($item)) {
+                    return $item[0];
+                } else {
+                    return $item;
+                }
+            }, $this->params [self::JOURNAL_EVENT_TYPES]);
 			$where [] = "jet.type IN ('" . implode ( "','", $this->params [self::JOURNAL_EVENT_TYPES] ) . "')";
 		}
 		if (isset ($this->params [self::YEAR]) && $this->params [self::YEAR] > 0) {
