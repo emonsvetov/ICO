@@ -74,13 +74,23 @@ class ReportInventoryOrderService extends ReportServiceAbstract
                     $row = [];
                     if ($first) {
                         $row['merchant_name'] = $item->merchant_name;
+                        $row['denomination'] = '';
+                        $row['count'] = '';
+                        $row['optimal_value'] = '';
+                        $arr[] = $row;
+
+                        $row['merchant_name'] = '';
+                        $row['denomination'] = $subItem->denomination;
+                        $row['count'] = $subItem->count;
+                        $row['optimal_value'] = $subItem->optimal_value;
                         $first = false;
                     } else {
                         $row['merchant_name'] = ''; // Or keep it as 'skip_td' if needed for your frontend logic
+                        $row['denomination'] = $subItem->denomination;
+                        $row['count'] = $subItem->count;
+                        $row['optimal_value'] = $subItem->optimal_value;
                     }
-                    $row['denomination'] = $subItem->denomination;
-                    $row['count'] = $subItem->count;
-                    $row['optimal_value'] = $subItem->optimal_value;
+
                     $arr[] = $row;
                 }
             }
