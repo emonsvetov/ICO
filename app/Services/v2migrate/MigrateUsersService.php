@@ -153,7 +153,7 @@ class MigrateUsersService extends MigrationService
         $data = [
             'first_name' => $v2User->first_name,
             'last_name' => $v2User->last_name,
-            'email' => trim($v2User->email),
+            'email' => str_replace('’', '', trim($v2User->email)),
             'password' => $v2User->password,
             'password_confirmation' => $v2User->password,
             'organization_id' => $v3Program->organization_id,
@@ -181,7 +181,7 @@ class MigrateUsersService extends MigrationService
         $formRequest = new UserRequest();
         $validator = Validator::make($data, $formRequest->rules());
         if ($validator->fails()) {
-            throw new Exception($validator->errors()->toJson());
+            throw new Exception($validator->errors()->toJson() . print_r($data,true));
         }
         return User::createAccount($data);
     }

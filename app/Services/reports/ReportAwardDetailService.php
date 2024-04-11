@@ -104,7 +104,11 @@ class ReportAwardDetailService extends ReportServiceAbstract
                 IF(`event_xml_data`.`award_level_name` IS NULL,`journal_event_types`.`type`,`event_xml_data`.`award_level_name`) AS `award_level_name`
             ")
         ]);
+
+        //throw new \Exception(print_r($query->toSql(),true));
+
         return $query;
+
     }
 
     /**
@@ -113,9 +117,16 @@ class ReportAwardDetailService extends ReportServiceAbstract
     protected function setWhereFilters(Builder $query): Builder
     {
         $query->where(function ($q) {
-            $q->where('account_types.name', '=', AccountType::getTypePointsAwarded())
-                ->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());
+            $q->where('account_types.name', '=', AccountType::getTypePointsAwarded());
+                /*->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());*/
         });
+        $query->whereIn('journal_event_types.type', [
+            'Award points to recipient',
+            'Award monies to recipient',
+            'Reclaim points',
+            'Reclaim monies'
+        ]);
+
         $from = Carbon::parse($this->params[self::DATE_BEGIN])->addDays(1)->toDateTimeString();
         $to = Carbon::parse($this->params[self::DATE_END])->addDays(2)->toDateTimeString();
         $query->whereBetween('postings.created_at', [$from, $to]);
@@ -134,7 +145,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
      */
     protected function setGroupBy(Builder $query): Builder
     {
-        // $query->groupBy('posting_id');
+        $query->groupBy('postings.id');
         return $query;
     }
 
@@ -143,7 +154,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
      */
     protected function setOrderBy(Builder $query): Builder
     {
-        $query->orderBy('posting_timestamp');
+        $query->orderBy('postings.created_at');
         return $query;
     }
 
