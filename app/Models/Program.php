@@ -407,24 +407,46 @@ class Program extends BaseModel
 
     public function getTemplate()
     {
+        $inheritFields = null;
         // If available return it
-        if( $this->template ) return $this->template;
-
-        // Get first available template from ancestors
-        $ancestors = $this->ancestors()->pluck('id');
-        if( $ancestors )
-        {
-            $ancestor = $this->has('template')->whereIn('id', $ancestors)->latest()->first();
-            if( $ancestor && $ancestor->template ) {
-                $this->setRelation('template', $ancestor->template);
-                return $ancestor->template;
+        if( $this->template ) {
+            //Let's find whether basic fields have values; if not try to patch them with parent's theme or default theme field values
+            foreach( ProgramTemplate::IMAGE_FIELDS as $imgField )    {
+                if( !$this->template->{$imgField} ) {
+                    $inheritFields[] = $imgField;
+                }
             }
         }
 
-        // If not set then use default template
-        $newTemplate = new ProgramTemplate( ProgramTemplate::DEFAULT_TEMPLATE );
-        $this->setRelation('template', $newTemplate);
-        return $newTemplate;
+        if( !$this->template ||  $inheritFields)  {
+            // Get first available template from ancestors
+            $ancestors = $this->ancestors()->pluck('id');
+            if( $ancestors )
+            {
+                $ancestor = $this->has('template')->whereIn('id', $ancestors)->latest()->first();
+                if( $ancestor && $ancestor->template ) {
+                    if( $this->template ) {
+                        if( $inheritFields )    {
+                            foreach( $inheritFields as $field ) {
+                                $this->template->{$field} = $ancestor->template->{$field};
+                            }
+                            $this->template->inherited = ['from' => $ancestor->id, 'fields' => $inheritFields];;
+                        }
+                    }   else {
+                        $ancestor->template->inherited = ['from' => $ancestor->id, 'fields' => null];
+                        $this->setRelation('template', $ancestor->template); //null means "all"
+                    }
+                }
+            }
+        }
+        if( !$this->template ) {
+            // If not set then use default template
+            $newTemplate = new ProgramTemplate( ProgramTemplate::DEFAULT_TEMPLATE );
+            $newTemplate->default = true;
+            $this->setRelation('template', $newTemplate);
+        }
+
+        return $this->template;
     }
     /***
      * Alias to getTemplate()
