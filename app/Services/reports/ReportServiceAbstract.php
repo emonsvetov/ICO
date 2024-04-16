@@ -80,6 +80,7 @@ abstract class ReportServiceAbstract
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;
+    protected bool $isArrangeByAccountHolderId = true;
     protected $query = null;
     const PAGINATE = 'paginate';
     const IS_CREDIT = "is_credit";
@@ -233,16 +234,18 @@ abstract class ReportServiceAbstract
     protected function getDataDateRange() {
         $data = $this->calcByDateRange ( $this->getParams() );
         // pr($data);
-        if (count ( $data ) > 0) {
-			foreach ( $data as $row ) {
-				foreach ( $row as $key => $val ) {
-                    if( isset($row->{self::FIELD_ID}) )
-                    {
-                        $this->table [$row->{self::FIELD_ID}] [$key] = $val;
+        if( $this->isArrangeByAccountHolderId ) {
+            if (count ( $data ) > 0) {
+                foreach ( $data as $row ) {
+                    foreach ( $row as $key => $val ) {
+                        if( isset($row->{self::FIELD_ID}) )
+                        {
+                            $this->table [$row->{self::FIELD_ID}] [$key] = $val;
+                        }
                     }
-				}
-			}
-		}
+                }
+            }
+        }
     }
 
 	protected function calcByDateRange( $params = [] )
