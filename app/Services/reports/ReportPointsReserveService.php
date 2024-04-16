@@ -301,7 +301,9 @@ class ReportPointsReserveService extends ReportServiceAbstract
         $newTable = [];
         foreach ($this->table as $key => $item) {
             if (empty($item->dinamicPath)) {
-                $newTable[$item->id] = clone $item;
+                $newTable[$item->id] =clone $item;
+                $newTable[$item->id]->dinamicDepth = 0;
+                $newTable[$item->id]->subRows[] = $item;
             } else {
                 $tmpPath = explode(',', $item->dinamicPath);
                 if (isset($newTable[$tmpPath[0]])) {
@@ -310,6 +312,9 @@ class ReportPointsReserveService extends ReportServiceAbstract
             }
         }
         $this->table = [];
+
+
+
         $this->table['data']['data'] =  array_values($newTable);
         $this->table['total'] = count($total_programs);
         $this->table['data']['date_begin'] = $subreport_params[self::DATE_BEGIN];
