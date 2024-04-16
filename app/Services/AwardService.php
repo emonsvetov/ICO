@@ -137,6 +137,7 @@ class AwardService
 
         $program = $event->program;
         $factor_valuation = $program->factor_valuation;
+        $escrowCreditAccountTypeName = $escrowAccountTypeName = "";
 
         $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
@@ -223,8 +224,6 @@ class AwardService
 
         $notificationBody = $data->message ?? ''; //TODO
         $notes = $data->notes ?? '';
-
-        $escrowCreditAccountTypeName = $escrowAccountTypeName = "";
 
         $referrer = $data->referrer ?? null;
         $leaseNumber = $data->lease_number ?? null;
