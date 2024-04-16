@@ -125,8 +125,8 @@ class UserController extends Controller
 
     public function reclaimItems(Request $request, $organization, User $user, Program $program, UserService $service)
     {
-        $peerBalance = $service->readAvailablePeerBalance($user, $program);
-        $amount_balance = $user->readAvailableBalance($program, $user) + $peerBalance;
+        // $peerBalance = $service->readAvailablePeerBalance($user, $program);
+        $amount_balance = $user->readAvailableBalance($program, $user);
         $items = $service->reclaimPointItems($user->account_holder_id, $program->id);
         return response(['data' => $items, 'balance' => $amount_balance]);
     }

@@ -564,8 +564,8 @@ class UserService
             ];
 
             $amount_balance = $user->readAvailableBalance($program, $user);
-            $peerBalance = $this->readAvailablePeerBalance($user, $program);
-            $balance = $amount_balance -$peerBalance;
+            // $peerBalance = $this->readAvailablePeerBalance($user, $program);
+            $balance = $amount_balance;
             if ($balance >= $item->points_value) {
                 $res = $awardService->reclaimPoints($program, $user, $data);
                 if ($res) {
