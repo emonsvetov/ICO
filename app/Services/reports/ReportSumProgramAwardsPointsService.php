@@ -88,4 +88,8 @@ class ReportSumProgramAwardsPointsService extends ReportServiceAbstract
 		return $where;
 
 	}
+    protected function setUsesDataset()
+    {
+        $this->usesDataset = false;
+    }
 }

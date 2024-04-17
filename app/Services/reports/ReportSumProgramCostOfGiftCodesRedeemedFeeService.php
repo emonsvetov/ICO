@@ -84,4 +84,8 @@ class ReportSumProgramCostOfGiftCodesRedeemedFeeService extends ReportServiceAbs
 		return $where;
 
 	}
+    protected function setUsesDataset()
+    {
+        $this->usesDataset = false;
+    }
 }

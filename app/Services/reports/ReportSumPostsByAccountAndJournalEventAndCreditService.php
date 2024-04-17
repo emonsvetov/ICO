@@ -112,6 +112,10 @@ class ReportSumPostsByAccountAndJournalEventAndCreditService extends ReportServi
 			$where [] =  "YEAR(`posts`.created_at) = '{$this->params[self::YEAR]}'";
 		}
 		return $where;
-
 	}
+
+    protected function setUsesDataset()
+    {
+        $this->usesDataset = false;
+    }
 }

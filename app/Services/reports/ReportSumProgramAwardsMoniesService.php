@@ -26,4 +26,8 @@ class ReportSumProgramAwardsMoniesService extends ReportSumProgramAwardsPointsSe
 
 		return $where;
 	}
+    protected function setUsesDataset()
+    {
+        $this->usesDataset = false;
+    }
 }

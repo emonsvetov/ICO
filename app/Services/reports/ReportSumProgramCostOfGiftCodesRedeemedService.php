@@ -83,6 +83,10 @@ class ReportSumProgramCostOfGiftCodesRedeemedService extends ReportServiceAbstra
 		$where [] = "posts.created_at >= '{$this->params[self::DATE_BEGIN]}'";
 		$where [] = "posts.created_at <= '{$this->params[self::DATE_END]}'";
 		return $where;
-
 	}
+
+    protected function setUsesDataset()
+    {
+        $this->usesDataset = false;
+    }
 }
