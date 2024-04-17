@@ -173,6 +173,7 @@ abstract class ReportServiceAbstract
         if ($this->params[self::EXPORT_CSV]) {
             return $this->getReportForCSV();
         } else {
+            $this->arrangeTableByAccountHolderId();
             return $this->getTable();
         }
     }
@@ -210,12 +211,13 @@ abstract class ReportServiceAbstract
         if( isset($this->table['data']) && isset($this->table['total']))    {
                 return $this->table; //Already paginated in child class
         }   else {
-            return [
-                'data' => $this->table,
-                'total' => $this->query instanceof Builder ? $this->query->get()->count() : count($this->table),
-            ];
+            if( $this->params[self::PAGINATE]) {
+                $this->table = [
+                    'data' => $this->table['data'] ?? $this->table,
+                    'total' => $this->query instanceof Builder ? $this->query->get()->count() : count($this->table),
+                ];
+            }
         }
-
         return $this->table;
     }
 
@@ -232,8 +234,13 @@ abstract class ReportServiceAbstract
 
     /** Calculate data by date range (timestampFrom|To) */
     protected function getDataDateRange() {
-        $data = $this->calcByDateRange ( $this->getParams() );
+        $this->calcByDateRange ( $this->getParams() );
+    }
+
+    protected function arrangeTableByAccountHolderId() {
+        $this->setIsPaginate();
         if( $this->isArrangeByAccountHolderId && !$this->params[self::PAGINATE] ) {
+            $data = $this->table;
             if (count ( $data ) > 0) {
                 foreach ( $data as $row ) {
                     foreach ( $row as $key => $val ) {
@@ -249,9 +256,9 @@ abstract class ReportServiceAbstract
 
 	protected function calcByDateRange( $params = [] )
     {
-        pr($this->params[self::PAGINATE]);
         $this->table = [];
         $query = $this->getBaseQuery();
+        $this->setIsPaginate();
         if($query instanceof Builder)
         {
             $this->query = $query;
@@ -275,9 +282,9 @@ abstract class ReportServiceAbstract
         {
             // $this->table['total'] = count($query);
             // $this->table['data'] = $query;
-            // pr($query);
             $this->table = $query;
         }
+
         // pr(get_class($this));
         // if(get_class($this) == 'ReportServiceSumProgramCostOfGiftCodesRedeemed')
         // {
@@ -323,9 +330,9 @@ abstract class ReportServiceAbstract
         return $query;
     }
 
-    protected function setIsPaginate( $flag = false)
+    protected function setIsPaginate()
     {
-        $this->params[self::PAGINATE] = $flag;
+        $this->params[self::PAGINATE] = false;
     }
 
     /**
@@ -363,10 +370,10 @@ abstract class ReportServiceAbstract
     protected function getBaseQuery(): mixed
     {
         $sql = $this->getBaseSql();
+        // pr($sql);
         if( $sql != "")
         {
             $sql = $this->addSqlFilters($sql);
-            // pr($sql);
             return DB::select( DB::raw($sql), []);
         }
 

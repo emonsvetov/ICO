@@ -147,4 +147,12 @@ class ReportInvoiceCreatedService extends ReportServiceAbstract
             ['label' => 'Journal Event Notes', 'key' => 'notes'],
         ];
     }
+
+    protected function setIsPaginate()
+    {
+        $this->params[self::PAGINATE] = true;
+        if( $this->params[self::SQL_LIMIT] === null || $this->params[self::SQL_OFFSET] === null ) {
+            $this->params[self::PAGINATE] = false;
+        }
+    }
 }

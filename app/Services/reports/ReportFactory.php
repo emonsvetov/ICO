@@ -48,11 +48,11 @@ class ReportFactory
         $keyword = $params['keyword'] ?? null;
         $orderStatus = $params['orderStatus'] ?? null;
         $purchaseByV2 = $params['purchaseByV2'] ?? null;
-        // if ($paramPage && $paramLimit) {
-        //     $paginate = true;
-        //     $offset = ($paramPage - 1) * $paramLimit;
-        //     $limit = $paramLimit;
-        // }
+        if ($paramPage && $paramLimit) {
+            $paginate = true;
+            $offset = ($paramPage - 1) * $paramLimit;
+            $limit = $paramLimit;
+        }
 
         $finalParams = [
             'merchants' => $merchants,
