@@ -27,13 +27,14 @@ class ProgramLoginController extends Controller
 
         if( $requestRole == 'participant' )    {
             if( $user->isParticipantToProgram($program->id) ) {
+                $program->getTemplate();
                 return response([
                     'role'=>Role::where('name', config('roles.participant'))->first(),
                     'program' => $program
                 ]);
             }
         }
-    
+
         return response([]);
     }
 }
