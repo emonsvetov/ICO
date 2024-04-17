@@ -211,12 +211,10 @@ abstract class ReportServiceAbstract
         if( isset($this->table['data']) && isset($this->table['total']))    {
                 return $this->table; //Already paginated in child class
         }   else {
-            if( $this->params[self::PAGINATE]) {
-                $this->table = [
-                    'data' => $this->table['data'] ?? $this->table,
-                    'total' => $this->query instanceof Builder ? $this->query->get()->count() : count($this->table),
-                ];
-            }
+            return $this->table = [
+                'data' => $this->table['data'] ?? $this->table,
+                'total' => $this->query instanceof Builder ? $this->query->get()->count() : count($this->table),
+            ];
         }
         return $this->table;
     }

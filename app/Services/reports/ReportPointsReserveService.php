@@ -99,6 +99,8 @@ class ReportPointsReserveService extends ReportServiceAbstract
         );
         $credits_report = new ReportSumPostsByAccountAndJournalEventAndCreditService ( $subreport_params );
         $credits_report_table = $credits_report->getTable ();
+        pr($credits_report_table);
+        exit;
         if (is_array ( $credits_report_table ) && count ( $credits_report_table ) > 0) {
             foreach ( $credits_report_table as $program_account_holder_id => $programs_credits_report_table ) {
                 // Get an easier reference to the program
