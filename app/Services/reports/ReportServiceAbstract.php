@@ -78,7 +78,7 @@ abstract class ReportServiceAbstract
     const ACCOUNT_TYPE_POINTS_AWARDED = "Points Awarded";
     const ACCOUNT_TYPE_MONIES_AWARDED = "Monies Awarded";
     protected array $params;
-    protected array $table = [];
+    protected mixed $table = [];
     protected bool $isExport = false;
     protected bool $isArrangeByAccountHolderId = true;
     protected $query = null;
@@ -180,6 +180,7 @@ abstract class ReportServiceAbstract
     protected function getReportForCSV(): array
     {
         $this->isExport = true;
+        $this->params[self::PAGINATE] = null;
         $this->params[self::SQL_LIMIT] = null;
         $this->params[self::SQL_OFFSET] = null;
         $data = $this->getTable();
@@ -201,21 +202,20 @@ abstract class ReportServiceAbstract
      */
     public function getTable(): array
     {
+
         if (empty($this->table)) {
             $this->calc();
         }
 
-        if( $this->params[self::PAGINATE] )
-        {
-            if( isset($this->table['data']) && isset($this->table['total']))    {
+        if( isset($this->table['data']) && isset($this->table['total']))    {
                 return $this->table; //Already paginated in child class
-            }   else {
-                return [
-                    'data' => $this->table,
-                    'total' => $this->query instanceof Builder ? $this->query->count() : count($this->table),
-                ];
-            }
+        }   else {
+            return [
+                'data' => $this->table,
+                'total' => $this->query instanceof Builder ? $this->query->get()->count() : count($this->table),
+            ];
         }
+
         return $this->table;
     }
 
@@ -233,8 +233,7 @@ abstract class ReportServiceAbstract
     /** Calculate data by date range (timestampFrom|To) */
     protected function getDataDateRange() {
         $data = $this->calcByDateRange ( $this->getParams() );
-        // pr($data);
-        if( $this->isArrangeByAccountHolderId ) {
+        if( $this->isArrangeByAccountHolderId && !$this->params[self::PAGINATE] ) {
             if (count ( $data ) > 0) {
                 foreach ( $data as $row ) {
                     foreach ( $row as $key => $val ) {
@@ -250,6 +249,7 @@ abstract class ReportServiceAbstract
 
 	protected function calcByDateRange( $params = [] )
     {
+        pr($this->params[self::PAGINATE]);
         $this->table = [];
         $query = $this->getBaseQuery();
         if($query instanceof Builder)
@@ -258,10 +258,14 @@ abstract class ReportServiceAbstract
             $query = $this->setWhereFilters($query);
             $query = $this->setGroupBy($query);
             try {
-                // pr($query->count());
                 $query = $this->setOrderBy($query);
-                $query = $this->setLimit($query);
-                $this->table = $query->get()->toArray();
+                if( $this->params[self::PAGINATE] ) {
+                    $query = $this->setLimit($query);
+                    $paginated = $query->paginate($this->params[self::SQL_LIMIT]);
+                    $this->table = $paginated->toArray();
+                }   else {
+                    $this->table = $query->get()->toArray();
+                }
             } catch (\Exception $exception) {
                print_r($exception->getMessage());
                die;
@@ -317,6 +321,11 @@ abstract class ReportServiceAbstract
             $query->orderBy($this->params[self::SQL_ORDER_BY], $this->params[self::SQL_ORDER_BY_DIR]);
         }
         return $query;
+    }
+
+    protected function setIsPaginate( $flag = false)
+    {
+        $this->params[self::PAGINATE] = $flag;
     }
 
     /**

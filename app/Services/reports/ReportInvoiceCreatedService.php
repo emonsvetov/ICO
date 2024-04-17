@@ -30,6 +30,8 @@ class ReportInvoiceCreatedService extends ReportServiceAbstract
         $query = DB::table($POSTINGS);
 
         $select = "$ACCOUNTS.account_holder_id,
+        $PROGRAMS.id,
+        $PROGRAMS.v2_account_holder_id,
         $PROGRAMS.name,
         CONCAT($USERS.last_name, ' ', $USERS.first_name) AS admin,
         $POSTINGS.id AS posting_id,
