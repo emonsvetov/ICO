@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\DB;
 class ReportDepositBalanceService extends ReportServiceAbstract
 {
 
+    public $totals = [];
+    public $defaultValues = [];
+
     /**
      * @inheritDoc
      */
@@ -138,6 +141,17 @@ class ReportDepositBalanceService extends ReportServiceAbstract
         }
 
         $table = [];
+        $this->defaultValues = [
+            'startBalanceTotal' => 0,
+            'deposit' => 0,
+            'reversal' => 0,
+            'transfer' => 0,
+            'award' => 0,
+            'reclaim' => 0,
+            'refunds' => 0,
+            'endBalanceTotal' => 0,
+        ];
+
         foreach ($programsArray as $programItem) {
             $table[] = (object) $programItem;
         }
@@ -156,8 +170,53 @@ class ReportDepositBalanceService extends ReportServiceAbstract
             }
         }
 
+        foreach ($newTable as $key => $item) {
+            $table = $item;
+            if (
+                isset($table->subRows) &&
+                count($table->subRows) > 0
+            ) {
+
+                $subTotal = clone $item;
+                $rootProgram = clone $item;
+                $rootProgram->subRows = [];
+                $subTotal->subRows = [];
+                $subTotal->name = 'Total ' . $subTotal->name;
+
+                $this->totals = $this->defaultValues;
+                $this->tableToTreeSubTotals($item);
+
+                foreach ($this->defaultValues as $valueKey => $value) {
+                    $subTotal->$valueKey = $this->totals[$valueKey];
+                    $newTable[$key]->$valueKey = $this->totals[$valueKey];
+
+                }
+                $rootProgram->disableTotalCalculation = TRUE;
+                $subTotal->disableTotalCalculation = TRUE;
+
+                $newTable[$key]->subRows[] = $subTotal;
+                array_unshift($newTable[$key]->subRows, $rootProgram);
+            }
+        }
+
+
 
         return array_values($newTable);
+    }
+
+    public function tableToTreeSubTotals($table)
+    {
+        foreach ($this->defaultValues as $keyValue => $value) {
+            $this->totals[$keyValue] += $table->$keyValue ?? 0;
+        }
+
+        if (
+            isset($table->subRows) &&
+            count($table->subRows) > 0
+        ) {
+            foreach ($table->subRows as $subTable)
+                $this->tableToTreeSubTotals($subTable);
+        }
     }
 
     /**
