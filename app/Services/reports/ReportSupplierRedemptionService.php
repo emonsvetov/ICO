@@ -23,7 +23,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
         $this->table = [];
         $query = $this->getBaseQuery();
         $query = $this->setWhereFilters($query);
-        $this->table['data'] = $query->get()->toArray();
+        $this->table['data'] = $query->get()->toArray();        
     }
 
     protected function getBaseQuery(): Builder
@@ -96,7 +96,9 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
         $report_key = $this->params[self::FIELD_REPORT_KEY] ?? self::FIELD_REDEMPTION_VALUE;
         $data = $this->table['data'];
         $bodyReference = [];
+        $cReportKey = [];
         foreach ($data as $val) {
+    
             if (!isset($bodyReference[$val->id]['total_cost_basis'])) {
                 $bodyReference[$val->id]['total_cost_basis'] = 0;
             }
@@ -104,6 +106,7 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
 
             if (!isset($bodyReference[$val->id]['c' . round($val->$report_key)])) {
                 $bodyReference[$val->id]['c' . round($val->$report_key)] = 0;
+                $cReportKey['c' . round($val->$report_key)] = true;
             }
 
             $bodyReference[$val->id]['c' . round($val->$report_key)] += 1;
@@ -164,6 +167,12 @@ class ReportSupplierRedemptionService extends ReportServiceAbstract
         foreach ($bodyReference as $key => $val) {
             $bodyReference[$key]['percent_total_redemption_value'] = round(($val['total_redemption_value'] * 100) / $this->total['total_redemption_value'], 2);
             $bodyReference[$key]['percent_total_cost'] = round(($val['total_cost_basis'] * 100) / $this->total['total_cost_basis'], 2);
+
+            foreach ( $cReportKey as $rkey => $rval )
+            {
+                if ( !isset($bodyReference[$key][$rkey]) )                
+                    $bodyReference[$key][$rkey] = 0;                
+            }            
         }
 
         foreach ($bodyReference as $key => $val) {
