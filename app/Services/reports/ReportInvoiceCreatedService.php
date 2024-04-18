@@ -31,6 +31,7 @@ class ReportInvoiceCreatedService extends ReportServiceAbstract
 
         $select = "$ACCOUNTS.account_holder_id,
         $PROGRAMS.name,
+        $PROGRAMS.id as program_id,
         CONCAT($USERS.last_name, ' ', $USERS.first_name) AS admin,
         $POSTINGS.id AS posting_id,
         (CAST($POSTINGS.qty AS UNSIGNED) * $POSTINGS.posting_amount) AS amount,
