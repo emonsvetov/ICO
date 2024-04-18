@@ -48,6 +48,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             'avg_per_month' => 0,
             'monthly_target' => 0,
             'annual_target' => 0,
+            'Q1' => 0,
+            'Q2' => 0,
+            'Q3' => 0,
+            'Q4' => 0,
         ];
         $empty = [
             'name' => '',
@@ -69,6 +73,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             'avg_per_month' => '',
             'monthly_target' => '',
             'annual_target' => '',
+            'Q1' => '',
+            'Q2' => '',
+            'Q3' => '',
+            'Q4' => '',
         ];
         foreach ($data['data'] as $key => $item) {
             if ($item->dinamicDepth !== 1) {
