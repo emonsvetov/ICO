@@ -6,6 +6,7 @@ use App\Models\AccountType;
 use App\Models\EventType;
 use App\Models\JournalEventType;
 use App\Models\Program;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -42,10 +43,14 @@ class ReportDepositBalanceService extends ReportServiceAbstract
     protected function calcReportsExtra($extras)
     {
         $programsArray = [];
-        $programIDs = $this->params[self::PROGRAMS];
-        $programs = Program::whereIn('account_holder_id', $programIDs)->get()->keyBy('account_holder_id')->toArray();
+        $programAccountHolderIds = $this->params[self::PROGRAMS];
+        $programs = Program::whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+        $programs = _tree_flatten($programs);
 
-        foreach ($programIDs as $programID) {
+        foreach ($programs as $program) {
+
+            $programID = $program->account_holder_id;
+
             $reversalTotal = $depositTotal = $transferTotal = $awardTotal = $reclaimTotal = $endBalanceTotalCredit = $endBalanceTotalDebit = $startBalanceTotalCredit = $startBalanceTotalDebit = 0;
             $programsArray[$programID]['name'] = (isset($this->programs[$programID]) && isset($this->programs[$programID]->name))
                 ? $this->programs[$programID]->name : '';
@@ -119,19 +124,40 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                 }
 
             }
+
+
             $programsArray[$programID]['endBalanceTotal'] = $programsArray[$programID]['startBalanceTotal'] + $depositTotal - $awardTotal - $transferTotal + $reclaimTotal - $reversalTotal;
-            $programsArray[$programID]['account_holder_id'] = $programs[$programID]["account_holder_id"];
-            $programsArray[$programID]['v2_account_holder_id'] = $programs[$programID]["v2_account_holder_id"];
-            $programsArray[$programID]['name'] = $programs[$programID]["name"];
+            $programsArray[$programID]['account_holder_id'] = $program->account_holder_id;
+            $programsArray[$programID]['v2_account_holder_id'] = $program->v2_account_holder_id;
+            $programsArray[$programID]['parent_id'] = $program->parent_id;
+            $programsArray[$programID]['dinamicPath'] = $program->dinamicPath;
+            $programsArray[$programID]['dinamicDepth'] = $program->dinamicDepth;
+            $programsArray[$programID]['id'] = $program->id;
+            $programsArray[$programID]['name'] = $program->name;
 
         }
 
-        $arr = [];
+        $table = [];
         foreach ($programsArray as $programItem) {
-            $arr[] = (object) $programItem;
+            $table[] = (object) $programItem;
         }
 
-        return $arr;
+        foreach ($table as $key => $item) {
+            if ($item->parent_id == $programs[0]->parent_id) {
+                $newTable[$item->id] = clone $item;
+            } else {
+                $tmpPath = explode(',', $item->dinamicPath);
+                $tmpPath = array_diff($tmpPath, explode(',',$programs[0]->dinamicPath));
+                $first = reset($tmpPath);
+
+                if (isset($newTable[$first])) {
+                    $newTable = $this->tableToTree($newTable, $item, $tmpPath, 0, []);
+                }
+            }
+        }
+
+
+        return array_values($newTable);
     }
 
     /**
