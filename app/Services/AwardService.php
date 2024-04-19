@@ -701,8 +701,8 @@ class AwardService
 
         try {
             return [
-                'data' => $query->limit($limit)->offset($offset)->get(),
-                'total' => $query->count()
+                'total' => $query->count(),
+                'data' => $query->limit($limit)->offset($offset)->get()
             ];
         } catch (Exception $e) {
             throw new Exception('DB query failed.', 500);
