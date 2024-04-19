@@ -313,6 +313,31 @@ class ReportPointsReserveService extends ReportServiceAbstract
         }
         $this->table = [];
 
+        foreach ($newTable as &$item){
+            $total = new stdClass();
+            $total->name = 'TOTAL';
+            $total->value_awarded = 0;
+            $total->expired = 0;
+            $total->reclaimed = 0;
+            $total->redeemed = 0;
+            $total->this_unredeemed = 0;
+            $total->last_unredeemed = 0;
+            $total->reserve_percentage = 0;
+            $total->calculated_reserve = 0;
+            foreach ($item->subRows as $val){
+                $total->value_awarded+=$val->value_awarded;
+                $total->expired+=$val->expired;
+                $total->reclaimed+=$val->reclaimed;
+                $total->redeemed+=$val->redeemed;
+                $total->this_unredeemed+=$val->this_unredeemed;
+                $total->reserve_percentage+=$val->reserve_percentage;
+                $total->calculated_reserve+=$val->calculated_reserve;
+                $total->last_unredeemed+=$val->last_unredeemed;
+            }
+            $total->reserve_percentage = $total->reserve_percentage/count($item->subRows);
+            $item->subRows[] = $total;
+        }
+
 
 
         $this->table['data']['data'] =  array_values($newTable);
