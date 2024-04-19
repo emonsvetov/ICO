@@ -34,6 +34,7 @@ class ReportFactory
         $reportKey = $params['reportKey'] ?? 0;
         $programId = $params['programId'] ?? null;
         $createdOnly = $params['createdOnly'] ?? null;
+        $rootOnly = $params['rootOnly'] ?? null;
         $group = $params['group'] ?? null;
         $order = $params['order'] ?? null;
         $order = $order ?? $params['sortby'] ?? null;
@@ -68,6 +69,7 @@ class ReportFactory
             'reportKey' => $reportKey,
             'programId' => $programId,
             'createdOnly' => $createdOnly,
+            'rootOnly' => $rootOnly,
             'group' => $group,
             'order' => $order,
             'dir' => $dir,
