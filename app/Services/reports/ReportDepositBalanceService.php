@@ -6,11 +6,16 @@ use App\Models\AccountType;
 use App\Models\EventType;
 use App\Models\JournalEventType;
 use App\Models\Program;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 class ReportDepositBalanceService extends ReportServiceAbstract
 {
+
+    public $totals = [];
+    public $defaultValues = [];
+    public $tranfers = [];
 
     /**
      * @inheritDoc
@@ -42,11 +47,15 @@ class ReportDepositBalanceService extends ReportServiceAbstract
     protected function calcReportsExtra($extras)
     {
         $programsArray = [];
-        $programIDs = $this->params[self::PROGRAMS];
-        $programs = Program::whereIn('account_holder_id', $programIDs)->get()->keyBy('account_holder_id')->toArray();
+        $programAccountHolderIds = $this->params[self::PROGRAMS];
+        $programs = Program::whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+        $programs = _tree_flatten($programs);
 
-        foreach ($programIDs as $programID) {
-            $reversalTotal = $depositTotal = $transferTotal = $awardTotal = $reclaimTotal = $endBalanceTotalCredit = $endBalanceTotalDebit = $startBalanceTotalCredit = $startBalanceTotalDebit = 0;
+        foreach ($programs as $program) {
+
+            $programID = $program->account_holder_id;
+
+            $transferSubTotal = $reversalTotal = $depositTotal = $transferTotal = $awardTotal = $reclaimTotal = $endBalanceTotalCredit = $endBalanceTotalDebit = $startBalanceTotalCredit = $startBalanceTotalDebit = 0;
             $programsArray[$programID]['name'] = (isset($this->programs[$programID]) && isset($this->programs[$programID]->name))
                 ? $this->programs[$programID]->name : '';
             foreach ($extras['startBalance'] as $extraStartBalance) {
@@ -77,7 +86,15 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                             && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE
                         )) {
                         $depositTotal += $extra->posting_amount;
-                        $programsArray[$programID]['deposit'] = $depositTotal;
+
+                        if (
+                            isset($this->tranfers[$extra->journal_event_id])
+                            && $extra->posting_amount == $this->tranfers[$extra->journal_event_id]
+                        ) {
+                            $programsArray[$programID]['transfer'] = $extra->posting_amount;
+                            $transferSubTotal += $extra->posting_amount;
+                        }
+
                     }
                     $reversal_types = array(
                         EventType::EVENT_TYPE_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING,
@@ -89,9 +106,14 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                         $programsArray[$programID]['reversal'] = $reversalTotal;
                     }
 
-                    if (!$extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE) {
+                    if (
+                        !$extra->is_credit
+                        && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE
+                        && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE
+                    ) {
+                        $this->tranfers[$extra->journal_event_id] = $extra->posting_amount;
                         $transferTotal += $extra->posting_amount;
-                        $programsArray[$programID]['transfer'] = $transferTotal;
+                        $programsArray[$programID]['transfer'] = $transferTotal * (-1);
                     }
 
                     if (!$extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_AWARD_MONIES_TO_RECIPIENT && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE) {
@@ -105,7 +127,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                     }
                 }
             }
-            $programsArray[$programID]['deposit'] = $depositTotal - $transferTotal;
+            $programsArray[$programID]['deposit'] = $depositTotal - $transferTotal - $transferSubTotal;
 
             foreach ($extras['balance'] as $extraBalance) {
                 if ($extraBalance->account_holder_id == $programID) {
@@ -119,19 +141,96 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                 }
 
             }
+
+
             $programsArray[$programID]['endBalanceTotal'] = $programsArray[$programID]['startBalanceTotal'] + $depositTotal - $awardTotal - $transferTotal + $reclaimTotal - $reversalTotal;
-            $programsArray[$programID]['account_holder_id'] = $programs[$programID]["account_holder_id"];
-            $programsArray[$programID]['v2_account_holder_id'] = $programs[$programID]["v2_account_holder_id"];
-            $programsArray[$programID]['name'] = $programs[$programID]["name"];
+            $programsArray[$programID]['account_holder_id'] = $program->account_holder_id;
+            $programsArray[$programID]['v2_account_holder_id'] = $program->v2_account_holder_id;
+            $programsArray[$programID]['parent_id'] = $program->parent_id;
+            $programsArray[$programID]['dinamicPath'] = $program->dinamicPath;
+            $programsArray[$programID]['dinamicDepth'] = $program->dinamicDepth;
+            $programsArray[$programID]['id'] = $program->id;
+            $programsArray[$programID]['name'] = $program->name;
 
         }
 
-        $arr = [];
+        $table = [];
+        $this->defaultValues = [
+            'startBalanceTotal' => 0,
+            'deposit' => 0,
+            'reversal' => 0,
+            'transfer' => 0,
+            'award' => 0,
+            'reclaim' => 0,
+            'refunds' => 0,
+            'endBalanceTotal' => 0,
+        ];
+
         foreach ($programsArray as $programItem) {
-            $arr[] = (object) $programItem;
+            $table[] = (object) $programItem;
         }
 
-        return $arr;
+        foreach ($table as $key => $item) {
+            if ($item->parent_id == $programs[0]->parent_id) {
+                $newTable[$item->id] = clone $item;
+            } else {
+                $tmpPath = explode(',', $item->dinamicPath);
+                $tmpPath = array_diff($tmpPath, explode(',',$programs[0]->dinamicPath));
+                $first = reset($tmpPath);
+
+                if (isset($newTable[$first])) {
+                    $newTable = $this->tableToTree($newTable, $item, $tmpPath, 0, []);
+                }
+            }
+        }
+
+        foreach ($newTable as $key => $item) {
+            $table = $item;
+            if (
+                isset($table->subRows) &&
+                count($table->subRows) > 0
+            ) {
+
+                $subTotal = clone $item;
+                $rootProgram = clone $item;
+                $rootProgram->subRows = [];
+                $subTotal->subRows = [];
+                $subTotal->name = 'Total ' . $subTotal->name;
+
+                $this->totals = $this->defaultValues;
+                $this->tableToTreeSubTotals($item);
+
+                foreach ($this->defaultValues as $valueKey => $value) {
+                    $subTotal->$valueKey = $this->totals[$valueKey];
+                    $newTable[$key]->$valueKey = $this->totals[$valueKey];
+
+                }
+                $rootProgram->disableTotalCalculation = TRUE;
+                $subTotal->disableTotalCalculation = TRUE;
+
+                $newTable[$key]->subRows[] = $subTotal;
+                array_unshift($newTable[$key]->subRows, $rootProgram);
+            }
+        }
+
+
+
+        return array_values($newTable);
+    }
+
+    public function tableToTreeSubTotals($table)
+    {
+        foreach ($this->defaultValues as $keyValue => $value) {
+            $this->totals[$keyValue] += $table->$keyValue ?? 0;
+        }
+
+        if (
+            isset($table->subRows) &&
+            count($table->subRows) > 0
+        ) {
+            foreach ($table->subRows as $subTable)
+                $this->tableToTreeSubTotals($subTable);
+        }
     }
 
     /**
@@ -151,6 +250,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
             p.id,
             posts.posting_amount,
             posts.is_credit,
+            posts.journal_event_id,
             jet.type as event_type,
             a.account_holder_id as program_id,
             atypes.name as account_type
