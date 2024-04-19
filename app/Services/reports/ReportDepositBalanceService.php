@@ -15,6 +15,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
 
     public $totals = [];
     public $defaultValues = [];
+    public $tranfers = [];
 
     /**
      * @inheritDoc
@@ -54,7 +55,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
 
             $programID = $program->account_holder_id;
 
-            $reversalTotal = $depositTotal = $transferTotal = $awardTotal = $reclaimTotal = $endBalanceTotalCredit = $endBalanceTotalDebit = $startBalanceTotalCredit = $startBalanceTotalDebit = 0;
+            $transferSubTotal = $reversalTotal = $depositTotal = $transferTotal = $awardTotal = $reclaimTotal = $endBalanceTotalCredit = $endBalanceTotalDebit = $startBalanceTotalCredit = $startBalanceTotalDebit = 0;
             $programsArray[$programID]['name'] = (isset($this->programs[$programID]) && isset($this->programs[$programID]->name))
                 ? $this->programs[$programID]->name : '';
             foreach ($extras['startBalance'] as $extraStartBalance) {
@@ -85,7 +86,15 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                             && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE
                         )) {
                         $depositTotal += $extra->posting_amount;
-                        $programsArray[$programID]['deposit'] = $depositTotal;
+
+                        if (
+                            isset($this->tranfers[$extra->journal_event_id])
+                            && $extra->posting_amount == $this->tranfers[$extra->journal_event_id]
+                        ) {
+                            $programsArray[$programID]['transfer'] = $extra->posting_amount;
+                            $transferSubTotal += $extra->posting_amount;
+                        }
+
                     }
                     $reversal_types = array(
                         EventType::EVENT_TYPE_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING,
@@ -97,9 +106,14 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                         $programsArray[$programID]['reversal'] = $reversalTotal;
                     }
 
-                    if (!$extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE) {
+                    if (
+                        !$extra->is_credit
+                        && $extra->event_type == EventType::EVENT_TYPE_PROGRAM_TRANSFERS_MONIES_AVAILABLE
+                        && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE
+                    ) {
+                        $this->tranfers[$extra->journal_event_id] = $extra->posting_amount;
                         $transferTotal += $extra->posting_amount;
-                        $programsArray[$programID]['transfer'] = $transferTotal;
+                        $programsArray[$programID]['transfer'] = $transferTotal * (-1);
                     }
 
                     if (!$extra->is_credit && $extra->event_type == EventType::EVENT_TYPE_AWARD_MONIES_TO_RECIPIENT && $extra->account_type == AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE) {
@@ -113,7 +127,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
                     }
                 }
             }
-            $programsArray[$programID]['deposit'] = $depositTotal - $transferTotal;
+            $programsArray[$programID]['deposit'] = $depositTotal - $transferTotal - $transferSubTotal;
 
             foreach ($extras['balance'] as $extraBalance) {
                 if ($extraBalance->account_holder_id == $programID) {
@@ -236,6 +250,7 @@ class ReportDepositBalanceService extends ReportServiceAbstract
             p.id,
             posts.posting_amount,
             posts.is_credit,
+            posts.journal_event_id,
             jet.type as event_type,
             a.account_holder_id as program_id,
             atypes.name as account_type
