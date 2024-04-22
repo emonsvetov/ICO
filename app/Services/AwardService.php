@@ -137,6 +137,7 @@ class AwardService
 
         $program = $event->program;
         $factor_valuation = $program->factor_valuation;
+        $escrowCreditAccountTypeName = $escrowAccountTypeName = "";
 
         $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
@@ -223,8 +224,6 @@ class AwardService
 
         $notificationBody = $data->message ?? ''; //TODO
         $notes = $data->notes ?? '';
-
-        $escrowCreditAccountTypeName = $escrowAccountTypeName = "";
 
         $referrer = $data->referrer ?? null;
         $leaseNumber = $data->lease_number ?? null;
@@ -702,8 +701,8 @@ class AwardService
 
         try {
             return [
-                'data' => $query->limit($limit)->offset($offset)->get(),
-                'total' => $query->count()
+                'total' => $query->count(),
+                'data' => $query->limit($limit)->offset($offset)->get()
             ];
         } catch (Exception $e) {
             throw new Exception('DB query failed.', 500);
