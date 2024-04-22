@@ -114,6 +114,10 @@ class ProgramController extends Controller
                 $program->load(['domains', 'merchants', 'organization', 'address', 'status','programExtras','programTransactionFee']);
             }
 
+            if ( request()->get('withTemplate') ) {
+                $program->getTemplate();
+            }
+
             return response($program);
         }
 

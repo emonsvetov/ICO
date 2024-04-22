@@ -47,7 +47,7 @@ class ProgramMediaTypeController extends Controller
         return response()->json($programMediaType);
     }
 
-    public function saveLink(Request $request, Organization $organization, Program $program,ProgramMediaType $programMediaType)
+    public function updateLink(Request $request, Organization $organization, Program $program,ProgramMediaType $programMediaType)
     {       
         try {
             // $programMediaType->menu_link = $request->get('menu_link');
@@ -58,11 +58,11 @@ class ProgramMediaTypeController extends Controller
             // $programMediaType->save();
             $menu_link = $request->get('menu_link');
             $program_media_type_id = $request->get('program_media_type_id');
-            $name = $request->get('name');
-            $is_menu_item = $request->get('is_menu_item');
-
             ProgramMediaType::where('program_media_type_id', $program_media_type_id)
-            ->update(['menu_link' => $menu_link, 'name' => $name, 'is_menu_item' => $is_menu_item]);
+            ->update(['menu_link' => $menu_link]);
+
+            $updatedProgramMediaType = ProgramMediaType::find($program_media_type_id);
+            return response($updatedProgramMediaType);
 
         } catch (\Exception $e) {
             return response(['errors' => $e->getMessage()], 422);
@@ -71,12 +71,9 @@ class ProgramMediaTypeController extends Controller
         return response()->json($programMediaType);
     }
 
-    public function delete(Request $request, Organization $organization, Program $program, ProgramMediaType $programMediaType) {
-        $program_media_type_id = $request->program_media_type_id;
+    public function delete(Organization $organization, Program $program, ProgramMediaType $programMediaType) {
 
-        ProgramMediaType::where('program_media_type_id', $program_media_type_id)
-            ->update(['menu_link' => ""]);
-        // $programMediaType->delete();
+        $programMediaType->delete();
         return response(['deleted' => true]);
     }
 }
