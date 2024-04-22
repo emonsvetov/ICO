@@ -16,7 +16,8 @@ use stdClass;
 
 class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
 {
-    private $total = [];
+    public $totals = [];
+    public $defaultValues = [];
 
     /**
      * @inheritDoc
@@ -47,6 +48,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             'avg_per_month' => 0,
             'monthly_target' => 0,
             'annual_target' => 0,
+            'Q1' => 0,
+            'Q2' => 0,
+            'Q3' => 0,
+            'Q4' => 0,
         ];
         $empty = [
             'name' => '',
@@ -68,6 +73,10 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             'avg_per_month' => '',
             'monthly_target' => '',
             'annual_target' => '',
+            'Q1' => '',
+            'Q2' => '',
+            'Q3' => '',
+            'Q4' => '',
         ];
         foreach ($data['data'] as $key => $item) {
             if ($item->dinamicDepth !== 1) {
@@ -282,6 +291,32 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
             }
 
             $newTable = [];
+            $this->defaultValues = [
+                'participants_count' => 0,
+                'month_1' => 0,
+                'month_2' => 0,
+                'month_3' => 0,
+                'month_4' => 0,
+                'month_5' => 0,
+                'month_6' => 0,
+                'month_7' => 0,
+                'month_8' => 0,
+                'month_9' => 0,
+                'month_10' => 0,
+                'month_11' => 0,
+                'month_12' => 0,
+                'per_participant' => 0,
+                'avg_per_month' => 0,
+                'avg_per_quarter' => 0,
+                'monthly_target' => 0,
+                'quarterly_target' => 0,
+                'annual_target' => 0,
+                'Q1' => 0,
+                'Q2' => 0,
+                'Q3' => 0,
+                'Q4' => 0,
+                'YTD' => 0,
+            ];
             foreach ($table as $key => $item) {
                 if ($item->parent_id == $programs[0]->parent_id) {
                     $newTable[$item->id] = clone $item;
@@ -291,39 +326,84 @@ class ReportPointsPurchaseSummaryService extends ReportServiceAbstract
                     $first = reset($tmpPath);
 
                     if (isset($newTable[$first])) {
-                        $newTable = $this->tableToTree($newTable, $item, $tmpPath);
-
-                        $newTable[$first]->participants_count += $this->amountFormat($item->participants_count);
-                        $newTable[$first]->month_1 += $this->amountFormat($item->month_1);
-                        $newTable[$first]->month_2 += $this->amountFormat($item->month_2);
-                        $newTable[$first]->month_3 += $this->amountFormat($item->month_3);
-                        $newTable[$first]->month_4 += $this->amountFormat($item->month_4);
-                        $newTable[$first]->month_5 += $this->amountFormat($item->month_5);
-                        $newTable[$first]->month_6 += $this->amountFormat($item->month_6);
-                        $newTable[$first]->month_7 += $this->amountFormat($item->month_7);
-                        $newTable[$first]->month_8 += $this->amountFormat($item->month_8);
-                        $newTable[$first]->month_9 += $this->amountFormat($item->month_9);
-                        $newTable[$first]->month_10 += $this->amountFormat($item->month_10);
-                        $newTable[$first]->month_11 += $this->amountFormat($item->month_11);
-                        $newTable[$first]->month_12 += $this->amountFormat($item->month_12);
-                        $newTable[$first]->per_participant += $this->amountFormat($item->per_participant);
-                        $newTable[$first]->avg_per_month += $this->amountFormat($item->avg_per_month);
-                        $newTable[$first]->avg_per_quarter += $this->amountFormat($item->avg_per_quarter);
-                        $newTable[$first]->monthly_target += $this->amountFormat($item->monthly_target);
-                        $newTable[$first]->quarterly_target += $this->amountFormat($item->quarterly_target);
-                        $newTable[$first]->annual_target += $this->amountFormat($item->annual_target);
-                        $newTable[$first]->Q1 += $this->amountFormat($item->Q1);
-                        $newTable[$first]->Q2 += $this->amountFormat($item->Q2);
-                        $newTable[$first]->Q3 += $this->amountFormat($item->Q3);
-                        $newTable[$first]->Q4 += $this->amountFormat($item->Q4);
-                        $newTable[$first]->YTD += $this->amountFormat($item->YTD);
+                        $newTable = $this->tableToTree($newTable, $item, $tmpPath, 0, $this->defaultValues);
                     }
                 }
             }
+
+            foreach ($newTable as $key => $item) {
+                $table = $item;
+                if (
+                    isset($table->subRows) &&
+                    count($table->subRows) > 0
+                ) {
+
+                    $subTotal = clone $item;
+                    $rootProgram = clone $item;
+                    $rootProgram->subRows = [];
+                    $subTotal->subRows = [];
+                    $subTotal->name = 'Total ' . $subTotal->name;
+
+                    $this->totals = $this->defaultValues;
+                    $this->tableToTreeSubTotals($item);
+
+                    foreach ($this->defaultValues as $valueKey => $value) {
+                        $subTotal->$valueKey = $this->totals[$valueKey];
+                        $newTable[$key]->$valueKey = $this->totals[$valueKey];
+
+                    }
+                    $rootProgram->disableTotalCalculation = TRUE;
+                    $subTotal->disableTotalCalculation = TRUE;
+
+                    $newTable[$key]->subRows[] = $subTotal;
+                    array_unshift($newTable[$key]->subRows, $rootProgram);
+                }
+            }
+
             $this->table = array_values($newTable);
         }
 
         return [];
+    }
+
+    public function tableToTree($newTable, $item, $path, $level = 0, $defaultValues = [])
+    {
+        $first = array_shift($path);
+        $tableKey = $level === 0 ? $first : array_search($first, array_column($newTable, 'id'));
+
+        if (count($path) === 0) {
+            foreach ($defaultValues as $keyValue => $value) {
+                $item->$keyValue = $keyValue == 'participants_count' ? $item->$keyValue : $this->amountFormat($item->$keyValue);
+            }
+            $newTable[$tableKey]->subRows[] = $item;
+        } else {
+            $level++;
+
+            $subRows = $this->tableToTree($newTable[$tableKey]->subRows, $item, $path, $level, $defaultValues);
+            foreach ($subRows as $key => $subRow) {
+                foreach ($defaultValues as $keyValue => $value) {
+                    $subRows[$key]->$keyValue = $keyValue == 'participants_count' ? $subRows[$key]->$keyValue : $this->amountFormat($subRows[$key]->$keyValue);
+                }
+            }
+
+            $newTable[$tableKey]->subRows = $subRows;
+        }
+        return $newTable;
+    }
+
+    public function tableToTreeSubTotals($table)
+    {
+        foreach ($this->defaultValues as $keyValue => $value) {
+            $this->totals[$keyValue] += $table->$keyValue;
+        }
+
+        if (
+            isset($table->subRows) &&
+            count($table->subRows) > 0
+        ) {
+            foreach ($table->subRows as $subTable)
+            $this->tableToTreeSubTotals($subTable);
+        }
     }
 
     public function getCsvHeaders(): array

@@ -305,18 +305,18 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post(
         '/v1/organization/{organization}/program/{program}/digital-media-type-iframe',
-        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'updateLink']
     )->middleware('can:add,App\ProgramMediaType,organization,program');
 
-    Route::post(
-        '/v1/organization/{organization}/program/{program}/digital-media-type-url-delete',
-        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete']
-    )->middleware('can:add,App\ProgramMediaType,organization,program');
+    // Route::post(
+    //     '/v1/organization/{organization}/program/{program}/digital-media-type-url-delete',
+    //     [App\Http\Controllers\API\ProgramMediaTypeController::class, 'delete']
+    // )->middleware('can:add,App\ProgramMediaType,organization,program');
 
-    Route::put(
-        '/v1/organization/{organization}/program/{program}/digital-media-type',
-        [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
-    )->middleware('can:add,App\ProgramMediaType,organization,program');
+    // Route::put(
+    //     '/v1/organization/{organization}/program/{program}/digital-media-type',
+    //     [App\Http\Controllers\API\ProgramMediaTypeController::class, 'saveLink']
+    // )->middleware('can:add,App\ProgramMediaType,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/media/{programMediaType}',
         [App\Http\Controllers\API\ProgramMediaController::class, 'index'])->middleware('can:view,App\ProgramMedia,organization,program');
@@ -640,6 +640,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Referrals - Send
 
     Route::post('/v1/organization/{organization}/program/{program}/refer', [App\Http\Controllers\API\ReferralController::class, 'store'])->middleware('can:create,App\Referral,organization,program');
+    
+    // Feeling
+    Route::post('/v1/organization/{organization}/program/{program}/feeling-survey', [App\Http\Controllers\API\FeelingSurveyController::class, 'store'])->middleware('can:create,App\FeelingSurvey,organization,program');
 
     //User goal
     Route::post('/v1/organization/{organization}/program/{program}/create-user-goals', [App\Http\Controllers\API\UserGoalController::class, 'createUserGoalPlans'])->middleware('can:createUserGoalPlans,App\UserGoal,organization,program');

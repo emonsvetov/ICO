@@ -32,6 +32,7 @@ abstract class ReportServiceAbstract
     const PROGRAM_ID = 'programId';
     const PROGRAM_ACCOUNT_HOLDER_ID = 'program_account_holder_id';
     const CREATED_ONLY = 'createdOnly';
+    const ROOT_ONLY = 'rootOnly';
     const PROGRAMS = 'programs';
     const PROGRAM_IDS = 'program_ids';
     const PROGRAM_ACCOUNT_HOLDER_IDS = 'program_account_holder_ids';
@@ -80,6 +81,7 @@ abstract class ReportServiceAbstract
     protected array $params;
     protected array $table = [];
     protected bool $isExport = false;
+    protected bool $isArrangeByAccountHolderId = true;
     protected $query = null;
     const PAGINATE = 'paginate';
     const IS_CREDIT = "is_credit";
@@ -108,6 +110,7 @@ abstract class ReportServiceAbstract
         $this->params[self::PROGRAM_ACCOUNT_HOLDER_ID] = $params[self::PROGRAM_ACCOUNT_HOLDER_ID] ?? null;
         $this->params[self::USER_ACCOUNT_HOLDER_ID] = $params[self::USER_ACCOUNT_HOLDER_ID] ?? null;
         $this->params[self::CREATED_ONLY] = $params[self::CREATED_ONLY] ?? null;
+        $this->params[self::ROOT_ONLY] = $params[self::ROOT_ONLY] ?? null;
         $this->params[self::SQL_GROUP_BY] = $params[self::SQL_GROUP_BY] ?? null;
         $this->params[self::SQL_ORDER_BY_DIR] = $params[self::SQL_ORDER_BY_DIR] ?? null;
         $this->params[self::SQL_ORDER_BY] = $params[self::SQL_ORDER_BY] ?? null;
@@ -233,16 +236,18 @@ abstract class ReportServiceAbstract
     protected function getDataDateRange() {
         $data = $this->calcByDateRange ( $this->getParams() );
         // pr($data);
-        if (count ( $data ) > 0) {
-			foreach ( $data as $row ) {
-				foreach ( $row as $key => $val ) {
-                    if( isset($row->{self::FIELD_ID}) )
-                    {
-                        $this->table [$row->{self::FIELD_ID}] [$key] = $val;
+        if( $this->isArrangeByAccountHolderId ) {
+            if (count ( $data ) > 0) {
+                foreach ( $data as $row ) {
+                    foreach ( $row as $key => $val ) {
+                        if( isset($row->{self::FIELD_ID}) )
+                        {
+                            $this->table [$row->{self::FIELD_ID}] [$key] = $val;
+                        }
                     }
-				}
-			}
-		}
+                }
+            }
+        }
     }
 
 	protected function calcByDateRange( $params = [] )

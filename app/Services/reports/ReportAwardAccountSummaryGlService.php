@@ -77,8 +77,8 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
             JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT,
             JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT,
         ]);
-        if ($this->params[self::DATE_FROM] && $this->params[self::DATE_TO]) {
-            $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        if ($this->params[self::DATE_BEGIN] && $this->params[self::DATE_END]) {
+            $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         }
         $query->where('postings.is_credit', '=', true);
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
@@ -167,8 +167,8 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
             JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS,
             JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES,
         ]);
-        if ($this->params[self::DATE_FROM] && $this->params[self::DATE_TO]) {
-            $query->whereBetween('postings.created_at', [$this->params[self::DATE_FROM], $this->params[self::DATE_TO]]);
+        if ($this->params[self::DATE_BEGIN] && $this->params[self::DATE_END]) {
+            $query->whereBetween('postings.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         }
         $query->where('postings.is_credit', '=', true);
         $query->whereIn('accounts.account_holder_id', $this->params[self::PROGRAMS]);
@@ -241,7 +241,7 @@ class ReportAwardAccountSummaryGlService extends ReportServiceAbstract
     {
         $headers = [
             [
-                "label" => "Program Balance for Period {$this->params[self::DATE_FROM]} to {$this->params[self::DATE_TO]}",
+                "label" => "Program Balance for Period {$this->params[self::DATE_BEGIN]} to {$this->params[self::DATE_END]}",
                 'key' => '01'
             ],
             [

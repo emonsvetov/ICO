@@ -15,13 +15,18 @@ class ReportJournalDetailedService extends ReportServiceAbstract
         $subreport_params [self::DATE_END] = $this->params [self::DATE_END];
 
         $programAccountHolderIds = $this->params[self::PROGRAMS];
+        $newProgramAccountHolderIds = [];
         $programs = Program::whereIn('account_holder_id', $programAccountHolderIds)->get();
         if ($programs) {
             $programIds = $programs->pluck('id')->toArray();
             $topLevelProgramData = $programs[0]->getRoot(['id', 'name']);
             $topLevelProgram = Program::find($topLevelProgramData->id);
 
-            $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+            if ($this->params[self::ROOT_ONLY] == 'true'){
+                $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->IsRoot()->get()->toTree();
+            } else {
+                $programs = (new Program)->whereIn('account_holder_id', $programAccountHolderIds)->get()->toTree();
+            }
             $programs = _tree_flatten($programs);
 
 			if ( $programs->isNotEmpty() ) {
@@ -67,7 +72,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 				// Get all types of fees, etc where we are interested in them being credits, fees from both award types are the transaction fees,
                 // they will be grouped by type, so we can pick which one we want
 				$subreport_params [self::ACCOUNT_HOLDER_IDS] = $account_holder_ids;
-				$subreport_params [self::PROGRAMS] = $this->params [self::PROGRAMS];
+				$subreport_params [self::PROGRAMS] = $account_holder_ids;
 				$subreport_params [ReportSumPostsByAccountAndJournalEventAndCreditService::IS_CREDIT] = 1;
 				$subreport_params [self::ACCOUNT_TYPES] = array (
 					AccountType::ACCOUNT_TYPE_MONIES_FEES,
@@ -554,7 +559,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                 'key' => 'points_purchased'
             ],
             [
-                'label' => 'Points Reclaimed"',
+                'label' => 'Points Reclaimed',
                 'key' => 'reclaims'
             ],
             [
@@ -627,18 +632,43 @@ class ReportJournalDetailedService extends ReportServiceAbstract
     {
         $this->isExport = true;
         $table = $this->getTable();
-        $temp = array();
-        foreach ($table['data'] as $key => $item) {
-            array_push($temp, $item);
+        $data['headers'] = $this->getCsvHeaders();
 
-            if (isset($item->subRows)) {
-                foreach($item->subRows as $sub => $subItem) {
-                    array_push($temp, $subItem);
+        // prepare data
+        $exists = [];
+        foreach ( $table as $row ) {
+            foreach ($data['headers'] as $header) {
+                if (isset($row[$header['key']]) && !in_array($header['key'], ['name', 'account_holder_id'])) {
+                    $row[$header['key']] = number_format($row[$header['key']], 2, '.', '');
                 }
             }
         }
+
+        $temp = [];
+        foreach ($table['data'] as $key => $item) {
+            array_push($temp, $item);
+            $exists[] = $item->account_holder_id;
+            if (isset($item->subRows)) {
+                $temp = $this->addChild($exists, $temp, $item);
+            }
+        }
         $data['data'] = $temp;
-        $data['headers'] = $this->getCsvHeaders();
+
         return $data;
+    }
+
+    public function addChild($exists, $temp, $item, $level = 1){
+        $level++;
+        foreach($item->subRows as $sub => $subItem) {
+            if (in_array($subItem->account_holder_id, $exists)) {
+                continue;
+            }
+            $subItem->name = str_repeat(' • ', $level-1) . $subItem->name;
+            array_push($temp, $subItem);
+            if (isset($subItem->subRows)) {
+                $temp = $this->addChild($exists, $temp, $subItem, $level);
+            }
+        }
+        return $temp;
     }
 }

@@ -12,9 +12,11 @@ class ReportCashDepositService extends ReportServiceAbstract
     /**
      * @inheritDoc
      */
-    protected function getBaseQuery(): Builder
+    protected function calc(): array
     {
-        return DB::table(function ($subQuery) {
+        $this->table = [];
+
+        $query = DB::table(function ($subQuery) {
             $subQuery->from('postings');
             $subQuery->join('accounts', 'accounts.id', '=', 'postings.account_id');
             $subQuery->join('programs', 'programs.account_holder_id', '=', 'accounts.account_holder_id');
@@ -31,6 +33,7 @@ class ReportCashDepositService extends ReportServiceAbstract
             $subQuery->addSelect([
                 'accounts.account_holder_id',
                 'programs.id',
+                'programs.v2_account_holder_id',
                 'programs.name',
                 DB::raw("
                     getProgramRoot(`programs`.id) as `root_id`
@@ -121,11 +124,11 @@ class ReportCashDepositService extends ReportServiceAbstract
         }, 'subQuery')
             ->select(
                 DB::raw("
+                root_name,
                 CASE
-                    WHEN `root_name` = name THEN ''
-                    ELSE `root_name`
-                END as 'root_name',
-                id as 'program_account_holder_id',
+                    WHEN v2_account_holder_id IS NULL THEN id
+                    ELSE v2_account_holder_id
+                END as 'program_account_holder_id',
                 name as 'program_name',
                 invoice_id,
                 invoice_number,
@@ -155,6 +158,11 @@ class ReportCashDepositService extends ReportServiceAbstract
                 max(`notes`)
                 ")
             )->groupBy(['id', 'invoice_id']);
+
+        $this->table['total'] = count($query->get()->toArray());
+        $query = $this->setLimit($query);
+        $this->table['data'] = $query->get()->toArray();
+        return $this->table;
     }
 
     /**
@@ -182,6 +190,16 @@ class ReportCashDepositService extends ReportServiceAbstract
         return $query;
     }
 
+    protected function getReportForCSV(): array
+    {
+        $this->isExport = true;
+        $this->params[self::SQL_LIMIT] = null;
+        $this->params[self::SQL_OFFSET] = null;
+        $data = $this->calc();
+        $data['headers'] = $this->getCsvHeaders();
+        return $data;
+    }
+
     public function getCsvHeaders(): array
     {
         return [
@@ -191,7 +209,7 @@ class ReportCashDepositService extends ReportServiceAbstract
             ],
             [
                 'label' => 'Program ID',
-                'key' => 'program_id'
+                'key' => 'program_account_holder_id'
             ],
             [
                 'label' => 'Program Name',

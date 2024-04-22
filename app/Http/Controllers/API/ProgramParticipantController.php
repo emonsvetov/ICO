@@ -21,7 +21,7 @@ class ProgramParticipantController extends Controller
         $users->load('status');
 
         foreach ($users as $key=>$user){
-            $users[$key]['pointBalance'] = AccountService::readAvailableBalanceForUser($program, $user) + $userService->readAvailablePeerBalance($user, $program);
+            $users[$key]['pointBalance'] = AccountService::readAvailableBalanceForUser($program, $user);
             $users[$key]['redeemedBalance'] = AccountService::readRedeemedTotalForParticipant($program, $user);
             $users[$key]['peerBalance'] = $userService->readAvailablePeerBalance($user, $program);//todo
             $awardLevel = AwardLevel::find($user->award_level);
