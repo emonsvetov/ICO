@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\CsvImportTypeRequest;
 use App\Http\Controllers\Controller;
 use App\Models\CsvImportType;
 use App\Models\Organization;
@@ -20,5 +21,12 @@ class ImportTypeController extends Controller
         }
 
         return response( $query->get() );
+    }
+
+    public function update(CsvImportTypeRequest $request, Organization $organization, CsvImportType $csvImportType )
+    {
+        $data = $request->validated();
+        $csvImportType->update( $data );
+        return response([ 'csvImportType' => $csvImportType ]);
     }
 }
