@@ -429,6 +429,16 @@ class MigrateMerchantsService extends MigrationService
         if (!empty($v2AvailableMerchantCodes)) {
             foreach ($v2AvailableMerchantCodes as $v2AvailableMerchantCode) {
 
+                if ($v2AvailableMerchantCode->v3_gift_code_id && $v2AvailableMerchantCode->code) {
+                    // it may already be synchronized in another way
+                    $v3MediumInfo = Giftcode::withoutGlobalScopes()->where('id', $v2AvailableMerchantCode->v3_gift_code_id)
+                        ->where('code', $v2AvailableMerchantCode->code)
+                        ->first();
+                    if($v3MediumInfo){
+                        continue;
+                    }
+                }
+
                 $v2MerchantID = $v2AvailableMerchantCode->merchant_account_holder_id;
                 $v2RedeemedMerchantID = $v2AvailableMerchantCode->redeemed_merchant_account_holder_id;
                 $v2RedeemedUserID = $v2AvailableMerchantCode->redeemed_account_holder_id;
