@@ -69,7 +69,7 @@ class ProgramController extends Controller
         $programs = $programService->index(null, $params);
 
         if ($programs->isNotEmpty()) {
-            $result['data'] = _tree_flatten($programs);
+            $result['data'] = _tree_flatten($programs)->sortBy('name')->values()->all();
             return response($result);
         }
 
