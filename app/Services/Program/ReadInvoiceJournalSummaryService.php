@@ -44,12 +44,16 @@ class ReadInvoiceJournalSummaryService
 		}
 
         $this->reportFactory = new \App\Services\reports\ReportFactory();
-        $report = $this->reportFactory->build("JournalDetailed", ['programs' => $program_account_holder_ids, 'dateFrom' => $start_date, 'dateTo' => $end_date]);
-        // $report_data = $report->getReport();
+        $report = $this->reportFactory->build("JournalDetailed", [
+            'programs' => $program_account_holder_ids,
+            'from' => $start_date,
+            'to' => $end_date,
+            'flatData' => true
+        ]);
 
 		$report = $report->getReport();
 
-		$summary = $report[$program->account_holder_id];
+		$summary = $report['data'];
 
 		if (! isset ( $summary )) {
 			// no data was returned...
@@ -86,7 +90,7 @@ class ReadInvoiceJournalSummaryService
 		}
 
 		$i = 0;
-		foreach ( $report as $data ) {
+		foreach ( $report['data'] as $data ) {
 			if ($data->invoice_for_awards) {
 				$result [1] [$TOTAL_AWARDS] += ( float ) $data->points_purchased;
 				$result [2] [$TOTAL_TXN_FEES] += ( float ) $data->transaction_fee;

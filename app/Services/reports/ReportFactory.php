@@ -49,6 +49,7 @@ class ReportFactory
         $keyword = $params['keyword'] ?? null;
         $orderStatus = $params['orderStatus'] ?? null;
         $purchaseByV2 = $params['purchaseByV2'] ?? null;
+        $flatData = $params['flatData'] ?? null;
         if ($paramPage && $paramLimit) {
             $paginate = true;
             $offset = ($paramPage - 1) * $paramLimit;
@@ -83,7 +84,8 @@ class ReportFactory
             'keyword' => $keyword,
             'orderStatus' => $orderStatus,
             'purchaseByV2' => $purchaseByV2,
-            'programs'=> $programs
+            'programs'=> $programs,
+            'flatData'=> $flatData
         ];
 
         // pr($finalParams);
