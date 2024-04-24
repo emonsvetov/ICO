@@ -57,8 +57,12 @@ class InvoiceController extends Controller
 
     public function show( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
     {
-        $invoice = $invoiceService->getInvoice($invoice);
-        return response( $invoice );
+        try {
+            $invoice = $invoiceService->getInvoice($invoice);
+            return response( $invoice );
+        } catch ( \Exception $e ) {
+            return response( [ 'errors' => $e ], 422);
+        }
     }
 
     public function download( Organization $organization, Program $program, Invoice $invoice, InvoiceService $invoiceService )
