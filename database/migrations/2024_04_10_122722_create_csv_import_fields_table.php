@@ -16,8 +16,10 @@ class CreateCsvImportFieldsTable extends Migration
         Schema::create('csv_import_fields', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('csv_import_type_id');
-            $table->longText('content');
+            $table->longText('name');
+            $table->longText('rule');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

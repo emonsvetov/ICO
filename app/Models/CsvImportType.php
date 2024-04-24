@@ -24,4 +24,8 @@ class CsvImportType extends Model
         $first = self::where('name', $name)->first();
         return $first ? $first->id : 0;
     }
+
+    public function fields() {
+        return $this->hasMany(CsvImportField::class);
+    }
 }
