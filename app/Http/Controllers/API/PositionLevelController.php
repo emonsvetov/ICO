@@ -20,13 +20,25 @@ class PositionLevelController extends Controller
         $this->positionLevelService = $positionLevelService;
     }
 
-    public function store(PositionLevelRequest $positionLevelRequest,Organization $organization, Program $program)
+   /* public function store(PositionLevelRequest $positionLevelRequest,Organization $organization, Program $program)
     { 
         $data = $positionLevelRequest->validated();
         $data=$data + ['program_id' => $program->id];
         $positionLevel = $this->positionLevelService->createPositionLevel($data);
         return response($positionLevel);
        // return response()->json(['message' => 'Position level created successfully', 'data' => $positionLevel], 201);
+    }*/
+
+    public function store(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program){ 
+        
+        $data = $positionLevelRequest->validated();
+        $data = $data + ['program_id' => $program->id];
+        try {
+            $positionLevel = $this->positionLevelService->createPositionLevel($data);
+            return response()->json(['message' => 'Position level created successfully', 'data' => $positionLevel], 201);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
+        }
     }
 
     public function index(Organization $organization, Program $program)

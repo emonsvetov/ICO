@@ -5,6 +5,8 @@ use App\Models\Program;
 
 class PositionLevelService
 {
+
+
     public function createPositionLevel(array $data)
     { 
         $program = new Program();
@@ -17,7 +19,7 @@ class PositionLevelService
         try {
             // Check if the title already exists
             if (PositionLevel::where('title', $data['title'])->exists()) {
-                throw new \Exception('Title already exists');
+                throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Title already exists');
             }
             return PositionLevel::create([
                 'name' => $name,
@@ -27,7 +29,7 @@ class PositionLevelService
                 'status' => $status,
             ]);
         } catch (\Exception $e) {
-            return $e->getMessage();
+            throw $e;
         }
     }
 
