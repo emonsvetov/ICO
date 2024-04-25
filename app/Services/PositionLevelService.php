@@ -44,6 +44,12 @@ class PositionLevelService
         return $positionLevels;
     }
 
+    public function getPositionLevel(PositionLevel $positionLevel)
+    {
+        $positionLevel = PositionLevel::find($positionLevel);
+        return $positionLevel;
+    }
+
     public function deletePositionLevel(PositionLevel $positionLevel)
     {
         $positionLevel->status = 0; // Assuming 0 means deleted

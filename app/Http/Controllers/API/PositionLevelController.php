@@ -40,8 +40,7 @@ class PositionLevelController extends Controller
 
     public function show(Organization $organization, Program $program, PositionLevel $positionLevel)
     {
-        $positionLevel->load('users');
-       // return response($positionLevel);
+        $positionLevel = $this->positionLevelService->getPositionLevel($positionLevel);
         return response()->json(['data' => $positionLevel], 200);
     }
 

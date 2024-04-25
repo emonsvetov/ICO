@@ -17,10 +17,10 @@ class PositionLevel extends Model
         $this->belongsTo(Program::class);
     }
 
-    public function users() 
+   /* public function users() 
     {
         return $this->belongsToMany(User::class, 'position_level_has_users')
         ->withTimestamps();
-    }
+    }*/
 
 }
