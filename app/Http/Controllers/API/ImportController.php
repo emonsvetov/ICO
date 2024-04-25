@@ -10,7 +10,9 @@ use App\Http\Controllers\Controller;
 // use App\Services\CSVimportService;
 use Illuminate\Support\Facades\Response;
 use App\Models\Organization;
+use App\Models\Program;
 use App\Models\CsvImport;
+use App\Models\CsvImportType;
 
 class ImportController extends Controller
 {
@@ -36,16 +38,24 @@ class ImportController extends Controller
 
         return response($csvImports);
     }
-    public function downloadTemplate()
+    public function downloadTemplate( Organization $organization, Program $program = null, CsvImportType $csvImportType)
     {
-         $filePath = storage_path('template/demo.csv');
-         if (file_exists($filePath)) {
+        if( $csvImportType->fields )    {
+            $columns = $csvImportType->fields->pluck('csv_column_name');
             $headers = array(
-                'Content-Type' => 'text/csv',
+                "Content-type"        => "text/csv",
+                "Content-Disposition" => "attachment; filename={$csvImportType->type}-template.csv",
+                "Pragma"              => "no-cache",
+                "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+                "Expires"             => "0"
             );
-            return response()->download($filePath, 'demo.csv', $headers);
-        } else {
-            return response()->json(['error' => 'File not found'], 404);
+            $callback = function() use($columns) {
+                $file = fopen('php://output', 'w');
+                fputcsv($file, $columns->toArray());
+                fclose($file);
+            };
+            return response()->stream($callback, 200, $headers);
         }
+        // return response()->json(['error' => 'Template not found'], 404);
     }
 }
