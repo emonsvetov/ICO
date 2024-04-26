@@ -36,32 +36,32 @@ class AwardRequest extends FormRequest
                 'mimes:pdf,txt,doc,docx'
             ],
             'user_id' => 'required|array',
-            'user_id.*' => 'required|integer'
+            'user_id.*' => 'required|integer',
         ];
     }
+
 
     public function importRules()
     {
         return [
             'email_template_id' => 'mustComeFromModel:EmailTemplate|matchWith:name|use:id',
-            'event_id'          => 'mustComeFromModel:Event|matchWith:id|use:name',
+            'event_id'          => 'mustComeFromModel:Event|matchWith:name|use:id',
             'documentationFile' => 'hide:true',
-            'user_id'=> 'override:true|required|integer',
-            'user_id.*'         => 'hide:true',
+            // 'user_id'           => 'required|array',
         ];
     }
 
     public function setups()
     {
         return [
-            'event_id' => 'nullable|integer',
+            'event' => 'nullable|integer',
         ];
     }
 
     public function importSetups()
     {
         return [
-            'event_id' => 'nullable|mustComeFromModel:Event|matchWith:id|use:name|filterConstant:organization_id,=,organization_id|provided:true',
+            'event' => 'nullable|mustComeFromModel:Event|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
         ];
     }
 
