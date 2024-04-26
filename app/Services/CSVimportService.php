@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Events\CSVImportAlert;
 use App\Http\Traits\UserImportTrait;
 use App\Models\CsvImport;
 use App\Models\CsvImportSettings;
@@ -27,10 +26,6 @@ class CSVimportService
     private int $line = 0;
     private array $headers = [];
     private array $saveData = [];
-    private CsvImportType $csvImportType;
-    private array $hideRuleByTypeMapping = [
-        'email' => ['award_users']
-    ];
 
     /*
     1. open file
@@ -55,7 +50,7 @@ class CSVimportService
             if ($file instanceof \App\Models\CsvImport) {
                 $filepath = $file['path'];
                 if (config('app.env') == 'local') {
-                    $filepath = storage_path() . '/app/' . $filepath;
+                    $filepath = '../storage/app/public/' . $filepath;
                 }
             }
         }
@@ -99,7 +94,6 @@ class CSVimportService
                     // return $mapArray;
 
                     foreach ($mapArray as $formRequest => $fieldsToMap) {
-                        // pr($formRequest);
                         #instantiate the form request
                         $requestClassPath = "App\Http\Requests\\" . $formRequest;
                         $formRequestClass = new $requestClassPath;
@@ -109,9 +103,6 @@ class CSVimportService
 
                             $fieldsWithImportRules = $formRequestClass->importRules();
                         }
-
-                        // pr($formRequest);
-                        // pr($fieldsWithImportRules);
 
                         //Initialize to avoid "Undefined array key" below (line 136, may change)
                         if ( ! isset($saveData[$formRequest][$line])) {
@@ -143,15 +134,12 @@ class CSVimportService
                         // {
                         //     $validator  = Validator::make( $saveData[$formRequest][$line], $formRequestClass->rules() );
                         // }
-                        $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules, $formRequest);
+
+                        $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
 
                         $validator = Validator::make($saveData[$formRequest][$line], $formRequestRules);
 
                         if ($validator->fails()) {
-                            // pr($saveData[$formRequest][$line]);
-                            // pr($formRequest);
-                            // pr($formRequestRules);
-                            // exit;
                             $this->errors['Line ' . $line][][$formRequest] = $validator->errors()->toArray();
                         } else {
                             $saveData[$formRequest][$line] = $validator->validated();
@@ -215,34 +203,12 @@ class CSVimportService
 
     }
 
-    private function isHideFieldByImportType( $key )
-    {
-        foreach( $this->hideRuleByTypeMapping as $field => $importTypes)    {
-            if( $field == $key && in_array( $this->csvImportType->type, $importTypes))    {
-                return true;
-            }
-        }
-        return false;
-    }
 
-    public function filterRules($rules, $importRules, $formRequest)
+    public function filterRules($rules, $importRules)
     {
-
         foreach ($importRules as $key => $importRule) {
-            if (str_contains($importRule, 'override:true')) {
-                $rules[$key] = rtrim(ltrim(str_replace('override:true','', $importRule), '|'), '|');
-            }
-            if (str_contains($importRule, 'hide:true')) {
-                unset($rules[$key]);
-            }
             if (str_contains($importRule, 'create:true')) {
                 unset($rules[$key]);
-            }
-            if (str_contains($importRule, 'hideByImportType:true')) {
-                if( $this->isHideFieldByImportType($key) )
-                {
-                    unset($rules[$key]);
-                }
             }
         }
         return $rules;
@@ -312,10 +278,6 @@ class CSVimportService
     */
     public function rule_mustExistInModel($ruleSets, $csvValue)
     {
-        if (str_contains($ruleSets, 'override:true')) {
-            $ruleSets = rtrim(ltrim(str_replace('override:true','', $ruleSets), '|'), '|');
-        }
-
         $rules = explode('|', $ruleSets);
 
         $whereConditions = [];
@@ -364,9 +326,6 @@ class CSVimportService
 
     public function rule_mustComeFromModel($ruleSets, $csvValue)
     {
-        if (str_contains($ruleSets, 'override:true')) {
-            $ruleSets = rtrim(ltrim(str_replace('override:true','', $ruleSets), '|'), '|');
-        }
         //'mustComeFromModel:Status|matchWith:status|use:id|filter:context=Users'
         $rules = explode('|', $ruleSets);
 
@@ -487,10 +446,6 @@ class CSVimportService
 
     public function rule_mustComeFromList($ruleSets)
     {
-        if (str_contains($ruleSets, 'override:true')) {
-            $ruleSets = rtrim(ltrim(str_replace('override:true','', $ruleSets), '|'), '|');
-        }
-
         $rules = explode('|', $ruleSets);
 
         foreach ($rules as $ruleSet) {
@@ -822,8 +777,7 @@ class CSVimportService
                         $this->currentRowData[$dbField] = $this->saveData[$formRequest][$this->line][$dbField];
                     }
 
-                    $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules, $formRequest);
-
+                    $formRequestRules = $this->filterRules($formRequestRules, $fieldsWithImportRules);
                     $validator = Validator::make($this->saveData[$formRequest][$this->line], $formRequestRules);
 
                     if ($validator->fails()) {
@@ -917,10 +871,6 @@ class CSVimportService
                 }
             }
         }
-    }
-
-    public function setImportType( CsvImportType $csvImportType ) {
-        $this->csvImportType = $csvImportType;
     }
 }
 

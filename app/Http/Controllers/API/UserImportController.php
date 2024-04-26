@@ -84,7 +84,7 @@ class UserImportController extends Controller
     }
 
 
-    public function addAwardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization, Program $program = null)
+    public function addAwardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization)
     {
         //Use policies to determine if has rights and correct organization
         //Setup Request file
@@ -98,15 +98,14 @@ class UserImportController extends Controller
             $validated['upload-file'], $supplied_constants,
             new \App\Http\Requests\CSVProgramRequest,
             new \App\Http\Requests\UserRequest,
-            new \App\Http\Requests\AwardRequest,
-            // new \App\Http\Requests\EventXmlDataRequest
+            new \App\Http\Requests\EventXmlDataRequest
         );
 
         return $csvHeaders;
     }
 
 
-    public function awardUsersHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization, Program $program = null)
+    public function awardUserHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization)
     {
         //Use policies to determine if has rights and correct organization
         //Setup Request file
@@ -118,14 +117,16 @@ class UserImportController extends Controller
 
         $csvHeaders = $csvService->getFieldsToMap(
             $validated['upload-file'], $supplied_constants,
-            new \App\Http\Requests\ImportAwardUsersRequest
+            new \App\Http\Requests\CSVProgramRequest,
+            new \App\Http\Requests\UserUpdateRequest,
+            new \App\Http\Requests\EventXmlDataRequest
         );
 
         return $csvHeaders;
     }
 
 
-    public function userFileAutoImport(CSVImportRequest $request, Organization $organization, Program $program = null)
+    public function userFileAutoImport(CSVImportRequest $request, Organization $organization)
     {
         $fileUpload = $request->validated();
         $validated = $request->validate([
@@ -157,7 +158,7 @@ class UserImportController extends Controller
         }
     }
 
-    public function userFileImport(CSVImportRequest $request, Organization $organization, Program $program = null)
+    public function userFileImport(CSVImportRequest $request, Organization $organization)
     {
         $fileUpload = $request->validated();
 
@@ -168,13 +169,9 @@ class UserImportController extends Controller
 
         // Check type
         $setups = json_decode($validated['setups'], true);
-        $userModel = $this->getImportUserRequestKey($validated);
-        $requestType = $this->getImportUserRequestType($validated);
-
-        $type = CsvImportType::where( function($query) use ($requestType)    {
-            $query->orWhere('type', 'LIKE', $requestType);
-            $query->orWhere('name', 'LIKE', $requestType);
-        })->first();
+        $userModel = isset($setups['UserRequest']) ? 'UserRequest' : 'UserUpdateRequest';
+        $requestType = isset($setups['UserRequest']) ? $setups['UserRequest']['type'] : $setups['UserUpdateRequest']['type'];
+        $type = CsvImportType::getIdByType($requestType);
 
         if (empty($type))
         {
@@ -196,19 +193,21 @@ class UserImportController extends Controller
         $csvImport = new CsvImport;
         $newCsvImport = $csvImport->createCsvImport($fileUpload + [
             'organization_id'       => $organization->id,
-            'csv_import_type_id'    => $type->id
+            'csv_import_type_id'    => $type
         ]);
 
         // ImportUserForProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants, $validated['setups']);
+
         // remove after test
         $csvService = new CSVimportService;
-        $csvService->setImportType( $type );
         $importData =  $csvService->importFile($newCsvImport, $request->fieldsToMap, $supplied_constants, $request->setups);
-        // return [$request->fieldsToMap, $importData];
+        // return $importData;
 
         if ( empty($importData['errors']) )
         {
-            switch ($type->type)
+            $type = CsvImportType::find( $newCsvImport->csv_import_type_id)->type;
+
+            switch ($type)
             {
                 case 'add_participants':
                     $this->addUser($newCsvImport, $importData, $supplied_constants);
@@ -235,7 +234,7 @@ class UserImportController extends Controller
             return response(['message'=>'Errors while validating import data', 'errors' => $importData['errors']], 422);
 
             $notifData = [
-                'csv_import_id' => $newCsvImport->id,
+                'csv_import_id' => $csvImportId,
                 'errors' => $importData['errors']
             ];
 
@@ -245,7 +244,7 @@ class UserImportController extends Controller
         //$file->getRealPath();
     }
 
-    public function userSaveSettings(Request $request, Organization $organization, Program $program = null, CSVimportService $csvImportService)
+    public function userSaveSettings(Request $request, Organization $organization, CSVimportService $csvImportService)
     {
         $validated = $request->validate([
             'fieldsToMap' => 'required|json',
