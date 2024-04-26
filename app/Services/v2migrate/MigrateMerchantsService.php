@@ -248,7 +248,7 @@ class MigrateMerchantsService extends MigrationService
                 $this->countUpdatedMerchants++;
             }
 
-//            $this->updateMerchantMedia($v2Merchant, $parentMerchant);
+            $this->updateMerchantMedia($v2Merchant, $parentMerchant);
 
             if (
                 isset($v2MerchantNode['sub_merchant']) &&
