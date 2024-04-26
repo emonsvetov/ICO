@@ -34,8 +34,7 @@ NEED TO CREATE MIDDLEWARE THAT CONFIRMS THE CURRENT USER BELONGS TO THE REQUESTE
 
 Route::get('/v1/organization/{organization}/program/{program}/merchant',[App\Http\Controllers\API\ProgramMerchantController::class, 'index'])->name('api.v1.program.merchant.index'); //Need to load for guest participant/manager on home page.
 
-// Route::post('/v1/organization/{organization}/userimportheaders', [App\Http\Controllers\API\UserImportController::class, 'userHeaderIndex']);
-Route::post('/v1/organization/{organization}/userimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
+Route::post('/v1/organization/{organization}/userimportheaders', [App\Http\Controllers\API\UserImportController::class, 'userHeaderIndex']);
 Route::post('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'userFileImport']);
 Route::post('/v1/organization/{organization}/user-auto-import', [App\Http\Controllers\API\UserImportController::class, 'userFileAutoImport']);
 Route::get('/v1/organization/{organization}/userimport', [App\Http\Controllers\API\UserImportController::class, 'index']);
@@ -701,12 +700,6 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Imports
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
-    Route::post('/v1/organization/{organization}/program/{program}/{userimport}', [App\Http\Controllers\API\UserImportController::class, 'userFileImport'])->where('userimport', 'userimport|awarduserimport|addandawarduserimport');
-    Route::post('/v1/organization/{organization}/program/{program}/csv-import-setting', [App\Http\Controllers\API\CsvImportSettingController::class, 'store']);
-    Route::get('/v1/organization/{organization}/program/{program}/csv-import-setting/{type?}', [App\Http\Controllers\API\CsvImportSettingController::class, 'index']);
-
-    Route::get('/v1/organization/{organization}/program/{program}/import/download-template', [App\Http\Controllers\API\ImportController::class, 'downloadTemplate'])->middleware('can:downloadTemplate,App\Import,organization,program');
-
     Route::get('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'index']);
     Route::post('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'store']);
     Route::put('/v1/organization/{organization}/importtype/{csvImportType}', [App\Http\Controllers\API\ImportTypeController::class, 'update']);
