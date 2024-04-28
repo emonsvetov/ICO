@@ -46,9 +46,6 @@ Route::get('/v1/organization/{organization}/csv-import-setting/{type?}', [App\Ht
 Route::post('/v1/organization/{organization}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
 Route::post('/v1/organization/{organization}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
 
-Route::post('/v1/organization/{organization}/program/{program}/awarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'awardUserHeaderIndex']);
-Route::post('/v1/organization/{organization}/program/{program}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
-
 // Route::post('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'addAwardUserFileImport']);
 // Route::get('/v1/organization/{organization}/addawarduserimport', [App\Http\Controllers\API\AddAwardUserImportController::class, 'index']);
 // Route::get('/v1/organization/{organization}/addawarduserimport/{csvImport}', [App\Http\Controllers\API\AddAwardUserImportController::class, 'show']);
@@ -705,8 +702,16 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/importtype/{csvImportType}', [App\Http\Controllers\API\ImportTypeController::class, 'update']);
     Route::get('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'fields']);
     Route::put('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'saveFields']);
-
     Route::get('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/download-template', [App\Http\Controllers\API\ImportController::class, 'downloadTemplate'])->middleware('can:downloadTemplate,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/importheaders', [App\Http\Controllers\API\ImportController::class, 'headerIndex']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'saveSettings']);
+    Route::get('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'show']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/import', [App\Http\Controllers\API\ImportController::class, 'fileImport'])->middleware('can:import,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
 
     // Dashboard
     Route::get('/v1/organization/{organization}/program/{program}/dashboard',[App\Http\Controllers\API\DashboardController::class, 'index'])->middleware('can:viewAny,App\Dashboard,organization,program');

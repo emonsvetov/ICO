@@ -4,8 +4,22 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ImportAwardUsersRequest extends FormRequest
+use App\Models\Traits\CsvImport;
+
+class CSVImportAwardUsersRequest extends FormRequest
 {
+    use CsvImport;
+    // public array $inlineRules = [
+    //     'program_id' => 'required|integer',
+    //     'first_name' => 'required|string',
+    //     'last_name' => 'required|string',
+    //     'email' => 'required|email',
+    //     'event_id' => 'required|integer',
+    //     'override_cash_value' => 'nullable|numeric',
+    //     'referrer' => 'nullable|string',
+    //     'message' => 'required|string',
+    //     'notes' => 'nullable|string'
+    // ];
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -23,33 +37,30 @@ class ImportAwardUsersRequest extends FormRequest
      */
     public function rules()
     {
-        return [
-            'program_id' => 'required|integer',
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'email' => 'required|email',
-            'event_id' => 'required|integer',
-            'override_cash_value' => 'nullable|numeric',
-            'referrer' => 'nullable|string',
-            'message' => 'required|string',
-            'notes' => 'nullable|string'
-        ];
+        if( isset( $this->inlineRules ))   {
+            return $this->inlineRules;
+        }
+
+        return $this->getRules();
+
     }
 
     public function importRules()
     {
-        return [];
+        return [
+            'event_id' => 'nullable|mustComeFromModel:Event|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
+        ];
     }
 
-    public function setups()
-    {
-        return [];
-    }
+    // public function setups()
+    // {
+    //     return [];
+    // }
 
     public function importSetups()
     {
         return [
-            'type' => 'mustComeFromModel:CsvImportType|matchWith:type|use:id|filter:context,=,Users'
+            'event_id' => 'nullable|mustComeFromModel:Event|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
         ];
     }
 }

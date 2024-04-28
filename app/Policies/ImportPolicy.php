@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\CsvImportType;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
@@ -44,5 +45,13 @@ class ImportPolicy
         if( $user->isAdmin() ) return true;
         if( $user->isManagerToProgram( $program )) return true;
         return $user->can('import-download-template');
+    }
+
+    public function import(User $user, Organization $organization, Program $program, CsvImportType $csvImportType)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program ) ) return false;
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('import-csv-upload');
     }
 }

@@ -657,12 +657,18 @@ class CSVimportService
 
         */
 
-    public function saveSettings(array $data, Organization $organization)
+    public function saveSettings(array $data, Organization $organization, CSVImportType $csvImportType = null)
     {
         $setups = json_decode($data['setups'], true);
         $fieldMapping = json_decode($data['fieldsToMap'], true);
-        $type = $setups['UserRequest']['type'] ?? null;
-        $csvImportTypeId = CsvImportType::getIdByName($type);
+
+        if($csvImportType && $csvImportType instanceof CSVImportType )  {
+            $csvImportTypeId = $csvImportType->id;
+        }   else {
+            $type = $setups['UserRequest']['type'] ?? null;
+            $csvImportTypeId = CsvImportType::getIdByName($type);
+            die("Ihan");
+        }
 
         $currentCsvImportSetting = CsvImportSettings::getByOrgIdAndTypeId($organization->id, $csvImportTypeId);
 
