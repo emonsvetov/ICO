@@ -73,10 +73,10 @@ class AccountService
     public static function readBalance($account_holder_id, $account_type, array $journal_event_types = [],$allProgramAccounts = false): float
     {
         $credits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 1,null,null,$allProgramAccounts
+            $account_holder_id, $account_type, $journal_event_types, 1
         );
         $debits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 0,null,null,$allProgramAccounts
+            $account_holder_id, $account_type, $journal_event_types, 0
         );
         return (float)(number_format(($credits->total - $debits->total), 2, '.', ''));
     }
