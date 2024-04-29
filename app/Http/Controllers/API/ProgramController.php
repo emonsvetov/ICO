@@ -69,7 +69,7 @@ class ProgramController extends Controller
         $programs = $programService->index(null, $params);
 
         if ($programs->isNotEmpty()) {
-            $result['data'] = _tree_flatten($programs);
+            $result['data'] = _tree_flatten($programs)->sortBy('name')->values()->all();
             return response($result);
         }
 
@@ -210,7 +210,7 @@ class ProgramController extends Controller
 
     public function getBalanceInformation(Organization $organization, Program $program, AccountService $accountService)
     {
-        $total_financial_balance = $accountService->readAvailableBalanceForProgram($program);
+        $total_financial_balance = $accountService->readAvailableBalanceForProgram($program, false);
         //$financial_detail = $accountService->readAvailableBalanceForOwner($program);
         return response(
             ["financial_detail" => $total_financial_balance, "total_financial_balance" => $total_financial_balance]

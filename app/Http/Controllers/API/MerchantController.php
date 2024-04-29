@@ -26,6 +26,7 @@ class MerchantController extends Controller
     {
 
         $keyword = request()->get('keyword');
+        $status = request()->get('status');
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
         $tree = request()->has('tree') ? true : false;
@@ -72,6 +73,12 @@ class MerchantController extends Controller
             if ($tree){
                 $query->whereNull('parent_id');
             }
+
+            // hot fix.
+            if ($status == 'active') {
+                $query->where('status', 1);
+            }
+
             $merchants = $query->paginate(request()->get('limit', 50));
         }
 

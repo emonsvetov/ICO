@@ -34,6 +34,9 @@ class MigrateMerchantsService extends MigrationService
     public $countUpdatedTangoApi = 0;
     public $countCreatedMerchantCodes = 0;
     public $countUpdatedMerchantCodes = 0;
+    public $countSyncPrograms = 0;
+    public $countSyncMerchants = 0;
+    public $v3MerchantIDs;
 
     public function __construct(MerchantService $merchantService, MigrateGiftcodesService $migrateGiftcodesService)
     {
@@ -370,7 +373,40 @@ class MigrateMerchantsService extends MigrationService
             throw new Exception("v3 program with ID: " . $v2AccountHolderID . " not found.");
         }
 
-        $v3MerchantIDs = Merchant::all()->pluck('id', 'id')->toArray();
+        $this->v3MerchantIDs = Merchant::all()->pluck('id', 'id')->toArray();
+
+        $this->getSubPrograms($v3Program);
+
+        try {
+            $result['success'] = TRUE;
+            $result['info'] = "sync $this->countSyncPrograms programs, sync $this->countSyncMerchants merchant";
+        } catch (\Exception $exception) {
+            throw new Exception("Sync merchants to a program is failed.");
+        }
+
+        return $result;
+    }
+
+    public function getSubPrograms($v3Program)
+    {
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
+
+        if ($v2AccountHolderID) {
+            $this->migrateMerchantSettings($v2AccountHolderID, $v3Program);
+        }
+
+        if (!empty($subPrograms)) {
+            foreach ($subPrograms as $subProgram) {
+                $this->getSubPrograms($subProgram);
+            }
+        }
+    }
+
+    public function migrateMerchantSettings($v2AccountHolderID, $v3Program)
+    {
+        $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
+        $this->countSyncPrograms++;
 
         $v2ProgramMerchants = $this->v2db->select(
             sprintf("
@@ -380,6 +416,22 @@ class MigrateMerchantsService extends MigrationService
                 JOIN `merchants` m on m.account_holder_id=pm.merchant_id
                 WHERE p.account_holder_id=%d AND m.v3_merchant_id IS NOT NULL", $v2AccountHolderID)
         );
+
+        $v3InheritedProgram = $v3Program;
+
+        while (empty($v2ProgramMerchants) && $v3InheritedProgram->parent_id !== NUll) {
+            $v3InheritedProgram = Program::where('id', $v3InheritedProgram->parent_id)->first();
+            $v2AccountHolderID = $v3InheritedProgram->v2_account_holder_id;
+
+            $v2ProgramMerchants = $this->v2db->select(
+                sprintf("
+                SELECT p.v3_program_id, m.v3_merchant_id, pm.*
+                FROM `programs` p
+                JOIN `program_merchant` pm ON p.account_holder_id = pm.program_id
+                JOIN `merchants` m on m.account_holder_id=pm.merchant_id
+                WHERE p.account_holder_id=%d AND m.v3_merchant_id IS NOT NULL", $v2AccountHolderID)
+            );
+        }
 
         if(!empty($v2ProgramMerchants)) {
             $programMerchants = [];
@@ -391,7 +443,7 @@ class MigrateMerchantsService extends MigrationService
                     throw new Exception("v3_program_id in V2 table programs not found.");
                 }
 
-                if ($v3MerchantIDs[$v2ProgramMerchant->v3_merchant_id] ?? FALSE) {
+                if ($this->v3MerchantIDs[$v2ProgramMerchant->v3_merchant_id] ?? FALSE) {
                     $programMerchants[$v2ProgramMerchant->v3_merchant_id] = [
                         'featured' => $v2ProgramMerchant->featured,
                         'cost_to_program' => $v2ProgramMerchant->cost_to_program
@@ -406,15 +458,15 @@ class MigrateMerchantsService extends MigrationService
                     $v3Program = Program::where('account_holder_id', $v3AccountHolderID)->first();
                     $v3Program->merchants()->sync($programMerchants, false);
                     $countProgramMerchants = count($programMerchants);
-                    $result['success'] = TRUE;
-                    $result['info'] = "sync $countProgramMerchants items.";
+
+                    $this->countSyncMerchants += $countProgramMerchants;
+
+
                 } catch (\Exception $exception) {
                     throw new Exception("Sync merchants to a program is failed.");
                 }
             }
         }
-
-        return $result;
     }
 
     /**

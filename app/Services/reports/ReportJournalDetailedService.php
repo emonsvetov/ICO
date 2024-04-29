@@ -490,6 +490,14 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 		sort($table);
         $newTable = [];
 
+        if ($this->params[self::FLAT_DATA]){
+            $this->table = [];
+            $this->table['data'] = array_values($table);
+            $this->table['total'] = count($table);
+
+            return $this->table;
+        }
+
         foreach ($table as $key => $item) {
             if ($item->parent_id == $programs[0]->parent_id) {
                 $newTable[$item->id] = clone $item;

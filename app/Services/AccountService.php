@@ -73,10 +73,10 @@ class AccountService
     public static function readBalance($account_holder_id, $account_type, array $journal_event_types = [],$allProgramAccounts = false): float
     {
         $credits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 1,null,null,$allProgramAccounts
+            $account_holder_id, $account_type, $journal_event_types, 1
         );
         $debits = JournalEvent::read_sum_postings_by_account_and_journal_events(
-            $account_holder_id, $account_type, $journal_event_types, 0,null,null,$allProgramAccounts
+            $account_holder_id, $account_type, $journal_event_types, 0
         );
         return (float)(number_format(($credits->total - $debits->total), 2, '.', ''));
     }
@@ -230,7 +230,7 @@ class AccountService
      * @return float
      */
 
-    public static function readAvailableBalanceForProgram($program)
+    public static function readAvailableBalanceForProgram($program, $allProgramAccounts = true)
     {
         $account_type = AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE;
         $journal_event_types = array(); // leave $journal_event_types empty to get all journal events
@@ -238,7 +238,8 @@ class AccountService
             $account_type = AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
         }
 
-        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types,true);
+        // allProgramAccounts - strange variable for next logic!
+        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types, $allProgramAccounts);
     }
     /**
      * Alias for "readAvailableBalanceForProgram"
