@@ -44,12 +44,12 @@ class SocialWallPost extends BaseModel
 
     public function receiver()
     {
-        return $this->hasOne(User::class, 'account_holder_id', 'receiver_user_account_holder_id');
+        return $this->hasOne(User::class, 'id', 'receiver_user_account_holder_id');
     }
 
     public function sender()
     {
-        return $this->hasOne(User::class, 'account_holder_id', 'sender_user_account_holder_id');
+        return $this->hasOne(User::class, 'id', 'sender_user_account_holder_id');
     }
 
     public function getFullTitle()
