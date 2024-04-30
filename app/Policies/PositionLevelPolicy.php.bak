@@ -67,9 +67,9 @@ class PositionLevelPolicy
      * @param  \App\Models\PositionLevel  $levelNumber
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function update(User $authUser, Organization $organization, Program $program,PositionLevel $positionLevel)
+    public function update(User $authUser, Organization $organization, Program $program,PositionLevel $levelNumber)
     {
-        if(!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
+        if(!$this->__preAuthCheck($authUser, $organization, $program, $levelNumber)) return false;
         if($authUser->isAdmin()) return true;
         return $authUser->can('position-level-update');
     }
@@ -86,6 +86,13 @@ class PositionLevelPolicy
         if(!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
         if($authUser->isAdmin()) return true;
         return $authUser->can('position-level-delete');
+    }
+
+	public function permissionlist(User $authUser, Organization $organization, Program $program)
+    {
+        if(!$this->__preAuthCheck($authUser, $organization, $program)) return false;
+        if($authUser->isAdmin()) return true;
+        return $authUser->can('position-level-permissionlist');
     }
 
     /**

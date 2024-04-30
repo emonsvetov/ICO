@@ -739,4 +739,11 @@ Route::get('/v1/organization/{organization}/program/{program}/positionlevel',[Ap
 
  Route::delete('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}',[App\Http\Controllers\API\PositionLevelController::class, 'delete'])->middleware('can:delete,App\PositionLevel,organization,program,positionLevel');
 
+//Position Permission Assignment
+ Route::get('/v1/organization/{organization}/program/{program}/positionpermissions',[App\Http\Controllers\API\PositionPermissionAssignmentController::class, 'getPositionPermission']);
+
+ Route::post('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/assign-permissions',[App\Http\Controllers\API\PositionPermissionAssignmentController::class, 'assignPermissionToPosition'])->middleware('can:assign,App\PositionPermissionAssignment,organization,program');
+
+ Route::get('/v1/organization/{organization}/program/{program}/positionpermissions/{positionPermissionAssignment}',[App\Http\Controllers\API\PositionLevelController::class, 'show'])->middleware('can:view,App\PositionPermissionAssignment,organization,program,positionPermissionAssignment');
+
 });

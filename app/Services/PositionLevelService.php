@@ -6,7 +6,6 @@ use App\Models\Program;
 class PositionLevelService
 {
 
-
     public function createPositionLevel(array $data)
     { 
         $program = new Program();
@@ -40,7 +39,8 @@ class PositionLevelService
 
     public function getPositionLevelList(Program $program)
     {
-        $positionLevels = PositionLevel::all();
+        //$positionLevels = PositionLevel::withTrashed()->get();
+        $positionLevels = PositionLevel::where('program_id', $program->id)->withTrashed()->get();
         return $positionLevels;
     }
 
@@ -56,6 +56,7 @@ class PositionLevelService
         $positionLevel->save();
         $positionLevel->delete();
     }
+    
 }
 
 ?>

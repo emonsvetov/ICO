@@ -1,0 +1,15 @@
+<?php
+namespace App\Services;
+use App\Models\PositionLevel;
+use App\Models\Program;
+
+class PositionPermissionAssignmentService
+{
+
+	public function assignPermissionToPosition($positionId, $permissionId)
+	{
+		// Logic to assign permission to position
+	}
+
+}
+?>

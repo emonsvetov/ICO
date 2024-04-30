@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers\API;
+
 use App\Http\Controllers\Controller;
 use App\Models\PositionLevel;
 use App\Models\Organization;
@@ -20,8 +22,9 @@ class PositionLevelController extends Controller
         $this->positionLevelService = $positionLevelService;
     }
 
-    public function store(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program){ 
-        
+    public function store(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program)
+    {
+
         $data = $positionLevelRequest->validated();
         $data = $data + ['program_id' => $program->id];
         try {
@@ -44,17 +47,18 @@ class PositionLevelController extends Controller
         return response()->json(['data' => $positionLevel], 200);
     }
 
-    public function update(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program,PositionLevel $positionLevel)
+    public function update(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program, PositionLevel $positionLevel)
     {
         $data = $positionLevelRequest->validated();
-        $positionLevel = $this->positionLevelService->updatePositionLevel($positionLevel,$data);
+        $positionLevel = $this->positionLevelService->updatePositionLevel($positionLevel, $data);
         return response()->json(['message' => 'Position level updated successfully', 'data' => $positionLevel], 200);
     }
 
-    public function delete(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program,PositionLevel $positionLevel)
+    public function delete(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program, PositionLevel $positionLevel)
     {
         $data = $positionLevelRequest->validated();
-        $positionLevel = $this->positionLevelService->deletePositionLevel($positionLevel,$data);
+        $positionLevel = $this->positionLevelService->deletePositionLevel($positionLevel, $data);
         return response()->json(['message' => 'Position level deleted successfully'], 200);
     }
+    
 }
