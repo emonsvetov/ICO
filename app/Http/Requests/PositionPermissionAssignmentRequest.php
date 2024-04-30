@@ -24,10 +24,8 @@ class PositionPermissionAssignmentRequest extends FormRequest
     public function rules()
     {
         return [
-           // 'position_level_id ' => 'required|array',
-           // 'position_level_id .*' => 'required|integer',
-            'position_permission_id' => 'required|array',
-            'position_permission_id.*' => 'required|integer',
+            'position_permission' => 'required|array',
+            'position_permission.*' => 'required|integer',
         ];
     }
 }

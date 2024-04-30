@@ -38,7 +38,9 @@ class PositionPermissionAssignmentController extends Controller
 
 	public function assignPermissionToPosition(PositionPermissionAssignmentRequest $PositionPermissionAssignmentRequest, Organization $organization, Program $program, $positionLevelId)
 	{
-		$permissionIds = $PositionPermissionAssignmentRequest->input('position_permission_id');
+		
+		$permissionIds = $PositionPermissionAssignmentRequest->input('position_permission');
+		//$permissionIds = $PositionPermissionAssignmentRequest->validated();
 		$data = $this->positionPermissionAssignmentService->assignPermissionToPosition($positionLevelId,$permissionIds);
 		return response()->json(['message' => 'Permission assigned successfully', 'data' => $data]);
 	}
