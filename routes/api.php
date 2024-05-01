@@ -728,4 +728,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}/assign',[App\Http\Controllers\API\UnitNumberController::class, 'assign'])->middleware('can:assign,App\UnitNumber,organization,program,unitNumber');
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}/unassign',[App\Http\Controllers\API\UnitNumberController::class, 'unassign'])->middleware('can:assign,App\UnitNumber,organization,program,unitNumber');
 });
+Route::get('/paypal/plans', [App\Http\Controllers\API\PayPalController::class, 'getPlans']);
+Route::post('/paypal/subscribe', [App\Http\Controllers\API\PayPalController::class, 'processPayment']);
+Route::post('/paypal/cancel-subscription', [App\Http\Controllers\API\PayPalController::class, 'cancelSubscription']);
+Route::post('/paypal/verify-subscription', [App\Http\Controllers\API\PayPalController::class, 'verifySubscription']);
 
