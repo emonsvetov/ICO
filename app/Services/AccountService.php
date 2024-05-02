@@ -223,6 +223,15 @@ class AccountService
         );
         return (float) number_format($debits->total, 2, '.', '');
     }
+
+    public static function getAvailableBalanceForProgram($program)
+    {
+        $account_type = AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE;
+        $journal_event_types = array();
+
+        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types);
+    }
+
     /**
      * This method returns available balance for a program
      *
