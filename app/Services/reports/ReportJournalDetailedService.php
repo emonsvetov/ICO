@@ -306,7 +306,8 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 													case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_MONIES_PENDING :
 														if (! $program->invoice_for_awards) {
 															$table [( int ) $program->account_holder_id]->deposits -= $amount;
-														}
+                                                            $table [( int ) $program->account_holder_id]->deposit_reversal = $amount;
+                                                        }
 													break;
 												}
 												break;
@@ -329,7 +330,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_DEPOSIT_FEE:
                                                             $table[(int)$program->account_holder_id]->deposit_fee -= $amount;
-    //                                                        $table[(int)$program->account_holder_id]->deposit_fee_reversal = $amount;
+                                                            $table[(int)$program->account_holder_id]->deposit_fee_reversal = $amount;
                                                             break;
                                                         case JournalEventType::JOURNAL_EVENT_TYPES_REVERSAL_PROGRAM_PAYS_FOR_CONVENIENCE_FEE:
                                                             $table[(int)$program->account_holder_id]->convenience_fees -= $amount;
