@@ -50,7 +50,7 @@ class ProgramUserService
             unset($validated['roles']);
         }
 
-        $userService->update($user, $validated);
+        $userService->update($user, $validated,$program->id);
 
         if ( ! empty($validated['program_roles'])) {
             $user->syncProgramRoles($program->id, $validated['program_roles']);

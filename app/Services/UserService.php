@@ -17,6 +17,7 @@ use App\Http\Traits\MediaUploadTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
+
 class UserService
 {
     use Filterable, UserFilters, MediaUploadTrait;
@@ -48,51 +49,44 @@ class UserService
 
         $query = User::where($where)->withOrganization($organization);
 
-        if( $keyword )
-        {
-            $query = $query->where(function($query1) use($keyword) {
+        if ($keyword) {
+            $query = $query->where(function ($query1) use ($keyword) {
                 $query1->orWhere('id', 'LIKE', "%{$keyword}%")
-                ->orWhere('email', 'LIKE', "%{$keyword}%")
-                ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%");
+                    ->orWhere('email', 'LIKE', "%{$keyword}%")
+                    ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%");
             });
         }
 
-        if( $orgId )
-        {
+        if ($orgId) {
             $orgIds = explode(',', $orgId);
             $query->whereIn('organization_id', $orgIds);
         }
 
-        if ( $status ){
+        if ($status) {
             $statuses = explode(',', $status);
             $statusIds = [];
-            foreach ($statuses as $status){
+            foreach ($statuses as $status) {
                 $statusIds[] = User::getStatusIdByName($status);
             }
             $query->whereIn('user_status_id', $statusIds);
         }
 
-        if( $sortby == 'name' )
-        {
+        if ($sortby == 'name') {
             $orderByRaw = "first_name $direction, last_name $direction";
-        }
-        else
-        {
+        } else {
             $orderByRaw = "$sortby $direction";
         }
 
         $query = $query->orderByRaw($orderByRaw);
 
-        if ( request()->has('minimal') )
-        {
+        if (request()->has('minimal')) {
             $users = $query->select('id', 'first_name', 'last_name')->with(['roles', 'status'])->get();
         } else {
             $users = $query->with(['roles', 'status'])->paginate(request()->get('limit', 10));
         }
 
-        if ( $users->isNotEmpty() )
-        {
-            return $users ;
+        if ($users->isNotEmpty()) {
+            return $users;
         }
 
         return [];
@@ -114,7 +108,7 @@ class UserService
     {
         $userStatus = User::getStatusByName(User::STATUS_DELETED);
         $program = self::GetModelByMixed($program);
-        if ( ! $program->exists()) {
+        if (!$program->exists()) {
             return;
         }
         // DB::enableQueryLog();
@@ -139,11 +133,11 @@ class UserService
      * @param User $user
      * @return User|null
      */
-    public function update( User $user, $validated,Program $program)
+    public function update(User $user, $validated, $programId)
     {
         $fieldsToUpdate = array_filter(
             $validated,
-            fn($key) => ! in_array($key, $user->getImageFields()),
+            fn ($key) => !in_array($key, $user->getImageFields()),
             ARRAY_FILTER_USE_KEY
         );
 
@@ -158,15 +152,15 @@ class UserService
 
         $user->update($fieldsToUpdate);
 
-        if ( ! empty($validated['roles'])) {
+        if (!empty($validated['roles'])) {
             $this->updateRoles($user, $validated['roles']);
         }
 
-        if ( ! empty($validated['unit_number']) ) {
+        if (!empty($validated['unit_number'])) {
             $this->updateUnitNumber($user, $validated['unit_number']);
         }
-        if ( ! empty($validated['position_level']) ) {
-            $this->updatePositionLevel($user, $validated['position_level'],$program->id);
+        if (!empty($validated['position_level'])) {
+            $this->updatePositionLevel($user, $validated['position_level'], $programId);
         }
 
         return $user;
@@ -209,7 +203,7 @@ class UserService
 
     public function updateStatus($validated, $user)
     {
-        return $user->update( ['user_status_id' => $validated['user_status_id']] );
+        return $user->update(['user_status_id' => $validated['user_status_id']]);
     }
 
     public function getUsersToRemind()
@@ -237,8 +231,8 @@ class UserService
 
         $query = $query->where(function ($query1) {
             $query1
-            ->orWhereNull('users.join_reminder_at')
-            ->orWhere('users.join_reminder_at', '<=', \Carbon\Carbon::now()->subDays(7)->toDateTimeString());
+                ->orWhereNull('users.join_reminder_at')
+                ->orWhere('users.join_reminder_at', '<=', \Carbon\Carbon::now()->subDays(7)->toDateTimeString());
         });
 
         $query->where('users.user_status_id', '=', User::getIdStatusNew());
@@ -250,12 +244,9 @@ class UserService
     {
         $users = $this->getUsersToRemind();
         $programUsers = [];
-        if($users->isNotEmpty())
-        {
-            foreach( $users as $user)
-            {
-                if( !isset($programUsers[$user->program_id]) )
-                {
+        if ($users->isNotEmpty()) {
+            foreach ($users as $user) {
+                if (!isset($programUsers[$user->program_id])) {
                     $programUsers[$user->program_id] = [];
                 }
                 $programUsers[$user->program_id][] = $user;
@@ -264,10 +255,9 @@ class UserService
             }
             $programIds = array_keys($programUsers);
             $programs = Program::whereIn('id', $programIds);
-            foreach( $programUsers as $programId => $_users)
-            {
+            foreach ($programUsers as $programId => $_users) {
                 $program = $programs->find($programId);
-                event( new \App\Events\UsersInvited( $_users, $program, true ) );
+                event(new \App\Events\UsersInvited($_users, $program, true));
             }
         }
     }
@@ -328,30 +318,27 @@ class UserService
             $user->token_2fa = $token;
             $user->twofa_verified = true;
             // temp hotfix for migration test
-            if ($user->email == 'oganshonkov@incentco.com'){
+            if ($user->email == 'oganshonkov@incentco.com') {
                 $user->token_2fa = 'zzz';
             }
             $user->save();
 
             Mail::raw($token, function ($message) use ($recipientEmail) {
                 $message->to($recipientEmail)
-                        ->subject('2FA code for Incentco');
+                    ->subject('2FA code for Incentco');
             });
             return [
                 'success' => true,
                 'message' => 'Verification email sent',
                 'code' => 200,
             ];
-        }
-        catch(\Exception $e)
-        {
+        } catch (\Exception $e) {
             return [
                 'success' => false,
-                'message' => 'Mail request failed '.$e->getMessage(),
+                'message' => 'Mail request failed ' . $e->getMessage(),
                 'code' => 422,
             ];
         }
-
     }
 
     public function calculateExpirationDate(\stdClass $data)
@@ -401,7 +388,6 @@ class UserService
             } else {
                 $res = false;
             }
-
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_ANNUAL) {
             $year = $originalDate->format('Y');
             $newDate = new \DateTime();
@@ -412,9 +398,7 @@ class UserService
             } else {
                 $res = false;
             }
-
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_SPECIFIED) {
-
         } elseif ($data->expiration_rule_id == self::EXPIRATION_RULES_TWO_YEARS) {
             $year = $originalDate->format('Y');
             $newDate = new \DateTime();
@@ -581,12 +565,11 @@ class UserService
                     $errorCode = 0;
                     $errorData = [];
                 }
-            }else{
+            } else {
                 $error = "Insufficient funds in the account";
                 $errorCode = 404;
                 $errorData = [];
             }
-
         } else {
             $success = false;
             $errorCode = 404;
@@ -613,10 +596,9 @@ class UserService
     {
         $currentUnitNumber = $user->unitNumber ? $user->unitNumber->id : null;
 
-        if( $newUnitNumber === $currentUnitNumber ) return;
+        if ($newUnitNumber === $currentUnitNumber) return;
 
-        if( $currentUnitNumber )
-        {
+        if ($currentUnitNumber) {
             $user->unit_numbers()->where('unit_number', '=', $currentUnitNumber)->detach();
         }
 
@@ -624,24 +606,23 @@ class UserService
         return $newUnitNumber;
     }
 
-    public function updatePositionLevel(User $user, int $newPositionLevel, $programId){
-    try {
-        $currentPositionLevel = $user->positionLevel ? $user->positionLevel->id : null;
+    public function updatePositionLevel(User $user, int $newPositionLevel, $programId)
+    {
+        try {
+            $currentPositionLevel = $user->positionLevel ? $user->positionLevel->id : null;
 
-        if ($newPositionLevel === $currentPositionLevel) return;
+            if ($newPositionLevel === $currentPositionLevel) return;
 
-        if ($currentPositionLevel) {
-            $user->position_levels()->where('position_level', '=', $currentPositionLevel)->detach();
+            if ($currentPositionLevel) {
+                $user->position_levels()->where('position_level', '=', $currentPositionLevel)->detach();
+            }
+
+            $user->position_levels()->attach([$newPositionLevel => ['program_id' => $programId]]);
+
+            return $newPositionLevel;
+        } catch (\Exception $e) {
+            // Log the error or handle it as needed
+            return response(['errors' => 'Error updating user position level'], 422);
         }
-
-        $user->position_levels()->attach([$newPositionLevel => ['program_id' => $programId]]);
-
-        return $newPositionLevel;
-    } catch (\Exception $e) {
-        // Log the error or handle it as needed
-        return response(['errors' => 'Error updating user position level'], 422);
     }
- }
-
-
 }
