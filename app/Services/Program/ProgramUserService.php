@@ -16,7 +16,7 @@ class ProgramUserService
         $validated['email_verified_at'] = now();
 
         $user = User::createAccount($validated);
-
+        //dd($user);
         if ($user) {
             $program->users()->sync([$user->id], false);
             if (isset($validated['roles'])) {
@@ -25,6 +25,10 @@ class ProgramUserService
             if ( ! empty($validated['unit_number']) ) {
                 $userService = new UserService;
                 $userService->updateUnitNumber($user, $validated['unit_number']);
+            }
+            if (!empty($validated['position_level'])) {
+                $userService = new UserService;
+                $userService->updatePositionLevel($user, $validated['position_level'],$program->id);
             }
             if (!empty($validated['send_invite'])) {
                 // $participantRoleId = Role::getParticipantRoleId();

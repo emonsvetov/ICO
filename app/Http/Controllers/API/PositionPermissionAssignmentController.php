@@ -1,17 +1,16 @@
 <?php
-
 namespace App\Http\Controllers\API;
 
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
 use App\Services\PositionPermissionAssignmentService;
 use App\Http\Requests\PositionPermissionAssignmentRequest;
+use App\Models\Program;
+use App\Models\Organization;
+use App\Models\PositionLevel;
 use App\Models\PositionPermission;
 use App\Models\PositionPermissionAssignment;
-use App\Models\PositionLevel;
-use App\Models\Organization;
-use App\Models\Program;
 
 class PositionPermissionAssignmentController extends Controller
 {
@@ -31,17 +30,16 @@ class PositionPermissionAssignmentController extends Controller
 
 
 	public function show(Organization $organization, Program $program, PositionPermissionAssignment $positionLevelPermission)
-    {
-        $positionLevelPermission = $this->positionPermissionAssignmentService->PositionPermissionAssignment($positionLevelPermission);
-        return response()->json(['data' => $positionLevelPermission], 200);
-    }
+	{
+		$positionLevelPermission = $this->positionPermissionAssignmentService->PositionPermissionAssignment($positionLevelPermission);
+		return response()->json(['data' => $positionLevelPermission], 200);
+	}
 
 	public function assignPermissionToPosition(PositionPermissionAssignmentRequest $PositionPermissionAssignmentRequest, Organization $organization, Program $program, $positionLevelId)
 	{
-		
 		$permissionIds = $PositionPermissionAssignmentRequest->input('position_permission');
 		//$permissionIds = $PositionPermissionAssignmentRequest->validated();
-		$data = $this->positionPermissionAssignmentService->assignPermissionToPosition($positionLevelId,$permissionIds);
-		return response()->json(['message' => 'Permission assigned successfully', 'data' => $data]);
+		$data = $this->positionPermissionAssignmentService->assignPermissionToPosition($positionLevelId, $permissionIds);
+		return response()->json(['status' =>200, 'data' => $data]);
 	}
 }

@@ -124,7 +124,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         'email_verified_at' => 'datetime',
     ];
 
-    protected $appends = ['name', 'isSuperAdmin', 'isAdmin', 'unitNumber'];
+    protected $appends = ['name', 'isSuperAdmin', 'isAdmin', 'unitNumber','positionLevel'];
     protected function getNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
@@ -187,9 +187,19 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         return $this->belongsToMany(UnitNumber::class, 'unit_number_has_users')->withTimestamps();
     }
 
+    public function position_levels()
+    {
+        return $this->belongsToMany(PositionLevel::class, 'position_assignments')->withTimestamps();
+    }
+
     public function getUnitNumberAttribute()
     {
         return $this->unit_numbers()->where('user_id', $this->id)->first();
+    }
+    
+    public function getPositionLevelAttribute()
+    {
+        return $this->position_levels()->where('user_id', $this->id)->first();
     }
 
     public function award_levels()

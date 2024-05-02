@@ -12,6 +12,7 @@ use App\Models\Traits\Filterable;
 use App\Models\Traits\UserFilters;
 use App\Models\Status;
 use App\Models\User;
+use App\Models\PositionAssignment;
 use App\Http\Traits\MediaUploadTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -138,7 +139,7 @@ class UserService
      * @param User $user
      * @return User|null
      */
-    public function update( User $user, $validated)
+    public function update( User $user, $validated,Program $program)
     {
         $fieldsToUpdate = array_filter(
             $validated,
@@ -163,6 +164,9 @@ class UserService
 
         if ( ! empty($validated['unit_number']) ) {
             $this->updateUnitNumber($user, $validated['unit_number']);
+        }
+        if ( ! empty($validated['position_level']) ) {
+            $this->updatePositionLevel($user, $validated['position_level'],$program->id);
         }
 
         return $user;
@@ -619,4 +623,25 @@ class UserService
         $user->unit_numbers()->attach([$newUnitNumber]);
         return $newUnitNumber;
     }
+
+    public function updatePositionLevel(User $user, int $newPositionLevel, $programId){
+    try {
+        $currentPositionLevel = $user->positionLevel ? $user->positionLevel->id : null;
+
+        if ($newPositionLevel === $currentPositionLevel) return;
+
+        if ($currentPositionLevel) {
+            $user->position_levels()->where('position_level', '=', $currentPositionLevel)->detach();
+        }
+
+        $user->position_levels()->attach([$newPositionLevel => ['program_id' => $programId]]);
+
+        return $newPositionLevel;
+    } catch (\Exception $e) {
+        // Log the error or handle it as needed
+        return response(['errors' => 'Error updating user position level'], 422);
+    }
+ }
+
+
 }

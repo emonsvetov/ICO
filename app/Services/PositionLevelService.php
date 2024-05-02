@@ -1,7 +1,8 @@
 <?php
 namespace App\Services;
-use App\Models\PositionLevel;
+
 use App\Models\Program;
+use App\Models\PositionLevel;
 
 class PositionLevelService
 {
@@ -14,7 +15,7 @@ class PositionLevelService
         if(!empty($program_id)){
             $level =$program_id + 1;
         }
-        $name = 'demo name';
+        $name = 'l'. $level;
         try {
             // Check if the title already exists
             if (PositionLevel::where('title', $data['title'])->exists()) {
