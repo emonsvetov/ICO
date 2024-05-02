@@ -3,6 +3,7 @@
 namespace App\Services\v2migrate;
 
 use App\Models\SocialWallPost;
+use App\Models\User;
 use Exception;
 
 use App\Models\Program;
@@ -10,6 +11,7 @@ use App\Models\Program;
 class MigrateSocialWallPostService extends MigrationService
 {
     public array $importedSocialWallPosts = [];
+    public $v3Users;
 
     public function __construct()
     {
@@ -72,6 +74,16 @@ class MigrateSocialWallPostService extends MigrationService
     {
         $v2Data = $this->getSocialWallPostsByIds($accountHolderIds);
 
+        $v2Users = [];
+        foreach ($v2Data as $v2SocialWallPost) {
+            $v3_sender_id = $v2SocialWallPost->v3_sender_id;
+            $v3_receiver_id = $v2SocialWallPost->v3_receiver_id;
+            $v2Users[$v3_sender_id] = $v3_sender_id;
+            $v2Users[$v3_receiver_id] = $v3_receiver_id;
+        }
+
+        $this->v3Users = User::whereIn('id', $v2Users)->pluck('account_holder_id', 'id')->toArray();
+
         foreach ($v2Data as $item) {
             $this->syncOrCreateSocialWallPost($item, $organizationId);
         }
@@ -95,8 +107,8 @@ class MigrateSocialWallPostService extends MigrationService
             'social_wall_post_id' => $parent_id,
             'event_xml_data_id' => $v2SocialWallPost->v3_event_xml_data_id,
             'awarder_program_id' => $v2SocialWallPost->v3_awarder_program_id,
-            'sender_user_account_holder_id' => $v2SocialWallPost->v3_sender_id,
-            'receiver_user_account_holder_id' => $v2SocialWallPost->v3_receiver_id,
+            'sender_user_account_holder_id' => $this->v3Users[$v2SocialWallPost->v3_sender_id],
+            'receiver_user_account_holder_id' => $this->v3Users[$v2SocialWallPost->v3_receiver_id],
             'comment' => $v2SocialWallPost->comment,
             'created_at' => $v2SocialWallPost->created,
             'organization_id' => $organizationId,
