@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\Program;
@@ -8,14 +9,14 @@ class PositionLevelService
 {
 
     public function createPositionLevel(array $data)
-    { 
+    {
         $program = new Program();
         $program_id = $program->get_top_level_program_id($data['program_id']);
-        $status=1;
-        if(!empty($program_id)){
-            $level =$program_id + 1;
+        $status = 1;
+        if (!empty($program_id)) {
+            $level = $program_id + 1;
         }
-        $name = 'l'. $level;
+        $name = 'l' . $level;
         try {
             // Check if the title already exists
             if (PositionLevel::where('title', $data['title'])->exists()) {
@@ -34,14 +35,16 @@ class PositionLevelService
     }
 
     public function updatePositionLevel(PositionLevel $positionLevel, array $data)
-    { 
+    {
         return $positionLevel->update($data);
     }
 
     public function getPositionLevelList(Program $program)
     {
-        //$positionLevels = PositionLevel::withTrashed()->get();
-        $positionLevels = PositionLevel::where('program_id', $program->id)->withTrashed()->get();
+        //$positionLevels = PositionLevel::where('program_id', $program->id)->withTrashed()->get();
+        $positionLevels = PositionLevel::where('program_id', $program->id)
+            ->whereNull('deleted_at')
+            ->get();
         return $positionLevels;
     }
 
@@ -57,7 +60,4 @@ class PositionLevelService
         $positionLevel->save();
         $positionLevel->delete();
     }
-    
 }
-
-?>
