@@ -223,6 +223,15 @@ class AccountService
         );
         return (float) number_format($debits->total, 2, '.', '');
     }
+
+    public static function getAvailableBalanceForProgram($program)
+    {
+        $account_type = AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE;
+        $journal_event_types = array();
+
+        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types);
+    }
+
     /**
      * This method returns available balance for a program
      *
@@ -230,7 +239,7 @@ class AccountService
      * @return float
      */
 
-    public static function readAvailableBalanceForProgram($program, $allProgramAccounts = true)
+    public static function readAvailableBalanceForProgram($program)
     {
         $account_type = AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE;
         $journal_event_types = array(); // leave $journal_event_types empty to get all journal events
@@ -238,8 +247,7 @@ class AccountService
             $account_type = AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
         }
 
-        // allProgramAccounts - strange variable for next logic!
-        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types, $allProgramAccounts);
+        return self::readBalance($program->account_holder_id, $account_type, $journal_event_types);
     }
     /**
      * Alias for "readAvailableBalanceForProgram"

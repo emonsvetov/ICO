@@ -256,11 +256,19 @@ trait HasProgramRoles
     }
     public function isManager( $program ) {
         $program = Program::getModelByMixed($program);
-        $isManager = $this->hasRoleInProgram( config('roles.manager'), $program);
+        $isManager = $this->hasAnyRoleInProgram([
+            config('roles.manager'),
+            config('roles.read_only_manager'),
+            config('roles.limited_manager'),
+        ], $program);
         if( $isManager )  return true;
         // Is not a manager in current program. Find manager role in anscestors!
         foreach( $program->ancestors()->get() as $ancestor )  {
-            $isManager = $this->hasRoleInProgram( config('roles.manager'), $ancestor);
+            $isManager = $this->hasAnyRoleInProgram([
+                config('roles.manager'),
+                config('roles.read_only_manager'),
+                config('roles.limited_manager'),
+            ], $ancestor);
             if( $isManager )  return true;
         }
         return false;
@@ -272,6 +280,8 @@ trait HasProgramRoles
         if($this->hasAnyRoleInProgram([
             config('roles.participant'),
             config('roles.manager'),
+            config('roles.read_only_manager'),
+            config('roles.limited_manager'),
             config('roles.admin')
         ], $program ))   {
             return true;
