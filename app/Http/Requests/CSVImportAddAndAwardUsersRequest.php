@@ -6,17 +6,15 @@ use Illuminate\Foundation\Http\FormRequest;
 
 use App\Models\Traits\CsvImport;
 
-class CSVImportAwardUsersRequest extends FormRequest
+class CSVImportAddAndAwardUsersRequest extends FormRequest
 {
     use CsvImport;
-    // public array $rules = [
+    // public array $inlineRules = [
     //     'program_id' => 'required|integer',
     //     'first_name' => 'required|string',
     //     'last_name' => 'required|string',
     //     'email' => 'required|email',
-    //     'event_id' => 'required|integer',
-    //     'override_cash_value' => 'nullable|numeric',
-    //     'referrer' => 'nullable|string',
+    //     'amount' => 'nullable|numeric',
     //     'message' => 'required|string',
     //     'notes' => 'nullable|string'
     // ];
@@ -37,6 +35,9 @@ class CSVImportAwardUsersRequest extends FormRequest
      */
     public function rules()
     {
+        if( isset( $this->inlineRules ))   {
+            return $this->inlineRules;
+        }
         return $this->getRules();
     }
 
@@ -56,7 +57,6 @@ class CSVImportAwardUsersRequest extends FormRequest
     public function importSetups()
     {
         return [
-            'event_id' => 'mustComeFromModel:Event|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
             'program_id' => 'mustComeFromModel:Program|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
         ];
     }

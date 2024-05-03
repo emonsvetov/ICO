@@ -8,6 +8,7 @@ use App\Notifications\CSVImportNotification;
 use App\Http\Requests\CSVImportRequest;
 use App\Services\CSVimportHeaderService;
 use App\Services\CSVimportService;
+use App\Http\Traits\UserImportTrait;
 
 use App\Models\Organization;
 use App\Models\Program;
@@ -16,6 +17,8 @@ use App\Models\CsvImportType;
 
 class ImportController extends Controller
 {
+    use UserImportTrait;
+    public $notifyOnError = false;
     public function index(Organization $organization)
     {
         $query = CsvImport::withOrganization($organization);
@@ -93,22 +96,10 @@ class ImportController extends Controller
             'setups' => 'required|json'
         ]);
 
-        // // Check type
-        // $setups = json_decode($validated['setups'], true);
-        // $userModel = isset($setups['UserRequest']) ? 'UserRequest' : 'UserUpdateRequest';
-        // $requestType = isset($setups['UserRequest']) ? $setups['UserRequest']['type'] : $setups['UserUpdateRequest']['type'];
-        // $type = CsvImportType::getIdByType($requestType);
-
-        // if (empty($type))
-        // {
-        //     return response(["errors" => [
-        //         'Setups' => [
-        //             $userModel => [
-        //                 'type' => "'" . $requestType . "' does not exist"
-        //             ]
-        //         ]
-        //     ]]);
-        // }
+        $method = "csvImport" . ucfirst(camel_case($csvImportType->type));
+        if( !method_exists($this, $method))  {
+            return response(['message'=>'Errors while importing data', 'errors' => sprintf('Import method:"%s" not implemented', $method)], 422);
+        }
 
         $supplied_constants = collect(
             [
@@ -127,42 +118,35 @@ class ImportController extends Controller
         // remove after test
         $csvService = new CSVimportService;
         $importData =  $csvService->importFile($newCsvImport, $request->fieldsToMap, $supplied_constants, $request->setups);
-        // return $importData;
 
         if ( empty($importData['errors']) )
         {
-            switch ( $csvImportType->type )
-            {
-                case 'add_participants':
-                    $this->addUser($newCsvImport, $importData, $supplied_constants);
-                    break;
-
-                case 'add_managers':
-                    $this->addUser($newCsvImport, $importData, $supplied_constants);
-                    break;
-
-                case 'add_and_award_users':
-                    $results = $this->addAndAwardUser($newCsvImport, $importData, $supplied_constants);
-                    break;
-
-                case 'award_users':
-                    $results = $this->awardUser($newCsvImport, $importData, $supplied_constants);
-                    break;
+            $results = $this->{$method}($newCsvImport, $importData, $supplied_constants);
+            if( !isset($results['errors'])) {
+                return response(['csvImport' => $newCsvImport, 'importData' => $importData, 'results' => $results]);
+            }   else {
+                if( $this->notifyOnError )
+                {
+                    $notifData = [
+                        'csv_import_id' => $csvImportType->id,
+                        'errors' => $results['errors']
+                    ];
+                    $newCsvImport->notify(new CSVImportNotification($notifData));
+                }
+                return response(['message'=>'Errors while validating import data', 'errors' => $results['errors']], 422);
             }
-
-            return response(['csvImport' => $newCsvImport, 'importData' => $importData, 'results' => $results]);
         }
         else
         {
-            // return $importData;
+            if( $this->notifyOnError )
+            {
+                $notifData = [
+                    'csv_import_id' => $csvImportType->id,
+                    'errors' => $importData['errors']
+                ];
+                $newCsvImport->notify(new CSVImportNotification($notifData));
+            }
             return response(['message'=>'Errors while validating import data', 'errors' => $importData['errors']], 422);
-
-            $notifData = [
-                'csv_import_id' => $csvImportType->id,
-                'errors' => $importData['errors']
-            ];
-
-            $newCsvImport->notify(new CSVImportNotification($notifData));
         }
     }
 }

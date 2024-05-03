@@ -6,7 +6,11 @@ use App\Models\CsvImportType;
 trait CSVImport
 {
     public function getRules( $importTypeType = null ) {
-        // pr(get_class());
+
+        if( isset( $this->rules ))   {
+            return $this->rules;
+        }
+
         if( !$importTypeType ) {
             $className = get_class();
             $str = str_replace("App\Http\Requests\CSVImport", "", $className);

@@ -28,4 +28,9 @@ class CsvImportType extends Model
     public function fields() {
         return $this->hasMany(CsvImportField::class);
     }
+
+    public function getCsvImportRequestNameAttribute()
+    {
+        return "CSVImport" . ucfirst(camel_case($this->type)) . 'Request';
+    }
 }

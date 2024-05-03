@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use DateTime;
+use Exception;
 
 trait UserImportTrait
 {
@@ -479,4 +480,89 @@ trait UserImportTrait
         }
     }
 
+    public function csvImportAwardUsers(\App\Models\CsvImport $newCsvImport, $importData, $supplied_constants)
+    {
+        if( !isset($importData[$newCsvImport->csvImportRequestName]))   {
+            return;
+        }
+        $result = [];
+        $data = $importData[$newCsvImport->csvImportRequestName];
+        foreach( $data as $row )    {
+            $program = Program::find($row['program_id']);
+            $user = User::where('email', $row['email'])->first();
+            $isParticipant = $user->isParticipantToProgram($program);
+            if( !$isParticipant ) continue;
+            $data = [
+                'event_id' => $row['event_id'],
+                'override_cash_value' => $row['override_cash_value'],
+                'notes' => $row['notes'],
+                'message' => $row['message'],
+                'referrer' => $row['referrer'],
+                'event_id' => $row['event_id'],
+            ];
+            $award = (object)($data +
+            [
+                'organization_id' => $supplied_constants['organization_id'],
+                'program_id' => $program->id
+            ]);
+            $event = Event::findOrFail($data['event_id']);
+            $awarder = auth()->user();
+            $result[] = (new \App\Services\AwardService)->awardUser($event, $user, $awarder, $award);
+        }
+        return $result;
+    }
+
+    public function csvImportAddAndAwardUsers(\App\Models\CsvImport $newCsvImport, $importData, $supplied_constants)
+    {
+        if( !isset($importData[$newCsvImport->csvImportRequestName]))   {
+            return;
+        }
+        $data = $importData[$newCsvImport->csvImportRequestName];
+        $result = [];
+        $errors = [];
+        foreach( $data as $row )    {
+            $program = Program::find($row['program_id']);
+            $user = User::where('email', $row['email'])->first();
+            if( !$user ) {
+                $registerFields = [
+                    'first_name' => $row['first_name'],
+                    'last_name' => $row['last_name'],
+                    'email' => $row['email'],
+                    'user_status_id' => User::getIdStatusActive(),
+                    'organization_id' => $supplied_constants['organization_id'],
+                ];
+                $participantRoleId = \App\Models\Role::where('name', config('roles.participant'))->first()->id;
+                $registerFields['roles'] = [$participantRoleId];
+                $user = (new \App\Services\Program\ProgramUserService)->create($program, $registerFields);
+                if( !$user ) {
+                    return ['errors' => ['User cannot be created']];
+                }
+            }   else {
+                $isParticipant = $user->isParticipantToProgram($program);
+                $participantRoleId = \App\Models\Role::where('name', config('roles.participant'))->first()->id;
+                if( !$isParticipant ) {
+                    $user->syncProgramRoles($program->id, [$participantRoleId]);
+                    // throw new Exception(sprintf("%s %s is not a participant to program", $user->first_name, $user->last_name));
+                    // continue;
+                }
+            }
+
+            $data = [
+                'event_id' => $row['event_id'],
+                'override_cash_value' => $row['amount'],
+                'notes' => $row['notes'],
+                'message' => $row['message'],
+                'event_id' => $row['event_id'],
+            ];
+            $award = (object)($data +
+            [
+                'organization_id' => $supplied_constants['organization_id'],
+                'program_id' => $program->id
+            ]);
+            $event = Event::findOrFail($data['event_id']);
+            $awarder = auth()->user();
+            $result[] = (new \App\Services\AwardService)->awardUser($event, $user, $awarder, $award);
+        }
+        return $result;
+    }
 }

@@ -71,7 +71,7 @@ class ImportTypeController extends Controller
             $csvImportType->fields()->createMany($inserts);
         }
         if( $upserts ) {
-            $csvImportType->fields()->upsert($upserts, uniqueBy: ['id'], update: ['name', 'rule']);
+            $csvImportType->fields()->upsert($upserts, uniqueBy: ['id'], update: ['name', 'rule', 'csv_column_name']);
         }
         if( $deletes ) {
             $csvImportType->fields()->whereIn('id', $deletes)->delete();

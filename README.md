@@ -94,6 +94,28 @@ Every incoming form request must be validated using Laravel's Form Request Valid
 Add common file uploads to .gitignore file. For example:
 `/public/uploads`
 
+## Csv Import 
+
+### Csv Import Settings
+
+Follow [adminUrl]/import/settings to 
+    1. Add new import type
+    2. Update existing import type
+    3. Manage Fields for an import type
+        i. Manage Field Names, Rulesets, CSVColumnNames
+
+### Using Csv Import to import data
+
+1. Create `CSVImport[importType]Request` FormRequest class which:
+    1. uses `App\Models\Traits\CsvImport` trait.
+    2. has `rules()` method that `returns $this->getRules()`
+    3. uses fields and rules stored in "`csv_import_fields`" via "`CsvImport`"
+    4. defines and uses importRules() and importSetups() and setups() methods as usual
+
+2. Implement new import method via `App\Http\Traits\UserImportTrait` or any other trait. Name of the method must be be `csvImport[ImportType]` for example "`csvImportAddAndAwardUsers`"
+
+2. Download template from [programUrl]/manager/csv-import by selecting specific import type. Route for import should be `organization/{organization}/program/{program}/importtype/{csvImportType}/import`. For example `organization/607/program/5170/importtype/7/import`
+
 ## Update Log
 
 ** Sep 01 2023
