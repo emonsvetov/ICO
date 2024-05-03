@@ -84,12 +84,16 @@ class MediumInfo extends BaseModel
             DB::raw('SUM(case when virtual_inventory = 1 then 1 else 0 end) as count_virtual_inventory'),
             DB::raw('SUM(case when virtual_inventory = 0 then 1 else 0 end) as count_real_inventory')
         )
-        ->where('merchant_id', $merchantId);
+            ->where('merchant_id', $merchantId);
 
         // Apply conditions based on extraArgs
         $inventoryType = $extraArgs['inventoryType'] ?? FALSE;
         if ($inventoryType) {
-            $query->where('medium_info.virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
+            $inventoryTypes = [
+                1 => 0,
+                2 => 1
+            ];
+            $query->where('medium_info.virtual_inventory', $inventoryTypes[$inventoryType]);
         }
 
         // Date conditions
@@ -97,7 +101,7 @@ class MediumInfo extends BaseModel
             $query->where('purchase_date', '<=', $endDate)
                 ->where(function ($query) use ($endDate) {
                     $query->whereNull('redemption_date')
-                        ->orWhere('redemption_date', '>', $endDate);
+                        ->orWhere('redemption_date', '>=', $endDate);
                 });
         } else {
             $query->whereNull('redemption_date');
