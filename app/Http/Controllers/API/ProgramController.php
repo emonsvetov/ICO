@@ -401,10 +401,7 @@ class ProgramController extends Controller
 
     public function getCsvImportTypes(Organization $organization, Program $program) {
         $onlyIds = request()->get('onlyIds');
-        $collection = $program->csv_import_types()->get();
-        if( $onlyIds ) {
-            return response($collection->pluck('id'));
-        }
+        $collection = $program->getCsvImportypesRecursively($onlyIds);
         return response($collection);
     }
 

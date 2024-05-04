@@ -520,6 +520,24 @@ class Program extends BaseModel
         return $this->belongsToMany(CsvImportType::class, 'program_csv_import_types', 'program_id', 'csv_import_type_id');
     }
 
+    public function getCsvImportypesRecursively( $onlyIds = false )
+    {
+        $relationExists = $this->csv_import_types()->exists();
+        if($relationExists) {
+            $collection = $this->csv_import_types()->get();
+            if( $onlyIds ) {
+                return $collection->pluck('id');
+            }
+            return $collection;
+        }   else {
+            $parent = $this->getParent();
+            if( $parent ) {
+                return $parent->getCsvImportypesRecursively( $onlyIds );
+            }
+            return [];
+        }
+    }
+
     public function getParentProgramId($subProgramId)
     {
         $hierarchy = null;
