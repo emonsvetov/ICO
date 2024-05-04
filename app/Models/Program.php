@@ -513,7 +513,11 @@ class Program extends BaseModel
     public function selected_reports()
     {
         return $this->belongsToMany(ProgramList::class, 'program_reports', 'program_id', 'report_id');
+    }
 
+    public function csv_import_types()
+    {
+        return $this->belongsToMany(CsvImportType::class, 'program_csv_import_types', 'program_id', 'csv_import_type_id');
     }
 
     public function getParentProgramId($subProgramId)
