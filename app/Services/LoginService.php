@@ -110,6 +110,13 @@ class LoginService
     }
 
     private function loginToProgram($email, $password, $programId)   {
+        $program = \App\Models\Program::select('id', 'name', 'organization_id', 'factor_valuation', 'parent_id')->with(['template' => function ($query) {
+            // $query->select(['id', 'small_logo', 'big_logo', 'name']);
+        }])->find($programId);
+
+        if( !$program ) {
+            return response(['error' => 'Invalid program'], 422);
+        }
 
         if (!auth()->guard('web')->attempt( ['email' => $email, 'password' => $password] )) {
             return response(['error' => 'Invalid Credentials'], 422);
@@ -117,14 +124,6 @@ class LoginService
         $user = auth()->guard('web')->user();
 
         $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
-
-        $program = \App\Models\Program::select('id', 'name', 'organization_id', 'factor_valuation')->with(['template' => function ($query) {
-            // $query->select(['id', 'small_logo', 'big_logo', 'name']);
-        }])->find($programId);
-
-        if( !$program ) {
-            return response(['error' => 'Invalid program'], 422);
-        }
 
         if($this->isCheckRole && !$user->isParticipantToProgram($program)) {
             return response(['error' => 'No participant role found in program'], 422);
@@ -137,6 +136,8 @@ class LoginService
         $user->balance = $amount_balance;
         $user->points_balance = $points_balance;
         $user->factor_valuation = $factor_valuation;
+
+        $program->getTemplate();
 
         return response([
                 'program' => $program,
