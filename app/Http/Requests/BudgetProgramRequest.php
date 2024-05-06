@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class BudgetTypeRequest extends FormRequest
+class BudgetProgramRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,8 +23,12 @@ class BudgetTypeRequest extends FormRequest
      */
     public function rules()
     {
-        return [
-            'title' => 'required|string',
+         return [
+            'budget_type_id' => 'required|integer',
+            'budget_amount' => 'numeric',
+            'remaining_amount' => 'numeric',
+            'budget_start_date' => 'date',
+            'budget_end_date' => 'date',
         ];
     }
 }
