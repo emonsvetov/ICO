@@ -41,6 +41,7 @@ class MigrateProgramsService extends MigrationService
         $this->migratePrograms($v2RootPrograms);
 
         return [
+            'program_id' => $v2RootPrograms[0]->v3_program_id ?? 0,
             'success' => TRUE,
             'info' => "migrated " . count($this->importedPrograms) . " items",
         ];
