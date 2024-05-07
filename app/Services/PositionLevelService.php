@@ -51,12 +51,6 @@ class PositionLevelService
 
     public function getPositionLevelList(Program $program)
     {
-        //$positionLevels = PositionLevel::where('program_id', $program->id)->withTrashed()->get();
-        /*$positionLevels = PositionLevel::where('program_id', $program->id)
-            ->whereNull('deleted_at')
-            ->get();
-        return $positionLevels;*/
-
         $positionLevels = PositionLevel::with('positionPermissionAssignments')
             ->where('program_id', $program->id)
             ->whereNull('deleted_at')

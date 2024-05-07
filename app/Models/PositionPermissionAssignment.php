@@ -14,4 +14,9 @@ class PositionPermissionAssignment extends Model
     {
         return $this->belongsTo(PositionLevel::class, 'position_level_id');
     }
+    
+    public function positionPermission()
+    {
+        return $this->belongsTo(PositionPermission::class, 'position_permission_id');
+    }
 }

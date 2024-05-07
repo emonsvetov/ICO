@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\Program;
@@ -43,9 +44,17 @@ class PositionPermissionAssignmentService
 	}
 
 	public function PositionPermissionAssignment(PositionPermissionAssignment $positionLevelPermission)
-    {
-        $positionLevelPermission = PositionPermissionAssignment::find($positionLevelPermission);
-        return $positionLevelPermission;
-    }
+	{
+		$positionLevelPermission = PositionPermissionAssignment::find($positionLevelPermission);
+		return $positionLevelPermission;
+	}
 
+	public function getAssignedPermissions($positionId)
+	{
+		$positionLevelPermissions = PositionPermissionAssignment::where('position_level_id', $positionId)
+			->with('positionPermission')
+			->get();
+
+		return $positionLevelPermissions;
+	}
 }

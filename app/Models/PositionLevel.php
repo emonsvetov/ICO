@@ -24,9 +24,10 @@ class PositionLevel extends Model
         return $this->belongsToMany(User::class, 'position_assignments')
             ->withTimestamps();
     }
-    
+
     public function positionPermissionAssignments()
     {
-        return $this->hasMany(PositionPermissionAssignment::class, 'position_level_id');
+        return $this->hasMany(PositionPermissionAssignment::class, 'position_level_id')->with('positionPermission');
     }
+    
 }

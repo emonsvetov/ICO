@@ -747,6 +747,8 @@ Route::get('/v1/organization/{organization}/program/{program}/positionlevel',[Ap
 
  Route::get('/v1/organization/{organization}/program/{program}/positionpermissions/{positionPermissionAssignment}',[App\Http\Controllers\API\PositionLevelController::class, 'show'])->middleware('can:view,App\PositionPermissionAssignment,organization,program,positionPermissionAssignment');
 
+Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/assigned-permissions',[App\Http\Controllers\API\PositionPermissionAssignmentController::class, 'getAssignedPermissions'])->middleware('can:view,App\PositionPermissionAssignment,organization,program');
+
 //Budget Type
 Route::get('/v1/organization/{organization}/program/{program}/budgettypes',[App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetTypes']);
 
