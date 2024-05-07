@@ -18,10 +18,19 @@ class PositionLevelService
         }
         $name = 'l' . $level;
         try {
-            // Check if the title already exists
-            if (PositionLevel::where('title', $data['title'])->exists()) {
-                throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Title already exists');
+            // Check if the title already exists, including soft deleted records
+            $existingPositionLevel = PositionLevel::withTrashed()->where('title', $data['title'])->first();
+
+            if ($existingPositionLevel) {
+                if ($existingPositionLevel->trashed()) {
+                    // Title already exists and is inactive
+                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Title already exists and inactive');
+                } else {
+                    // Title already exists and is active
+                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Title already exists');
+                }
             }
+
             return PositionLevel::create([
                 'name' => $name,
                 'title' => $data['title'],
@@ -34,6 +43,7 @@ class PositionLevelService
         }
     }
 
+
     public function updatePositionLevel(PositionLevel $positionLevel, array $data)
     {
         return $positionLevel->update($data);
@@ -42,7 +52,13 @@ class PositionLevelService
     public function getPositionLevelList(Program $program)
     {
         //$positionLevels = PositionLevel::where('program_id', $program->id)->withTrashed()->get();
-        $positionLevels = PositionLevel::where('program_id', $program->id)
+        /*$positionLevels = PositionLevel::where('program_id', $program->id)
+            ->whereNull('deleted_at')
+            ->get();
+        return $positionLevels;*/
+
+        $positionLevels = PositionLevel::with('positionPermissionAssignments')
+            ->where('program_id', $program->id)
             ->whereNull('deleted_at')
             ->get();
         return $positionLevels;

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,14 +14,19 @@ class PositionLevel extends Model
     protected $guarded = [];
     public $timestamp = true;
 
-    public function program() {
+    public function program()
+    {
         $this->belongsTo(Program::class);
     }
 
-    public function users() 
+    public function users()
     {
         return $this->belongsToMany(User::class, 'position_assignments')
-        ->withTimestamps();
+            ->withTimestamps();
     }
-
+    
+    public function positionPermissionAssignments()
+    {
+        return $this->hasMany(PositionPermissionAssignment::class, 'position_level_id');
+    }
 }

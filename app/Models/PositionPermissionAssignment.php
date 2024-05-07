@@ -9,4 +9,9 @@ class PositionPermissionAssignment extends Model
 {
     use HasFactory;
     protected $guarded = [];
+
+    public function positionLevel()
+    {
+        return $this->belongsTo(PositionLevel::class, 'position_level_id');
+    }
 }
