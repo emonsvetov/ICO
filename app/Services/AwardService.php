@@ -471,6 +471,8 @@ class AwardService
         // DB::rollBack();
         DB::commit();
         // DB::statement("UNLOCK TABLES;");
+
+        return $result;
     }
     public function awardPeer2Peer(array $data, Event $event, Program $program, User $awarder)
     {

@@ -118,8 +118,8 @@ class PermissionSeeder extends Seeder
             'user-program-roles',
             'user-status-list',
             'user-status-update',
-			'can-invite',
-			'can-invite-resend',
+            'can-invite',
+            'can-invite-resend',
             'program-event-list',
             'program-event-view',
             'program-event-create',
@@ -173,6 +173,9 @@ class PermissionSeeder extends Seeder
             'user-goal-list',
             'user-goal-view',
             'user-goal-progress-view',
+            'import-list',
+            'import-download-template',
+            'import-csv-upload',
             'can-refer',
             'mark-notifications-read',
             'push-notification-create',
@@ -185,7 +188,7 @@ class PermissionSeeder extends Seeder
         ];
 
         foreach ($permissions as $permission) {
-             Permission::create(['name' => $permission, 'organization_id' => 1]);
+            Permission::create(['name' => $permission, 'organization_id' => 1]);
         }
     }
 }

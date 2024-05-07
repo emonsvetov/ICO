@@ -385,6 +385,26 @@ class ProgramController extends Controller
         return response()->json(['message' => 'Selected reports saved successfully'], 200);
     }
 
+    public function saveCsvImportTypes(Request $request, Organization $organization, Program $program)
+    {
+        $selectedCsvImporttypes = $request->input('selected_csv_importtypes', []);
+
+        DB::transaction(function () use ($program, $selectedCsvImporttypes) {
+            $program->csv_import_types()->detach();
+            if (!empty($selectedCsvImporttypes)) {
+                $program->csv_import_types()->attach($selectedCsvImporttypes);
+            }
+        });
+
+        return response()->json(['message' => 'Selected importtypes saved successfully'], 200);
+    }
+
+    public function getCsvImportTypes(Organization $organization, Program $program) {
+        $onlyIds = request()->get('onlyIds');
+        $collection = $program->getCsvImportypesRecursively($onlyIds);
+        return response($collection);
+    }
+
     public function storeRaw(Request $request, ProgramService $programService)
     {
         DB::beginTransaction();
