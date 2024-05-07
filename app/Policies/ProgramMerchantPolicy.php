@@ -17,7 +17,7 @@ class ProgramMerchantPolicy
     {
         if( $organization->id != $user->organization_id ) return false;
         if( $program && $organization->id != $program->organization_id) return false;
-        if( $program && $merchant && !$program->merchants->contains( $merchant )) return false;
+        // if( $program && $merchant && !$program->merchants->contains( $merchant )) return false;
         return true;
     }
 
@@ -60,9 +60,9 @@ class ProgramMerchantPolicy
         {
             return false;
         }
-        return $user->canReadProgram($program, 'program-merchant-view-redeemable');
+        return true;
     }
-  
+
     public function add(User $user, Organization $organization, Program $program)
     {
         if ( !$this->__preAuthCheck($user, $organization, $program) )
