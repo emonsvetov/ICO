@@ -53,8 +53,10 @@ class PositionLevelService
     {
         $positionLevels = PositionLevel::with('positionPermissionAssignments')
             ->where('program_id', $program->id)
-            ->whereNull('deleted_at')
+            //->whereNull('deleted_at')
+            ->withTrashed() //Include deleted records
             ->get();
+
         return $positionLevels;
     }
 
