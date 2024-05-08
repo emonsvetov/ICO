@@ -24,15 +24,8 @@ class ProgramMerchantController extends Controller
 
     public function index(Organization $organization, Program $program)
     {
-        $status = request()->get('status');
         $query = $program->merchants();
-
-        if (!empty($status)) {
-            $query = $query->where('status', $status);
-        }
-
         $merchants = $query->orderBy('name')->get();
-
 
         if ($merchants->isNotEmpty()) {
             return response($merchants);

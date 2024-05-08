@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Mail\templates\WelcomeEmail;
+use App\Models\Merchant;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\ProgramPaymentReverseRequest;
@@ -111,7 +112,8 @@ class ProgramController extends Controller
 
         if ($program) {
             if ( ! request()->get('only')) {
-                $program->load(['domains', 'merchants', 'organization', 'address', 'status','programExtras','programTransactionFee']);
+                $program->load(['domains', 'organization', 'address', 'status','programExtras','programTransactionFee']);
+                $program->merchants = Merchant::where('status', Merchant::ACTIVE)->get();
             }
 
             if ( request()->get('withTemplate') ) {
