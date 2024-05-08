@@ -118,6 +118,9 @@ class ProgramController extends Controller
                 $program->getTemplate();
             }
 
+            $program->bcc_email_list = trim($program->bcc_email_list);
+            $program->cc_email_list = trim($program->cc_email_list);
+
             return response($program);
         }
 
