@@ -24,6 +24,8 @@ class Merchant extends Model
 
     const MEDIA_FIELDS = ['logo', 'icon', 'large_icon', 'banner'];
 
+    const ACTIVE = 1;
+
     public function findByIds($ids = [])
     {
          //not sure whether to get with tree, if so, uncomment next line and the query block with "children"
