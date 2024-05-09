@@ -35,22 +35,42 @@ class ProgramUserController extends Controller
     {
         $selectedRoleId = $request->input('role_id', null);
 
-        $query = User::where('organization_id', $organization->id)
-            ->whereHas('roles', function ($query) use ($selectedRoleId, $program) {
-                $query->where('program_id', $program->id);
-                if ($selectedRoleId) {
-                    $query->where('role_id', $selectedRoleId);
-                }
+        if (empty($selectedRoleId)) {
+            $selectedRoleId = null;
+        }
+
+        if (is_null($selectedRoleId)) {
+            $userIds = $program->users->pluck('id')->toArray();
+        } else {
+            $userIds = $program->users->filter(function ($user) use ($selectedRoleId) {
+                return $user->roles->contains('id', $selectedRoleId);
+            })->pluck('id')->toArray();
+        }
+
+
+        $query = User::whereIn('id', $userIds)
+            ->where(['organization_id' => $organization->id]);
+
+        if ($selectedRoleId) {
+            $query->whereHas('roles', function ($query) use ($selectedRoleId) {
+                $query->where('role_id', $selectedRoleId);
             });
+        }
 
-        $sortby = $request->get('sortby', 'id');
-        $direction = $request->get('direction', 'asc');
-        $orderByRaw = $sortby === 'name' ? "first_name $direction, last_name $direction" : "$sortby $direction";
+        $sortby = request()->get('sortby', 'id');
+        $direction = request()->get('direction', 'asc');
 
-        $keyword = $request->get('keyword');
+        if ($sortby == 'name') {
+            $orderByRaw = "first_name $direction, last_name $direction";
+        } else {
+            $orderByRaw = "$sortby $direction";
+        }
+
+        $keyword = request()->get('keyword');
+
         if ($keyword) {
-            $query = $query->where(function ($query) use ($keyword) {
-                $query->orWhere('id', 'LIKE', "%{$keyword}%")
+            $query = $query->where(function ($query1) use ($keyword) {
+                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
                     ->orWhere('email', 'LIKE', "%{$keyword}%")
                     ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%")
                     ->orWhere(DB::raw("CONCAT(last_name, ' ', first_name)"), 'LIKE', "%{$keyword}%");
@@ -59,20 +79,27 @@ class ProgramUserController extends Controller
 
         $query = $query->orderByRaw($orderByRaw);
 
-        if ($request->has('minimal')) {
+        if (request()->has('minimal')) {
             $users = $query->select('id', 'name')->get();
         } else {
-            $users = $query->with(['roles' => function ($query) use ($program, $selectedRoleId) {
-                $query->where('program_id', '=', $program->id);
-                if ($selectedRoleId) {
-                    $query->where('role_id', '=', $selectedRoleId);
-                }
-            }, 'status'])
-                ->paginate($request->get('limit', 20));
+            $users = $query->with([
+                'roles' => function ($query) use ($program, $selectedRoleId) {
+                    $query->wherePivot('program_id', '=', $program->id);
+                    if ($selectedRoleId) {
+                        $query->where('role_id', '=', $selectedRoleId);
+                    }
+                },
+                'status'
+            ])->paginate(request()->get('limit', 20));
         }
 
-        return $users->isNotEmpty() ? response($users) : response([]);
+        if ($users->isNotEmpty()) {
+            return response($users);
+        }
+
+        return response([]);
     }
+
 
     public function store(UserRequest $request, ProgramUserService $programUserService, Organization $organization, Program $program)
     {
