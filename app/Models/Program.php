@@ -420,7 +420,7 @@ class Program extends BaseModel
 
         if( !$this->template ||  $inheritFields)  {
             // Get first available template from ancestors
-            $ancestors = $this->ancestors()->pluck('id');
+            $ancestors = $this->ancestors()->get()->pluck('id');
             if( $ancestors )
             {
                 $ancestor = $this->has('template')->whereIn('id', $ancestors)->latest()->first();
