@@ -59,10 +59,10 @@ class ReportInventoryService extends ReportServiceAbstract
                 $denominationList = MediumInfo::getRedeemableDenominationsByMerchant($merchant->id, $endDate, ['inventoryType' => $this->params[self::INVENTORY_TYPE]]);
                 foreach ($denominationList as $denomination) {
                     $skuValueFormatted = number_format(floatval($denomination->sku_value), 2, '.', '');
-                    if (isset($table[$merchantId]->on_hand[$skuValueFormatted])) {
-                        $table[$merchantId]->on_hand[$skuValueFormatted] += $denomination->count;
-
+                    if (!isset($table[$merchantId]->on_hand[$skuValueFormatted])){
+                        $table[$merchantId]->on_hand[$skuValueFormatted] = 0;
                     }
+                    $table[$merchantId]->on_hand[$skuValueFormatted] += $denomination->count;
                 }
             }
 

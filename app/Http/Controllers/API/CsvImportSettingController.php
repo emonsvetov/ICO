@@ -58,4 +58,21 @@ class CsvImportSettingController extends Controller
         return response(['success' => (bool)$csvImportSetting, 'csvImportSetting' => $csvImportSetting]);
 
     }
+
+    public function saveSettings(Request $request, Organization $organization, Program $program, CsvImportType $csvImportType, CSVimportService $csvImportService)
+    {
+        $validated = $request->validate([
+            'fieldsToMap' => 'required|json',
+            'setups' => 'required|json'
+        ]);
+
+        $csvImportSetting = $csvImportService->saveSettings($validated, $organization, $csvImportType);
+        return response(['success' => (bool)$csvImportSetting, 'csvImportSetting' => $csvImportSetting]);
+    }
+
+    public function show(Organization $organization, Program $program, CsvImportType $csvImportType)
+    {
+        $csvImportSettings = CsvImportSettings::getByOrgIdAndTypeId($organization->id, $csvImportType->id);
+        return response($csvImportSettings);
+    }
 }

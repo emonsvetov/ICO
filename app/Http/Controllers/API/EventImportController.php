@@ -27,7 +27,7 @@ class EventImportController extends Controller
         $query = CsvImport::withOrganization($organization);
 
         $csvImports = $query->whereRelation('csv_import_type', 'context', '=', 'Events')->get();
-        
+
         return response($csvImports);
     }
 
@@ -46,7 +46,7 @@ class EventImportController extends Controller
         return response([]);
     }
 
-    
+
     public function eventHeaderIndex(CSVImportRequest $request, CSVimportHeaderService $csvService, Organization $organization)
     {
         $validated = $request->validated();
@@ -54,14 +54,14 @@ class EventImportController extends Controller
         $supplied_constants = collect(
             ['organization_id' => $organization->id]
         );
-        
+
         $csvHeaders = $csvService->getFieldsToMap( $validated['upload-file'], $supplied_constants, new \App\Http\Requests\CSVProgramRequest, new \App\Http\Requests\EventRequest );
 
         return $csvHeaders;
     }
 
     public function eventFileImport(CSVImportRequest $request, Organization $organization)
-    {    
+    {
         $fileUpload = $request->validated();
 
         $validated = $request->validate([
@@ -98,8 +98,8 @@ class EventImportController extends Controller
                 $eventIds = DB::transaction(function() use ($importData, $supplied_constants) {
                     $createdEventIds = [];
                     $event = new Event;
-                    foreach ($importData['EventRequest'] as $key => $eventData) 
-                    {    
+                    foreach ($importData['EventRequest'] as $key => $eventData)
+                    {
                         $newEvent = $event->create($eventData + [
                             'organization_id' => $supplied_constants['organization_id'],
                             'program_id' => $importData['CSVProgramRequest'][$key]['program_id']
