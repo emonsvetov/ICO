@@ -36,10 +36,6 @@ class ProgramUserController extends Controller
     {
         $selectedRoleId = request()->query('role_id');
 
-        Log::info('Received role_id:', ['role_id' => $selectedRoleId]);
-        Log::info('Received filter parameters', request()->all());
-        Log::info('POST data:', request()->post());
-
         if (empty($selectedRoleId)) {
             $selectedRoleId = null;
         }
