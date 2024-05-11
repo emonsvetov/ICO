@@ -21,6 +21,7 @@ use App\Services\UserService;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -33,13 +34,11 @@ class ProgramUserController extends Controller
      */
     public function index(Request $request, Organization $organization, Program $program)
     {
-        $selectedRoleId = $request->input('role_id');
+        $selectedRoleId = request()->query('role_id');
 
         if (empty($selectedRoleId)) {
             $selectedRoleId = null;
         }
-
-        info('Selected Role ID: ' . $selectedRoleId);
 
         if (is_null($selectedRoleId)) {
             $userIds = $program->users->pluck('id')->toArray();
