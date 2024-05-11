@@ -21,36 +21,53 @@ use App\Services\UserService;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 class ProgramUserController extends Controller
 {
-    public function index(Organization $organization, Program $program)
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
+    public function index(Request $request, Organization $organization, Program $program)
     {
+        $selectedRoleId = request()->query('role_id');
 
-        if ( ! $program->users->isNotEmpty()) {
-            return response([]);
+        if (empty($selectedRoleId)) {
+            $selectedRoleId = null;
         }
 
-        $keyword = request()->get('keyword');
-        $sortby = request()->get('sortby', 'id');
-        $direction = request()->get('direction', 'asc');
-
-        $userIds = [];
-        $where = ['organization_id' => $organization->id];
-
-        foreach ($program->users as $user) {
-            $userIds[] = $user->id;
+        if (is_null($selectedRoleId)) {
+            $userIds = $program->users->pluck('id')->toArray();
+        } else {
+            $userIds = $program->users->filter(function ($user) use ($selectedRoleId) {
+                return $user->roles->contains('id', $selectedRoleId);
+            })->pluck('id')->toArray();
         }
+
 
         $query = User::whereIn('id', $userIds)
-            ->where($where);
+            ->where(['organization_id' => $organization->id]);
+
+        if ($selectedRoleId) {
+            $query->whereHas('roles', function ($query) use ($selectedRoleId) {
+                $query->where('role_id', $selectedRoleId);
+            });
+        }
+
+        $sortby = request()->get('sortby', 'id');
+        $direction = request()->get('direction', 'asc');
 
         if ($sortby == 'name') {
             $orderByRaw = "first_name $direction, last_name $direction";
         } else {
             $orderByRaw = "$sortby $direction";
         }
+
+        $keyword = request()->get('keyword');
 
         if ($keyword) {
             $query = $query->where(function ($query1) use ($keyword) {
@@ -67,8 +84,11 @@ class ProgramUserController extends Controller
             $users = $query->select('id', 'name')->get();
         } else {
             $users = $query->with([
-                'roles' => function ($query) use ($program) {
+                'roles' => function ($query) use ($program, $selectedRoleId) {
                     $query->wherePivot('program_id', '=', $program->id);
+                    if ($selectedRoleId) {
+                        $query->where('role_id', '=', $selectedRoleId);
+                    }
                 },
                 'status'
             ])->paginate(request()->get('limit', 20));
@@ -80,6 +100,7 @@ class ProgramUserController extends Controller
 
         return response([]);
     }
+
 
     public function store(UserRequest $request, ProgramUserService $programUserService, Organization $organization, Program $program)
     {

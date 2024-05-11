@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
 {
 
+    public $totals = [];
+    public $defaultValues = [];
+    public $countSubTotal = 0;
+
     /**
      * @inheritDoc
      */
@@ -245,11 +249,11 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                     AS DECIMAL(10, 2)
                 ) as deposit_balance,
                 (CASE
-                    WHEN count_users > 0 THEN cast((count_email/count_users*100) as decimal(9,1))
+                    WHEN count_users > 0 THEN cast(((count_users*100) / count_email) as decimal(9,1))
                     ELSE 0
                 END) as 'percent_participant',
                 (CASE
-                    WHEN count_active_user > 0 THEN cast((count_email/count_active_user*100) as decimal(9,1))
+                    WHEN count_active_user > 0 THEN cast(((count_active_user*100) / count_email) as decimal(9,1))
                     ELSE 0
                 END) as 'percent_active_participant'
                 ")
@@ -283,7 +287,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $this->table[$program_account_id] = $datas[$index];
                 $program = (object)$program->toArray();
                 $this->table [$program_account_id]->program = $program;
-                
+
             }
         }
         $newTable = [];
@@ -297,11 +301,79 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 }
             }
         }
+
+        $this->defaultValues = [
+            'count_users' => 0,
+            'count_active_user' => 0,
+            'count_email' => 0,
+            'count_award' => 0,
+            'sum_posting_amount' => 0,
+            'avg_posting_amount' => 0,
+            'deposit_balance' => 0,
+            'percent_participant' => 0,
+            'percent_active_participant' => 0,
+        ];
+
+        foreach ($newTable as $key => $item) {
+            $table = $item;
+            if (
+                isset($table->subRows) &&
+                count($table->subRows) > 0
+            ) {
+
+                $subTotal = clone $item;
+                $rootProgram = clone $item;
+                $rootProgram->subRows = [];
+                $subTotal->subRows = [];
+                $subTotal->name = 'Total ' . $subTotal->name;
+
+                $this->totals = $this->defaultValues;
+                $this->countSubTotal = 0;
+                $this->tableToTreeSubTotals($item);
+
+                foreach ($this->defaultValues as $valueKey => $value) {
+                    if (in_array($valueKey, ['percent_participant', 'percent_active_participant'])) {
+                        $percentValue = round($this->totals[$valueKey] / $this->countSubTotal, 2);
+                        $subTotal->$valueKey = $percentValue;
+                        $newTable[$key]->$valueKey =$percentValue;
+                    }
+                    else {
+                        $subTotal->$valueKey = $this->totals[$valueKey];
+                        $newTable[$key]->$valueKey = $this->totals[$valueKey];
+                    }
+                }
+
+                $rootProgram->disableTotalCalculation = TRUE;
+                $subTotal->disableTotalCalculation = TRUE;
+
+                $newTable[$key]->subRows[] = $subTotal;
+                array_unshift($newTable[$key]->subRows, $rootProgram);
+            }
+        }
+
+
         $this->table = [];
-        
+
         $this->table['data'] =  array_values($newTable);
         $this->table['total'] = count($newTable);
         return $this->table;
+    }
+
+    public function tableToTreeSubTotals($table)
+    {
+        $this->countSubTotal++;
+
+        foreach ($this->defaultValues as $keyValue => $value) {
+            $this->totals[$keyValue] += $table->$keyValue ?? 0;
+        }
+
+        if (
+            isset($table->subRows) &&
+            count($table->subRows) > 0
+        ) {
+            foreach ($table->subRows as $subTable)
+                $this->tableToTreeSubTotals($subTable);
+        }
     }
 
     /**

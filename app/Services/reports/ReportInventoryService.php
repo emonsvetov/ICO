@@ -59,9 +59,10 @@ class ReportInventoryService extends ReportServiceAbstract
                 $denominationList = MediumInfo::getRedeemableDenominationsByMerchant($merchant->id, $endDate, ['inventoryType' => $this->params[self::INVENTORY_TYPE]]);
                 foreach ($denominationList as $denomination) {
                     $skuValueFormatted = number_format(floatval($denomination->sku_value), 2, '.', '');
-                    if ($table[$merchantId]->on_hand[$skuValueFormatted]) {
-                        $table[$merchantId]->on_hand[$skuValueFormatted] += $denomination->count;
+                    if (!isset($table[$merchantId]->on_hand[$skuValueFormatted])){
+                        $table[$merchantId]->on_hand[$skuValueFormatted] = 0;
                     }
+                    $table[$merchantId]->on_hand[$skuValueFormatted] += $denomination->count;
                 }
             }
 
@@ -130,9 +131,9 @@ class ReportInventoryService extends ReportServiceAbstract
 
             $columnCanClear = true;
             foreach (['on_hand',
-                      'optimal_values',
-                      'percent_remaining',
-            ] as $item) {
+                         'optimal_values',
+                         'percent_remaining',
+                     ] as $item) {
                 foreach ($table as $merchant) {
                     $merchantItem = $merchant->{$item};
                     if (
@@ -146,8 +147,8 @@ class ReportInventoryService extends ReportServiceAbstract
 
             if ($columnCanClear) {
                 foreach (['on_hand',
-                          'optimal_values',
-                          'percent_remaining',
+                             'optimal_values',
+                             'percent_remaining',
                          ] as $item) {
                     foreach ($table as $key => $merchant) {
                         unset($table[$key]->{$item}[$formattedSkuValue]);

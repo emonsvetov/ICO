@@ -130,4 +130,8 @@ class CsvImport extends BaseModel
         ]);
     }
 
+    public function getCsvImportRequestNameAttribute()
+    {
+        return "CSVImport" . ucfirst(camel_case($this->csv_import_type->type)) . 'Request';
+    }
 }

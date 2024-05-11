@@ -262,6 +262,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/prepare-live-mode', [App\Http\Controllers\API\ProgramController::class, 'prepareLiveMode'])->middleware('can:liveMode,App\Program,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/live-mode', [App\Http\Controllers\API\ProgramController::class, 'liveMode'])->middleware('can:liveMode,App\Program,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/save-selected-reports', [App\Http\Controllers\API\ProgramController::class, 'saveSelectedReports']);
+    Route::put('/v1/organization/{organization}/program/{program}/importtype', [App\Http\Controllers\API\ProgramController::class, 'saveCsvImportTypes']);
+    Route::get('/v1/organization/{organization}/program/{program}/importtype', [App\Http\Controllers\API\ProgramController::class, 'getCsvImportTypes']);
     Route::get('/v1/reports', [App\Http\Controllers\API\ReportsController::class, 'getAllReports'])->middleware('auth:api');
     Route::get('/v1/reports/{program}', [App\Http\Controllers\API\ReportsController::class, 'getReportsByProgramId'])->middleware(['auth:api', 'reports.available']);
     Route::get('/v1/reports/{program}/selected', [App\Http\Controllers\API\ReportsController::class, 'getSelectedReportsByProgramId'])->middleware('auth:api');
@@ -636,7 +638,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Referrals - Send
 
     Route::post('/v1/organization/{organization}/program/{program}/refer', [App\Http\Controllers\API\ReferralController::class, 'store'])->middleware('can:create,App\Referral,organization,program');
-    
+
     // Feeling
     Route::post('/v1/organization/{organization}/program/{program}/feeling-survey', [App\Http\Controllers\API\FeelingSurveyController::class, 'store'])->middleware('can:create,App\FeelingSurvey,organization,program');
 
@@ -697,6 +699,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Imports
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
+    Route::get('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'index']);
+    Route::post('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'store']);
+    Route::put('/v1/organization/{organization}/importtype/{csvImportType}', [App\Http\Controllers\API\ImportTypeController::class, 'update']);
+    Route::get('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'fields']);
+    Route::put('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'saveFields']);
+    Route::get('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/download-template', [App\Http\Controllers\API\ImportController::class, 'downloadTemplate'])->middleware('can:downloadTemplate,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/importheaders', [App\Http\Controllers\API\ImportController::class, 'headerIndex']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'saveSettings']);
+    Route::get('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'show']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/import', [App\Http\Controllers\API\ImportController::class, 'fileImport'])->middleware('can:import,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
 
     // Dashboard
     Route::get('/v1/organization/{organization}/program/{program}/dashboard',[App\Http\Controllers\API\DashboardController::class, 'index'])->middleware('can:viewAny,App\Dashboard,organization,program');

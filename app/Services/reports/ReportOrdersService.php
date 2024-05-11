@@ -20,7 +20,6 @@ class ReportOrdersService extends ReportServiceAbstract
         $query->leftJoin('merchants as redeemed_merchants', 'redeemed_merchants.id', '=', 'medium_info.redeemed_merchant_id');
         $query->leftJoin('merchants', 'merchants.id', '=', 'medium_info.merchant_id');
         $query->leftJoin('programs', 'programs.id', '=', 'medium_info.redeemed_program_id');
-
         $query->selectRaw("
         medium_info.*,
         users.email as user_email,
@@ -28,11 +27,10 @@ class ReportOrdersService extends ReportServiceAbstract
         users.id as redeemed_user_id,
         merchants.name as redeemed_merchant_name,
         merchants.id as merchant_id,
-        redeemed_merchants.id as redeemed_merchant_id
+        redeemed_merchants.id as redeemed_merchant_id,
         programs.name as redeemed_program_name,
         programs.id as redeemed_program_id
     ");
-
 
         return $query;
     }
@@ -70,7 +68,6 @@ class ReportOrdersService extends ReportServiceAbstract
             $query->where('purchased_by_v2', '=', [1 => 0, 2 => 1][$purchaseByV2]);
         }
 
-
         $search = $this->params[self::KEYWORD];
         if (!blank($search)) {
             $query->where(function ($q) use ($search) {
@@ -93,5 +90,4 @@ class ReportOrdersService extends ReportServiceAbstract
         }
         return $query;
     }
-
 }

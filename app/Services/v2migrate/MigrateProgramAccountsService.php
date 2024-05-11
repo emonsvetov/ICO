@@ -201,6 +201,8 @@ class MigrateProgramAccountsService extends MigrationService
         $v2Settings['uses_leaderboards'] = $v2Settings['uses_leaderbaords'] ?? FALSE;
         $v2Settings['allow_award_peers_not_logged_into'] = $v2Settings['peer_award_seperation'] ?? FALSE;
         $v2Settings['allow_search_peers_not_logged_into'] = $v2Settings['peer_search_seperation'] ?? FALSE;
+        $v2Settings['bcc_email_list'] = isset($v2Settings['bcc_email_list']) ? trim($v2Settings['bcc_email_list']) : '';
+        $v2Settings['cc_email_list'] = isset($v2Settings['cc_email_list']) ? trim($v2Settings['cc_email_list']) : '';
 
         ksort($v2Settings);
 
@@ -421,13 +423,6 @@ class MigrateProgramAccountsService extends MigrationService
                 if (isset($v2Settings[$field])) {
                     $v3ProgramAddressData[$field] = $v2Settings[$field];
                 }
-            }
-
-            if ($v3Program->v2_account_holder_id == 892368) {
-                $a = 1;
-            }
-            if ($v3Program->v2_account_holder_id == 829739) {
-                $a = 1;
             }
 
             $v3Program->programExtras()->updateOrCreate(['program_account_holder_id' => $v3Program->v2_account_holder_id], $v3ProgramExtraData);
