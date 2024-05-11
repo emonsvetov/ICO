@@ -8,9 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class PositionPermission extends Model
 {
     use HasFactory;
-	protected $guarded = [];
+    protected $guarded = [];
 
-     /**
+
+    public function positionPermissionAssignments()
+    {
+        return $this->hasMany(PositionPermissionAssignment::class, 'position_permission_id');
+    }
+
+    /**
      * Get a list of all permissions.
      *
      * @return \Illuminate\Database\Eloquent\Collection
@@ -19,5 +25,4 @@ class PositionPermission extends Model
     {
         return self::all();
     }
-    
 }

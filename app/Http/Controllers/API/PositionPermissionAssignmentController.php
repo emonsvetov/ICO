@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\API;
 
 use Illuminate\Http\Request;
@@ -40,6 +41,12 @@ class PositionPermissionAssignmentController extends Controller
 		$permissionIds = $PositionPermissionAssignmentRequest->input('position_permission');
 		//$permissionIds = $PositionPermissionAssignmentRequest->validated();
 		$data = $this->positionPermissionAssignmentService->assignPermissionToPosition($positionLevelId, $permissionIds);
-		return response()->json(['status' =>200, 'data' => $data]);
+		return response()->json(['status' => 200, 'data' => $data]);
+	}
+
+	public function getAssignedPermissions(Organization $organization, Program $program, $positionLevelId)
+	{
+		$assignedPermissions = $this->positionPermissionAssignmentService->getAssignedPermissions($positionLevelId);
+		return response()->json(['data' => $assignedPermissions], 200);
 	}
 }
