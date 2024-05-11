@@ -548,7 +548,7 @@ class Program extends BaseModel
         }
     }
 
-    public function getMerchantsRecursively($status=null)
+    public function getMerchantsRecursively($status=null, &$inheritedFrom = null)
     {
         $query = $this->merchants();
         $relationExists = $query->exists();
@@ -561,6 +561,7 @@ class Program extends BaseModel
         }   else {
             $parent = $this->getParent();
             if( $parent ) {
+                $inheritedFrom = $parent;
                 return $parent->getMerchantsRecursively($status);
             }
             return [];

@@ -25,9 +25,9 @@ class ProgramMerchantController extends Controller
     public function index(Organization $organization, Program $program)
     {
         $status = request()->get('status');
-        $merchants = $program->getMerchantsRecursively($status);
+        $merchants = $program->getMerchantsRecursively($status, $inheritedFrom);
         if ($merchants->isNotEmpty()) {
-            return response($merchants);
+            return response($merchants)->header('inheritedFrom', $inheritedFrom);
         }
         return response([]);
     }
