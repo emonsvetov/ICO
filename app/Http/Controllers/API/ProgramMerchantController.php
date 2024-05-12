@@ -25,9 +25,12 @@ class ProgramMerchantController extends Controller
     public function index(Organization $organization, Program $program)
     {
         $status = request()->get('status');
-        $merchants = $program->getMerchantsRecursively($status, $inheritedFrom);
+        // DB::enableQueryLog();
+        $status = (strtolower($status) === 'active' || (int) $status > 0 ) ? 1 : 0;
+        $merchants = $program->getMerchantsRecursively($status, $inheritsFrom);
         if ($merchants->isNotEmpty()) {
-            return response($merchants)->header('inheritedFrom', $inheritedFrom);
+            // pr(toSql(DB::getQueryLog()));
+            return response(['merchants' => $merchants, 'inheritsFrom' => $inheritsFrom]);
         }
         return response([]);
     }
