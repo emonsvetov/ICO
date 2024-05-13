@@ -431,4 +431,16 @@ abstract class ReportServiceAbstract
         return $newTable;
     }
 
+    public function getCount( Builder $query ){
+	    $originalQuery = clone $query;
+        $originalQuery->limit  = null;
+        $originalQuery->offset = null;
+        $sql = $originalQuery->toSql();
+        $values = $originalQuery->getBindings();
+        $countQuery = DB::table(DB::raw('('.$sql.') AS `temp`'))
+            ->selectRaw("COUNT(*) AS 'count'", $values);
+        $count = $countQuery->first()->count;
+        return $count;
+    }
+
 }
