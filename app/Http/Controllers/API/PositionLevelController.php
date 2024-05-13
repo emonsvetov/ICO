@@ -2,19 +2,16 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Requests\PositionPermissionAssignmentRequest;
 use App\Http\Controllers\Controller;
 use App\Models\PositionLevel;
 use App\Models\Organization;
 use App\Models\Program;
 use App\Services\PositionLevelService;
 use App\Http\Requests\PositionLevelRequest;
-use Illuminate\Database\QueryException;
-use Illuminate\Http\Request;
 
 class PositionLevelController extends Controller
 {
-
-
     protected $positionLevelService;
 
     public function __construct(PositionLevelService $positionLevelService)
@@ -24,41 +21,53 @@ class PositionLevelController extends Controller
 
     public function store(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program)
     {
-
         $data = $positionLevelRequest->validated();
         $data = $data + ['program_id' => $program->id];
         try {
             $positionLevel = $this->positionLevelService->createPositionLevel($data);
-            return response()->json(['message' => 'Position level created successfully', 'data' => $positionLevel], 201);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
+            return response($positionLevel);
+        } catch (\Exception $e) {
+            return response(['errors' => $e->getMessage(), 422]);
         }
     }
 
     public function index(Organization $organization, Program $program)
     {
-        $positionLevels = $this->positionLevelService->getPositionLevelList($program);
-        return response()->json(['data' => $positionLevels], 200);
+        $filters['deleted'] = filter_var(request()->get('deleted', false), FILTER_VALIDATE_BOOLEAN);
+        $filters['active'] = filter_var(request()->get('active', true), FILTER_VALIDATE_BOOLEAN);
+        $positionLevels = $this->positionLevelService->getPositionLevelList($program,$filters);
+        return response($positionLevels);
     }
 
     public function show(Organization $organization, Program $program, PositionLevel $positionLevel)
     {
         $positionLevel = $this->positionLevelService->getPositionLevel($positionLevel);
-        return response()->json(['data' => $positionLevel], 200);
+        return response($positionLevel);
     }
 
     public function update(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program, PositionLevel $positionLevel)
     {
         $data = $positionLevelRequest->validated();
         $positionLevel = $this->positionLevelService->updatePositionLevel($positionLevel, $data);
-        return response()->json(['message' => 'Position level updated successfully', 'data' => $positionLevel], 200);
+        return response($positionLevel);
     }
 
     public function delete(PositionLevelRequest $positionLevelRequest, Organization $organization, Program $program, PositionLevel $positionLevel)
     {
-        $data = $positionLevelRequest->validated();
-        $positionLevel = $this->positionLevelService->deletePositionLevel($positionLevel, $data);
-        return response()->json(['message' => 'Position level deleted successfully'], 200);
+        $deleted = $this->positionLevelService->deletePositionLevel($positionLevel);
+        return response([$deleted]);
     }
-    
+
+    public function assignPermissions(PositionPermissionAssignmentRequest $positionPermissionAssignmentRequest, Organization $organization, Program $program, PositionLevel $positionLevel)
+	{
+        $permissionIds = $positionPermissionAssignmentRequest->input('position_permission');
+        $positionLevel->position_permissions()->sync($permissionIds);
+		return response(['success' => true]);
+	}
+
+    public function getPermissions(Organization $organization, Program $program, PositionLevel $positionLevel)
+	{
+        $positionPermissions = $positionLevel->position_permissions()->get();
+		return response($positionPermissions);
+	}
 }
