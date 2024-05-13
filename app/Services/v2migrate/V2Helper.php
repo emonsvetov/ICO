@@ -1755,4 +1755,13 @@ class V2Helper
         return $this->v2db->select($sql);
     }
 
+    public function getMerchantOptimalValues(): array
+    {
+        $this->v2db->statement("SET SQL_MODE=''");
+
+        $sql = "SELECT * FROM optimal_values";
+
+        return $this->v2db->select($sql);
+    }
+
 }

@@ -54,6 +54,7 @@ class MigrationBaseService extends MigrationService
     const MERCHANT_ACCOUNTS = 'Merchant Accounts';
     const OWNER_ACCOUNTS = 'Owner Accounts';
     const PROGRAM_MERCHANTS = 'Program Merchants';
+    const MERCHANTS_OPTIMAL_VALUES = 'Merchants Optimal Values';
 
     public function __construct(
         MigrateMerchantsService $migrateMerchantsService,
@@ -114,6 +115,7 @@ class MigrationBaseService extends MigrationService
             self::MIGRATE_DOMAINS,
             self::MIGRATE_MERCHANTS,
             self::MERCHANTS_AVAILABLE_GIFT_CODES,
+            self::MERCHANTS_OPTIMAL_VALUES,
         ];
 
         $arr = [];
@@ -143,6 +145,10 @@ class MigrationBaseService extends MigrationService
 
                 case 3:
                     $result['migration'] = $this->migrateMerchantsService->availableGiftCodes();
+                    break;
+
+                case 4:
+                    $result['migration'] = $this->migrateMerchantsService->optimalValues();
                     break;
 
                 default:
