@@ -174,6 +174,7 @@ class MigrateUsersService extends MigrationService
             'deactivated' => $v2User->deactivated,
             'last_login' => $v2User->last_login,
             'v2_parent_program_id' => $v2User->parent_program_id,
+            'external_id' => $v2User->organization_uid,
             // 'v2_account_holder_id' => $v2User->account_holder_id, //sync by "user_v2_users"
             'work_anniversary' => $hireDate,
             'email_verified_at' => $v2User->activated
