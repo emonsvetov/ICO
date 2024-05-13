@@ -223,7 +223,20 @@ class MigrationBaseService extends MigrationService
                     break;
 
                 case 1:
-                     $result['migration'] = $this->migrateProgramsService->migrate($v2AccountHolderID);
+                    $result['migration'] = $this->migrateProgramsService->migrate($v2AccountHolderID);
+
+                    if (isset($result['migration']['program_id']) && $result['migration']['program_id']) {
+
+                        $program = Program::findOrFail($result['migration']['program_id']);
+                        $selectedReports = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+                        DB::transaction(function () use ($program, $selectedReports) {
+                            $program->selected_reports()->detach();
+                            if (!empty($selectedReports)) {
+                                $program->selected_reports()->attach($selectedReports);
+                            }
+                        });
+                    }
+
                     break;
                 case 2:
                      $result['migration'] = $this->migrateProgramAccountsService->migrate($v2AccountHolderID);
@@ -309,6 +322,7 @@ class MigrationBaseService extends MigrationService
                     $nextStep = 0;
                     break;
             }
+
 
             if ((int) $step < count($migrations)) {
                 $nextStep = $step == 'start' ? 1 : $step + 1;

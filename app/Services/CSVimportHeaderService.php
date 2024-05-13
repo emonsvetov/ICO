@@ -78,7 +78,9 @@ class CSVimportHeaderService
     {
         foreach ($importRules as $key => $ruleSets)
         {
-
+            if (str_contains($ruleSets, 'override:true')) {
+                $rules[$key] = rtrim(ltrim(str_replace('override:true','', $ruleSets), '|'), '|');
+            }
             if ( str_contains($ruleSets, 'hide:true') )
             {
                 unset($formRules[$key]);

@@ -85,6 +85,7 @@ abstract class ReportServiceAbstract
     protected $query = null;
     const PAGINATE = 'paginate';
     const IS_CREDIT = "is_credit";
+    const FLAT_DATA = "flatData";
 
     /**
      * @var ReportHelper|null
@@ -123,6 +124,7 @@ abstract class ReportServiceAbstract
         $this->params[self::MONTH] = $params[self::MONTH] ?? null;
         $this->params[self::CODES] = $params[self::CODES] ?? null;
         $this->params[self::TARGET_PARTICIPANT] = $params[self::TARGET_PARTICIPANT] ?? null;
+        $this->params[self::FLAT_DATA] = $params[self::FLAT_DATA] ?? null;
         if (isset($params[self::ACCOUNT_TYPES])) {
             $temp = array();
             foreach( $params[self::ACCOUNT_TYPES] as $param) {

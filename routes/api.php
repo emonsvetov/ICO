@@ -262,6 +262,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/prepare-live-mode', [App\Http\Controllers\API\ProgramController::class, 'prepareLiveMode'])->middleware('can:liveMode,App\Program,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/live-mode', [App\Http\Controllers\API\ProgramController::class, 'liveMode'])->middleware('can:liveMode,App\Program,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/save-selected-reports', [App\Http\Controllers\API\ProgramController::class, 'saveSelectedReports']);
+    Route::put('/v1/organization/{organization}/program/{program}/importtype', [App\Http\Controllers\API\ProgramController::class, 'saveCsvImportTypes']);
+    Route::get('/v1/organization/{organization}/program/{program}/importtype', [App\Http\Controllers\API\ProgramController::class, 'getCsvImportTypes']);
     Route::get('/v1/reports', [App\Http\Controllers\API\ReportsController::class, 'getAllReports'])->middleware('auth:api');
     Route::get('/v1/reports/{program}', [App\Http\Controllers\API\ReportsController::class, 'getReportsByProgramId'])->middleware(['auth:api', 'reports.available']);
     Route::get('/v1/reports/{program}/selected', [App\Http\Controllers\API\ReportsController::class, 'getSelectedReportsByProgramId'])->middleware('auth:api');
@@ -636,7 +638,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Referrals - Send
 
     Route::post('/v1/organization/{organization}/program/{program}/refer', [App\Http\Controllers\API\ReferralController::class, 'store'])->middleware('can:create,App\Referral,organization,program');
-    
+
     // Feeling
     Route::post('/v1/organization/{organization}/program/{program}/feeling-survey', [App\Http\Controllers\API\FeelingSurveyController::class, 'store'])->middleware('can:create,App\FeelingSurvey,organization,program');
 
@@ -697,6 +699,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Imports
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
+    Route::get('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'index']);
+    Route::post('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'store']);
+    Route::put('/v1/organization/{organization}/importtype/{csvImportType}', [App\Http\Controllers\API\ImportTypeController::class, 'update']);
+    Route::get('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'fields']);
+    Route::put('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'saveFields']);
+    Route::get('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/download-template', [App\Http\Controllers\API\ImportController::class, 'downloadTemplate'])->middleware('can:downloadTemplate,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/importheaders', [App\Http\Controllers\API\ImportController::class, 'headerIndex']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'saveSettings']);
+    Route::get('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'show']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/import', [App\Http\Controllers\API\ImportController::class, 'fileImport'])->middleware('can:import,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
 
     // Dashboard
     Route::get('/v1/organization/{organization}/program/{program}/dashboard',[App\Http\Controllers\API\DashboardController::class, 'index'])->middleware('can:viewAny,App\Dashboard,organization,program');
@@ -719,7 +736,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/v2-deprecated/migrate/{account_holder_id}/{step}', [App\Http\Controllers\API\MigrationController::class, 'run'])->middleware('can:viewAny,App\V2Deprecated')->name('runMigrations');
     Route::get('/v1/v2-deprecated/migrate-global/{step}', [App\Http\Controllers\API\MigrationController::class, 'runGlobal'])->middleware('can:viewAny,App\V2Deprecated');
     Route::get('/v1/v2-deprecated/migrate-artisan', [App\Http\Controllers\API\MigrationController::class, 'runArtisanMigrate'])->middleware('can:viewAny,App\V2Deprecated');
-    
+
 // UnitNumber
     Route::get('/v1/organization/{organization}/program/{program}/unitnumber',[App\Http\Controllers\API\UnitNumberController::class, 'index'])->middleware('can:viewAny,App\UnitNumber,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber',[App\Http\Controllers\API\UnitNumberController::class, 'store'])->middleware('can:create,App\UnitNumber,organization,program');
@@ -729,30 +746,28 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}/assign',[App\Http\Controllers\API\UnitNumberController::class, 'assign'])->middleware('can:assign,App\UnitNumber,organization,program,unitNumber');
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}/unassign',[App\Http\Controllers\API\UnitNumberController::class, 'unassign'])->middleware('can:assign,App\UnitNumber,organization,program,unitNumber');
 
-// PositionLevel
-Route::post('/v1/organization/{organization}/program/{program}/positionlevel',[App\Http\Controllers\API\PositionLevelController::class, 'store'])->middleware('can:create,App\PositionLevel,organization,program');
+    // PositionLevel
+    Route::post('/v1/organization/{organization}/program/{program}/positionlevel',[App\Http\Controllers\API\PositionLevelController::class, 'store'])->middleware('can:create,App\PositionLevel,organization,program');
 
-Route::get('/v1/organization/{organization}/program/{program}/positionlevel',[App\Http\Controllers\API\PositionLevelController::class, 'index'])->middleware('can:viewAny,App\PositionLevel,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/positionlevel',[App\Http\Controllers\API\PositionLevelController::class, 'index'])->middleware('can:viewAny,App\PositionLevel,organization,program');
 
- Route::put('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}',[App\Http\Controllers\API\PositionLevelController::class, 'update'])->middleware('can:update,App\PositionLevel,organization,program,positionLevel');
+    Route::put('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}',[App\Http\Controllers\API\PositionLevelController::class, 'update'])->middleware('can:update,App\PositionLevel,organization,program,positionLevel');
 
- Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}',[App\Http\Controllers\API\PositionLevelController::class, 'show'])->middleware('can:view,App\PositionLevel,organization,program,positionLevel');
+    Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}',[App\Http\Controllers\API\PositionLevelController::class, 'show'])->middleware('can:view,App\PositionLevel,organization,program,positionLevel');
 
- Route::delete('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}',[App\Http\Controllers\API\PositionLevelController::class, 'delete'])->middleware('can:delete,App\PositionLevel,organization,program,positionLevel');
+    Route::delete('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}',[App\Http\Controllers\API\PositionLevelController::class, 'delete'])->middleware('can:delete,App\PositionLevel,organization,program,positionLevel');
 
-//Position Permission Assignment
- Route::get('/v1/organization/{organization}/program/{program}/positionpermissions',[App\Http\Controllers\API\PositionPermissionAssignmentController::class, 'getPositionPermission']);
+    //Position Permission Assignment
+    Route::get('/v1/organization/{organization}/program/{program}/positionpermissions',[App\Http\Controllers\API\PositionPermissionController::class, 'index']);
 
- Route::post('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/assign-permissions',[App\Http\Controllers\API\PositionPermissionAssignmentController::class, 'assignPermissionToPosition'])->middleware('can:assign,App\PositionPermissionAssignment,organization,program');
+    Route::post('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/permissions',[App\Http\Controllers\API\PositionLevelController::class, 'assignPermissions'])->middleware('can:assign,App\PositionPermissionAssignment,organization,program');
 
- Route::get('/v1/organization/{organization}/program/{program}/positionpermissions/{positionPermissionAssignment}',[App\Http\Controllers\API\PositionLevelController::class, 'show'])->middleware('can:view,App\PositionPermissionAssignment,organization,program,positionPermissionAssignment');
+    Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/permissions',[App\Http\Controllers\API\PositionLevelController::class, 'getPermissions'])->middleware('can:view,App\PositionLevel,organization,program');
 
-Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/assigned-permissions',[App\Http\Controllers\API\PositionPermissionAssignmentController::class, 'getAssignedPermissions'])->middleware('can:view,App\PositionPermissionAssignment,organization,program');
+    //Budget Type
+    Route::get('/v1/organization/{organization}/program/{program}/budgettypes',[App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetTypes']);
 
-//Budget Type
-Route::get('/v1/organization/{organization}/program/{program}/budgettypes',[App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetTypes']);
-
-//Budget Program
-Route::post('/v1/organization/{organization}/program/{program}/budgetprogram',[App\Http\Controllers\API\BudgetProgramController::class, 'store'])->middleware('can:create,App\BudgetProgram,organization,program');
+    //Budget Program
+    Route::post('/v1/organization/{organization}/program/{program}/budgetprogram',[App\Http\Controllers\API\BudgetProgramController::class, 'store'])->middleware('can:create,App\BudgetProgram,organization,program');
 
 });

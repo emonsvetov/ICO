@@ -138,8 +138,8 @@ class ReportQuarterlyAwardSummaryService extends ReportServiceAbstract
                     when (quarter(`posts`.`created_at`) = 4) then `posts`.`posting_amount`
                 end)),
                 0) AS `Q4_count`,
-        coalesce(sum(`posts`.`posting_amount`),
-                0) AS `YTD_value`,
+        round(coalesce(sum(`posts`.`posting_amount`),
+                0), 2) AS `YTD_value`,
         coalesce(count(`posts`.`posting_amount`),
                 0) AS `YTD_count`,
         `p`.`account_holder_id` AS `program_id`,

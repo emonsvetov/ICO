@@ -36,7 +36,7 @@ class EventController extends Controller
 
     public function show( Organization $organization, Program $program, Event $event , ProgramEventService $programEventService)
     {
-        if ( !( $organization->id == $program->organization_id && $program->id == $event->program_id ) )
+        if ( !( $organization->id == $program->organization_id && ($program->id == $event->program_id || $program->getParentProgramId($program->id) == $event->program_id) ) ) // Consider subprogram
         {
             return response(['errors' => 'Invalid Organization or Program'], 422);
         }

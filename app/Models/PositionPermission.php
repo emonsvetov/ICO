@@ -10,19 +10,9 @@ class PositionPermission extends Model
     use HasFactory;
     protected $guarded = [];
 
-
-    public function positionPermissionAssignments()
+    public function position_levels()
     {
-        return $this->hasMany(PositionPermissionAssignment::class, 'position_permission_id');
-    }
-
-    /**
-     * Get a list of all permissions.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    public static function PositionPermissionList()
-    {
-        return self::all();
+        return $this->belongsToMany(PositionLevel::class, 'position_permission_assignments')
+        ->withTimestamps();
     }
 }

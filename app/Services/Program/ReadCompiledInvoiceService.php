@@ -52,8 +52,6 @@ class ReadCompiledInvoiceService
 					$invoice_statement->journal_summary = $this->readInvoiceJournalSummaryService->get ( $invoice->program, $start_date, $end_date );
 				}
 				$journal_summary = $invoice_statement->journal_summary;
-                pr($journal_summary);
-                exit;
 			break;
 			default :
 				throw new \InvalidArgumentException ( "Unsupported Invoice Type." );

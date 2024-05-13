@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Mail\templates\WelcomeEmail;
+use App\Models\Merchant;
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\ProgramPaymentReverseRequest;
@@ -69,7 +70,7 @@ class ProgramController extends Controller
         $programs = $programService->index(null, $params);
 
         if ($programs->isNotEmpty()) {
-            $result['data'] = _tree_flatten($programs);
+            $result['data'] = _tree_flatten($programs)->sortBy('name')->values()->all();
             return response($result);
         }
 
@@ -111,12 +112,16 @@ class ProgramController extends Controller
 
         if ($program) {
             if ( ! request()->get('only')) {
-                $program->load(['domains', 'merchants', 'organization', 'address', 'status','programExtras','programTransactionFee']);
+                $program->load(['domains', 'organization', 'address', 'status','programExtras','programTransactionFee']);
+                $program->merchants = Merchant::where('status', Merchant::ACTIVE)->get();
             }
 
             if ( request()->get('withTemplate') ) {
                 $program->getTemplate();
             }
+
+            $program->bcc_email_list = trim($program->bcc_email_list);
+            $program->cc_email_list = trim($program->cc_email_list);
 
             return response($program);
         }
@@ -210,7 +215,7 @@ class ProgramController extends Controller
 
     public function getBalanceInformation(Organization $organization, Program $program, AccountService $accountService)
     {
-        $total_financial_balance = $accountService->readAvailableBalanceForProgram($program);
+        $total_financial_balance = $accountService->getAvailableBalanceForProgram($program);
         //$financial_detail = $accountService->readAvailableBalanceForOwner($program);
         return response(
             ["financial_detail" => $total_financial_balance, "total_financial_balance" => $total_financial_balance]
@@ -383,6 +388,26 @@ class ProgramController extends Controller
         });
 
         return response()->json(['message' => 'Selected reports saved successfully'], 200);
+    }
+
+    public function saveCsvImportTypes(Request $request, Organization $organization, Program $program)
+    {
+        $selectedCsvImporttypes = $request->input('selected_csv_importtypes', []);
+
+        DB::transaction(function () use ($program, $selectedCsvImporttypes) {
+            $program->csv_import_types()->detach();
+            if (!empty($selectedCsvImporttypes)) {
+                $program->csv_import_types()->attach($selectedCsvImporttypes);
+            }
+        });
+
+        return response()->json(['message' => 'Selected importtypes saved successfully'], 200);
+    }
+
+    public function getCsvImportTypes(Organization $organization, Program $program) {
+        $onlyIds = request()->get('onlyIds');
+        $collection = $program->getCsvImportypesRecursively($onlyIds);
+        return response($collection);
     }
 
     public function storeRaw(Request $request, ProgramService $programService)

@@ -25,6 +25,24 @@ class ProgramLoginController extends Controller
             }
         }
 
+        if( $requestRole == 'read_only_manager' )    {
+            if( $user->isManagerToProgram($program->id) ) {
+                return response([
+                    'role'=>Role::where('name', config('roles.read_only_manager'))->first(),
+                    'program' => $program,
+                ]);
+            }
+        }
+
+        if( $requestRole == 'limited_manager' )    {
+            if( $user->isManagerToProgram($program->id) ) {
+                return response([
+                    'role'=>Role::where('name', config('roles.limited_manager'))->first(),
+                    'program' => $program,
+                ]);
+            }
+        }
+
         if( $requestRole == 'participant' )    {
             if( $user->isParticipantToProgram($program->id) ) {
                 $program->getTemplate();

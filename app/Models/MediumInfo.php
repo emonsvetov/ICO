@@ -80,33 +80,35 @@ class MediumInfo extends BaseModel
             DB::raw('FORMAT(redemption_value, 2) as redemption_value'),
             DB::raw('FORMAT(sku_value, 2) as sku_value'),
             'virtual_inventory',
-            DB::raw('COUNT(DISTINCT medium_info.id) as count'),
+            DB::raw('COUNT(medium_info.id) as count'),
             DB::raw('SUM(case when virtual_inventory = 1 then 1 else 0 end) as count_virtual_inventory'),
             DB::raw('SUM(case when virtual_inventory = 0 then 1 else 0 end) as count_real_inventory')
         )
-        ->where('merchant_id', $merchantId);
+            ->where('merchant_id', $merchantId);
 
         // Apply conditions based on extraArgs
         $inventoryType = $extraArgs['inventoryType'] ?? FALSE;
         if ($inventoryType) {
-            $query->where('medium_info.virtual_inventory', [1 => 0, 2 => 1][$inventoryType]);
+            $inventoryTypes = [
+                1 => 0,
+                2 => 1
+            ];
+            $query->where('medium_info.virtual_inventory', $inventoryTypes[$inventoryType]);
         }
 
-        // Date conditions
-        if (!empty($endDate)) {
-            $query->where('purchase_date', '<=', $endDate)
-                ->where(function ($query) use ($endDate) {
-                    $query->whereNull('redemption_date')
-                        ->orWhere('redemption_date', '>', $endDate);
-                });
-        } else {
+        if ($endDate) {
+            $query->where('purchase_date', '<=', $endDate);
+            $query->where(function($q) use ($endDate) {
+                $q->orWhere('redemption_date', null)
+                    ->orWhere('redemption_date', '>', $endDate);
+            });
+        }else{
             $query->whereNull('redemption_date');
         }
 
         // Group by and order by
-        $query->groupBy('sku_value', 'redemption_value')
-            ->orderBy('sku_value', 'ASC')
-            ->orderBy('redemption_value', 'ASC');
+        $query->groupBy('sku_value')
+            ->orderBy('sku_value', 'ASC');
 
         return $query->get();
     }
@@ -144,11 +146,12 @@ class MediumInfo extends BaseModel
     {
         $inventoryType = $params['inventoryType'] ?? FALSE;
         $endDate = $params['endDate'] ?? FALSE;
-        $totalCost = DB::table('medium_info')
+        $totalCost = MediumInfo::select(
 //            ->join('postings', 'postings.medium_info_id', '=', 'medium_info.id')
 //            ->join('accounts', 'accounts.id', '=', 'postings.account_id')
-            ->where('medium_info.merchant_id', '=', $merchantId)
-            ->select(DB::raw('SUM(medium_info.cost_basis) as cost_basis'));
+            DB::raw('SUM(medium_info.cost_basis) as cost_basis')
+        )->where('medium_info.merchant_id', '=', $merchantId);
+
 
         if ($endDate) {
             $totalCost->where('purchase_date', '<=', $endDate);
@@ -156,6 +159,8 @@ class MediumInfo extends BaseModel
                 $query->orWhere('redemption_date', null)
                     ->orWhere('redemption_date', '>', $endDate);
             });
+        }else{
+            $totalCost->whereNull('redemption_date');
         }
 
         if ($inventoryType) {

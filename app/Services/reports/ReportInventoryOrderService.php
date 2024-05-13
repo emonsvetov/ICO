@@ -57,6 +57,8 @@ class ReportInventoryOrderService extends ReportServiceAbstract
                     $values->optimal_values[$skuValue]->count = $inventoryRow->count;
                 }
             }
+
+            ksort($values->optimal_values);
         }
 
         // needed flat array to csv export

@@ -49,27 +49,31 @@ class PositionLevelService
         return $positionLevel->update($data);
     }
 
-    public function getPositionLevelList(Program $program)
+    public function getPositionLevelList(Program $program, $filters = ['deleted'=>false, 'active'=>true])
     {
-        $positionLevels = PositionLevel::with('positionPermissionAssignments')
-            ->where('program_id', $program->id)
-            //->whereNull('deleted_at')
-            ->withTrashed() //Include deleted records
-            ->get();
+        $query = $program->position_levels();
 
-        return $positionLevels;
+        if( $filters['deleted'] ) {
+            $query->withTrashed();
+        }
+
+        if( $filters['active'] ) {
+            $query->where('status', 1);
+        }
+
+        return $query->with(['position_permissions'])->get();
     }
 
     public function getPositionLevel(PositionLevel $positionLevel)
     {
-        $positionLevel = PositionLevel::find($positionLevel);
+        // $positionLevel = PositionLevel::find($positionLevel);
         return $positionLevel;
     }
 
     public function deletePositionLevel(PositionLevel $positionLevel)
     {
-        $positionLevel->status = 0; // Assuming 0 means deleted
-        $positionLevel->save();
-        $positionLevel->delete();
+        // $positionLevel->status = 0; // Assuming 0 means deleted
+        // $positionLevel->save();
+        return $positionLevel->delete();
     }
 }

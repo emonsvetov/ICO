@@ -26,7 +26,7 @@ class MigrationController extends Controller
     {
         try {
             Artisan::call('route:clear');
-            Artisan::call('migrate');
+            Artisan::call('migrate', ['--force' => true]);
 
             $output = Artisan::output();
         } catch (\Exception $e) {
