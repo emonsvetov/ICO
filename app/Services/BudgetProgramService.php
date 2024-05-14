@@ -50,6 +50,11 @@ class BudgetProgramService
         return $budgetProgram->update($data);
     }
 
+    public function getBudgetProgram(BudgetProgram $budgetProgram)
+    {
+        return $budgetProgram;
+    }
+
     public function closeBudget(BudgetProgram $budgetProgram)
     {
         $budgetProgram->status = 0;

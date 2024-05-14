@@ -53,6 +53,12 @@ class BudgetProgramController extends Controller
         return response($budgetProgram);
     }
 
+    public function show(Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    {
+        $budgetProgram = $this->budgetProgramService->getBudgetProgram($budgetProgram);
+        return response($budgetProgram);
+    }
+
     public function close(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
         $budgetProgram = $this->budgetProgramService->closeBudget($budgetProgram);

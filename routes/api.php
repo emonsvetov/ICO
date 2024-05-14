@@ -838,6 +838,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram', [App\Http\Controllers\API\BudgetProgramController::class, 'index'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/budgetprogram', [App\Http\Controllers\API\BudgetProgramController::class, 'store'])->middleware('can:create,App\BudgetProgram,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}', [App\Http\Controllers\API\BudgetProgramController::class, 'update'])->middleware('can:update,App\BudgetProgram,organization,program,budgetProgram');
+    Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}', [App\Http\Controllers\API\BudgetProgramController::class, 'show'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
     Route::post(
         '/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/close',
         [App\Http\Controllers\API\BudgetProgramController::class, 'close']
