@@ -52,7 +52,7 @@ class BudgetProgramService
 
     public function getBudgetProgram(BudgetProgram $budgetProgram)
     {
-        return $budgetProgram;
+        return $budgetProgram->load('budget_types');
     }
 
     public function closeBudget(BudgetProgram $budgetProgram)
