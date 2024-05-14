@@ -6,10 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BudgetProgram extends Model
-{ 
+{
     use HasFactory;
-	protected $guarded = [];
+    protected $guarded = [];
     public $timestamp = true;
+
+    public function budget_types()
+    {
+        return $this->belongsTo(BudgetType::class, 'budget_type_id');
+    }
 
     /*protected $fillable = [
         'budget_type_id',

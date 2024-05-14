@@ -22,15 +22,16 @@ class BudgetProgramService
         try {
             $existingBudget = BudgetProgram::where('budget_start_date', '<=', $data['budget_end_date'])
                 ->where('budget_end_date', '>=', $data['budget_start_date'])
+                ->where('budget_type_id', $data['budget_type_id'])
                 ->first();
 
             if ($existingBudget) {
                 throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Budget already exists for the selected duration');
             }
-            if ($data['budget_amount']<= 0) {
+            if ($data['budget_amount'] <= 0) {
                 throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Budget Amount should be grater than 0');
             }
-        
+
             return BudgetProgram::create([
                 'budget_type_id' => $data['budget_type_id'],
                 'program_id' => $data['program_id'],
@@ -42,5 +43,17 @@ class BudgetProgramService
         } catch (\Exception $e) {
             throw $e;
         }
+    }
+
+    public function updateBudgetProgram(BudgetProgram $budgetProgram, array $data)
+    {
+        return $budgetProgram->update($data);
+    }
+
+    public function closeBudget(BudgetProgram $budgetProgram)
+    {
+        $budgetProgram->status = 0;
+        $budgetProgram->save();
+        return $budgetProgram;
     }
 }

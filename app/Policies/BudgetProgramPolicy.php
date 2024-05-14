@@ -88,6 +88,14 @@ class BudgetProgramPolicy
        return $user->can('budget-program-delete');
     }
 
+    public function close(User $user, Organization $organization, Program $program,BudgetProgram $budgetProgram)
+    {
+       if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+       if($user->isAdmin()) return true;
+       return $user->can('budget-program-close');
+    }
+
+
     /**
      * Determine whether the user can restore the model.
      *

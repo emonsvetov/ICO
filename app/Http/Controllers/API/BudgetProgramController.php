@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 class BudgetProgramController extends Controller
 {
 
-	protected $budgetProgramService;
+    protected $budgetProgramService;
 
     public function __construct(BudgetProgramService $budgetProgramService)
     {
@@ -22,20 +22,40 @@ class BudgetProgramController extends Controller
     }
 
     public function getBudgetTypes()
+    {
+        $types = BudgetType::budgetTypeList();
+        return response($types);
+    }
+
+    public function index(Organization $organization, Program $program)
 	{
-		$types = BudgetType::budgetTypeList();
-		return response()->json(['data' => $types], 200);
+		//return response(BudgetProgram::all());
+        $budgetPrograms = BudgetProgram::with('budget_types')->get();
+        return response($budgetPrograms);
 	}
     
-   public function store(BudgetProgramRequest $budgetProgramRequest, Organization $organization, Program $program)
+    public function store(BudgetProgramRequest $budgetProgramRequest, Organization $organization, Program $program)
     {
-		 $data = $budgetProgramRequest->validated();
-         $data = $data + ['program_id' => $program->id];
+        $data = $budgetProgramRequest->validated();
+        $data = $data + ['program_id' => $program->id];
         try {
             $budgetProgram = $this->budgetProgramService->createBudgetProgram($data);
-            return response()->json(['message' => 'Budget program created successfully', 'data' => $budgetProgram], 201);
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            return response()->json(['message' => $e->getMessage()], $e->getStatusCode());
+            return response($budgetProgram);
+        } catch (\Exception $e) {
+            return response(['errors' => $e->getMessage(), 422]);
         }
-	}
+    }
+
+    public function update(BudgetProgramRequest $budgetProgramRequest, Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    {
+        $data = $budgetProgramRequest->validated();
+        $budgetProgram = $this->budgetProgramService->updateBudgetProgram($budgetProgram, $data);
+        return response($budgetProgram);
+    }
+
+    public function close(Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    {
+        $budgetProgram = $this->budgetProgramService->closeBudget($budgetProgram);
+        return response($budgetProgram);
+    }
 }
