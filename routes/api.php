@@ -746,3 +746,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}/unassign',[App\Http\Controllers\API\UnitNumberController::class, 'unassign'])->middleware('can:assign,App\UnitNumber,organization,program,unitNumber');
 });
 
+Route::post('/v1/user/{account_holder_id}/hmi/checkout',[App\Http\Controllers\API\CheckoutController::class, 'hmiStore']);
+
+Route::get('/v1/user/{account_holder_id}/hmi/balance',[App\Http\Controllers\API\ProgramUserController::class, 'sendBalanceToHMI']);
+
+Route::get('/v1/user/{account_holder_id}/return/url',[App\Http\Controllers\API\ProgramUserController::class, 'returnLastLocation']);
