@@ -36,7 +36,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
         }
         $total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
         $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
-        $this_year = $this->params [self::YEAR];
+        $this_year =  date("Y", strtotime($this->params['from']));
         $last_year = $this_year - 1;
 
         $subreport_params [self::ACCOUNT_HOLDER_IDS] = array ();
