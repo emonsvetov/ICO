@@ -10,6 +10,7 @@ use App\Models\OptimalValue;
 use App\Models\Program;
 use App\Models\User;
 use App\Models\Posting;
+use Faker\Core\DateTime;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\Cast\Object_;
@@ -36,7 +37,7 @@ class ReportPointsReserveService extends ReportServiceAbstract
         }
         $total_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
         $ranked_programs = Program::read_programs ( $this->params [self::PROGRAMS], false );
-        $this_year =  date("Y", strtotime($this->params['from']));
+        $this_year = $this->params [self::YEAR];
         $last_year = $this_year - 1;
 
         $subreport_params [self::ACCOUNT_HOLDER_IDS] = array ();
@@ -351,8 +352,15 @@ class ReportPointsReserveService extends ReportServiceAbstract
          // Get the monies awards for this year
          $subreport_params [self::ACCOUNT_TYPES] = array ();
          $subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
-         if ($year)
-            $subreport_params [self::YEAR] = $year;
+        if ($year) {
+            $from_date = new \DateTime($subreport_params['from']);
+            $to_date = new \DateTime($subreport_params['to']);
+            $from_date->modify('-1 year');
+            $to_date->modify('-1 year');
+            $subreport_params['from'] = $from_date->format('Y-m-d H:i:s');
+            $subreport_params['to'] = $to_date->format('Y-m-d H:i:s');
+        }
+
          $points_report = new ReportSumProgramAwardsMoniesService ( $subreport_params );
          $points_report_table = $points_report->getTable ();
          // Sort the points awards
