@@ -21,7 +21,8 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
      */
     protected function getBaseQuery(): Builder
     {
-        return DB::table(function ($query) {
+
+        $query = DB::table(function ($query) {
             $query->from('programs');
             $query->select([
                 'programs.account_holder_id as program_id',
@@ -212,7 +213,7 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
             $query->addSelect([
                 DB::raw("
                 (CASE
-                    WHEN max(programs.invoice_for_awards) = 0 THEN ''
+                    WHEN programs.invoice_for_awards = 1 THEN ''
                     ELSE (
                         ifnull(({$subQuery1->toSql()}), 0) - ifnull(({$subQuery2->toSql()}), 0)
                         )
@@ -249,11 +250,11 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                     AS DECIMAL(10, 2)
                 ) as deposit_balance,
                 (CASE
-                    WHEN count_users > 0 THEN cast(((count_users*100) / count_email) as decimal(9,1))
+                    WHEN count_users > 0 THEN cast(((count_email/count_users)*100) as decimal(9,1))
                     ELSE 0
                 END) as 'percent_participant',
                 (CASE
-                    WHEN count_active_user > 0 THEN cast(((count_active_user*100) / count_email) as decimal(9,1))
+                    WHEN count_active_user > 0 THEN cast(((count_active_user/count_users)*100) as decimal(9,1))
                     ELSE 0
                 END) as 'percent_active_participant'
                 ")
@@ -332,15 +333,26 @@ class ReportPortfolioStatusReportNewService extends ReportServiceAbstract
                 $this->tableToTreeSubTotals($item);
 
                 foreach ($this->defaultValues as $valueKey => $value) {
-                    if (in_array($valueKey, ['percent_participant', 'percent_active_participant'])) {
-                        $percentValue = round($this->totals[$valueKey] / $this->countSubTotal, 2);
-                        $subTotal->$valueKey = $percentValue;
-                        $newTable[$key]->$valueKey =$percentValue;
+
+                    switch ($valueKey) {
+                        case 'percent_participant':
+                            $percentValue = $this->totals['count_users'] > 0 ? round(($this->totals['count_email'] / $this->totals['count_users']) * 100, 2) : 0;
+                            $subTotal->$valueKey = $percentValue;
+                            $newTable[$key]->$valueKey = $percentValue;
+                            break;
+
+                        case 'percent_active_participant':
+                            $percentValue = $this->totals['count_users'] > 0 ? round(($this->totals['count_active_user'] / $this->totals['count_users']) * 100, 2) : 0;
+                            $subTotal->$valueKey = $percentValue;
+                            $newTable[$key]->$valueKey = $percentValue;
+                            break;
+
+                        default:
+                            $subTotal->$valueKey = $this->totals[$valueKey];
+                            $newTable[$key]->$valueKey = $this->totals[$valueKey];
+                            break;
                     }
-                    else {
-                        $subTotal->$valueKey = $this->totals[$valueKey];
-                        $newTable[$key]->$valueKey = $this->totals[$valueKey];
-                    }
+
                 }
 
                 $rootProgram->disableTotalCalculation = TRUE;
