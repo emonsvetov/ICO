@@ -42,7 +42,7 @@ class ReportInventoryOrderService extends ReportServiceAbstract
             $merchant = Merchant::where('account_holder_id', $merchantId)->first();
             $inventory = MediumInfo::getRedeemableDenominationsByMerchant((int)$merchant->id);
             foreach ($inventory as $inventoryRow) {
-                $skuValue = number_format($inventoryRow->sku_value, 2);
+                $skuValue = number_format((float) $inventoryRow->sku_value, 2);
                 if (!isset ($values->optimal_values[$skuValue])) {
                     $reportRow = new stdClass ();
                     $reportRow->denomination = number_format($skuValue, 2);
