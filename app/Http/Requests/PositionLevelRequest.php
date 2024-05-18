@@ -25,6 +25,9 @@ class PositionLevelRequest extends FormRequest
     {
         return [
             'title' => 'required|string',
+            'name' => 'string',
+            'level' => 'string',
+            'status' => 'boolean',
         ];
     }
 }
