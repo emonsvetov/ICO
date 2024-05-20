@@ -28,12 +28,14 @@ class BudgetProgramController extends Controller
     }
 
     public function index(Organization $organization, Program $program)
-	{
-		//return response(BudgetProgram::all());
-        $budgetPrograms = BudgetProgram::with('budget_types')->get();
+    {
+        //return response(BudgetProgram::all());
+        $budgetPrograms = BudgetProgram::where('program_id', $program->id)
+            ->with('budget_types')
+            ->get();
         return response($budgetPrograms);
-	}
-    
+    }
+
     public function store(BudgetProgramRequest $budgetProgramRequest, Organization $organization, Program $program)
     {
         $data = $budgetProgramRequest->validated();

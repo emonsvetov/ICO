@@ -23,6 +23,7 @@ class BudgetProgramService
             $existingBudget = BudgetProgram::where('budget_start_date', '<=', $data['budget_end_date'])
                 ->where('budget_end_date', '>=', $data['budget_start_date'])
                 ->where('budget_type_id', $data['budget_type_id'])
+                ->where('program_id', $data['program_id'])
                 ->first();
 
             if ($existingBudget) {
