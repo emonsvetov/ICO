@@ -112,7 +112,7 @@ class AwardService
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach( $users as $user)    {
-                $result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
+                $result[$user->id] = $this->awardUser($program, $event, $user, $awarder, $award);
             }
 
             // print_r( $journalEventType );
@@ -130,12 +130,12 @@ class AwardService
 
         return $result;
     }
-    public function awardUser( $event, $awardee, $awarder, object $data = null, $dontSendEmail = null) {
+    public function awardUser($program, $event, $awardee, $awarder, object $data = null, $dontSendEmail = null) {
 //        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
 //        DB::statement($statement);
         DB::beginTransaction();
 
-        $program = $event->program;
+        // $program = $event->program;
         $factor_valuation = $program->factor_valuation;
 
         $organization_id = $data->organization_id ?? $program->organization_id;
