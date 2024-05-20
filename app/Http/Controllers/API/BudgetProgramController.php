@@ -29,10 +29,10 @@ class BudgetProgramController extends Controller
 
     public function index(Organization $organization, Program $program)
     {
-        //return response(BudgetProgram::all());
+		//return response(BudgetProgram::all());
         $budgetPrograms = BudgetProgram::where('program_id', $program->id)
-            ->with('budget_types')
-            ->get();
+        ->with('budget_types')
+        ->get();
         return response($budgetPrograms);
     }
 
@@ -44,7 +44,7 @@ class BudgetProgramController extends Controller
             $budgetProgram = $this->budgetProgramService->createBudgetProgram($data);
             return response($budgetProgram);
         } catch (\Exception $e) {
-            return response(['errors' => $e->getMessage(), 422]);
+            return response(['errors' => $e->getMessage()],422);
         }
     }
 
