@@ -221,7 +221,7 @@ class ProgramUserController extends Controller
             'points' => $pointsEarned,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
-            'peerBalance' => $peerBalance, //todo
+            'peerBalance' => $peerBalance,
             'redeemedBalance' => $redeemedBalance,
             'expiredBalance' => $expiredBalance,
         ]);
