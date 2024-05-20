@@ -755,6 +755,9 @@ class AwardService
             'event_xml_data.event_template_id',
             'programs.account_holder_id as program_id',
             'programs.name as program_name',
+            DB::raw("'Disabled on Program Level' as award_credit"),
+            DB::raw("expiration_rules.description as expiration_description"),
+            DB::raw("postings.id as 'key'")
         ]);
 
         $query->addSelect(
@@ -782,6 +785,8 @@ class AwardService
         $query->leftJoin('accounts AS program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
         $query->join('programs', 'programs.account_holder_id', '=', 'program_accounts.account_holder_id');
         $query->leftJoin('users as u2', 'u2.account_holder_id', '=', 'journal_events.prime_account_holder_id');
+        $query->leftJoin('expiration_rules', 'expiration_rules.id', '=', 'programs.expiration_rule_id');
+
 
         $query->where('users.account_holder_id', '=', $user->account_holder_id);
         $query->where('account_types.name', '=', $account_name);
@@ -859,6 +864,9 @@ class AwardService
                         $point_award4->amount = 0;
                     }
                 }
+
+
+
                 // Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
                 // take away points that have been redeemed since we care about
                 foreach ( $result as &$point_award ) {
