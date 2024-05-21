@@ -825,4 +825,27 @@ class ProgramService
         $transferMoniesService = app('App\Services\Program\TransferMoniesService');
         return $transferMoniesService->getTransferTemplateCSVStream($program);
     }
+
+    public function getRootPogramId($subProgramId)
+    {
+        $maxDepthProgram = DB::select(
+            DB::raw("
+            WITH RECURSIVE ParentProgram AS (
+                SELECT id, parent_id, 0 AS depth
+                FROM programs
+                WHERE id = :program_id
+                UNION ALL
+                SELECT p.id, p.parent_id, pp.depth + 1 AS depth
+                FROM programs p
+                         INNER JOIN ParentProgram pp ON pp.parent_id = p.id
+            )
+            SELECT id
+            FROM ParentProgram
+            ORDER BY depth DESC
+            LIMIT 1;
+    "), ['program_id' => $subProgramId]
+        );
+
+        return $maxDepthProgram[0]->id ?? null;
+    }
 }
