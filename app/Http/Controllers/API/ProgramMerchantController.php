@@ -24,24 +24,26 @@ class ProgramMerchantController extends Controller
 
     public function index(Organization $organization, Program $program)
     {
-        $query = $program->merchants();
-        $merchants = $query->orderBy('name')->get();
-
+        $status = request()->get('status');
+        // DB::enableQueryLog();
+        $status = (strtolower($status) === 'active' || (int) $status > 0 ) ? 1 : 0;
+        $merchants = $program->getMerchantsRecursively($status, $inheritsFrom);
         if ($merchants->isNotEmpty()) {
-            return response($merchants);
+            // pr(toSql(DB::getQueryLog()));
+            return response(['merchants' => $merchants, 'inheritsFrom' => $inheritsFrom]);
         }
-
         return response([]);
     }
 
     public function view( Organization $organization, Program $program, Merchant $merchant )
     {
-        $user = auth()->user();
-        $programMerchant = $program->merchants->find($merchant->id);
+        // $user = auth()->user();
+        // $programMerchant = $program->merchants->find($merchant->id);
+        //If required make it to check for relationship in parent programs recursively. Commenting it out for now, as we just need a $merchant object here
 
-        if ( $programMerchant )
+        if ( $merchant )
         {
-            return response( $programMerchant );
+            return response( $merchant );
         }
 
         return response( [] );
