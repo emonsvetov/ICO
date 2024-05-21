@@ -14,7 +14,7 @@ class UnitNumberService
     public function index(Program $program) {
         $ignore_uses_units = request()->get('ignore_uses_units', false);
         if( !$ignore_uses_units && !$program->uses_units )   {
-            return response([]);
+            return [];
         }
         $query =  $program->unit_numbers()->withCount('users');
         $assignable = request()->get('assignable', false);
