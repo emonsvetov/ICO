@@ -412,6 +412,20 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Tango API
     Route::get('/v1/tango-api/index',[App\Http\Controllers\API\TangoApiController::class, 'index'])->middleware('can:viewAny,App\TangoApi,organization,program');
 
+    Route::get('/v1/tango-settings',[App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
+
+    Route::get('/v1/tango-settings/view/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
+        ->middleware('can:view,App\TangoApi,organization,program');
+
+    Route::post('/v1/tango-settings/create/{id}', [App\Http\Controllers\API\TangoApiController::class, 'createConfiguration'])
+        ->middleware('can:create,App\TangoApi,organization,program');
+
+    Route::put('/v1/tango-settings/edit/{id}', [App\Http\Controllers\API\TangoApiController::class, 'updateConfiguration'])
+        ->middleware('can:update,App\TangoApi,organization,program');
+
+    Route::delete('/v1/tango-settings/delete/{id}', [App\Http\Controllers\API\TangoApiController::class, 'deleteConfiguration'])
+        ->middleware('can:delete,App\TangoApi,organization,program');
+
     //ProgramLogin
 
     Route::post('/v1/organization/{organization}/program/{program}/login',[App\Http\Controllers\API\ProgramLoginController::class, 'login'])->middleware('can:login,App\ProgramLogin,organization,program');
