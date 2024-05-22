@@ -75,12 +75,17 @@ class ImportController extends Controller
         $requestName = "CSVImport" . ucfirst(camel_case($csvImportType->type)) . 'Request';
         $requestClassPath = "App\Http\Requests\\" . $requestName;
         $importRequestClass = new $requestClassPath;
-        $csvHeaders = $csvService->getFieldsToMap(
-            $validated['upload-file'], $supplied_constants,
-            $importRequestClass
-        );
+        try{
+            $csvHeaders = $csvService->getFieldsToMap(
+                $validated['upload-file'], $supplied_constants,
+                $importRequestClass
+            );
 
-        return $csvHeaders;
+            return $csvHeaders;
+        } catch (\Exception $e) {
+            return response(['errors' => sprintf('Could not process due to error:%s in line:%d of file:%s.', $e->getMessage(), $e->getLine(), $e->getFile())], 422);
+        }
+
     }
     public function fileImport(CSVImportRequest $request, Organization $organization, Program $program, CsvImportType $csvImportType)
     {
