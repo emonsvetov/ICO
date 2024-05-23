@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TangoOrdersApi extends Model
 {
@@ -74,9 +75,15 @@ class TangoOrdersApi extends Model
      * @param array $data Data for creating the new configuration.
      * @return TangoOrdersApi The newly created configuration model instance.
      */
-    public static function createConfiguration(array $data): self
+    public static function createConfiguration(array $data): ?self
     {
-        return self::create($data);
+        try {
+            $configuration = self::create($data);
+            return $configuration;
+        } catch (\Exception $e) {
+            Log::error("Error creating configuration: " . $e->getMessage());
+            return null;
+        }
     }
 
     /**
@@ -89,8 +96,17 @@ class TangoOrdersApi extends Model
     public static function updateConfiguration(int $id, array $data): bool
     {
         $configuration = self::find($id);
-        return $configuration ? $configuration->update($data) : false;
+        if (!$configuration) {
+            return false;
+        }
+        try {
+            return $configuration->update($data);
+        } catch (\Exception $e) {
+            Log::error("Failed to update configuration: " . $e->getMessage());
+            return false;
+        }
     }
+
 
     /**
      * Retrieves a specific configuration by its ID.

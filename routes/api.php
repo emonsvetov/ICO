@@ -414,10 +414,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::get('/v1/tango-settings',[App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
 
+    Route::get('/v1/tango-settings/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
+        ->middleware('can:view,App\TangoApi');
+
     Route::get('/v1/tango-settings/view/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
         ->middleware('can:view,App\TangoApi,organization,program');
 
-    Route::post('/v1/tango-settings/create/{id}', [App\Http\Controllers\API\TangoApiController::class, 'createConfiguration'])
+    Route::post('/v1/tango-settings/create', [App\Http\Controllers\API\TangoApiController::class, 'createConfiguration'])
         ->middleware('can:create,App\TangoApi,organization,program');
 
     Route::put('/v1/tango-settings/edit/{id}', [App\Http\Controllers\API\TangoApiController::class, 'updateConfiguration'])
