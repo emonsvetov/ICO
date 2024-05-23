@@ -26,10 +26,12 @@ class BudgetProgramAssignRequest extends FormRequest
         return [
             'budget_type' => 'required|integer',
             'budget_amount' => 'required|array',
-            'remaining_budgets' => 'numeric',
+            "parent_program_id"=>'required|integer',
+            'program_budget_id'=>'required|integer',
+            'remaining_budgets' => 'array',
             'external_ids' => 'required|array',
             'program_budget_amounts' => 'required|array',
-            'program_budgets_ids.*' => 'required|integer',
+            'program_budgets_ids.*' => 'required|array',
         ];
     }
 }

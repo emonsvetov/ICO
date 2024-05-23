@@ -5,7 +5,10 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 use App\Models\BudgetProgram;
 use App\Models\BudgetCascading;
+use Illuminate\Support\Facades\Log;
 use App\Models\Program;
+use RuntimeException;
+use Exception;
 use Carbon\Carbon;
 
 class BudgetProgramService
@@ -69,101 +72,55 @@ class BudgetProgramService
     public function assignBudget(BudgetProgram $budgetProgram, array $data)
     {
         try {
+            DB::beginTransaction();
+        
             $budgetType = $data['budget_type'];
             $budgetAmount = $data['budget_amount'];
-            $parentProgramId = $data['program_id'];
-            $programBudgetId = $budgetProgram->id;
+            $parentProgramId = $data['parent_program_id'];
+            $programBudgetId = $data['program_budget_id'];
             $programBudgetsIds = $data['program_budgets_ids'];
             $remainingBudgets = $data['remaining_budgets'];
             $externalIds = $data['external_ids'];
             $programBudgetAmounts = $data['program_budget_amounts'];
+        
             $availableBudget = $assignedBudget = 0;
-            $values = [];
-    
-            if ($budgetType == 1) {
-                foreach ($budgetAmount as $programId => $budgetWithMonths) {
-                    foreach ($budgetWithMonths as $key => $budget) {
-                        if (isset($programBudgetsIds[$programId][$key])) {
-                            if ($budget == $programBudgetAmounts[$programId][$key]) {
-                                unset($programBudgetsIds[$programId][$key]);
-                                continue;
-                            }
-                            $budgetsCascadingId = $programBudgetsIds[$programId][$key]['budgets_cascading_id'];
-                            $remainingBudgetAmount = $remainingBudgets[$programId][$key];
-    
-                            if ($budget < 0 || $remainingBudgetAmount < 0) {
-                                throw new \RuntimeException('Budget amount or Remaining amount should not be less than 0');
-                            }
-    
-                            DB::table('budgets_cascading')->where('budgets_cascading_id', $budgetsCascadingId)->update([
-                                'budget_amount' => $budget,
-                                'budget_amount_remaining' => $remainingBudgetAmount,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                                'reason_for_budget_change' => 'Updated From Manage Budget'
-                            ]);
-    
-                            if ($budget > $programBudgetsIds[$programId][$key]['budget_amount']) {
-                                $assignedBudget += ($budget - $programBudgetsIds[$programId][$key]['budget_amount']);
-                            } else if ($budget < $programBudgetsIds[$programId][$key]['budget_amount']) {
-                                $availableBudget += ($programBudgetsIds[$programId][$key]['budget_amount'] - $budget);
-                            }
+
+            foreach ($budgetAmount as $programId => $budgetData) {
+                foreach ($budgetData as $key => $budget) {
+                    if (isset($programBudgetsIds[$programId][$key]) && isset($programBudgetsIds[$programId][$key]['budgets_cascading_id'])) {
+                        $budgetsCascading = BudgetCascading::find($programBudgetsIds[$programId][$key]['budgets_cascading_id']);
+        
+                        if ($budget === $programBudgetAmounts[$programId][$key]) {
                             unset($programBudgetsIds[$programId][$key]);
-                        } else {
-                            $externalId = $externalIds[$programId];
-                            $yearMonth = str_replace('_', '-', $key);
-    
-                            $values[] = [
-                                'sub_program_external_id' => $externalId,
-                                'budget_amount' => $budget,
-                                'budget_amount_remaining' => $budget,
-                                'parent_program_id' => $parentProgramId,
-                                'program_id' => $programId,
-                                'program_budget_id' => $programBudgetId,
-                                'budget_start_date' => '',
-                                'budget_end_date' => '',
-                                'reason_for_budget_change' => 'Assigned Budgets'
-                            ];
-    
-                            $assignedBudget += $budget;
-                        }
-                    }
-                }
-            } else {
-                foreach ($budgetAmount as $programId => $budget) {
-                    if (isset($programBudgetsIds[$programId])) {
-                        if ($budget == $programBudgetAmounts[$programId]) {
-                            unset($programBudgetsIds[$programId]);
                             continue;
                         }
-                        $budgetsCascadingId = $programBudgetsIds[$programId]['budgets_cascading_id'];
-                        $remainingBudgetAmount = $remainingBudgets[$programId];
-    
+        
+                        $remainingBudgetAmount = $remainingBudgets[$programId][$key];
+        
                         if ($budget < 0 || $remainingBudgetAmount < 0) {
-                            throw new \RuntimeException('Budget amount or Remaining amount should not be less than 0');
+                            throw new RuntimeException('Budget amount should not be less than 0');
                         }
-    
-                        DB::table('budgets_cascading')->where('budgets_cascading_id', $budgetsCascadingId)->update([
-                            'budget_amount' => $budget,
-                            'budget_amount_remaining' => $remainingBudgetAmount,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                            'reason_for_budget_change' => 'Updated From Manage Budget'
-                        ]);
-    
-                        if ($budget > $programBudgetsIds[$programId]['budget_amount']) {
-                            $assignedBudget += ($budget - $programBudgetsIds[$programId]['budget_amount']);
-                        } else if ($budget < $programBudgetsIds[$programId]['budget_amount']) {
-                            $availableBudget += ($programBudgetsIds[$programId]['budget_amount'] - $budget);
+        
+                        $budgetsCascading->budget_amount = $budget;
+                        $budgetsCascading->budget_amount_remaining = $remainingBudgetAmount;
+                        $budgetsCascading->reason_for_budget_change = 'Updated From Manage Budget';
+                        $budgetsCascading->save();
+        
+                        if ($budget > $programBudgetsIds[$programId][$key]['budget_amount']) {
+                            $assignedBudget += ($budget - $programBudgetsIds[$programId][$key]['budget_amount']);
+                        } elseif ($budget < $programBudgetsIds[$programId][$key]['budget_amount']) {
+                            $availableBudget += ($programBudgetsIds[$programId][$key]['budget_amount'] - $budget);
                         }
-                        unset($programBudgetsIds[$programId]);
+        
+                        unset($programBudgetsIds[$programId][$key]);
                     } else {
-                        $externalId = $externalIds[$programId];
-                        $budgetStartDate = Carbon::parse($data['budget_start_date']);
-                        $budgetEndDate = Carbon::parse($data['budget_end_date']);
-    
-                        $values[] = [
-                            'sub_program_external_id' => $externalId,
+                        // Insert new budget cascading
+                        $yearMonth = str_replace('_', '-', $key);
+                        $budgetStartDate = date($yearMonth . '-01');
+                        $budgetEndDate = date($yearMonth . '-' . date('t', strtotime($budgetStartDate)));
+        
+                        $budgetsCascading = new BudgetCascading([
+                            'sub_program_external_id' => $externalIds[$programId],
                             'budget_amount' => $budget,
                             'budget_amount_remaining' => $budget,
                             'parent_program_id' => $parentProgramId,
@@ -171,31 +128,32 @@ class BudgetProgramService
                             'program_budget_id' => $programBudgetId,
                             'budget_start_date' => $budgetStartDate,
                             'budget_end_date' => $budgetEndDate,
-                            'created_at' => now(),
-                            'updated_at' => now(),
                             'reason_for_budget_change' => 'Assigned Budgets'
-                        ];
-    
+                        ]);
+        
+                        $budgetsCascading->save();
                         $assignedBudget += $budget;
                     }
                 }
             }
-    
-            if (count($values) > 0) {
-                DB::table('budgets_cascading')->insert($values);
-            }
-    
+        
+            // Assume delete_budget_rows and update_remaining_budget are methods in the current class
+        
+            // Delete the rows if the budget amount has been removed
             if (count($programBudgetsIds) > 0) {
-                $availableBudget += $this->deleteBudgetRows($programBudgetId, $programBudgetsIds, ['budget_type' => $budgetType, 'userId' => auth()->id()]);
+                $availableBudget += $this->deleteBudgetRows($programBudgetId, $programBudgetsIds, ['budget_type' => $budgetType]);
             }
-    
+        
+            // After insert or update in budget_programs, update the remaining amount in budget_programs
             if ($assignedBudget > 0 || $availableBudget > 0) {
                 $this->updateRemainingBudget($programBudgetId, $assignedBudget, $availableBudget);
             }
-    
-            return $budgetProgram;
-        } catch (\Exception $e) {
-            throw new \RuntimeException($e->getMessage(), 500);
+        
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error processing budget data', ['error' => $e->getMessage()]);
+            throw new RuntimeException($e->getMessage(), 500);
         }
     }
     
@@ -216,7 +174,6 @@ class BudgetProgramService
 
     public function deleteBudgetRows($programBudgetId, $programBudgetsIds, $args = [])
     {
-        //dd($args);
         $budgetAmounts = [];
         $budgetsCascadingIds = [];
 
