@@ -44,6 +44,7 @@ class PositionLevelPolicy
     {
         if(!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
         if($authUser->isAdmin()) return true;
+        if($authUser->isManagerToProgram($program)) return true;
         return $authUser->can('position-level-view');
     }
 

@@ -30,6 +30,7 @@ class BudgetProgramPolicy
     {
         if(!$this->__preAuthCheck($user, $organization, $program)) return false;
         if($user->isAdmin()) return true;
+        if($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-list');
     }
 
@@ -44,6 +45,7 @@ class BudgetProgramPolicy
     {
         if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
         if($user->isAdmin()) return true;
+        if($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-view');
     }
 
@@ -57,6 +59,7 @@ class BudgetProgramPolicy
     {
        if(!$this->__preAuthCheck($user, $organization, $program)) return false;
         if($user->isAdmin()) return true;
+        if($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-create');
     }
 
@@ -71,6 +74,7 @@ class BudgetProgramPolicy
     {
         if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
         if($user->isAdmin()) return true;
+        if($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-update');
     }
 
@@ -85,6 +89,7 @@ class BudgetProgramPolicy
     {
        if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
        if($user->isAdmin()) return true;
+       if($user->isManagerToProgram($program)) return true;
        return $user->can('budget-program-delete');
     }
 
@@ -92,6 +97,7 @@ class BudgetProgramPolicy
     {
        if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
        if($user->isAdmin()) return true;
+       if($user->isManagerToProgram($program)) return true;
        return $user->can('budget-program-close');
     }
 
@@ -99,6 +105,7 @@ class BudgetProgramPolicy
     { 
        if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
        if($user->isAdmin()) return true;
+       if($user->isManagerToProgram($program)) return true;
        return $user->can('budget-program-assign');
     }
 

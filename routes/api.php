@@ -829,7 +829,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::post('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/permissions', [App\Http\Controllers\API\PositionLevelController::class, 'assignPermissions'])->middleware('can:assign,App\PositionPermissionAssignment,organization,program');
 
-    Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/permissions', [App\Http\Controllers\API\PositionLevelController::class, 'getPermissions'])->middleware('can:view,App\PositionLevel,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/permissions', [App\Http\Controllers\API\PositionLevelController::class, 'getPermissions'])->middleware('can:view,App\PositionLevel,organization,program,positionLevel');
 
     //Budget Type
     Route::get('/v1/organization/{organization}/program/{program}/budgettypes', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetTypes']);
