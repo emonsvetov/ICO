@@ -72,7 +72,7 @@ class BudgetProgramController extends Controller
     {
         $data = $budgetProgramAssignRequest->validated();
         $data = $data + ['program_id' => $program->id];
-        $budgetProgram = $this->budgetProgramService->assignBudget($budgetProgram, $data);
+        $budgetProgram = $this->budgetProgramService->assignBudget($program, $budgetProgram, $data);
         return response($budgetProgram);
     }
 }
