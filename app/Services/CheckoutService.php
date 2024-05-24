@@ -578,6 +578,7 @@ class CheckoutService
                         if($gift_codes_redeemed_item->id == $gift_code_id){
                             $gift_codes_redeemed_for[$index]->pin = $tangoResult['pin'];
                             $gift_codes_redeemed_for[$index]->code = $tangoResult['code'];
+                            $gift_codes_redeemed_for[$index]->tango_reference_order_id = $tangoResult['referenceOrderID'];
                             break;
                         }
                     }
