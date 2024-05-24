@@ -31,10 +31,10 @@ class ReferralRequest extends FormRequest
             'category_lead'=>'integer|nullable',
             'category_reward'=>'integer|nullable',
             'reward_amount'=>'float|nullable',
-            'recipient_first_name' => 'required|string',
-            'recipient_last_name' => 'required|string',
+            'recipient_first_name' => 'nullable|string',
+            'recipient_last_name' => 'nullable|string',
             'recipient_email' => [
-                "required",
+                "nullable",
                 "email:filter"
             ],
             'recipient_area_code' => 'nullable|string',
