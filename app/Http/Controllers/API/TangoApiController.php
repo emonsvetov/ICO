@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Requests\TeamRequest;
-//use Illuminate\Support\Facades\Request;
 use App\Http\Traits\TeamUploadTrait;
 use App\Http\Controllers\Controller;
 use App\Models\Organization;
@@ -22,7 +21,6 @@ class TangoApiController extends Controller
     {
         return response(TangoOrdersApi::getActiveConfigurations());
     }
-
 
     /**
      * List configurations with optional pagination.
@@ -59,8 +57,19 @@ class TangoApiController extends Controller
      */
     public function createConfiguration(Request $request): JsonResponse
     {
-        $newConfigurationId = (new TangoOrdersApi)->createConfiguration($request->all());
-        return response()->json(['newConfigurationId' => $newConfigurationId], 201);
+        try {
+            $allowedFields = [
+                'name', 'platform_name', 'platform_url', 'platform_mode',
+                'account_identifier', 'account_number', 'customer_number',
+                'udid', 'etid', 'status', 'is_test'
+            ];
+            $newConfiguration = TangoOrdersApi::create($request->only($allowedFields));
+
+            return response()->json(['newConfigurationId' => $newConfiguration->id], 201);
+        } catch (\Exception $e) {
+            Log::error("Failed to create configuration: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to create configuration'], 500);
+        }
     }
 
     /**
@@ -72,8 +81,25 @@ class TangoApiController extends Controller
      */
     public function updateConfiguration(Request $request, int $id): JsonResponse
     {
-        $updated = (new TangoOrdersApi)->updateConfiguration($id, $request->all());
-        return response()->json(['success' => $updated]);
+        try {
+            $configuration = TangoOrdersApi::find($id);
+            if (!$configuration) {
+                return response()->json(['error' => 'Configuration not found'], 404);
+            }
+
+            $allowedFields = [
+                'name', 'platform_name', 'platform_url', 'platform_mode',
+                'account_identifier', 'account_number', 'customer_number',
+                'udid', 'etid', 'status', 'is_test'
+            ];
+            $data = $request->only($allowedFields);
+            $configuration->update($data);
+
+            return response()->json(['success' => true]);
+        } catch (\Exception $e) {
+            Log::error("Failed to update configuration: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to update configuration'], 500);
+        }
     }
 
     /**
