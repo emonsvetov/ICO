@@ -84,6 +84,11 @@ class Program extends BaseModel
         return $this->hasMany(PositionLevel::class);
     }
 
+    public function budget_programs()
+    {
+        return $this->hasMany(BudgetProgram::class);
+    }
+
     public function address()
     {
         return $this->hasOne(Address::class, 'account_holder_id', 'account_holder_id')->with(['state', 'country']);

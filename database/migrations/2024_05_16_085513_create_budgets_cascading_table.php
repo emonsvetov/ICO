@@ -14,23 +14,22 @@ class CreateBudgetsCascadingTable extends Migration
     public function up()
     {
         Schema::create('budgets_cascading', function (Blueprint $table) {
-            $table->bigIncrements('budgets_cascading_id');
-            $table->string('sub_program_external_id');
-            $table->string('budget_holder_external-user_id');
-            $table->integer('employee_count');
+            $table->id();
+            $table->unsignedBigInteger('budget_program_id');
+            $table->unsignedBigInteger('program_id');
+            $table->unsignedBigInteger('parent_program_id');
+            $table->string('program_external_id')->nullable();
+            $table->integer('employee_count')->nullable();
             $table->decimal('budget_percentage', 10, 2)->nullable();
             $table->decimal('budget_amount', 10, 2)->nullable();
             $table->decimal('budget_awaiting_approval', 10, 2)->nullable();
             $table->decimal('budget_amount_remaining', 10, 2)->nullable();
-            $table->string('date_updated');
-            $table->unsignedBigInteger('parent_program_id');
-            $table->unsignedBigInteger('program_id');
-            $table->unsignedBigInteger('program_budget_id');
-            $table->date('budget_start_date');
-            $table->date('budget_end_date');
+            $table->date('budget_start_date')->nullable();
+            $table->date('budget_end_date')->nullable();
             $table->smallInteger('flag')->unsigned()->nullable()->default(null);
             $table->boolean('status')->default(1);
-            $table->string('reason_for_budget_change');
+            $table->string('reason_for_budget_change')->nullable();
+            $table->index(['id','program_id','budget_program_id']);
             $table->timestamps();
         });
     }

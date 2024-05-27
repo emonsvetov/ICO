@@ -16,6 +16,11 @@ class BudgetProgram extends Model
         return $this->belongsTo(BudgetType::class, 'budget_type_id');
     }
 
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
+    }
+
     /*protected $fillable = [
         'budget_type_id',
         'program_id ',
