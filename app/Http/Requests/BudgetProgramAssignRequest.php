@@ -25,8 +25,7 @@ class BudgetProgramAssignRequest extends FormRequest
     {
         return [
             'budget_type' => 'required|integer',
-            'budget_amount' => 'required|array',
-            'budget_program_id .*' => 'required|array',
+            'budget_amount' => 'required|array'
         ];
     }
 }
