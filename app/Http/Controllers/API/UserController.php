@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Models\AwardLevel;
 use App\Models\Program;
 use App\Models\Role;
+use App\Services\AwardService;
 use App\Services\reports\ReportServiceAbstract;
 use App\Services\reports\User\ReportServiceUserChangeLogs;
 use App\Services\reports\User\ReportServiceUserGiftCodeReedemed;
@@ -123,17 +124,19 @@ class UserController extends Controller
         return response($report->getReport());
     }
 
-    public function reclaimItems(Request $request, $organization, User $user, Program $program, UserService $service)
+    public function reclaimItems(Request $request, $organization, User $user, Program $program, UserService $service, AwardService $awardService)
     {
-        // $peerBalance = $service->readAvailablePeerBalance($user, $program);
+        $result = $awardService->readListExpireFuture($program, $user);
+        sort($result['expiration']);
         $amount_balance = $user->readAvailableBalance($program, $user);
-        $items = $service->reclaimPointItems($user->account_holder_id, $program->id);
-        return response(['data' => $items, 'balance' => $amount_balance]);
+
+        return response(['data' => $result['expiration'], 'balance' => $amount_balance]);
     }
 
-    public function reclaim(Request $request, UserService $service)
+    public function reclaim(Request $request, User $user, UserService $service)
     {
-        $res = $service->reclaim($request);
-        return response($res);
+        $result = $service->reclaim($request, $user);
+
+        return response($result, $result['success'] ? 200 : 400);
     }
 }
