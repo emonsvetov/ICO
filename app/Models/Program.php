@@ -548,6 +548,25 @@ class Program extends BaseModel
         }
     }
 
+    public function getMerchantsRecursively($status=null)
+    {
+        $query = $this->merchants();
+        $relationExists = $query->exists();
+        if($relationExists) {
+            if (!empty($status)) {
+                $query = $query->where('status', $status);
+            }
+            $collection = $query->orderBy('name')->get();
+            return $collection;
+        }   else {
+            $parent = $this->getParent();
+            if( $parent ) {
+                return $parent->getMerchantsRecursively($status);
+            }
+            return [];
+        }
+    }
+
     public function getParentProgramId($subProgramId)
     {
         $hierarchy = null;
