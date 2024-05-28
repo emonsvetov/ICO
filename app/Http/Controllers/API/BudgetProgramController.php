@@ -71,8 +71,8 @@ class BudgetProgramController extends Controller
     public function assign(BudgetProgramAssignRequest $budgetProgramAssignRequest, Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
         $data = $budgetProgramAssignRequest->validated();
-        $data = $data + ['program_id' => $program->id];
-        $budgetProgram = $this->budgetProgramService->assignBudget($program, $budgetProgram, $data);
+        $data = $data + ['parent_program_id' => $program->id];
+        $budgetProgram = $this->budgetProgramService->assignBudget($budgetProgram, $data);
         return response($budgetProgram);
     }
 }

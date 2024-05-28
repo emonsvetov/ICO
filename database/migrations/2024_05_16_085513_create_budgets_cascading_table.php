@@ -29,7 +29,7 @@ class CreateBudgetsCascadingTable extends Migration
             $table->smallInteger('flag')->unsigned()->nullable()->default(null);
             $table->boolean('status')->default(1);
             $table->string('reason_for_budget_change')->nullable();
-            $table->index(['id','program_id','budget_program_id']);
+            $table->index(['id','program_id']);
             $table->timestamps();
         });
     }
