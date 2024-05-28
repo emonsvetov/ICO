@@ -29,10 +29,11 @@ border-left:solid 1px;
                 <p style="margin-left:20px; margin-right:20px;">
                     Email: {{$referee_email}}
                 </p>
-                <p style="margin-left:20px; margin-right:20px;">
-                    Phone number: {{$referee_area_code}}-{{$referee_phone}}
-                </p>
-
+                @if (isset($referee_area_code) && isset($referee_phone))
+                    <p style="margin-left:20px; margin-right:20px;">
+                        Phone number: {{ $referee_area_code }}-{{ $referee_phone }}
+                    </p>
+                @endif
                 <p style="margin-left:20px; margin-right:20px;">
                     Log-in to your dashboard to view the submission in the reports section. Remember to give a reward to increase engagement AND get more submissions!
                 </p>
