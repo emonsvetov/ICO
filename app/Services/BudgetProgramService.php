@@ -2,9 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\Organization;
 use Illuminate\Support\Facades\DB;
 use App\Models\BudgetProgram;
+use App\Models\BudgetType;
 use App\Models\BudgetCascading;
+use App\Services\ProgramService;
 use Illuminate\Support\Facades\Log;
 use App\Models\Program;
 use RuntimeException;
@@ -13,6 +16,8 @@ use Carbon\Carbon;
 
 class BudgetProgramService
 {
+    const ASSIGN_BUDGET_CSV_FROM_HEADER = ["Total Budget", "Remaining Budget", "Budget Type", "Budget Start Date", "Budget End Date"];
+    const ASSIGN_BUDGET_CSV_TO_HEADER = ["Assign Budget to Program Id", "Assign Budget to program Name"];
     public function getAllBudgetTypes()
     {
         return BudgetProgram::all();
@@ -168,7 +173,7 @@ class BudgetProgramService
                         [
                             'parent_program_id' => $parent_program_id,
                             'program_id' => $programId,
-                            'budget_program_id' => $budgetProgramId,
+                            'program_budget_id' => $budgetProgramId,
                             'budget_amount_remaining' => $amount,
                             'budget_amount' => $amount,
                             'reason_for_budget_change' => "assign budget"
