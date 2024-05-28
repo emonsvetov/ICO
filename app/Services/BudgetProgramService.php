@@ -170,96 +170,80 @@ class BudgetProgramService
 
         return array_sum($budgetAmounts);
     }
-    public function getTransferMoniesByProgram(Program $program)
+
+    public function getMonths($budgetProgramId)
     {
-        $topLevelProgram = $program->rootAncestor()->select(['id', 'name', 'external_id'])->first();
+        $_budgetProgram = BudgetProgram::find($budgetProgramId);
+        if ($_budgetProgram) {
+            $startDate = Carbon::parse($_budgetProgram->budget_start_date);
+            $endDate = Carbon::parse($_budgetProgram->budget_end_date);
+
+            $months = [];
+            while ($startDate->lessThanOrEqualTo($endDate)) {
+                $months[] = $startDate->format('F');
+                $startDate->addMonth();
+            }
+            $data[] = [
+                'months' => $months,
+            ];
+            return $data;
+        }
+
+    }
+
+    public function getManageBudgetDataByProgram(Program $program, BudgetCascading $budgetCascading)
+    {
+        $topLevelProgram = $program->rootAncestor()->select(['id', 'name'])->first();
         if (!$topLevelProgram) {
             $topLevelProgram = $program;
         }
-        $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name', 'external_id'])->get();
-        $balance = (new \App\Services\AccountService)->readAvailableBalanceForProgram($program);
+        $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
+        $amount = BudgetCascading::all();
+
         return
             [
                 'program' => $program,
                 'programs' => $programs,
+                'amount' => $amount->budget_amount,
             ]
         ;
     }
 
-    public function getMonths($budgetProgram)
+    public function getManageBudgetTemplateCSV(Program $program, BudgetProgram $budgetProgram)
     {
-        $startDate = Carbon::parse($budgetProgram->budget_start_date);
-        $endDate = Carbon::parse($budgetProgram->budget_end_date);
-
-        $months = [];
-        while ($startDate->lessThan($endDate)) {
-            $months[] = $startDate->format('F');
-            $startDate->addMonth();
-        }
-
-        $data = [
-            'months' => $months,
-        ];
-        return $data;
-    }
-
-    public function getAssignBudgetByProgram(Program $program)
-    {
-        $program = Program::find($program->id);
-        $programsId = $program->descendantsAndSelf()->get()->pluck('id')->toArray();
-
-        $minimalFields = Program::MIN_FIELDS;
-        $query = Program::query();
-        $query->where('parent_id', $program->parent_id);
-        $query->whereIn('id', $programsId);
-        $query = $query->select($minimalFields);
-        $query = $query->with([
-            'childrenMinimal' => function ($query) use ($minimalFields) {
-                $subquery = $query->select($minimalFields);
-                return $subquery;
-            }
-        ]);
-        $result = $query->get();
-        return childrenizeCollection($result);
-        ;
-    }
-    public function getAssignBudgetTemplateCSV(Organization $organization, Program $program,ProgramService $programService, BudgetProgram $budgetProgram)
-    {
-       // $programdata = $this->getAssignBudgetByProgram($program);
-        $transferData = $programService->getHierarchyByProgramId($organization, $program->id)->toArray();
-        dd($transferData);
+        //$manageBudgetData = (object) $this->//make a function for set manage data;
         $csv = array();
-        $months = $this->getMonths($budgetProgram);
-        $csvTransferFromRow = self::ASSIGN_BUDGET_CSV_FROM_HEADER;
-        $csv[] = $csvTransferFromRow; //csv header row
-        $budgetTypeId = $budgetProgram->budget_type_id;
-        $budgetType = BudgetType::findOrFail($budgetTypeId);
-        $csvAssignBudgetRow = self::ASSIGN_BUDGET_CSV_TO_HEADER;
-        $csv[] = [$budgetProgram->budget_amount, $budgetProgram->remaining_amount, $budgetType->title, $budgetProgram->budget_start_date, $budgetProgram->budget_end_date]; //
+
+        $months = $this->getMonths($budgetProgram->id);
+        // Add the section for the transfer from
+        $csvManageBudgetFromRow = self::MANAGE_BUDGET_CSV_FROM_HEADER;
+        $csv[] = $csvManageBudgetFromRow; //csv header row
+        $csv[] = [$budgetProgram->id, $budgetProgram->remaining_amount, $budgetProgram->budget_start_date, $budgetProgram->budget_end_date];
+
         foreach ($months as $month) {
-            $csvTransferToRow = [...$csvAssignBudgetRow, ...$month];
+            $monthRow = [$budgetProgram->id, $budgetProgram->remaining_amount, $month];
+            $csv[] = $monthRow;
         }
-        $csv[] = $csvTransferToRow;
-        if ($transferData) {
-            foreach ($transferData as $_program) {
-              
-                // if ($_program->id == $program->id) {
-                //     continue;
-                // }
-                //    $programToRow = [$_program->id, $_program->external_id, $_program->name, 0];
-                //  $csv[] = $programToRow;
-            }
-        }
-        $programToRow = [1, "incentco", 0];
-        $csv[] = $programToRow;
+        ;
+        $csvManageBudgetToRow = self::MANAGE_BUDGET_CSV_TO_HEADER;
+        $csv[] = $csvManageBudgetToRow;
+        $csv[] = [1, "incentco", 0];
+        // if ($manageBudgetData->programs->isNotEmpty()) {
+        //     foreach ($transferData->programs as $_program) {
+        //         if ($_program->id == $program->id) { //in case
+        //             continue;
+        //         }
+        //         $programToRow = [$_program->id, $_program->external_id, $_program->name, 0];
+        //         $csv[] = $programToRow;
+        //     }
+        // }
         return $csv;
     }
 
-    public function getAssignBudgetTemplateCSVStream(Program $program, BudgetProgram $budgetProgram)
+    public function getManageBudgetTemplateCSVStream(Program $program, BudgetProgram $budgetProgram)
     {
-        $months = $this->getMonths($budgetProgram);
-        $csv = $this->getAssignBudgetTemplateCSV($program, $budgetProgram);
-        $csvFilename = 'transfer-template-' . $program->id;
+        $csv = $this->getManageBudgetTemplateCSV($program, $budgetProgram);
+        $csvFilename = 'assign-budget-template-';
 
         $headers = array(
             "Content-type" => "text/csv",
@@ -269,32 +253,30 @@ class BudgetProgramService
             "Expires" => "0"
         );
 
-        $callback = function () use ($csv, $months) {
+        $callback = function () use ($csv) {
             $file = fopen('php://output', 'w');
+
             foreach ($csv as $row) {
-                $row = $this->flattenRow($row, count($months));
+                // Flatten any nested arrays
+                $row = $this->flattenRow($row);
                 fputcsv($file, $row);
             }
             fclose($file);
         };
         return [$callback, 200, $headers];
     }
-    private function flattenRow($row, $monthCount)
+
+    private function flattenRow($row)
     {
         $flattenedRow = [];
-        foreach ($row as $key => $item) {
-            if (is_array($item) && isset($item['months'])) {
-                // Add months to the flattened row
-                $flattenedRow = array_merge($flattenedRow, $item['months']);
-                // If fewer months are provided, fill the rest with empty values
-                while (count($flattenedRow) < $monthCount) {
-                    $flattenedRow[] = '';
-                }
+        foreach ($row as $item) {
+            if (is_array($item)) {
+                // Flatten nested array
+                $flattenedRow[] = implode(', ', $item['months']);
             } else {
                 $flattenedRow[] = $item;
             }
         }
-
         return $flattenedRow;
     }
 }

@@ -76,8 +76,9 @@ class BudgetProgramController extends Controller
         return response($budgetProgram);
     }
 
-    public function downloadAssignBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    public function downloadManageBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-        return response()->stream(...($this->budgetProgramService->getAssignBudgetTemplateCSVStream($organization, $program, $budgetProgram)));
+        return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));
     }
+    
 }
