@@ -71,6 +71,38 @@ class EventController extends Controller
         }
     }
 
+    public function updateHierarchyPrepare(EventRequest $request, Organization $organization, Program $program, Event $event, ProgramEventService $programEventService)
+    {
+        $validated = $request->validated();
+        try {
+            return response(
+                $programEventService->updateHierarchyPrepare($event, $validated + [
+                'organization_id' => $organization->id,
+                'program_id' => $program->id
+            ]));
+        }
+        catch(\Throwable $e)
+        {
+            return response(['errors' => 'Error updating program event', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
+        }
+    }
+
+    public function updateHierarchy(EventRequest $request, Organization $organization, Program $program, Event $event, ProgramEventService $programEventService)
+    {
+        $validated = $request->validated();
+        try {
+            return response(
+                $programEventService->updateHierarchy($event, $validated + [
+                'organization_id' => $organization->id,
+                'program_id' => $program->id,
+            ], $request->get('programIds')));
+        }
+        catch(\Exception $e)
+        {
+            return response(['errors' => 'Error updating program event', 'e' => sprintf('Error %s in line  %d', $e->getMessage(), $e->getLine())], 422);
+        }
+    }
+
     public function delete(Organization $organization, Program $program, Event $event )
     {
         try {
