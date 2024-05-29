@@ -24,6 +24,7 @@ class BudgetProgramAssignRequest extends FormRequest
     public function rules()
     {
         return [
+            'budget_id' => 'required|integer',
             'budget_type' => 'required|integer',
             'budget_amount' => 'required|array'
         ];

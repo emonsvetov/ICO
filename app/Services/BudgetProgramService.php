@@ -74,25 +74,81 @@ class BudgetProgramService
         return $budgetProgram;
     }
 
-    public function assignBudget(Program $program, BudgetProgram $budgetProgram, array $data)
+    public function assignBudget(BudgetProgram $budgetProgram, array $data)
     {
+        $total_amount = $budgetProgram->budget_amount;
+        $rem_amount = $budgetProgram->remaining_amount;
+
         $budgetProgramId = $budgetProgram->id;
+        $parent_program_id = $data['parent_program_id'];
         $budgetAmounts = $data['budget_amount'];
         $processedBudgets = [];
 
-        foreach ($budgetAmounts as $programData) {
-            $programId = $programData['program_id'];
-            $budgets = $programData['budgets'];
-            foreach ($budgets as $budget) {
-                $budgetsCascadingId = $budget['budgets_cascading_id'];
+        if ($data['budget_type'] == '1') {
+            foreach ($budgetAmounts as $programData) {
+                $programId = $programData['program_id'];
+                $budgets = $programData['budgets'];
+                foreach ($budgets as $budget) {
+                    $budgetsCascadingId = $budget['budgets_cascading_id'];
+                    $year = $budget['year'];
+                    $month = $budget['month'];
+                    $amount = $budget['amount'];
 
-                $year = $budget['year'];
-                $month = $budget['month'];
-                $amount = $budget['amount'];
-                $budgetStartDate = "$year-$month-01";
-                $budgetEndDate = date("Y-m-t", strtotime($budgetStartDate)); // Get the last day of the month
+                    $budgetStartDate = "$year-$month-01";
+                    $budgetEndDate = date("Y-m-t", strtotime($budgetStartDate));
 
-                if (empty($amount) || $amount === 0) {
+                    if (empty($amount) || $amount === 0 && !empty($budgetsCascadingId)) {
+                        // Delete the budget record if the amount is zero or not provided
+                        BudgetCascading::where('id', $budgetsCascadingId)
+                            ->where('program_id', $programId)
+                            ->where('budget_start_date', $budgetStartDate)
+                            ->where('budget_end_date', $budgetEndDate)
+                            ->delete();
+                    } else {
+                        // Calculate the updated amount
+                        $updated_amount = $total_amount - $amount;
+
+                        if ($updated_amount < 0) {
+                            return response()->json(['error' => 'You cannot assign Budget more than you have available.'], 422);
+                        }
+
+                        // Update or create the budget record
+                        $budgetRecord = BudgetCascading::updateOrCreate(
+                            [
+                                'id' => $budgetsCascadingId,
+                                'budget_start_date' => $budgetStartDate,
+                                'budget_end_date' => $budgetEndDate
+                            ],
+                            [
+                                'parent_program_id' => $parent_program_id,
+                                'program_id' => $programId,
+                                'budget_program_id' => $budgetProgramId,
+                                'budget_amount_remaining' => $amount,
+                                'budget_amount' => $amount,
+                                'reason_for_budget_change' => "assign budget"
+                            ]
+                        );
+
+                        $processedBudgets[] = $budgetRecord;
+
+                        // Update the remaining amount
+                        $budgetProgram->remaining_amount = $updated_amount;
+                        $budgetProgram->save();
+
+                        // Update the total amount for the next iteration
+                        $total_amount = $updated_amount;
+                    }
+                }
+            }
+        } else {
+            foreach ($budgetAmounts as $programData) {
+                $programId = $programData['program_id'];
+                $budgetsCascadingId = $programData['budgets_cascading_id'];
+                $budgetStartDate = $programData['budget_start_date'];
+                $budgetEndDate = $programData['budget_end_date'];
+                $amount = $programData['amount'];
+
+                if (empty($amount) || $amount === 0 && !empty($budgetsCascadingId)) {
                     // Delete the budget record if the amount is zero or not provided
                     BudgetCascading::where('id', $budgetsCascadingId)
                         ->where('program_id', $programId)
@@ -100,6 +156,13 @@ class BudgetProgramService
                         ->where('budget_end_date', $budgetEndDate)
                         ->delete();
                 } else {
+                    // Calculate the updated amount
+                    $updated_amount = $total_amount - $amount;
+
+                    if ($updated_amount < 0) {
+                        return response()->json(['error' => 'You cannot assign Budget more than you have available.'], 422);
+                    }
+
                     // Update or create the budget record
                     $budgetRecord = BudgetCascading::updateOrCreate(
                         [
@@ -108,7 +171,7 @@ class BudgetProgramService
                             'budget_end_date' => $budgetEndDate
                         ],
                         [
-                            'parent_program_id' => $program->id,
+                            'parent_program_id' => $parent_program_id,
                             'program_id' => $programId,
                             'program_budget_id' => $budgetProgramId,
                             'budget_amount_remaining' => $amount,
@@ -116,167 +179,65 @@ class BudgetProgramService
                             'reason_for_budget_change' => "assign budget"
                         ]
                     );
-
                     $processedBudgets[] = $budgetRecord;
+
+                    // Update the remaining amount
+                    $budgetProgram->remaining_amount = $updated_amount;
+                    $budgetProgram->save();
+
+                    // Update the total amount for the next iteration
+                    $total_amount = $updated_amount;
                 }
             }
         }
-
         return $processedBudgets;
     }
 
 
-    public function updateRemainingBudget($programBudgetId, $assignedBudget, $availableBudget)
-    {
-        if ($programBudgetId && ($assignedBudget || $availableBudget)) {
-            $budgetProgram = BudgetProgram::find($programBudgetId);
-            if (!$budgetProgram) {
-                throw new \RuntimeException('Budget program not found.');
-            }
 
-            $budgetProgram->remaining_amount = $budgetProgram->remaining_amount - $assignedBudget + $availableBudget;
-            if (!$budgetProgram->save()) {
-                throw new \RuntimeException('Failed to update remaining amount.');
-            }
-        }
-    }
 
-    public function deleteBudgetRows($programBudgetId, $programBudgetsIds, $args = [])
-    {
-        $budgetAmounts = [];
-        $budgetsCascadingIds = [];
+    // public function updateRemainingBudget($programBudgetId, $assignedBudget, $availableBudget)
+    // {
+    //     if ($programBudgetId && ($assignedBudget || $availableBudget)) {
+    //         $budgetProgram = BudgetProgram::find($programBudgetId);
+    //         if (!$budgetProgram) {
+    //             throw new \RuntimeException('Budget program not found.');
+    //         }
 
-        foreach ($programBudgetsIds as $programId => $programBudgetsId) {
-            // Ensure that $programBudgetsId is an array
-            if (!is_array($programBudgetsId) || empty($programBudgetsId)) {
-                continue;
-            }
+    //         $budgetProgram->remaining_amount = $budgetProgram->remaining_amount - $assignedBudget + $availableBudget;
+    //         if (!$budgetProgram->save()) {
+    //             throw new \RuntimeException('Failed to update remaining amount.');
+    //         }
+    //     }
+    // }
 
-            if ($args['budget_type'] == 1) {
-                $budgetsCascadingIds = array_merge($budgetsCascadingIds, array_column($programBudgetsId, 'budgets_cascading_id'));
-                $budgetAmounts = array_merge($budgetAmounts, array_column($programBudgetsId, 'budget_amount'));
-            } else {
-                $budgetsCascadingIds = array_merge($budgetsCascadingIds, array_column($programBudgetsIds, 'budgets_cascading_id'));
-                $budgetAmounts = array_merge($budgetAmounts, array_column($programBudgetsIds, 'budget_amount'));
-            }
-        }
+    // public function deleteBudgetRows($programBudgetId, $programBudgetsIds, $args = [])
+    // {
+    //     $budgetAmounts = [];
+    //     $budgetsCascadingIds = [];
 
-        if (!empty($budgetsCascadingIds)) {
-            $deletedRows = BudgetCascading::whereIn('id', $budgetsCascadingIds)->delete();
-            if (!$deletedRows) {
-                throw new \RuntimeException('Failed to delete budget rows.');
-            }
-        }
+    //     foreach ($programBudgetsIds as $programId => $programBudgetsId) {
+    //         // Ensure that $programBudgetsId is an array
+    //         if (!is_array($programBudgetsId) || empty($programBudgetsId)) {
+    //             continue;
+    //         }
 
-        return array_sum($budgetAmounts);
-    }
+    //         if ($args['budget_type'] == 1) {
+    //             $budgetsCascadingIds = array_merge($budgetsCascadingIds, array_column($programBudgetsId, 'budgets_cascading_id'));
+    //             $budgetAmounts = array_merge($budgetAmounts, array_column($programBudgetsId, 'budget_amount'));
+    //         } else {
+    //             $budgetsCascadingIds = array_merge($budgetsCascadingIds, array_column($programBudgetsIds, 'budgets_cascading_id'));
+    //             $budgetAmounts = array_merge($budgetAmounts, array_column($programBudgetsIds, 'budget_amount'));
+    //         }
+    //     }
 
-    public function getMonths($budgetProgramId)
-    {
-        $_budgetProgram = BudgetProgram::find($budgetProgramId);
-        if ($_budgetProgram) {
-            $startDate = Carbon::parse($_budgetProgram->budget_start_date);
-            $endDate = Carbon::parse($_budgetProgram->budget_end_date);
+    //     if (!empty($budgetsCascadingIds)) {
+    //         $deletedRows = BudgetCascading::whereIn('id', $budgetsCascadingIds)->delete();
+    //         if (!$deletedRows) {
+    //             throw new \RuntimeException('Failed to delete budget rows.');
+    //         }
+    //     }
 
-            $months = [];
-            while ($startDate->lessThanOrEqualTo($endDate)) {
-                $months[] = $startDate->format('F');
-                $startDate->addMonth();
-            }
-            $data[] = [
-                'months' => $months,
-            ];
-            return $data;
-        }
-
-    }
-
-    public function getManageBudgetDataByProgram(Program $program, BudgetCascading $budgetCascading)
-    {
-        $topLevelProgram = $program->rootAncestor()->select(['id', 'name'])->first();
-        if (!$topLevelProgram) {
-            $topLevelProgram = $program;
-        }
-        $programs = $topLevelProgram->descendantsAndSelf()->depthFirst()->whereNotIn('id', [$program->id])->select(['id', 'name'])->get();
-        $amount = BudgetCascading::all();
-
-        return
-            [
-                'program' => $program,
-                'programs' => $programs,
-                'amount' => $amount->budget_amount,
-            ]
-        ;
-    }
-
-    public function getManageBudgetTemplateCSV(Program $program, BudgetProgram $budgetProgram)
-    {
-        //$manageBudgetData = (object) $this->//make a function for set manage data;
-        $csv = array();
-
-        $months = $this->getMonths($budgetProgram->id);
-        // Add the section for the transfer from
-        $csvManageBudgetFromRow = self::ASSIGN_BUDGET_CSV_FROM_HEADER;
-        $csv[] = $csvManageBudgetFromRow; //csv header row
-        $csv[] = [$budgetProgram->id, $budgetProgram->remaining_amount, $budgetProgram->budget_start_date, $budgetProgram->budget_end_date];
-
-        foreach ($months as $month) {
-            $monthRow = [$budgetProgram->id, $budgetProgram->remaining_amount, $month];
-            $csv[] = $monthRow;
-        }
-        ;
-        $csvManageBudgetToRow = self::ASSIGN_BUDGET_CSV_TO_HEADER;
-        $csv[] = $csvManageBudgetToRow;
-        $csv[] = [1, "incentco", 0];
-        // if ($manageBudgetData->programs->isNotEmpty()) {
-        //     foreach ($transferData->programs as $_program) {
-        //         if ($_program->id == $program->id) { //in case
-        //             continue;
-        //         }
-        //         $programToRow = [$_program->id, $_program->external_id, $_program->name, 0];
-        //         $csv[] = $programToRow;
-        //     }
-        // }
-        return $csv;
-    }
-
-    public function getManageBudgetTemplateCSVStream(Program $program, BudgetProgram $budgetProgram)
-    {
-        $csv = $this->getManageBudgetTemplateCSV($program, $budgetProgram);
-        $csvFilename = 'assign-budget-template-';
-
-        $headers = array(
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$csvFilename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        );
-
-        $callback = function () use ($csv) {
-            $file = fopen('php://output', 'w');
-
-            foreach ($csv as $row) {
-                // Flatten any nested arrays
-                $row = $this->flattenRow($row);
-                fputcsv($file, $row);
-            }
-            fclose($file);
-        };
-        return [$callback, 200, $headers];
-    }
-
-    private function flattenRow($row)
-    {
-        $flattenedRow = [];
-        foreach ($row as $item) {
-            if (is_array($item)) {
-                // Flatten nested array
-                $flattenedRow[] = implode(', ', $item['months']);
-            } else {
-                $flattenedRow[] = $item;
-            }
-        }
-        return $flattenedRow;
-    }
+    //     return array_sum($budgetAmounts);
+    // }
 }

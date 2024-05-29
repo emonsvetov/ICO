@@ -9,19 +9,22 @@ class BudgetCascading extends Model
 {
     use HasFactory;
     protected $table = 'budgets_cascading';
-    protected $primaryKey = 'budgets_cascading_id';
+    protected $primaryKey = 'id';
 
     protected $fillable = [
-        'sub_program_external_id',
-        'budget_amount',
-        'budget_amount_remaining',
-        'parent_program_id',
+        'budget_program_id',
         'program_id',
-        'program_budget_id',
+        'parent_program_id',
+        'program_external_id',
+        'employee_count',
+        'budget_percentage',
+        'budget_amount',
+        'budget_awaiting_approval',
+        'budget_amount_remaining',
         'budget_start_date',
         'budget_end_date',
-        'created_by',
-        'updated_by',
+        'flag',
+        'status',
         'reason_for_budget_change'
     ];
 
