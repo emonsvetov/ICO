@@ -24,4 +24,9 @@ class BudgetCascading extends Model
         'updated_by',
         'reason_for_budget_change'
     ];
+
+    public static function budgetCascadingList()
+    {
+        return self::all();
+    }
 }

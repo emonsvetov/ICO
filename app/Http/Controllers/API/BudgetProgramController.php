@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Program;
 use App\Models\BudgetType;
 use App\Models\Organization;
+use App\Models\BudgetCascading;
 use App\Models\BudgetProgram;
 use App\Services\BudgetProgramService;
 use App\Http\Requests\BudgetProgramRequest;
@@ -75,7 +76,11 @@ class BudgetProgramController extends Controller
         $budgetProgram = $this->budgetProgramService->assignBudget($program, $budgetProgram, $data);
         return response($budgetProgram);
     }
-
+    public function getBudgetCascading()
+    {
+        $types = BudgetCascading::budgetCascadingList();
+        return response($types);
+    }
     public function downloadManageBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
         return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));

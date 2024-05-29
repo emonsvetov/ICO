@@ -216,7 +216,7 @@ class BudgetProgramService
 
         $months = $this->getMonths($budgetProgram->id);
         // Add the section for the transfer from
-        $csvManageBudgetFromRow = self::MANAGE_BUDGET_CSV_FROM_HEADER;
+        $csvManageBudgetFromRow = self::ASSIGN_BUDGET_CSV_FROM_HEADER;
         $csv[] = $csvManageBudgetFromRow; //csv header row
         $csv[] = [$budgetProgram->id, $budgetProgram->remaining_amount, $budgetProgram->budget_start_date, $budgetProgram->budget_end_date];
 
@@ -225,7 +225,7 @@ class BudgetProgramService
             $csv[] = $monthRow;
         }
         ;
-        $csvManageBudgetToRow = self::MANAGE_BUDGET_CSV_TO_HEADER;
+        $csvManageBudgetToRow = self::ASSIGN_BUDGET_CSV_TO_HEADER;
         $csv[] = $csvManageBudgetToRow;
         $csv[] = [1, "incentco", 0];
         // if ($manageBudgetData->programs->isNotEmpty()) {

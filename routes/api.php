@@ -878,6 +878,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         [App\Http\Controllers\API\BudgetProgramController::class, 'close']
     )->middleware('can:close,App\Models\BudgetProgram,organization,program,budgetProgram');
 
+    //Budget Cascading
+    Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/budgetcascading', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascading'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
     Route::post(
         '/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/assign',
         [App\Http\Controllers\API\BudgetProgramController::class, 'assign']
