@@ -884,6 +884,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         '/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/assign',
         [App\Http\Controllers\API\BudgetProgramController::class, 'assign']
     )->middleware('can:close,App\Models\BudgetProgram,organization,program,budgetProgram');
+
+    Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/cascading', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascading'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
+    
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/template', [App\Http\Controllers\API\BudgetProgramController::class, 'downloadAssignBudgetTemplate'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
 
 });

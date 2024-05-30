@@ -15,11 +15,17 @@ class BudgetProgram extends Model
     {
         return $this->belongsTo(BudgetType::class, 'budget_type_id');
     }
+    
+    public function budget_cascading()
+    {
+        return $this->hasMany(BudgetCascading::class);
+    }
 
     public function program()
     {
         return $this->belongsTo(Program::class);
     }
+
 
     /*protected $fillable = [
         'budget_type_id',

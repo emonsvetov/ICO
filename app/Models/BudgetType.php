@@ -8,10 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class BudgetType extends Model
 {
     use HasFactory;
-	protected $guarded = [];
+    protected $guarded = [];
     public $timestamp = true;
 
-     /**
+
+    public function budget_programs()
+    {
+        return $this->hasMany(BudgetProgram::class, 'budget_type_id');
+    }
+
+    /**
      * Get a list of all budget types.
      *
      * @return \Illuminate\Database\Eloquent\Collection
@@ -20,5 +26,4 @@ class BudgetType extends Model
     {
         return self::all();
     }
-    
 }
