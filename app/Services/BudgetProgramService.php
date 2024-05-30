@@ -173,7 +173,7 @@ class BudgetProgramService
                         [
                             'parent_program_id' => $parent_program_id,
                             'program_id' => $programId,
-                            'program_budget_id' => $budgetProgramId,
+                            'budget_program_id' => $budgetProgramId,
                             'budget_amount_remaining' => $amount,
                             'budget_amount' => $amount,
                             'reason_for_budget_change' => "assign budget"
@@ -240,4 +240,8 @@ class BudgetProgramService
 
     //     return array_sum($budgetAmounts);
     // }
+    public function getManageBudgetTemplateCSVStream(Program $program, BudgetProgram $budgetProgram)
+    {
+        //templete
+    }
 }

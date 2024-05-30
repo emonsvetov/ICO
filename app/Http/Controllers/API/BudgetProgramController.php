@@ -76,14 +76,8 @@ class BudgetProgramController extends Controller
         $budgetProgram = $this->budgetProgramService->assignBudget($budgetProgram, $data);
         return response($budgetProgram);
     }
-    public function getBudgetCascading()
-    {
-        $types = BudgetCascading::budgetCascadingList();
-        return response($types);
-    }
     public function downloadManageBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
         return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));
     }
-    
 }
