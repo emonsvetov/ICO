@@ -6,7 +6,7 @@ use App\Models\Traits\GetModelByMixed;
 trait Filterable
 {
     use GetModelByMixed;
-    
+
     static $DEFAULT_PARAMS = [
         'status' => '',
         'keyword' => '',
@@ -46,7 +46,7 @@ trait Filterable
         $params['paginate'] = $paginate;
         $params['flatlist'] = $flatlist;
         $params['except'] = $except;
-        $params['programs'] = explode(",", $programs);
+        $params['programs'] = $programs ? explode(",", $programs) : [];
         // pr($params);
         self::$PARAMS = array_merge(self::$DEFAULT_PARAMS, $params);
         return self::$PARAMS;
