@@ -109,7 +109,8 @@ class BudgetProgramService
                         $updated_amount = $total_amount - $amount;
 
                         if ($updated_amount < 0) {
-                            return response()->json(['error' => 'You cannot assign Budget more than you have available.'], 422);
+                            //return response()->json(['error' => 'You cannot assign Budget more than you have available.'], 422);
+                            throw new \Symfony\Component\HttpKernel\Exception\HttpException(422, 'You cannot assign Budget more than you have available.');
                         }
 
                         // Update or create the budget record
@@ -160,7 +161,8 @@ class BudgetProgramService
                     $updated_amount = $total_amount - $amount;
 
                     if ($updated_amount < 0) {
-                        return response()->json(['error' => 'You cannot assign Budget more than you have available.'], 422);
+                        //return response()->json(['error' => 'You cannot assign Budget more than you have available.'], 422);
+                        throw new \Symfony\Component\HttpKernel\Exception\HttpException(422, 'You cannot assign Budget more than you have available.');
                     }
 
                     // Update or create the budget record
@@ -193,51 +195,12 @@ class BudgetProgramService
         return $processedBudgets;
     }
 
-
-
-
-    // public function updateRemainingBudget($programBudgetId, $assignedBudget, $availableBudget)
-    // {
-    //     if ($programBudgetId && ($assignedBudget || $availableBudget)) {
-    //         $budgetProgram = BudgetProgram::find($programBudgetId);
-    //         if (!$budgetProgram) {
-    //             throw new \RuntimeException('Budget program not found.');
-    //         }
-
-    //         $budgetProgram->remaining_amount = $budgetProgram->remaining_amount - $assignedBudget + $availableBudget;
-    //         if (!$budgetProgram->save()) {
-    //             throw new \RuntimeException('Failed to update remaining amount.');
-    //         }
-    //     }
-    // }
-
-    // public function deleteBudgetRows($programBudgetId, $programBudgetsIds, $args = [])
-    // {
-    //     $budgetAmounts = [];
-    //     $budgetsCascadingIds = [];
-
-    //     foreach ($programBudgetsIds as $programId => $programBudgetsId) {
-    //         // Ensure that $programBudgetsId is an array
-    //         if (!is_array($programBudgetsId) || empty($programBudgetsId)) {
-    //             continue;
-    //         }
-
-    //         if ($args['budget_type'] == 1) {
-    //             $budgetsCascadingIds = array_merge($budgetsCascadingIds, array_column($programBudgetsId, 'budgets_cascading_id'));
-    //             $budgetAmounts = array_merge($budgetAmounts, array_column($programBudgetsId, 'budget_amount'));
-    //         } else {
-    //             $budgetsCascadingIds = array_merge($budgetsCascadingIds, array_column($programBudgetsIds, 'budgets_cascading_id'));
-    //             $budgetAmounts = array_merge($budgetAmounts, array_column($programBudgetsIds, 'budget_amount'));
-    //         }
-    //     }
-
-    //     if (!empty($budgetsCascadingIds)) {
-    //         $deletedRows = BudgetCascading::whereIn('id', $budgetsCascadingIds)->delete();
-    //         if (!$deletedRows) {
-    //             throw new \RuntimeException('Failed to delete budget rows.');
-    //         }
-    //     }
-
-    //     return array_sum($budgetAmounts);
-    // }
+    public function getBudgetCascading(BudgetProgram $budgetProgram)
+    {
+        //$budgetCascadingData = $budgetProgram->budget_cascading()->with('budget_types')->get();
+        $budgetCascadingData = $budgetProgram->budget_cascading()
+            ->with('budget_program.budget_types')
+            ->get();
+        return $budgetCascadingData;
+    }
 }

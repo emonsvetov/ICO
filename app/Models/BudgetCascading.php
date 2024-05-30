@@ -27,4 +27,9 @@ class BudgetCascading extends Model
         'status',
         'reason_for_budget_change'
     ];
+
+    public function budget_program()
+    {
+        return $this->belongsTo(BudgetProgram::class);
+    }
 }
