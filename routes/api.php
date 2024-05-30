@@ -140,6 +140,8 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
     Route::post('/v1/invitation/accept', [App\Http\Controllers\API\InvitationController::class, 'accept']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/refer-participants', [App\Http\Controllers\API\ReferralController::class, 'refer']);
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {

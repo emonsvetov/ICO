@@ -25,21 +25,24 @@ class ReportEngagementService extends ReportServiceAbstract
     //     return $this->table;
     // }
 
-    protected function calc(): array
+    protected function getBaseQuery(): Builder
     {
         // $programs = Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get();
         // $program = Program::find($this->params[self::PROGRAM_ID]);
+
         $query = DB::table('referrals');
         $query->join('programs', 'programs.id', '=', 'referrals.program_id');
-        $query->join('users', 'users.id', '=', 'referrals.sender_id');
+        $query->leftJoin('users', 'users.id', '=', 'referrals.sender_id');
 
         $query->whereBetween('referrals.created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
         $query->selectRaw("
         referrals.created_at as created,
         programs.name as program,
-        CONCAT(users.first_name, ' ', users.last_name) as referrer,
-        users.email as referrer_email,
+        COALESCE(CONCAT(users.first_name, ' ', users.last_name), CONCAT(referrals.sender_first_name, ' ', referrals.sender_last_name)) AS referrer,
+        COALESCE(users.email, referrals.sender_email) AS referrer_email,
+        CONCAT(referrals.recipient_first_name, ' ', referrals.recipient_last_name) as referree,
+        referrals.recipient_email as referree_email,
         referrals.message as message,
         (CASE
             WHEN referrals.category_referral = 1 THEN 'Referral'
@@ -49,12 +52,22 @@ class ReportEngagementService extends ReportServiceAbstract
             ELSE 'Unknown'
         END) AS category
         ");
-        $query->orderBy('referrals.created_at', 'DESC');
-        $table = $query->get();
-        $this->table['data'] = $table;
-        $this->table['total'] = count($table);
 
-        return $this->table;
+        return $query;
+    }
+
+    protected function calc()
+    {
+        $this->table = [];
+        $query = $this->getBaseQuery();
+        $this->query = $query;
+        $query = $this->setWhereFilters($query);
+        $query = $this->setGroupBy($query);
+        $query = $this->setOrderBy($query);
+        $total = count($query->get()->toArray());
+        $query = $this->setLimit($query);
+        $this->table['data'] = $query->get()->toArray();
+        $this->table['total'] = $total;
     }
 
     public function getCsvHeaders(): array

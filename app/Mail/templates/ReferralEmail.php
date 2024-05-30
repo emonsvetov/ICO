@@ -19,9 +19,9 @@ class ReferralEmail extends SendgridEmail
         string $contactFirstName,
         string $referrer_first_name,
         string $referrer_last_name,
-        string $referee_first_name,
-        string $referee_last_name,
-        string $referee_email,
+        ?string $referee_first_name,
+        ?string $referee_last_name,
+        ?string $referee_email,
         ?string $referee_area_code,
         ?string $referee_phone,
         $program
