@@ -35,6 +35,7 @@ trait Filterable
         $except = !empty($override['except']) ? $override['except'] : request()->get('except', '');
         $limit = !empty($override['limit']) ? $override['limit'] : request()->get('limit', 10);
         $paginate = !empty($override['paginate']) ? $override['paginate'] : request()->get('paginate', true);
+        $programs = !empty($override['programs']) ? $override['programs'] : request()->get('programs', []);
         $params['status'] = $status;
         $params['keyword'] = $keyword;
         $params['sortby'] = $sortby;
@@ -45,6 +46,7 @@ trait Filterable
         $params['paginate'] = $paginate;
         $params['flatlist'] = $flatlist;
         $params['except'] = $except;
+        $params['programs'] = explode(",", $programs);
         // pr($params);
         self::$PARAMS = array_merge(self::$DEFAULT_PARAMS, $params);
         return self::$PARAMS;

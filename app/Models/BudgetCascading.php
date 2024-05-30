@@ -28,14 +28,8 @@ class BudgetCascading extends Model
         'reason_for_budget_change'
     ];
 
-<<<<<<< HEAD
-    public static function budgetCascadingList()
-    {
-        return self::all();
-=======
     public function budget_program()
     {
         return $this->belongsTo(BudgetProgram::class);
->>>>>>> 061fadc1dcbd7107b18f368ae75fe340cd7e7f6c
     }
 }
