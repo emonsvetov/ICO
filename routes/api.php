@@ -90,6 +90,8 @@ Route::group([
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
         Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class,'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class,'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
         Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
     Route::group([
@@ -140,6 +142,8 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
     Route::post('/v1/invitation/accept', [App\Http\Controllers\API\InvitationController::class, 'accept']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/refer-participants', [App\Http\Controllers\API\ReferralController::class, 'refer']);
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {

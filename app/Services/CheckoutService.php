@@ -30,7 +30,8 @@ class CheckoutService
         $this->tangoVisaApiService = $tangoVisaApiService;
     }
 
-    public function processOrder( $cart, $program )   {
+    public function processOrder($cart, $program, $user = null)
+    {
 		// return Merchant::getRoot( 6 );
 
 		// pr($cart);
@@ -51,7 +52,10 @@ class CheckoutService
 
 		if( !$gift_codes ) return ['errors' => "No cart items in CheckoutService:processOrder"];
 
-		$user = auth()->user();
+        if (!$user){
+            $user = auth()->user();
+        }
+
 		// $user->account_holder_id = $user->account_holder_id;
 
         $merchantsCostToProgram = array ();

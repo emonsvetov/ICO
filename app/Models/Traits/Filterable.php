@@ -6,7 +6,7 @@ use App\Models\Traits\GetModelByMixed;
 trait Filterable
 {
     use GetModelByMixed;
-    
+
     static $DEFAULT_PARAMS = [
         'status' => '',
         'keyword' => '',
