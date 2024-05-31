@@ -46,7 +46,7 @@ trait Filterable
         $params['paginate'] = $paginate;
         $params['flatlist'] = $flatlist;
         $params['except'] = $except;
-        $params['programs'] = $programs ? explode(",", $programs) : [];
+        $params['programs'] = !is_null($programs) && !empty($programs) ? explode(",", $programs) : [];
         // pr($params);
         self::$PARAMS = array_merge(self::$DEFAULT_PARAMS, $params);
         return self::$PARAMS;
