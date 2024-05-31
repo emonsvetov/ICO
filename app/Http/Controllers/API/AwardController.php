@@ -14,6 +14,7 @@ use App\Models\Organization;
 use App\Models\Program;
 use App\Models\User;
 use App\Services\AwardService;
+use App\Services\RabbitMQService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -26,7 +27,8 @@ class AwardController extends Controller
         Organization $organization,
         Program $program,
         AwardService $awardService
-    ) {
+    )
+    {
         try {
             /** @var User $awarder */
             $awarder = auth()->user();
