@@ -435,14 +435,13 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         ->middleware('can:delete,App\TangoApi,organization,program');
 
     //HMI Configuration
-    Route::get('v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])
-        ->middleware('can:viewAny,App\Models\Hmi');
-    Route::post('v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])
-        ->middleware('can:create,App\Models\Hmi');
-    Route::put('v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])
-        ->middleware('can:update,App\Models\Hmi');
-    Route::delete('v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])
-        ->middleware('can:delete,App\Models\Hmi');
+    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])->middleware('can:viewAny,App\Hmi,organization,program');
+
+    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])->middleware('can:create,App\Hmi');
+
+    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])->middleware('can:update,App\Hmi');
+
+    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])->middleware('can:delete,App\Hmi');
 
     //ProgramLogin
 

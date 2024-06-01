@@ -31,12 +31,13 @@ class HmiController extends Controller
                 'total' => $total,
                 'limit' => $limit,
                 'offset' => $offset
-            ]);
+            ], 200);
         } catch (\Exception $e) {
             Log::error("Failed to load HMI configurations: " . $e->getMessage());
             return response()->json(['error' => 'Failed to load HMI configurations'], 500);
         }
     }
+
 
     /**
      * Create a new HMI configuration.
