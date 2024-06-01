@@ -14,8 +14,8 @@ class UserPolicy
     private function __preAuthCheck($authUser, $organization, $user = null): bool
     {
         if( !$organization )  return false;
-        if( $organization->id != $authUser->organization_id ) return false;
-        if( $user && $organization->id != $user->organization_id) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
+        if( $user && !$organization->hasUser($user)) return false;
         return true;
     }
 

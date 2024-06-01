@@ -20,7 +20,14 @@ class Organization extends BaseModel
 
     public function users()
     {
-        return $this->hasMany(User::class);
+        // return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class);
+    }
+
+    public function hasUser( User $user )
+    {
+        return true;
+        return $this->users->contains($user->id);
     }
 
     public function roles()

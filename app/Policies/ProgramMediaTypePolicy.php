@@ -14,8 +14,7 @@ class ProgramMediaTypePolicy
 
     private function __preAuthCheck($authUser, $organization, $program): bool
     {
-        if( $authUser->organization_id != $organization->id) return false;
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg( $organization ) ) return false;
         return true;
     }
 

@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 use App\Http\Requests\InvitationResendRequest;
+use App\Events\ParticipantAddedToProgram;
 use App\Http\Requests\InvitationRequest;
 use App\Http\Controllers\Controller;
 use App\Events\InvitationAccepted;
@@ -26,18 +27,28 @@ class InvitationController extends Controller
      */
     public function invite(InvitationRequest $request, Organization $organization, Program $program)
     {
+
         DB::beginTransaction();
         try {
             $validated = $request->validated();
-            $validated['organization_id'] = $organization->id;
-            $generatedPassword = rand();
-            $validated['password'] = $generatedPassword;
 
-            $user = User::createAccount($validated);
-            // $user = User::find( 553 );
-            $token = Password::broker()->createToken($user);
-
+            // pr($validated);
+            // exit;
             $roles[] = Role::getIdByName(config('roles.participant'));
+
+            //First of all check for the existense of user in the system
+
+            $user = User::where('email', 'like', $validated['email'])->first();
+
+            if( !$user ) {
+                $validated['organization_id'] = $organization->id;
+                $generatedPassword = rand();
+                $validated['password'] = $generatedPassword;
+
+                $user = User::createAccount($validated);
+                // $user = User::find( 553 );
+                $token = Password::broker()->createToken($user);
+            }
 
             if (!empty($roles)) {
                 $program->users()->sync([$user->id], false);
@@ -46,9 +57,15 @@ class InvitationController extends Controller
             if ( ! empty($validated['unit_number']) ) {
                 (new \App\Services\UserService)->updateUnitNumber($user, $validated['unit_number']);
             }
-            event(new UserInvited($user, $program, $token));
+            if( !empty($token) )    {
+                event(new UserInvited($user, $program, $token));
+            }   else {
+                event(new ParticipantAddedToProgram($user, $program));
+            }
+
             DB::commit();
             return response(['user' => $user]);
+
         } catch (\Exception $e) {
             DB::rollBack();
             if (config('app.env') != 'production') {

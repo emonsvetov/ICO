@@ -165,7 +165,15 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return $this->belongsTo(Organization::class);
     }
-
+    public function organizations()
+    {
+        return $this->belongsToMany(Organization::class);
+    }
+    public function belongsToOrg( Organization $organization)
+    {
+        return true;
+        return $this->organizations->contains($organization->id);
+    }
     public function status()
     {
         return $this->belongsTo(Status::class, 'user_status_id');
