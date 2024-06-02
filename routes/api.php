@@ -437,6 +437,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //HMI Configuration
     Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])->middleware('can:viewAny,App\Hmi,organization,program');
 
+    Route::get('/v1/hmi/{id}', [App\Http\Controllers\API\HmiController::class, 'view'])
+        ->middleware('can:view,App\Hmi');
+
     Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])->middleware('can:create,App\Hmi');
 
     Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])->middleware('can:update,App\Hmi');
