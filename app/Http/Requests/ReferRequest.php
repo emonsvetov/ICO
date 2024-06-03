@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ReferralRequest extends FormRequest
+class ReferRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,8 +24,9 @@ class ReferralRequest extends FormRequest
     public function rules()
     {
         return [
-            'sender_id' => 'required|integer',
-            'more_info'=>'integer|nullable',
+            'sender_first_name' => 'required|string',
+            'sender_last_name' => 'required|string',
+            'sender_email' => 'required|email',
             'category_referral'=>'integer|nullable',
             'category_feedback'=>'integer|nullable',
             'category_lead'=>'integer|nullable',
@@ -36,11 +37,6 @@ class ReferralRequest extends FormRequest
             'recipient_email' => [
                 "nullable",
                 "email:filter"
-            ],
-            'recipient_area_code' => 'required|string',
-            'recipient_phone' => [
-                "required",
-                'regex:/^[\w-]*$/'
             ],
             'message' => 'required|string'
         ];
