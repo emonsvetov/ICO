@@ -4,11 +4,11 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-use App\Models\Traits\CsvImport;
+use App\Models\Traits\CSVImport;
 
 class CSVImportAddAndAwardUsersRequest extends FormRequest
 {
-    use CsvImport;
+    use CSVImport;
     // public array $inlineRules = [
     //     'program_id' => 'required|integer',
     //     'first_name' => 'required|string',

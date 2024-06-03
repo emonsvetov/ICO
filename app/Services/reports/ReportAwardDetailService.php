@@ -17,13 +17,18 @@ class ReportAwardDetailService extends ReportServiceAbstract
     {
         $selectedPrograms = $this->params[self::PROGRAM_IDS];
         $query = DB::table('users');
-        $query->join('program_user', 'program_user.user_id', '=', 'users.id');
-        $query->join('programs', 'programs.id', '=', 'program_user.program_id');
         $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
         $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
         $query->join('postings', 'postings.account_id', '=', 'accounts.id');
         $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
         $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
+        $query->join('postings as program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts as program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('account_types as program_account_types', function ($join) {
+            $join->on('program_account_types.id', '=', 'program_accounts.account_type_id');
+        });
+        $query->join('programs', 'programs.account_holder_id', '=', 'program_accounts.account_holder_id');
+
         $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
         $query->leftJoin('users as awarder', 'awarder.account_holder_id', '=', 'event_xml_data.awarder_account_holder_id');
         $query->leftJoin('events', function ($join) use ($selectedPrograms) {
@@ -145,10 +150,10 @@ class ReportAwardDetailService extends ReportServiceAbstract
      */
     protected function setWhereFilters(Builder $query): Builder
     {
-        $query->where(function ($q) {
-            $q->where('account_types.name', '=', AccountType::getTypePointsAwarded())
-                ->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());
-        });
+        $query->whereIn('account_types.name', [
+            AccountType::getTypePointsAwarded(),
+            AccountType::getTypeMoniesAwarded(),
+        ]);
         $query->whereIn('journal_event_types.type', [
             'Award points to recipient',
             'Award monies to recipient',
@@ -182,7 +187,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
      */
     protected function setOrderBy(Builder $query): Builder
     {
-        $query->orderBy('postings.created_at');
+        $query->orderBy('postings.created_at', 'DESC');
         return $query;
     }
 

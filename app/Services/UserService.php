@@ -3,7 +3,13 @@
 namespace App\Services;
 
 use App\Http\Requests\UserRequest;
+use App\Models\Account;
 use App\Models\AccountType;
+use App\Models\Currency;
+use App\Models\FinanceType;
+use App\Models\JournalEvent;
+use App\Models\JournalEventType;
+use App\Models\MediumType;
 use App\Models\Organization;
 use App\Models\Posting;
 use App\Models\Program;
@@ -17,6 +23,7 @@ use App\Http\Traits\MediaUploadTrait;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
+use InvalidArgumentException;
 
 class UserService
 {
@@ -414,63 +421,6 @@ class UserService
         return $res;
     }
 
-    public function reclaimPointItems(int $accountHolderId, int $programId, int $postingId = 0)
-    {
-        $query = DB::table('postings');
-        $query->join('journal_events', 'postings.journal_event_id', '=', 'journal_events.id');
-        $query->join('accounts', 'accounts.id', '=', 'postings.account_id');
-        $query->join('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
-        $query->join('events', 'events.id', '=', 'event_xml_data.event_template_id');
-        $query->join('programs', 'programs.id', '=', 'events.program_id');
-        $query->join('expiration_rules', 'expiration_rules.id', '=', 'programs.expiration_rule_id');
-        $query->where('accounts.account_holder_id', '=', $accountHolderId);
-        $query->where('events.program_id', '=', $programId);
-        $query->where('postings.posting_amount', '>', 0);
-        $query->whereNull('postings.date_reclaim');
-
-        if ($postingId) {
-            $query->where('postings.id', '=', $postingId);
-        }
-
-        $query->orderByDesc('journal_events.created_at');
-        $query->select(
-            'postings.id as key',
-            'events.id as events_id',
-            'programs.id as programs_id',
-            'event_xml_data.id as event_xml_data_id',
-            'events.organization_id as organization_id',
-            'postings.posting_amount as points_value',
-            'postings.created_at as date_awarded',
-            'event_xml_data.name as event',
-            'programs.expiration_rule_id as expiration_date',
-            'programs.expiration_rule_id as expiration_rule_id',
-            'programs.custom_expire_offset as custom_expire_offset',
-            'programs.custom_expire_units as custom_expire_units',
-            'programs.annual_expire_month as annual_expire_month',
-            'programs.annual_expire_day as annual_expire_day',
-            'expiration_rules.description as expiration_description',
-            DB::raw("'Disabled on Program Level' as award_credit")
-        );
-        $res = $query->get();
-
-        $arrayData = $res->toArray();
-
-        $filteredArrayData = [];
-        foreach ($arrayData as $val) {
-            $expirationDate = $this->calculateExpirationDate($val);
-            if ($expirationDate !== false) {
-                $val->points_value = round($val->points_value, 2);
-                if (intval($val->points_value) == $val->points_value) {
-                    $val->points_value = number_format($val->points_value, 2);
-                }
-                $val->expiration_date = $expirationDate;
-                $filteredArrayData[] = $val;
-            }
-        }
-
-        return $filteredArrayData;
-    }
-
     public function getUserBalance($accountHolderId)
     {
         $results = DB::table('accounts')
@@ -533,58 +483,128 @@ class UserService
         ];
     }
 
-    public function reclaim($request)
+    public function reclaim($request, $user)
     {
-        $success = false;
-        $error = "";
-        $errorCode = 0;
-        $errorData = [];
+        $result = [
+            'success' => false,
+        ];
 
-        $user = User::find($request->userId);
-        if (is_object($user)) {
+        try {
+            DB::beginTransaction();
+
             $awardService = new AwardService();
-            $item = $this->reclaimPointItems($user->account_holder_id, $request->programId, $request->postingId)[0];
-            $program = Program::find($item->programs_id);
-            $data = [
-                'journal_event_id' => $item->event_xml_data_id,
-                'amount' => (float)$item->points_value,
-                'note' => $request->notes,
-            ];
+            $user = User::findOrFail($request->userId);
+            $program = Program::where('account_holder_id', $request->program_account_holder_id)->first();
 
-            $amount_balance = $user->readAvailableBalance($program, $user);
-            // $peerBalance = $this->readAvailablePeerBalance($user, $program);
-            $balance = $amount_balance;
-            if ($balance >= $item->points_value) {
-                $res = $awardService->reclaimPoints($program, $user, $data);
-                if ($res) {
-                    $posting = Posting::find($item->key);
-                    $posting->date_reclaim = now();
-                    $posting->save();
-                    $success = true;
-                    $error = "";
-                    $errorCode = 0;
-                    $errorData = [];
+            $posting = Posting::findOrFail($request->postingId);
+            $parentJournalEventId = $posting->journal_event_id;
+            $amount = $posting->posting_amount;
+            $event_xml_data_id = $posting->journalEvent->event_xml_data_id;
+            $notes = $request->notes;
+
+            $reclaimableList = $awardService->readListExpireFuture($program, $user)['expiration'];
+            sort($reclaimableList);
+
+            $totalReclaimAble = 0;
+            foreach ( $reclaimableList as $reclaimablePosting ) {
+                if ($reclaimablePosting->program_id != $program->account_holder_id) {
+                    continue;
                 }
-            } else {
-                $error = "Insufficient funds in the account";
-                $errorCode = 404;
-                $errorData = [];
+                $totalReclaimAble += $reclaimablePosting->amount;
             }
-        } else {
-            $success = false;
-            $errorCode = 404;
-            $error = "User not found";
-            $errorData = [
-                'userId' => "User not found"
-            ];
+
+            if (compare_floats ( $totalReclaimAble, $amount ) > 0) {
+                throw new InvalidArgumentException ( "The total reclaimable amount for this user is less than the amount trying to be reclaimed ({$totalReclaimAble} < {$amount})" );
+            }
+
+
+            // @todo award_credit is always disabled, this feature is not implemented
+            $award_credit_date_start = null;
+            $asset = FinanceType::getIdByName('Asset', true);
+            $liability = FinanceType::getIdByName('Liability');
+            $points = MediumType::getIdByName('Points', true);
+            $monies = MediumType::getIdByName('Monies', true);
+            $currency_id = Currency::getIdByType(config('global.default_currency'), true);
+
+            if ($program->program_is_invoice_for_awards ()) {
+                $journalEventTypeName = $award_credit_date_start ? JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_POINTS : JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS;
+            } else {
+                $journalEventTypeName = $award_credit_date_start ? JournalEventType::JOURNAL_EVENT_TYPES_AWARD_CREDIT_RECLAIM_MONIES : JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_MONIES;
+            }
+
+            $journalEventTypeId = JournalEventType::getIdByType( $journalEventTypeName );
+            $journalEventId = JournalEvent::insertGetId([
+                'journal_event_type_id' => $journalEventTypeId,
+                'event_xml_data_id' => null,
+                'notes' => $notes,
+                'parent_journal_event_id' => $parentJournalEventId,
+                'prime_account_holder_id' => $user->account_holder_id,
+                'created_at' => now()
+            ]);
+
+
+            if ($program->program_is_invoice_for_awards ()) {
+                $accountPostings = Account::postings(
+                    $user->account_holder_id,
+                    AccountType::ACCOUNT_TYPE_POINTS_AWARDED,
+                    $liability,
+                    $points,
+                    $program->account_holder_id,
+                    AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE,
+                    $liability,
+                    $points,
+                    $journalEventId,
+                    $amount,
+                    1, //qty
+                    null, // medium_info
+                    null, // medium_info_id
+                    $currency_id
+                );
+
+                $accountPostings = Account::postings(
+                    $user->account_holder_id,
+                    AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE,
+                    $liability,
+                    $points,
+                    $program->account_holder_id,
+                    AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
+                    $asset,
+                    $monies,
+                    $journalEventId,
+                    $amount,
+                    1, //qty
+                    null, // medium_info
+                    null, // medium_info_id
+                    $currency_id
+                );
+            } else {
+                $accountPostings = Account::postings(
+                    $user->account_holder_id,
+                    AccountType::ACCOUNT_TYPE_MONIES_AWARDED,
+                    $liability,
+                    $monies,
+                    $program->account_holder_id,
+                    AccountType::ACCOUNT_TYPE_MONIES_AVAILABLE,
+                    $asset,
+                    $monies,
+                    $journalEventId,
+                    $amount,
+                    1, //qty
+                    null, // medium_info
+                    null, // medium_info_id
+                    $currency_id
+                );
+            }
+
+            $result['success'] = true;
+
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollBack();
+            $result['error'] = $e->getMessage();
         }
 
-        return [
-            'success' => $success,
-            'error' => $error,
-            'errorCode' => $errorCode,
-            'errorData' => $errorData,
-        ];
+        return $result;
     }
 
     /**
