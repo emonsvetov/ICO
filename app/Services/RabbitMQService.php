@@ -62,8 +62,14 @@ class RabbitMQService
 
     public function __destruct()
     {
-        $this->channel->close();
-        $this->connection->close();
+        if (isset($this->channel)){
+            $this->channel->close();
+        }
+
+        if (isset($this->connection)){
+            $this->connection->close();
+        }
+
     }
 
     public function redeem($data,$program,$user)
