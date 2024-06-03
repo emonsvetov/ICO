@@ -41,7 +41,7 @@ class UserGoalPolicy
 
         if($authUser->isAdmin()) return true;
 
-        return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-list');
+        return $authUser->isParticipantToProgram( $program ) || $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-list');
     }
 
     public function readActiveByProgramAndUser(User $authUser, Organization $organization, Program $program, User $user)

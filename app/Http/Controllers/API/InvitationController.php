@@ -128,11 +128,12 @@ class InvitationController extends Controller
                     $domain = $domainService->getDomain();
 
                     if ($user && $domain) {
-                        $user->load(['organization']);
+                        // $user->load(['organization']);
                         $user->programRoles = $user->getCompiledProgramRoles(null, $domain);
                         if ($user->programRoles) {
                             foreach ($user->programRoles as $programRole) {
                                 $program = Program::find($programRole['id']);
+                                $program->load(['organization']);
                                 if ($program->exists()) {
                                     $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
                                     $response['access_token'] = $accessToken;
