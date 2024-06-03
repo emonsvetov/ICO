@@ -123,6 +123,7 @@ class Hmi extends Model
      * @param int $id
      * @return bool|null
      */
+
     public static function deleteConfiguration(int $id): ?bool
     {
         try {
