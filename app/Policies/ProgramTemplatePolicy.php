@@ -15,7 +15,7 @@ class ProgramTemplatePolicy
 
     private function __preAuthCheck($authUser, $organization, $program, $programTemplate = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id) return false;
         if($programTemplate && $programTemplate->program_id != $program->id) return false;
         return true;
