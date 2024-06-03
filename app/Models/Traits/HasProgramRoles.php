@@ -2,6 +2,7 @@
 namespace App\Models\Traits;
 
 use App\Models\AwardLevelHasUser;
+use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Domain;
 use FontLib\TrueType\Collection;
