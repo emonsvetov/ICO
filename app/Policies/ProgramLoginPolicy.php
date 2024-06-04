@@ -23,7 +23,8 @@ class ProgramLoginPolicy
      */
     public function login(User $user, Organization $organization, Program $program)
     {
-        if( $organization->id != $user->organization_id ) return false;
+        // if( !$organization->hasUser($user) ) return false;
+        if( !$user->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id ) return false;
         // dd(request()->all());
         return true;

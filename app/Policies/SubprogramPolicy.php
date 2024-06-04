@@ -13,7 +13,7 @@ class SubprogramPolicy
     use HandlesAuthorization;
 
     private function __preAuthCheck($authUser, $organization, $program = null)   {
-        if( $authUser->organization_id != $organization->id) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $program && $program->organization_id != $organization->id) return false;
         return true;
     }
