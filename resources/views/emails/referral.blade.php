@@ -23,7 +23,7 @@ border-left:solid 1px;
                 <p style="margin-left:20px; margin-right:20px;">
                     Congratulations! You've just received a submission from {{$referrer_first_name}} {{$referrer_last_name}}.
                 </p>
-                @if (isset($referee_first_name) && isset($referee_last_name) && isset($referee_email))
+                @if (!empty($referee_first_name) && !empty($referee_last_name) && !empty($referee_email))
                     <p style="margin-left:20px; margin-right:20px;">
                         Full name: {{$referee_first_name}} {{$referee_last_name}}
                     </p>

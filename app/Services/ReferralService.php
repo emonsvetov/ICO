@@ -76,34 +76,32 @@ class ReferralService
     }
 
     public function referParticipant(Organization $organization, Program $program, $data )  {
-        $referral = Referral::create($data);
-
-        $notification =  [
-            'sender_first_name' => $referral->sender_first_name,
-            'sender_last_name' => $referral->sender_last_name,
-            'recipient_first_name' => $referral->recipient_first_name,
-            'recipient_last_name' => $referral->recipient_last_name,
-            'recipient_email' => $referral->recipient_email,
-            'recipient_area_code' => '',
-            'recipient_phone' => '',
-            'message' => $referral->message,
-            'program' => $program
-        ];
-        // pr($notification);
         $userData =  [
-            'first_name' => $referral->sender_first_name,
-            'last_name' => $referral->sender_last_name,
-            'email' => $referral->sender_email,
-        ];
-        
-        $this->__notify($organization, $program, $notification);
-        $user = User::where('email', $referral->sender_email)->first();
+            'first_name' => $data['sender_first_name'],
+            'last_name' => $data['sender_last_name'],
+            'email' => $data['sender_email'],
+        ];        
+        $user = User::where('email', $data['sender_email'])->first();
+
         if($user == null){
             $newUser = $this->__invite($organization, $program, $userData);
+            $referral = Referral::create($data);
+            $notification =  [
+                'sender_first_name' => $referral->sender_first_name,
+                'sender_last_name' => $referral->sender_last_name,
+                'recipient_first_name' => $referral->recipient_first_name,
+                'recipient_last_name' => $referral->recipient_last_name,
+                'recipient_email' => $referral->recipient_email,
+                'recipient_area_code' => '',
+                'recipient_phone' => '',
+                'message' => $referral->message,
+                'program' => $program
+            ];
+            $this->__notify($organization, $program, $notification);
             return [$referral, $newUser];
         }
         else{
-            return [$referral, null];
+            return [null, null];
         }
     }
 
