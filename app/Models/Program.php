@@ -89,6 +89,11 @@ class Program extends BaseModel
         return $this->hasMany(BudgetProgram::class);
     }
 
+    public function budgets_cascading()
+    {
+        return $this->hasMany(BudgetCascading::class);
+    }
+
     public function address()
     {
         return $this->hasOne(Address::class, 'account_holder_id', 'account_holder_id')->with(['state', 'country']);

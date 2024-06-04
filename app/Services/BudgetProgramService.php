@@ -220,8 +220,8 @@ class BudgetProgramService
     public function getBudgetCascading(BudgetProgram $budgetProgram)
     {
         //$budgetCascadingData = $budgetProgram->budget_cascading()->with('budget_types')->get();
-        $budgetCascadingData = $budgetProgram->budget_cascading()
-            ->with('budget_program.budget_types')
+        $budgetCascadingData = Program::with('budgets_cascading')
+            ->select('id', 'name')
             ->get();
         return $budgetCascadingData;
     }

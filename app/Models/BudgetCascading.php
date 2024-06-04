@@ -32,4 +32,9 @@ class BudgetCascading extends Model
     {
         return $this->belongsTo(BudgetProgram::class);
     }
+
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
+    }
 }
