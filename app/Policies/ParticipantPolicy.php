@@ -13,9 +13,9 @@ class ParticipantPolicy
     use HandlesAuthorization;
 
     private function __preAuthCheck($authUser, $organization, $program = null, $user = null)   {
-        if( $authUser->organization_id != $organization->id) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $program && $program->organization_id != $organization->id) return false;
-        if( $user && $user->organization_id != $organization->id) return false;
+        if( $user && !$organization->hasUser($user)) return false;
         return true;
     }
 

@@ -20,7 +20,7 @@ class ImportPolicy
      * @return mixed
      */
     private function __preAuthCheck(User $authUser, Organization $organization, Program $program = null)   {
-        if( $authUser->organization_id != $organization->id) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $program && $authUser->organization_id != $program->organization_id) return false;
         return true;
     }

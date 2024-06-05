@@ -14,7 +14,7 @@ class LeaderboardGoalPlanPolicy
 
     private function __preAuthCheck($authUser, $organization, $program, $leaderboard): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id ) return false;
         if( $organization->id != $leaderboard->organization_id ) return false;
         return true;

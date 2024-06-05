@@ -16,6 +16,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Traits\OrgHasUserViaProgram;
 use App\Models\Traits\HasProgramRoles;
 use App\Models\Traits\GetModelByMixed;
 use App\Models\Traits\IdExtractor;
@@ -28,7 +29,7 @@ use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope, GetModelByMixed;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope, GetModelByMixed, OrgHasUserViaProgram;
     use SoftDeletes;
 
     const IMAGE_FIELDS = ['avatar'];
@@ -165,7 +166,17 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return $this->belongsTo(Organization::class);
     }
-
+    public function organizations()
+    {
+        return $this->belongsToMany(Organization::class)->withTimestamps();
+    }
+    public function belongsToOrg( Organization $organization )
+    {
+        if( $this->organizations->contains($organization->id) ) {
+            return true;
+        }
+        return $this->orgHasUserViaProgram($organization, $this, true);
+    }
     public function status()
     {
         return $this->belongsTo(Status::class, 'user_status_id');

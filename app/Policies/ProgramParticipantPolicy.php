@@ -13,14 +13,14 @@ class ProgramParticipantPolicy
     use HandlesAuthorization;
     public function viewAny(User $user, Organization $organization, Program $program)
     {
-        if( $user->organization_id !== $organization->id ) return false;
+        if( !$user->belongsToOrg( $organization ) ) return false;
         if( $program->organization_id !== $organization->id ) return false;
         return true;
     }
 
     public function changeStatus(User $user, Organization $organization, Program $program)
     {
-        if( $user->organization_id !== $organization->id ) return false;
+        if( !$user->belongsToOrg( $organization ) ) return false;
         if( $program->organization_id !== $organization->id ) return false;
         if( $user->isAdmin() ) return true;
         return $user->isManagerToProgram( $program ) || $user->can('program-participant-change-status');

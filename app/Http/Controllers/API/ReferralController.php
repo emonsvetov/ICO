@@ -39,14 +39,13 @@ class ReferralController extends Controller
             ]
         );
 
-        if ( !$newReferral )
-        {
-            return response(['errors' => 'Referral creation failed'], 422);
-        }
-
         if ( !$newUser )
         {
             return response(['errors' => 'Invitation failed'], 422);
+        }
+        else if ( !$newReferral )
+        {
+            return response(['errors' => 'Referral creation failed'], 422);
         }
 
         return response([ 'referral' => $newReferral, 'user' => $newUser ]);
