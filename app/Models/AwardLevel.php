@@ -15,4 +15,14 @@ class AwardLevel extends Model
     {
         return $this->belongsTo(ProgramAccountHolder::class);
     }
+
+    public static function readAllAwardLevelsByEvent($programId, $eventId)
+    {
+        return self::selectRaw('award_levels.*, event_award_level.amount')
+            ->join('event_award_level', 'event_award_level.award_level_id', '=', 'award_levels.id')
+            ->where('award_levels.program_id', $programId)
+            ->where('event_award_level.event_id', $eventId)
+            ->get();
+    }
+
 }

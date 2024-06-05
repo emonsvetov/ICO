@@ -17,20 +17,26 @@ class ReportAwardDetailService extends ReportServiceAbstract
     {
         $selectedPrograms = $this->params[self::PROGRAM_IDS];
         $query = DB::table('users');
-        $query->join('program_user', 'program_user.user_id', '=', 'users.id');
-        $query->join('programs', 'programs.id', '=', 'program_user.program_id');
         $query->join('accounts', 'accounts.account_holder_id', '=', 'users.account_holder_id');
         $query->join('account_types', 'account_types.id', '=', 'accounts.account_type_id');
         $query->join('postings', 'postings.account_id', '=', 'accounts.id');
         $query->join('journal_events', 'journal_events.id', '=', 'postings.journal_event_id');
         $query->join('journal_event_types', 'journal_event_types.id', '=', 'journal_events.journal_event_type_id');
-        $query->join('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
-        $query->join('users as awarder', 'awarder.account_holder_id', '=', 'event_xml_data.awarder_account_holder_id');
+        $query->join('postings as program_posting', 'program_posting.journal_event_id', '=', 'journal_events.id');
+        $query->join('accounts as program_accounts', 'program_accounts.id', '=', 'program_posting.account_id');
+        $query->join('account_types as program_account_types', function ($join) {
+            $join->on('program_account_types.id', '=', 'program_accounts.account_type_id');
+        });
+        $query->join('programs', 'programs.account_holder_id', '=', 'program_accounts.account_holder_id');
+
+        $query->leftJoin('event_xml_data', 'event_xml_data.id', '=', 'journal_events.event_xml_data_id');
+        $query->leftJoin('users as awarder', 'awarder.account_holder_id', '=', 'event_xml_data.awarder_account_holder_id');
         $query->leftJoin('events', function ($join) use ($selectedPrograms) {
             $join->on('events.name', '=', 'event_xml_data.name')
                 ->whereIn('events.program_id', $selectedPrograms);
         });
         $query->leftJoin('event_ledger_codes', 'event_ledger_codes.id', '=', 'events.ledger_code');
+        $query->leftJoin('users as reclaim_user', 'reclaim_user.id', '=', 'journal_events.prime_account_holder_id');
 
         $query->addSelect([
             'programs.account_holder_id as program_id',
@@ -85,9 +91,23 @@ class ReportAwardDetailService extends ReportServiceAbstract
         ]);
         $query->addSelect([
             'awarder.account_holder_id as awarder_id',
-            'awarder.first_name as awarder_first_name',
-            'awarder.last_name as awarder_last_name',
-            DB::raw("CONCAT(`awarder`.`first_name`, ' ', `awarder`.`last_name`) AS awarder_full")
+            DB::raw("
+                CASE
+                    WHEN (`journal_event_types`.`type` = 'Reclaim points' OR `journal_event_types`.`type` = 'Reclaim monies')
+                    THEN `journal_events`.`notes`
+                    ELSE `event_xml_data`.`notes`
+                END AS `notes`,
+                CASE
+                    WHEN (`journal_event_types`.`type` = 'Reclaim points' OR `journal_event_types`.`type` = 'Reclaim monies')
+                    THEN CONCAT(reclaim_user.`first_name`, ' ', `reclaim_user`.`last_name`)
+                    ELSE CONCAT(`awarder`.`first_name`, ' ', `awarder`.`last_name`)
+                END AS `awarder_full`,
+                CASE
+                    WHEN (`journal_event_types`.`type` = 'Reclaim points' OR `journal_event_types`.`type` = 'Reclaim monies')
+                    THEN `reclaim_user`.`email`
+                    ELSE ''
+                END AS `awarder_email`
+            ")
         ]);
         $query->addSelect([
             'accounts.id as account_id',
@@ -111,15 +131,29 @@ class ReportAwardDetailService extends ReportServiceAbstract
 
     }
 
+    protected function calc()
+    {
+        $this->table = [];
+        $query = $this->getBaseQuery();
+        $this->query = $query;
+        $query = $this->setWhereFilters($query);
+        $query = $this->setGroupBy($query);
+        $query = $this->setOrderBy($query);
+        $total = count($query->get()->toArray());
+        $query = $this->setLimit($query);
+        $this->table['data'] = $query->get()->toArray();
+        $this->table['total'] = $total;
+    }
+
     /**
      * @inheritDoc
      */
     protected function setWhereFilters(Builder $query): Builder
     {
-        $query->where(function ($q) {
-            $q->where('account_types.name', '=', AccountType::getTypePointsAwarded());
-                /*->orWhere('account_types.name', '=', AccountType::getTypeMoniesAwarded());*/
-        });
+        $query->whereIn('account_types.name', [
+            AccountType::getTypePointsAwarded(),
+            AccountType::getTypeMoniesAwarded(),
+        ]);
         $query->whereIn('journal_event_types.type', [
             'Award points to recipient',
             'Award monies to recipient',
@@ -127,11 +161,10 @@ class ReportAwardDetailService extends ReportServiceAbstract
             'Reclaim monies'
         ]);
 
-        $from = Carbon::parse($this->params[self::DATE_BEGIN])->addDays(1)->toDateTimeString();
+        $from = Carbon::parse($this->params[self::DATE_BEGIN])->addDays(0)->toDateTimeString();
         $to = Carbon::parse($this->params[self::DATE_END])->addDays(2)->toDateTimeString();
         $query->whereBetween('postings.created_at', [$from, $to]);
         $query->whereIn('programs.account_holder_id', $this->params[self::PROGRAMS]);
-        $query->whereIn('events.program_id', $this->params[self::PROGRAM_IDS]);
         if (isset($this->params[self::AWARD_LEVEL_NAMES]) && count($this->params[self::AWARD_LEVEL_NAMES]) > 0)
         {
             $query->whereIn('event_xml_data.award_level_name', $this->params[self::AWARD_LEVEL_NAMES]);
@@ -154,7 +187,7 @@ class ReportAwardDetailService extends ReportServiceAbstract
      */
     protected function setOrderBy(Builder $query): Builder
     {
-        $query->orderBy('postings.created_at');
+        $query->orderBy('postings.created_at', 'DESC');
         return $query;
     }
 

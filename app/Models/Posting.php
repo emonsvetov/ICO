@@ -70,4 +70,10 @@ class Posting extends Model
             'credit' => $credit_posting,
         ];
     }
+
+    public function journalEvent()
+    {
+        return $this->hasOne(JournalEvent::class, 'id', 'journal_event_id');
+    }
+
 }

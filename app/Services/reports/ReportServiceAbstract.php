@@ -252,6 +252,10 @@ abstract class ReportServiceAbstract
         }
     }
 
+    protected function prepareCalcResults($data){
+        return $data;
+    }
+
 	protected function calcByDateRange( $params = [] )
     {
         $this->table = [];
@@ -265,7 +269,7 @@ abstract class ReportServiceAbstract
                 // pr($query->count());
                 $query = $this->setOrderBy($query);
                 $query = $this->setLimit($query);
-                $this->table = $query->get()->toArray();
+                $this->table = $this->prepareCalcResults($query->get()->toArray());
             } catch (\Exception $exception) {
                print_r($exception->getMessage());
                die;
@@ -429,6 +433,18 @@ abstract class ReportServiceAbstract
             $newTable[$tableKey]->subRows = $subRows;
         }
         return $newTable;
+    }
+
+    public function getCount( Builder $query ){
+	    $originalQuery = clone $query;
+        $originalQuery->limit  = null;
+        $originalQuery->offset = null;
+        $sql = $originalQuery->toSql();
+        $values = $originalQuery->getBindings();
+        $countQuery = DB::table(DB::raw('('.$sql.') AS `temp`'))
+            ->selectRaw("COUNT(*) AS 'count'", $values);
+        $count = $countQuery->first()->count;
+        return $count;
     }
 
 }

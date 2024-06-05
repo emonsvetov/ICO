@@ -35,7 +35,7 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
             users.email AS recipient_email,
             users.first_name AS recipient_first_name,
             users.last_name AS recipient_last_name,
-            users.organization_id AS recipient_organization_uid,
+            users.external_id AS recipient_organization_uid,
             users.hire_date AS anniversary,
             users.user_status_id,
             programs.external_id,
@@ -124,7 +124,7 @@ class ReportParticipantAccountSubprogramService extends ReportServiceAbstract
         if ($this->params[self::PAGINATE]) {
             return [
                 'data' => $this->table,
-                'total' => $this->query instanceof Builder ? $this->query->count('users.id') : count($this->table),
+                'total' => $this->query instanceof Builder ? $this->getCount($this->query) : count($this->table),
             ];
         }
         return $this->table;

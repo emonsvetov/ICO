@@ -2,6 +2,7 @@
 namespace App\Models\Traits;
 
 use App\Models\AwardLevelHasUser;
+use App\Models\Organization;
 use App\Models\Program;
 use App\Models\Domain;
 use FontLib\TrueType\Collection;
@@ -51,10 +52,12 @@ trait HasProgramRoles
         }
         $domain->load('programs');
         //Lets try to find it in associated programs aka parent programs
+        $loadedFor = [];
         foreach( $domain->programs as $program)    {
             $programRoles = $this->getProgramRolesByProgram($program);
             if( $programRoles->isNotEmpty() ) {
                 $allRoles = $allRoles->merge($programRoles);
+                array_push($loadedFor, $program->id);
                 // return $programRoles;
             }
         }
@@ -64,11 +67,13 @@ trait HasProgramRoles
             // pr($descendants->toArray());
             if( !$descendants->isEmpty() ) {
                 foreach( $descendants as $child)    {
+                    if(in_array($child->id, $loadedFor)) continue;
                     $programRoles = $this->getProgramRolesByProgram($child);
                     if( !$programRoles->isEmpty() ) {
                         // pr($programRoles);
                         $allRoles = $allRoles->merge($programRoles);
                         // return $programRoles;
+                        array_push($loadedFor, $child->id);
                     }
                 }
             }
@@ -174,7 +179,7 @@ trait HasProgramRoles
             $roleId = $_role->id;
             $programId = $_role->pivot->program_id;
             if( !isset( $programs[$programId] ) )   {
-                $program = Program::where( 'id', $programId )->select('id', 'name')->first();
+                $program = Program::where( 'id', $programId )->select('id', 'name', 'organization_id')->with('organization')->first();
                 $programs[$programId] = $program;
             }
             else
@@ -255,6 +260,7 @@ trait HasProgramRoles
         return $this->isProgramParticipant( $program );
     }
     public function isManager( $program ) {
+        if( !$program ) return false;
         $program = Program::getModelByMixed($program);
         $isManager = $this->hasAnyRoleInProgram([
             config('roles.manager'),

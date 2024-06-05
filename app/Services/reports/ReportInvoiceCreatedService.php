@@ -16,46 +16,37 @@ class ReportInvoiceCreatedService extends ReportServiceAbstract
      */
     protected function getBaseQuery(): Builder
     {
-        $POSTINGS = 'postings';
-        $ACCOUNTS = 'accounts';
-        $PROGRAMS = 'programs';
-        $ACCOUNT_TYPES = 'account_types';
-        $JOURNAL_EVENTS = 'journal_events';
-        $JOURNAL_EVENT_TYPES = 'journal_event_types';
-        $EVENT_XML_DATA = 'event_xml_data';
-        $INVOICE_JOURNAL_EVENTS = 'invoice_journal_event';
-        $INVOICES_TBL = 'invoices';
-        $USERS = 'users';
+        $query = DB::table('postings');
 
-        $query = DB::table($POSTINGS);
+        $journalEventTypes = [
+            JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING,
+            JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE
+        ];
 
-        $select = "$ACCOUNTS.account_holder_id,
-        $PROGRAMS.name,
-        IFNULL($PROGRAMS.v2_account_holder_id, $PROGRAMS.account_holder_id) as program_id,
-        CONCAT($USERS.last_name, ' ', $USERS.first_name) AS admin,
-        $POSTINGS.id AS posting_id,
-        (CAST($POSTINGS.qty AS UNSIGNED) * $POSTINGS.posting_amount) AS amount,
-        $POSTINGS.created_at AS date_paid,
-        $POSTINGS.is_credit,
-        CONCAT($INVOICES_TBL.key, '-', $INVOICES_TBL.seq) AS invoice_number,
-        $INVOICES_TBL.id AS invoice_id,
-        $JOURNAL_EVENT_TYPES.type AS journal_event_type,
-        $JOURNAL_EVENTS.notes";
-        $query->join($ACCOUNTS, "$ACCOUNTS.id", "=", "$POSTINGS.account_id")
-            ->join($PROGRAMS, "$PROGRAMS.account_holder_id", "=", "$ACCOUNTS.account_holder_id")
-            ->join($ACCOUNT_TYPES, "$ACCOUNT_TYPES.id", "=", "$ACCOUNTS.account_type_id")
-            ->join($JOURNAL_EVENTS, "$JOURNAL_EVENTS.id", "=", "$POSTINGS.journal_event_id")
-            ->join($JOURNAL_EVENT_TYPES, "$JOURNAL_EVENT_TYPES.id", "=", "$JOURNAL_EVENTS.journal_event_type_id")
-            ->leftJoin($EVENT_XML_DATA, "$JOURNAL_EVENTS.event_xml_data_id", "=", "$EVENT_XML_DATA.id")
-            ->leftJoin($INVOICE_JOURNAL_EVENTS, "$INVOICE_JOURNAL_EVENTS.journal_event_id", "=", "$JOURNAL_EVENTS.id")
-            ->leftJoin($INVOICES_TBL, "$INVOICES_TBL.id", "=", "$INVOICE_JOURNAL_EVENTS.invoice_id")
-            ->leftJoin($USERS, "$USERS.account_holder_id", "=", "$JOURNAL_EVENTS.prime_account_holder_id")
-            ->whereIn("$JOURNAL_EVENT_TYPES.type", [
-                JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING,
-                JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE
-            ])
-            ->where("$POSTINGS.is_credit" ,'=', 0)
-            ->where("$ACCOUNT_TYPES.name" ,'=', AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER)
+        $select = "accounts.account_holder_id,
+        programs.name,
+        IFNULL(programs.v2_account_holder_id, programs.account_holder_id) as program_id,
+        CONCAT(users.last_name, ' ', users.first_name) AS admin,
+        postings.id AS posting_id,
+        (CAST(postings.qty AS UNSIGNED) * postings.posting_amount) AS amount,
+        postings.created_at AS date_paid,
+        postings.is_credit,
+        CONCAT(invoices.key, '-', invoices.seq) AS invoice_number,
+        invoices.id AS invoice_id,
+        journal_event_types.type AS journal_event_type,
+        journal_events.notes";
+        $query->join('accounts', "accounts.id", "=", "postings.account_id")
+            ->join('programs', "programs.account_holder_id", "=", "accounts.account_holder_id")
+            ->join('account_types', "account_types.id", "=", "accounts.account_type_id")
+            ->join('journal_events', "journal_events.id", "=", "postings.journal_event_id")
+            ->join('journal_event_types', "journal_event_types.id", "=", "journal_events.journal_event_type_id")
+            ->leftJoin('event_xml_data', "journal_events.event_xml_data_id", "=", "event_xml_data.id")
+            ->leftJoin('invoice_journal_event', "invoice_journal_event.journal_event_id", "=", "journal_events.id")
+            ->leftJoin('invoices', "invoices.id", "=", "invoice_journal_event.invoice_id")
+            ->leftJoin('users', "users.account_holder_id", "=", "journal_events.prime_account_holder_id")
+            ->whereIn("journal_event_types.type", $journalEventTypes)
+            ->where("postings.is_credit" ,'=', 0)
+            ->where("account_types.name" ,'=', AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER)
             ->selectRaw($select);
 
         $query = $query->addSelect([
@@ -68,30 +59,38 @@ class ReportInvoiceCreatedService extends ReportServiceAbstract
         ]);
 
         return $query;
+    }
 
-        // $result = $query->get();
+    protected function prepareCalcResults( $data ){
+        $results = [];
+        foreach ($data as $row) {
+           $invoiceId = (int)$row->invoice_id;
 
-        // $table = [];
+           if(!isset($results[$invoiceId])){
+               $results[$invoiceId] = [
+                   'account_holder_id' => $row->account_holder_id,
+                   'name' => $row->name,
+                   'root_name' => $row->root_name,
+                   'program_id' => $row->program_id,
+                   'admin' => $row->admin,
+                   'posting_id' => $row->posting_id,
+                   'amount' => 0,
+                   'deposit_fee' => 0,
+                   'date_paid' => $row->date_paid,
+                   'is_credit' => $row->is_credit,
+                   'invoice_number' => $row->invoice_number,
+                   'invoice_id' => $row->invoice_id,
+                   'notes' => $row->notes
+               ];
+           }
 
-        // foreach ($result as $row) {
-        //     $accountHolderId = (int)$row->account_holder_id;
-
-        //     $table[$accountHolderId] = [
-        //         'account_holder_id' => $row->account_holder_id,
-        //         'name' => $row->name,
-        //         'admin' => $row->admin,
-        //         'posting_id' => $row->posting_id,
-        //         'amount' => $row->amount,
-        //         'date_paid' => $row->date_paid,
-        //         'is_credit' => $row->is_credit,
-        //         'invoice_number' => $row->invoice_number,
-        //         'invoice_id' => $row->invoice_id,
-        //         'journal_event_type' => $journalEventTypes,
-        //         'notes' => $row->notes,
-        //     ];
-        // }
-
-        // return $table;
+           if( $row->journal_event_type == JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_MONIES_PENDING){
+               $results[$invoiceId]['amount'] = $row->amount;
+           }elseif($row->journal_event_type == JournalEventType::JOURNAL_EVENT_TYPES_CHARGE_DEPOSIT_FEE){
+               $results[$invoiceId]['deposit_fee'] = $row->amount;
+           }
+        }
+        return array_values($results);
     }
 
     protected function setOrderBy(Builder $query): Builder
@@ -104,7 +103,7 @@ class ReportInvoiceCreatedService extends ReportServiceAbstract
 
     protected function setGroupBy(Builder $query): Builder
     {
-        $query->groupBy("invoices.id");
+        //$query->groupBy("invoices.id");
         return $query;
     }
 

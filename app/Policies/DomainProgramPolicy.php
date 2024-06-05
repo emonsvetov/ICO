@@ -20,7 +20,7 @@ class DomainProgramPolicy
 
     private function __preAuthCheck($authUser, $organization, $domain = null, $program = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if($domain && $organization->id != $domain->organization_id) return false;
         if($program && $organization->id != $program->organization_id) return false;
         return true;
@@ -63,7 +63,7 @@ class DomainProgramPolicy
      * @param  \App\Models\Organization  $organization
      * @param  \App\Models\Domain  $domain
      * @param  \App\Models\Program  $program
-     * 
+     *
      * @return mixed
      */
     public function delete(User $user, Organization $organization, Domain $domain, Program $program)

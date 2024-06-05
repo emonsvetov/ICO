@@ -2,7 +2,9 @@
 
 namespace App\Policies;
 
+use App\Models\CsvImportType;
 use App\Models\Organization;
+use App\Models\Program;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
@@ -17,8 +19,9 @@ class ImportPolicy
      * @param  \App\Models\Organization  $organization
      * @return mixed
      */
-    private function __preAuthCheck(User $authUser, Organization $organization)   {
-        if( $authUser->organization_id != $organization->id) return false;
+    private function __preAuthCheck(User $authUser, Organization $organization, Program $program = null)   {
+        if( !$authUser->belongsToOrg($organization) ) return false;
+        if( $program && $authUser->organization_id != $program->organization_id) return false;
         return true;
     }
 
@@ -31,8 +34,24 @@ class ImportPolicy
      */
     public function viewAny(User $user, Organization $organization)
     {
-        if( !$this->__preAuthCheck($user,$organization) ) return false;
+        if( !$this->__preAuthCheck($user, $organization) ) return false;
         if( $user->isAdmin() ) return true;
         return $user->can('import-list');
+    }
+
+    public function downloadTemplate(User $user, Organization $organization, Program $program)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program ) ) return false;
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('import-download-template');
+    }
+
+    public function import(User $user, Organization $organization, Program $program, CsvImportType $csvImportType)
+    {
+        if( !$this->__preAuthCheck($user, $organization, $program ) ) return false;
+        if( $user->isAdmin() ) return true;
+        if( $user->isManagerToProgram( $program )) return true;
+        return $user->can('import-csv-upload');
     }
 }

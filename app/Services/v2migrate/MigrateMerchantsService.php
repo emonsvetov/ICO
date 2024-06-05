@@ -4,6 +4,7 @@ namespace App\Services\v2migrate;
 use App\Models\AccountHolder;
 use App\Models\Giftcode;
 use App\Models\MediumInfo;
+use App\Models\OptimalValue;
 use App\Models\TangoOrdersApi;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +31,8 @@ class MigrateMerchantsService extends MigrationService
 
     public $countCreatedMerchants = 0;
     public $countUpdatedMerchants = 0;
+    public $countCreatedMerchantsOptimalValues = 0;
+    public $countUpdatedMerchantsOptimalValues = 0;
     public $countCreatedTangoApi = 0;
     public $countUpdatedTangoApi = 0;
     public $countCreatedMerchantCodes = 0;
@@ -586,6 +589,60 @@ class MigrateMerchantsService extends MigrationService
         }
 
         return $v3UserID;
+    }
+
+    /**
+     * Migrate Optimal Values Table.
+     *
+     * @return array
+     * @throws Exception
+     */
+    public function optimalValues()
+    {
+
+        try {
+
+            $v2MerchantOptimalValues = $this->getMerchantOptimalValues();
+
+            if (!empty($v2MerchantOptimalValues)) {
+                foreach ($v2MerchantOptimalValues as $v2MerchantOptimalValue) {
+                    $merchant_account_holder_id = $v2MerchantOptimalValue->merchant_account_holder_id;
+                    $denomination = $v2MerchantOptimalValue->denomination;
+                    $optimal_value = $v2MerchantOptimalValue->optimal_value;
+
+                    if (!isset($this->v3Merchants[$merchant_account_holder_id])) {
+                        throw new Exception("Don't find {$merchant_account_holder_id} in v3 merchants table.");
+                    }
+
+                    $v3MerchantOptimalValues = OptimalValue::where([
+                        ['merchant_id', $this->v3Merchants[$merchant_account_holder_id]],
+                        ['denomination', $denomination],
+                        ['optimal_value', $optimal_value]
+                    ])->first();
+
+                    if (blank($v3MerchantOptimalValues)) {
+                        OptimalValue::create([
+                            'merchant_id' => $this->v3Merchants[$merchant_account_holder_id],
+                            'denomination' => $denomination,
+                            'optimal_value' => $optimal_value,
+                        ]);
+                        $this->countCreatedMerchantsOptimalValues++;
+                    }
+                    else {
+                        $this->countUpdatedMerchantsOptimalValues++;
+                    }
+
+                }
+            }
+
+            return [
+                'success' => TRUE,
+                'info' => "created $this->countCreatedMerchantsOptimalValues items, updated $this->countUpdatedMerchantsOptimalValues items",
+            ];
+        } catch(Exception $e) {
+            throw new Exception("Error migrating optimal values. Error:{$e->getMessage()} in Line: {$e->getLine()} in File: {$e->getFile()}");
+        }
+
     }
 
     /**

@@ -24,6 +24,8 @@ class Merchant extends Model
 
     const MEDIA_FIELDS = ['logo', 'icon', 'large_icon', 'banner'];
 
+    const ACTIVE = 1;
+
     public function findByIds($ids = [])
     {
          //not sure whether to get with tree, if so, uncomment next line and the query block with "children"
@@ -100,15 +102,10 @@ class Merchant extends Model
     }
 
     public static function readListByProgram( $program ) {
-        if( count($program->merchants) )    {
-            return $program->merchants;
+        $merchants = $program->getMerchantsRecursively();
+        if ($merchants->isNotEmpty()) {
+            return $merchants;
         }
-        //TODO - If there is no merchants for this program the we need to check whether this is a subprogram, and hence get list of merchants by parent program id
-        // if (Program::is_sub_program ( $program_account_holder_id )) {
-        //     $parent_id = Program::read_parent_account_holder_id ( $program_account_holder_id );
-        //     return self::read_list_by_program ( $parent_id, $offset, $limit );
-        // }
-
         return [];
     }
 

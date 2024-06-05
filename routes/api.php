@@ -90,6 +90,8 @@ Route::group([
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
         Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class,'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class,'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
         Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
     Route::group([
@@ -140,6 +142,8 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
     Route::post('/v1/invitation/accept', [App\Http\Controllers\API\InvitationController::class, 'accept']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/refer-participants', [App\Http\Controllers\API\ReferralController::class, 'refer']);
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {
@@ -262,6 +266,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/prepare-live-mode', [App\Http\Controllers\API\ProgramController::class, 'prepareLiveMode'])->middleware('can:liveMode,App\Program,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/live-mode', [App\Http\Controllers\API\ProgramController::class, 'liveMode'])->middleware('can:liveMode,App\Program,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/save-selected-reports', [App\Http\Controllers\API\ProgramController::class, 'saveSelectedReports']);
+    Route::put('/v1/organization/{organization}/program/{program}/importtype', [App\Http\Controllers\API\ProgramController::class, 'saveCsvImportTypes']);
+    Route::get('/v1/organization/{organization}/program/{program}/importtype', [App\Http\Controllers\API\ProgramController::class, 'getCsvImportTypes']);
     Route::get('/v1/reports', [App\Http\Controllers\API\ReportsController::class, 'getAllReports'])->middleware('auth:api');
     Route::get('/v1/reports/{program}', [App\Http\Controllers\API\ReportsController::class, 'getReportsByProgramId'])->middleware(['auth:api', 'reports.available']);
     Route::get('/v1/reports/{program}/selected', [App\Http\Controllers\API\ReportsController::class, 'getSelectedReportsByProgramId'])->middleware('auth:api');
@@ -337,7 +343,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         [App\Http\Controllers\API\ProgramMediaController::class, 'upload'])->middleware('can:add,App\ProgramMedia,organization,program');
 
 
-    Route::get('/v1/organization/{organization}/program/{program}/user/{selectedRoleId?}', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/user', [App\Http\Controllers\API\ProgramUserController::class, 'index'])->middleware('can:viewAny,App\ProgramUser,organization,program');
 
     Route::get('/v1/organization/{organization}/program/{program}/user/{user}',[App\Http\Controllers\API\ProgramUserController::class, 'show'])->middleware('can:view,App\ProgramUser,organization,program,user');
 
@@ -409,6 +415,39 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Tango API
     Route::get('/v1/tango-api/index',[App\Http\Controllers\API\TangoApiController::class, 'index'])->middleware('can:viewAny,App\TangoApi,organization,program');
+
+    Route::get('/v1/tango-settings',[App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
+
+    Route::get('/v1/tango-settings/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
+        ->middleware('can:view,App\TangoApi');
+
+    Route::get('/v1/tango-settings/view/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
+        ->middleware('can:view,App\TangoApi,organization,program');
+
+    Route::post('/v1/tango-settings/create', [App\Http\Controllers\API\TangoApiController::class, 'createConfiguration'])
+        ->middleware('can:create,App\TangoApi,organization,program');
+
+    Route::put('/v1/tango-settings/edit/{id}', [App\Http\Controllers\API\TangoApiController::class, 'updateConfiguration'])
+        ->middleware('can:update,App\TangoApi,organization,program');
+
+    Route::delete('/v1/tango-settings/delete/{id}', [App\Http\Controllers\API\TangoApiController::class, 'deleteConfiguration'])
+        ->middleware('can:delete,App\TangoApi,organization,program');
+
+    //HMI Configuration
+    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])
+        ->middleware('can:viewAny,App\Hmi,organization,program');
+
+    Route::get('/v1/hmi/{id}', [App\Http\Controllers\API\HmiController::class, 'view'])
+        ->middleware('can:view,App\Hmi,organization,program');
+
+    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])
+        ->middleware('can:create,App\Hmi,organization,program');
+
+    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])
+        ->middleware('can:update,App\Hmi');
+
+    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])
+        ->middleware('can:delete,App\Hmi');
 
     //ProgramLogin
 
@@ -697,6 +736,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     //Imports
 
     Route::get('/v1/organization/{organization}/import', [App\Http\Controllers\API\ImportController::class, 'index'])->middleware('can:viewAny,App\Import,organization');
+    Route::get('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'index']);
+    Route::post('/v1/organization/{organization}/importtype', [App\Http\Controllers\API\ImportTypeController::class, 'store']);
+    Route::put('/v1/organization/{organization}/importtype/{csvImportType}', [App\Http\Controllers\API\ImportTypeController::class, 'update']);
+    Route::get('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'fields']);
+    Route::put('/v1/organization/{organization}/importtype/{csvImportType}/fields', [App\Http\Controllers\API\ImportTypeController::class, 'saveFields']);
+    Route::get('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/download-template', [App\Http\Controllers\API\ImportController::class, 'downloadTemplate'])->middleware('can:downloadTemplate,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/importheaders', [App\Http\Controllers\API\ImportController::class, 'headerIndex']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'saveSettings']);
+    Route::get('/v1/organization/{organization}/program/{program}/csv-import-setting/{csvImportType}', [App\Http\Controllers\API\CsvImportSettingController::class, 'show']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/importtype/{csvImportType}/import', [App\Http\Controllers\API\ImportController::class, 'fileImport'])->middleware('can:import,App\Import,organization,program,csvImportType');
+
+    Route::post('/v1/organization/{organization}/program/{program}/addawarduserimportheaders', [App\Http\Controllers\API\UserImportController::class, 'addAwardUserHeaderIndex']);
 
     // Dashboard
     Route::get('/v1/organization/{organization}/program/{program}/dashboard',[App\Http\Controllers\API\DashboardController::class, 'index'])->middleware('can:viewAny,App\Dashboard,organization,program');

@@ -13,7 +13,7 @@ class ProgramParticipantGiftCodePolicy
     use HandlesAuthorization;
     public function viewAny(User $user, Organization $organization, Program $program)
     {
-        if( $user->organization_id !== $organization->id ) return false;
+        if( !$user->belongsToOrg( $organization ) ) return false;
         if( $program->organization_id !== $organization->id ) return false;
         return true;
     }

@@ -40,6 +40,8 @@ class MigrateProgramsService extends MigrationService
 
         $this->migratePrograms($v2RootPrograms);
 
+        $v2RootPrograms = $this->read_list_all_root_program_ids($programArgs);
+
         return [
             'program_id' => $v2RootPrograms[0]->v3_program_id ?? 0,
             'success' => TRUE,

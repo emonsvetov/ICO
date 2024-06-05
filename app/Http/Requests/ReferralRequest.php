@@ -25,10 +25,16 @@ class ReferralRequest extends FormRequest
     {
         return [
             'sender_id' => 'required|integer',
-            'recipient_first_name' => 'required|string',
-            'recipient_last_name' => 'required|string',
+            'more_info'=>'integer|nullable',
+            'category_referral'=>'integer|nullable',
+            'category_feedback'=>'integer|nullable',
+            'category_lead'=>'integer|nullable',
+            'category_reward'=>'integer|nullable',
+            'reward_amount'=>'float|nullable',
+            'recipient_first_name' => 'nullable|string',
+            'recipient_last_name' => 'nullable|string',
             'recipient_email' => [
-                "required",
+                "nullable",
                 "email:filter"
             ],
             'recipient_area_code' => 'required|string',

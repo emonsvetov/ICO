@@ -15,7 +15,7 @@ class SocialWallPostPolicy
 
     private function __preAuthCheck($authUser, $organization, $program, $socialWallPost = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id ) return false;
         if( $socialWallPost && $organization->id != $socialWallPost->organization_id ) return false;
         return true;

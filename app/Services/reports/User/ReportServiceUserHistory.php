@@ -34,7 +34,6 @@ class ReportServiceUserHistory extends ReportServiceAbstractBase
 
             $subQuery->join('account_types', function ($join) use ($account_type) {
                 $join->on('account_types.id', '=', 'accounts.account_type_id');
-               // $join->on('account_types.name', '=', DB::raw("'{$account_type}'"));
             });
             $subQuery->join('postings', function ($join) use ($account_type) {
                 $join->on('postings.account_id', '=', 'accounts.id');
@@ -72,6 +71,7 @@ class ReportServiceUserHistory extends ReportServiceAbstractBase
             });
 
             $subQuery->where('accounts.account_holder_id', '=', $this->params[self::USER_ACCOUNT_HOLDER_ID]);
+            $subQuery->whereIn('account_types.name', ['Points Awarded', 'Monies Awarded']);
 
             if (!$query) {
                 $query = $subQuery;

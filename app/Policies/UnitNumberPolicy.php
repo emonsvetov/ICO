@@ -14,7 +14,7 @@ class UnitNumberPolicy
 
     private function __preAuthCheck($authUser, $organization, $program, UnitNumber $unitNumber = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id ) return false;
         if( $unitNumber && $unitNumber->program_id != $program->id ) return false;
         return true;

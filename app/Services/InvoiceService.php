@@ -49,7 +49,12 @@ class InvoiceService
         // });
         // pr(DB::enableQueryLog());
         $query = self::filterable(Invoice::class);
-        $query->where('program_id', $program->id);
+		if(request()->has('programs')){
+			$programs = Program::whereIn('account_holder_id', self::$PARAMS['programs'])->get()->pluck('id')->toArray();
+			$query->whereIn('program_id', $programs);	
+		}else{
+			$query->where('program_id', $program->id);
+		}
         $query->orderByRaw('date_due desc');
         if( $paginate ) {
             $invoices = $query->paginate( self::$PARAMS['limit'] );
@@ -77,8 +82,10 @@ class InvoiceService
 
 		if( $invoice )  {
             $invoice = (new ChargeInvoiceForMoniesPending())->process($invoice, $user, $program, $amount );
+            $invoice->amount = $amount;
             if ($deposit_fee > 0) {
             	$invoice = (new ChargeInvoiceForDespositFee())->process ($invoice, $user, $program, $deposit_fee_amount);
+                $invoice->amount += $deposit_fee_amount;
             }
             // sleep(2); //To Remove
         }
