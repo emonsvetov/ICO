@@ -219,9 +219,13 @@ class BudgetProgramService
 
     public function getBudgetCascading(BudgetProgram $budgetProgram)
     {
-        $budgetCascadingData = Program::with(['children.budgets_cascading', 'budgets_cascading'])
-            ->select('id', 'name')
-            ->where('id', $budgetProgram->program_id)
+        $budgetCascadingData = BudgetCascading::with([
+            'program' => function ($query) {
+                $query->select('id', 'name');
+            }
+        ])
+            ->where('budget_program_id', $budgetProgram->id)
+
             ->get();
 
         return $budgetCascadingData;
