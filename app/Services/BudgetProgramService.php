@@ -98,56 +98,9 @@ class BudgetProgramService
                     $budgetEndDate = date("Y-m-t", strtotime($budgetStartDate));
 
                     if ((empty($amount) || $amount === 0) && !empty($budgetsCascadingId)) {
-                        // Delete the budget record if the amount is zero or not provided
-                        BudgetCascading::where('id', $budgetsCascadingId)
-                            ->where('program_id', $programId)
-                            ->where('budget_start_date', $budgetStartDate)
-                            ->where('budget_end_date', $budgetEndDate)
-                            ->delete();
+                        $this->deleteAmount($budgetProgram, $programId, $budgetsCascadingId, $budgetStartDate, $budgetEndDate);
                     } else {
-                        // Calculate the updated remaining amount
-                        $updated_amount = $rem_amount - $amount;
-
-                        if ($updated_amount < 0) {
-                            throw new \Symfony\Component\HttpKernel\Exception\HttpException(422, 'You cannot assign Budget more than you have available.');
-                        }
-
-                        // Check if the record exists
-                        $existingBudget = BudgetCascading::where('program_id', $programId)
-                            ->where('budget_start_date', $budgetStartDate)
-                            ->where('budget_end_date', $budgetEndDate)
-                            ->first();
-
-                        if ($existingBudget) {
-                            // Update the existing budget record
-                            $existingBudget->update([
-                                'parent_program_id' => $parent_program_id,
-                                'budget_program_id' => $budgetProgramId,
-                                'budget_amount_remaining' => $amount,
-                                'budget_amount' => $amount,
-                                'reason_for_budget_change' => "assign budget"
-                            ]);
-                            $budgetRecord = $existingBudget;
-                        } else {
-                            // Create a new budget record
-                            $budgetRecord = BudgetCascading::create([
-                                'parent_program_id' => $parent_program_id,
-                                'program_id' => $programId,
-                                'budget_program_id' => $budgetProgramId,
-                                'budget_start_date' => $budgetStartDate,
-                                'budget_end_date' => $budgetEndDate,
-                                'budget_amount_remaining' => $amount,
-                                'budget_amount' => $amount,
-                                'reason_for_budget_change' => "assign budget"
-                            ]);
-                        }
-
-                        // Update the remaining amount
-                        $rem_amount = $updated_amount;
-                        $budgetProgram->remaining_amount = $updated_amount;
-                        $budgetProgram->save();
-
-                        $processedBudgets[] = $budgetRecord;
+                        $processedBudgets[] = $this->updateAmount($budgetProgram, $parent_program_id, $programId, $budgetsCascadingId, $budgetStartDate, $budgetEndDate, $amount);
                     }
                 }
             }
@@ -160,62 +113,91 @@ class BudgetProgramService
                 $amount = $programData['amount'];
 
                 if ((empty($amount) || $amount === 0) && !empty($budgetsCascadingId)) {
-                    // Delete the budget record if the amount is zero or not provided
-                    BudgetCascading::where('id', $budgetsCascadingId)
-                        ->where('program_id', $programId)
-                        ->where('budget_start_date', $budgetStartDate)
-                        ->where('budget_end_date', $budgetEndDate)
-                        ->delete();
+                    $this->deleteAmount($budgetProgram, $programId, $budgetsCascadingId, $budgetStartDate, $budgetEndDate);
                 } else {
-                    // Calculate the updated remaining amount
-                    $updated_amount = $rem_amount - $amount;
-
-                    if ($updated_amount < 0) {
-                        throw new \Symfony\Component\HttpKernel\Exception\HttpException(422, 'You cannot assign Budget more than you have available.');
-                    }
-
-                    // Check if the record exists
-                    $existingBudget = BudgetCascading::where('program_id', $programId)
-                        ->where('budget_start_date', $budgetStartDate)
-                        ->where('budget_end_date', $budgetEndDate)
-                        ->first();
-
-                    if ($existingBudget) {
-                        // Update the existing budget record
-                        $existingBudget->update([
-                            'parent_program_id' => $parent_program_id,
-                            'budget_program_id' => $budgetProgramId,
-                            'budget_amount_remaining' => $amount,
-                            'budget_amount' => $amount,
-                            'reason_for_budget_change' => "assign budget"
-                        ]);
-                        $budgetRecord = $existingBudget;
-                    } else {
-                        // Create a new budget record
-                        $budgetRecord = BudgetCascading::create([
-                            'parent_program_id' => $parent_program_id,
-                            'program_id' => $programId,
-                            'budget_program_id' => $budgetProgramId,
-                            'budget_start_date' => $budgetStartDate,
-                            'budget_end_date' => $budgetEndDate,
-                            'budget_amount_remaining' => $amount,
-                            'budget_amount' => $amount,
-                            'reason_for_budget_change' => "assign budget"
-                        ]);
-                    }
-
-                    // Update the remaining amount
-                    $rem_amount = $updated_amount;
-                    $budgetProgram->remaining_amount = $updated_amount;
-                    $budgetProgram->save();
-
-                    $processedBudgets[] = $budgetRecord;
+                    $processedBudgets[] = $this->updateAmount($budgetProgram, $parent_program_id, $programId, $budgetsCascadingId, $budgetStartDate, $budgetEndDate, $amount);
                 }
             }
         }
 
         return $processedBudgets;
     }
+
+    private function updateAmount(BudgetProgram $budgetProgram, $parent_program_id, $programId, $budgetsCascadingId, $budgetStartDate, $budgetEndDate, $amount)
+    {
+        $existingBudget = BudgetCascading::where('program_id', $programId)
+            ->where('budget_start_date', $budgetStartDate)
+            ->where('budget_end_date', $budgetEndDate)
+            ->first();
+
+        $rem_amount = $budgetProgram->remaining_amount;
+
+        if ($existingBudget) {
+            $difference = $amount - $existingBudget->budget_amount;
+        } else {
+            $difference = $amount;
+        }
+
+        $updated_amount = $rem_amount - $difference;
+
+        if ($updated_amount < 0) {
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(422, 'You cannot assign Budget more than you have available.');
+        }
+
+        if ($existingBudget) {
+            $existingBudget->update([
+                'parent_program_id' => $parent_program_id,
+                'budget_program_id' => $budgetProgram->id,
+                'budget_amount_remaining' => $amount,
+                'budget_amount' => $amount,
+                'reason_for_budget_change' => "assign budget"
+            ]);
+            $budgetRecord = $existingBudget;
+        } else {
+            $budgetRecord = BudgetCascading::create([
+                'parent_program_id' => $parent_program_id,
+                'program_id' => $programId,
+                'budget_program_id' => $budgetProgram->id,
+                'budget_start_date' => $budgetStartDate,
+                'budget_end_date' => $budgetEndDate,
+                'budget_amount_remaining' => $amount,
+                'budget_amount' => $amount,
+                'reason_for_budget_change' => "assign budget"
+            ]);
+        }
+
+        $budgetProgram->remaining_amount = $updated_amount;
+        $budgetProgram->save();
+
+        return $budgetRecord;
+    }
+
+    private function deleteAmount(BudgetProgram $budgetProgram, $programId, $budgetsCascadingId, $budgetStartDate, $budgetEndDate)
+    {
+        $existingBudget = BudgetCascading::where('id', $budgetsCascadingId)
+            ->where('program_id', $programId)
+            ->where('budget_start_date', $budgetStartDate)
+            ->where('budget_end_date', $budgetEndDate)
+            ->first();
+
+        if ($existingBudget) {
+            $amount = $existingBudget->budget_amount;
+
+            $updated_amount = $budgetProgram->remaining_amount + $amount;
+
+            BudgetCascading::where('id', $budgetsCascadingId)
+                ->where('program_id', $programId)
+                ->where('budget_start_date', $budgetStartDate)
+                ->where('budget_end_date', $budgetEndDate)
+                ->delete();
+
+            $budgetProgram->remaining_amount = $updated_amount;
+            $budgetProgram->save();
+        }
+    }
+
+
+
 
     public function getBudgetCascading(BudgetProgram $budgetProgram)
     {
