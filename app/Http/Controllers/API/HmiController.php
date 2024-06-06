@@ -49,10 +49,11 @@ class HmiController extends Controller
     public function create(Request $request): JsonResponse
     {
         $this->validate($request, [
-            'hmi_name' => 'required',
-            'hmi_username' => 'required',
-            'hmi_password' => 'required',
-            'hmi_url' => 'required',
+            'hmi_name' => 'required|unique:hmi,hmi_name',
+            'hmi_username' => 'required|string|max:255',
+            'hmi_password' => 'required|string|min:6',
+            'hmi_url' => 'required|url',
+            'hmi_is_test' => 'required|boolean',
         ]);
 
         try {
@@ -67,6 +68,7 @@ class HmiController extends Controller
             return response()->json(['error' => 'Failed to create HMI'], 500);
         }
     }
+
 
     /**
      * View a specific HMI configuration.
@@ -99,14 +101,16 @@ class HmiController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $this->validate($request, [
-            'hmi_name' => 'required',
-            'hmi_username' => 'required',
-            'hmi_url' => 'required',
+            'hmi_name' => 'required|unique:hmi,hmi_name,' . $id,
+            'hmi_username' => 'required|string|max:255',
+            'hmi_password' => 'required|string|min:6',
+            'hmi_url' => 'required|url',
+            'hmi_is_test' => 'required|boolean',
         ]);
 
         try {
             $data = $request->only([
-                'hmi_name', 'hmi_username', 'hmi_url', 'hmi_is_test'
+                'hmi_name', 'hmi_username', 'hmi_password', 'hmi_url', 'hmi_is_test'
             ]);
             Hmi::updateHmi($id, $data);
 
