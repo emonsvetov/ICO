@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\MediumInfo;
 use App\Models\Merchant;
 use App\Models\Program;
 use App\Models\User;
@@ -95,6 +96,15 @@ class RabbitMQService
                 $transportData = base64_encode(json_encode($transportData));
                 $this->publish(env('RABBITMQ_ROUTINGKEY'), $transportData);
             }
+        }
+    }
+
+    public function markRedeemed($data)
+    {
+        $mediumInfo = MediumInfo::where('v2_medium_info_id', $data->gift_code_id)->first();
+        if (isset($mediumInfo)) {
+            $mediumInfo->purchased_by_v2 = 1;
+            $mediumInfo->save();
         }
     }
 

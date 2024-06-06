@@ -23,7 +23,9 @@ class ConsumeRabbitMQ extends Command
 
             if (isset($transportData->action)) {
                 if ($transportData->action == 'redeem_multiple') {
-                    $rabbitMQService->redeemMultiple($transportData->data);
+                    $rabbitMQService->markRedeemed($transportData->data);
+                    // todo redeem in v3 system
+                    //$rabbitMQService->redeemMultiple($transportData->data);
                     $this->info(print_r($transportData,true));
                 }
             }

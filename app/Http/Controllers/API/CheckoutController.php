@@ -21,11 +21,11 @@ class CheckoutController extends Controller
         $cart = $request->validated();
         try {
             $response = $checkoutService->processOrder($cart, $program);
-            if ($response['redeem_result']) {
-                $rabbitMQService = new RabbitMQService();
-                $user = auth()->user();
-                $rabbitMQService->redeem($cart, $program, $user);
-            }
+//            if ($response['redeem_result']) {
+//                $rabbitMQService = new RabbitMQService();
+//                $user = auth()->user();
+//                $rabbitMQService->redeem($cart, $program, $user);
+//            }
             if( !empty($response['errors']) )   {
                 return response(['errors' => $response['errors']], 422);
             }
