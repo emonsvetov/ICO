@@ -453,19 +453,19 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Server Ips
     Route::prefix('v1/server-ips')->group(function () {
         Route::get('/', [ServerIpController::class, 'readList'])
-            ->middleware('can:viewAny,App\Models\ServerIp,organization,program');
+            ->middleware('can:viewAny,App\ServerIp,organization,program');
 
         Route::get('/{id}', [ServerIpController::class, 'readById'])
-            ->middleware('can:view,App\Models\ServerIp');
+            ->middleware('can:view,App\ServerIp');
 
         Route::post('/create', [ServerIpController::class, 'create'])
-            ->middleware('can:create,App\Models\ServerIp,organization,program');
+            ->middleware('can:create,App\ServerIp,organization,program');
 
         Route::put('/edit/{id}', [ServerIpController::class, 'update'])
-            ->middleware('can:update,App\Models\ServerIp,organization,program');
+            ->middleware('can:update,App\ServerIp,organization,program');
 
         Route::delete('/delete/{id}', [ServerIpController::class, 'delete'])
-            ->middleware('can:delete,App\Models\ServerIp,organization,program');
+            ->middleware('can:delete,App\ServerIp,organization,program');
     });
 
     //ProgramLogin
