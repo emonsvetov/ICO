@@ -37,6 +37,9 @@ border-left:solid 1px;
                     @endif
                 @endif
                 <p style="margin-left:20px; margin-right:20px;">
+                    Message: {{$msg}}
+                </p>
+                <p style="margin-left:20px; margin-right:20px;">
                     Log-in to your dashboard to view the submission in the reports section. Remember to give a reward to increase engagement AND get more submissions!
                 </p>
             </td>
