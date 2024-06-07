@@ -11,6 +11,7 @@ use App\Http\Resources\GiftcodeCollection;
 use App\Models\Traits\IdExtractor;
 use App\Models\Giftcode;
 use App\Models\Merchant;
+use function PHPUnit\Framework\isNull;
 
 class GiftcodeService
 {
@@ -52,14 +53,20 @@ class GiftcodeService
         return new GiftcodeCollection( $giftcodes );
     }
 
-    public function createGiftcode( $merchant, $giftcode )    {
+    public function createGiftcode($merchant, $giftcode, $user = null)
+    {
         $response = [];
         $removable = ['supplier_code', 'someurl']; //handling 'unwanted' keys
         foreach($removable as $key) {
             if( isset($giftcode[$key]) ) unset( $giftcode[$key] );
         }
+
+        if (isNull($user)){
+            $user = auth()->user();
+        }
+
         $result = Giftcode::createGiftcode(
-            auth()->user(),
+            $user,
             $merchant,
             $giftcode
         );
