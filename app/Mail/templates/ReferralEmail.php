@@ -24,6 +24,7 @@ class ReferralEmail extends SendgridEmail
         ?string $referee_email,
         ?string $referee_area_code,
         ?string $referee_phone,
+        string $msg,
         $program
     )
     {

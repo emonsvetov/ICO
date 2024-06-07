@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Notification;
 
 class ReferralNotificationRecipient extends BaseModel
 {
@@ -41,6 +42,12 @@ class ReferralNotificationRecipient extends BaseModel
     public function sendReferralNotification($notification)
     {
         $user = User::where('email', $this->referral_notification_recipient_email)->first();
-        $user->notify(new ReferralNotification($notification));
+        if(!is_null($user)){
+            $user->notify(new ReferralNotification($notification));
+        }
+        else{
+            Notification::route('mail', $this->referral_notification_recipient_email)
+                    ->notify(new ReferralNotification($notification));
+        }
     }
 }
