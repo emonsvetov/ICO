@@ -3,11 +3,10 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Exception;
 use RuntimeException;
-
+use Carbon\Carbon;
 
 class ServerIp extends Model
 {
@@ -25,7 +24,16 @@ class ServerIp extends Model
         'updated_at',
     ];
 
-    public static function readList($limit = 0, $offset = 0, $all = false)
+    /**
+     * Retrieves a list of server IPs with optional pagination.
+     *
+     * @param int $limit
+     * @param int $offset
+     * @param bool $all
+     * @return \Illuminate\Database\Eloquent\Collection
+     * @throws \RuntimeException
+     */
+    public static function readList(int $limit = 0, int $offset = 0, bool $all = false)
     {
         try {
             $query = self::select('server_ips.*', 'users.first_name', 'users.last_name', 'users.email', 'server_ips_target.name as target_name')
@@ -43,6 +51,12 @@ class ServerIp extends Model
         }
     }
 
+    /**
+     * Retrieves the count of server IPs.
+     *
+     * @return int
+     * @throws \RuntimeException
+     */
     public static function countAll()
     {
         try {
@@ -52,20 +66,37 @@ class ServerIp extends Model
         }
     }
 
-    public static function createIp($data)
+    /**
+     * Creates a new server IP.
+     *
+     * @param array $data
+     * @return int
+     * @throws \RuntimeException
+     */
+    public static function createIp(array $data)
     {
         try {
+            $data['updated_by'] = Auth::id();
             return self::create($data)->id;
         } catch (Exception $e) {
             throw new RuntimeException('Failed to create server IP', 500);
         }
     }
 
-    public static function updateIp($id, $data)
+    /**
+     * Updates an existing server IP by ID.
+     *
+     * @param int $id
+     * @param array $data
+     * @return int
+     * @throws \RuntimeException
+     */
+    public static function updateIp(int $id, array $data)
     {
         try {
             $serverIp = self::findOrFail($id);
             $data['updated_at'] = now();
+            $data['updated_by'] = Auth::id();
             $serverIp->update($data);
             return $serverIp->id;
         } catch (Exception $e) {
@@ -73,7 +104,14 @@ class ServerIp extends Model
         }
     }
 
-    public static function readById($id)
+    /**
+     * Retrieves a specific server IP by its ID.
+     *
+     * @param int $id
+     * @return \App\Models\ServerIp
+     * @throws \RuntimeException
+     */
+    public static function readById(int $id)
     {
         try {
             return self::select('server_ips.*', 'users.first_name', 'users.last_name', 'users.email', 'server_ips_target.name as target_name')
@@ -87,7 +125,15 @@ class ServerIp extends Model
         }
     }
 
-    public static function deleteById($id, $updated_by)
+    /**
+     * Deletes a specific server IP by ID.
+     *
+     * @param int $id
+     * @param int $updated_by
+     * @return int
+     * @throws \RuntimeException
+     */
+    public static function deleteById(int $id, int $updated_by)
     {
         try {
             $serverIp = self::findOrFail($id);
@@ -99,5 +145,27 @@ class ServerIp extends Model
         } catch (Exception $e) {
             throw new RuntimeException('Failed to delete server IP', 500);
         }
+    }
+
+    /**
+     * Accessor to format the created_at attribute.
+     *
+     * @param $value
+     * @return string
+     */
+    public function getCreatedAtAttribute($value): string
+    {
+        return Carbon::parse($value)->format('d-m-Y H:i:s');
+    }
+
+    /**
+     * Accessor to format the updated_at attribute.
+     *
+     * @param $value
+     * @return string
+     */
+    public function getUpdatedAtAttribute($value): string
+    {
+        return Carbon::parse($value)->format('d-m-Y H:i:s');
     }
 }

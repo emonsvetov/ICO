@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\ServerIpController;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -450,23 +449,30 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])
         ->middleware('can:delete,App\Hmi');
 
-    // Server Ips
-    Route::prefix('v1/server-ips')->group(function () {
-        Route::get('/', [ServerIpController::class, 'readList'])
-            ->middleware('can:viewAny,App\ServerIp,organization,program');
+    // Server IPs
+    Route::get('/v1/server-ips', [App\Http\Controllers\API\ServerIpController::class, 'readList'])
+        ->middleware('can:viewAny,App\ServerIp,organization,program');
 
-        Route::get('/{id}', [ServerIpController::class, 'readById'])
-            ->middleware('can:view,App\ServerIp');
+    Route::get('/v1/server-ips/view/{id}', [App\Http\Controllers\API\ServerIpController::class, 'readById'])
+        ->middleware('can:view,App\ServerIp,organization,program');
 
-        Route::post('/create', [ServerIpController::class, 'create'])
-            ->middleware('can:create,App\ServerIp,organization,program');
+    Route::post('/v1/server-ips/create', [App\Http\Controllers\API\ServerIpController::class, 'create'])
+        ->middleware('can:create,App\ServerIp,organization,program');
 
-        Route::put('/edit/{id}', [ServerIpController::class, 'update'])
-            ->middleware('can:update,App\ServerIp,organization,program');
+    Route::put('/v1/server-ips/edit/{id}', [App\Http\Controllers\API\ServerIpController::class, 'update'])
+        ->middleware('can:update,App\ServerIp,organization,program');
 
-        Route::delete('/delete/{id}', [ServerIpController::class, 'delete'])
-            ->middleware('can:delete,App\ServerIp,organization,program');
-    });
+    Route::delete('/v1/server-ips/delete/{id}', [App\Http\Controllers\API\ServerIpController::class, 'delete'])
+        ->middleware('can:delete,App\ServerIp,organization,program');
+
+    // Server IP Targets
+
+    Route::get('/v1/server-ips-target', [App\Http\Controllers\API\ServerIpsTargetController::class, 'readList'])
+        ->middleware('can:viewAny,App\ServerIpTarget,organization,program');
+
+    Route::post('/v1/server-ips-target/create', [App\Http\Controllers\API\ServerIpsTargetController::class, 'create'])
+        ->middleware('can:create,App\ServerIpTarget,organization,program');
+
 
     //ProgramLogin
 

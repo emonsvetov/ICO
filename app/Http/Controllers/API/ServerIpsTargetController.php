@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\API;
 
+use App\Http\Controllers\Controller;
 use App\Models\ServerIpsTarget;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,20 +21,26 @@ class ServerIpsTargetController extends Controller
      */
     public function readList(Request $request): JsonResponse
     {
+        $request->validate([
+            'limit' => 'integer|min:0',
+            'offset' => 'integer|min:0',
+            'all' => 'boolean',
+        ]);
+
         $limit = $request->input('limit', 0);
         $offset = $request->input('offset', 0);
         $all = $request->input('all', false);
 
-        if (!is_int($offset) || $offset < 0) {
-            throw new InvalidArgumentException('Invalid "offset" passed, integer expected and not less than 0', 400);
+        try {
+            $targets = ServerIpsTarget::readList($limit, $offset, $all);
+            return response()->json(['data' => $targets]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Internal query failed, please contact the API administrator',
+                'message' => $e->getMessage(),
+                'code' => 500
+            ], 500);
         }
-        if (!is_int($limit) || $limit < 1) {
-            throw new InvalidArgumentException('Invalid "limit" passed, integer expected and not less than 0', 400);
-        }
-
-        $targets = ServerIpsTarget::readList($limit, $offset, $all);
-
-        return response()->json($targets);
     }
 
     /**
