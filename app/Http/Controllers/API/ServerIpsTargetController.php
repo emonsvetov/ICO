@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\ServerIpsTarget;
+use AWS\CRT\Log;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -60,26 +61,30 @@ class ServerIpsTargetController extends Controller
      *
      * @param Request $request
      * @return JsonResponse
+     * @throws ValidationException
+     */
+    /**
+     * Create a new server IP target.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
     public function create(Request $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+        $request->validate([
+            'name' => 'required|string|max:255|unique:server_ips_target',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
-        }
-
-        $data = $validator->validated();
-
         try {
+            $data = $request->only(['name']);
             $id = ServerIpsTarget::createTarget($data);
-            return response()->json(['id' => $id], 201);
-        } catch (RuntimeException $e) {
-            return response()->json(['error' => 'Internal query failed, please contact the API administrator'], 500);
+            return response()->json(['message' => 'Server IP target successfully created', 'id' => $id], 201);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to create Server IP: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to create Target Name'], $e->getCode());
         }
     }
+
 
     /**
      * Retrieve a specific server IP target by its ID.
@@ -108,7 +113,7 @@ class ServerIpsTargetController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:server_ips_targets',
         ]);
 
         if ($validator->fails()) {
@@ -119,7 +124,7 @@ class ServerIpsTargetController extends Controller
 
         try {
             $success = ServerIpsTarget::updateTarget($id, $data);
-            return response()->json(['success' => $success]);
+            return response()->json(['success' => $success], 200);
         } catch (RuntimeException $e) {
             return response()->json(['error' => 'Internal query failed, please contact the API administrator'], 500);
         }

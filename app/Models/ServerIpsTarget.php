@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class ServerIpsTarget extends Model
 {
@@ -20,7 +22,7 @@ class ServerIpsTarget extends Model
      * @param int $limit
      * @param int $offset
      * @return Collection
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public static function readList(int $limit = 0, int $offset = 0): Collection
     {
@@ -31,7 +33,8 @@ class ServerIpsTarget extends Model
             }
             return $query->get();
         } catch (\Exception $e) {
-            throw new \RuntimeException('Internal query failed, please contact the API administrator', 500);
+            Log::error('Failed to retrieve server IP targets list: ' . $e->getMessage());
+            throw new RuntimeException('Internal query failed, please contact the API administrator', 500);
         }
     }
 
@@ -39,14 +42,15 @@ class ServerIpsTarget extends Model
      * Retrieves the count of server IP targets.
      *
      * @return int
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public static function countAll(): int
     {
         try {
             return self::count();
         } catch (\Exception $e) {
-            throw new \RuntimeException('Internal query failed, please contact the API administrator', 500);
+            Log::error('Failed to count server IP targets: ' . $e->getMessage());
+            throw new RuntimeException('Internal query failed, please contact the API administrator', 500);
         }
     }
 
@@ -55,14 +59,15 @@ class ServerIpsTarget extends Model
      *
      * @param array $data
      * @return int
-     * @throws \Exception
+     * @throws RuntimeException
      */
-    public static function createTarget(array $data): int
+    public static function createTarget(array $data)
     {
         try {
             return self::create($data)->id;
         } catch (\Exception $e) {
-            throw new \Exception('Failed to create server IP target', 500);
+            Log::error('Failed to create server IP target: ' . $e->getMessage());
+            throw new RuntimeException('Failed to create server IP target', 500);
         }
     }
 
@@ -72,7 +77,7 @@ class ServerIpsTarget extends Model
      * @param int $id
      * @param array $data
      * @return bool
-     * @throws \Exception
+     * @throws RuntimeException
      */
     public static function updateTarget(int $id, array $data): bool
     {
@@ -80,7 +85,8 @@ class ServerIpsTarget extends Model
             $target = self::findOrFail($id);
             return $target->update($data);
         } catch (\Exception $e) {
-            throw new \Exception('Failed to update server IP target', 500);
+            Log::error('Failed to update server IP target: ' . $e->getMessage());
+            throw new RuntimeException('Failed to update server IP target', 500);
         }
     }
 
@@ -89,14 +95,15 @@ class ServerIpsTarget extends Model
      *
      * @param int $id
      * @return \App\Models\ServerIpsTarget
-     * @throws \RuntimeException
+     * @throws RuntimeException
      */
     public static function readById(int $id): self
     {
         try {
             return self::findOrFail($id);
         } catch (\Exception $e) {
-            throw new \RuntimeException('Internal query failed, please contact the API administrator', 500);
+            Log::error('Failed to retrieve server IP target by ID: ' . $e->getMessage());
+            throw new RuntimeException('Internal query failed, please contact the API administrator', 500);
         }
     }
 
@@ -105,7 +112,7 @@ class ServerIpsTarget extends Model
      *
      * @param int $id
      * @return bool
-     * @throws \Exception
+     * @throws RuntimeException
      */
     public static function deleteById(int $id): bool
     {
@@ -113,7 +120,8 @@ class ServerIpsTarget extends Model
             $target = self::findOrFail($id);
             return $target->delete();
         } catch (\Exception $e) {
-            throw new \Exception('Failed to delete server IP target', 500);
+            Log::error('Failed to delete server IP target: ' . $e->getMessage());
+            throw new RuntimeException('Failed to delete server IP target', 500);
         }
     }
 }

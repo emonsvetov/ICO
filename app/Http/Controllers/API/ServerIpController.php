@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class ServerIpController extends Controller
@@ -67,8 +68,8 @@ class ServerIpController extends Controller
      */
     public function create(Request $request): JsonResponse
     {
-        $this->validate($request, [
-            'ip' => 'required|string',
+        $request->validate([
+            'ip' => ['required', 'string', 'unique:server_ips,ip'],
             'comment' => 'nullable|string',
             'target' => 'required|integer',
         ]);
@@ -79,7 +80,7 @@ class ServerIpController extends Controller
             return response()->json(['message' => 'Server IP successfully created', 'id' => $id], 201);
         } catch (\Exception $e) {
             Log::error("Failed to create Server IP: " . $e->getMessage());
-            return response()->json(['error' => 'Failed to create Server IP'], 500);
+            return response()->json(['error' => 'Failed to create Server IP'], $e->getCode());
         }
     }
 
@@ -109,8 +110,8 @@ class ServerIpController extends Controller
      */
     public function update(Request $request, int $id): JsonResponse
     {
-        $this->validate($request, [
-            'ip' => 'required|string',
+        $request->validate([
+            'ip' => ['required', 'string', Rule::unique('server_ips')->ignore($id)],
             'comment' => 'nullable|string',
             'target' => 'required|integer',
         ]);
