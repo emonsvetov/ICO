@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use AWS\CRT\Log;
 use Illuminate\Console\Command;
 use App\Services\RabbitMQService;
 
@@ -17,6 +18,7 @@ class ConsumeRabbitMQ extends Command
 
     public function handle(rabbitMQService $rabbitMQService)
     {
+        \Illuminate\Support\Facades\Log::info('1111111');
         $this->info('Starting RabbitMQ consumer...');
         $rabbitMQService->consume(function ($msg) use ($rabbitMQService) {
             $transportData = json_decode(base64_decode($msg->body),true);
