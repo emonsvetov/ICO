@@ -141,7 +141,8 @@ class AwardService
 
         $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
-
+        
+        $isCustom = $eventType->isEventTypeCustom();
         $isBadge = $eventType->isEventTypeBadge();
         $isPeer2peer = $eventType->isEventTypePeer2Peer();
         $isAutoAward = $eventType->isEventTypeAutoAward();
@@ -168,6 +169,10 @@ class AwardService
         //Set notification type
         $notificationType = 'Award';
 
+        if( $isCustom )
+        {
+            $notificationType = 'CustomAward';
+        }
         if( $isBadge )
         {
             $notificationType = 'BadgeAward';
@@ -223,6 +228,7 @@ class AwardService
         $awarderAccountHolderId = $awarder->account_holder_id;
 
         $notificationBody = $data->message ?? ''; //TODO
+        $restrictions = $data->restrictions ?? '';
         $notes = $data->notes ?? '';
 
         $referrer = $data->referrer ?? null;
@@ -428,6 +434,11 @@ class AwardService
             $notification['awarder_first_name'] = $awarder->first_name;
             $notification['awarder_last_name'] = $awarder->last_name;
             $notification['availableAwardPoints'] = $awardee->readAvailableBalance($program) * $factor_valuation;
+        }
+
+        if( $notificationType == 'CustomAward')
+        {
+            $notification['restrictions'] = $restrictions;
         }
 
         // If the event template used has post to social wall turned on. Create a new social wall post
