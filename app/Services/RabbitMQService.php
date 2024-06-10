@@ -84,7 +84,7 @@ class RabbitMQService
                 $transportData = [
                     'action' => 'redeem_multiple',
                     'data' => [
-                        'sidtem_name' => env('RABBITMQ_ROUTINGKEY'),
+                        'system_name' => env('RABBITMQ_ROUTINGKEY'),
                         'merchant_account_holder_id' => $merchant->v2_account_holder_id,
                         'account_holder_id' => $userV2User->v2_user_account_holder_id,
                         'program_id' => $program->v2_account_holder_id,
@@ -108,6 +108,7 @@ class RabbitMQService
         $mediumInfo = MediumInfo::where('v2_medium_info_id', $data['gift_code_id'])->first();
         if (isset($mediumInfo)) {
             $mediumInfo->purchased_by_v2 = 1;
+            $mediumInfo->purchased_in_system = $data['system_name'];
             $mediumInfo->save();
         }
     }
