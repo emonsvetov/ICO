@@ -519,7 +519,8 @@ class CheckoutService
 
             // purchase codes from Tango since all transactions are final
             foreach($reserved_codes as $code){
-
+                $rabbitMQService = new RabbitMQService();
+                $rabbitMQService->redeemByCodeID($code->id,$program);
                 $gift_code_id = ( int )$code->id;
 
                 if(!$code->virtual_inventory &&
