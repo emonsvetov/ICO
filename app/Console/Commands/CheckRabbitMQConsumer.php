@@ -20,7 +20,7 @@ class CheckRabbitMQConsumer extends Command
         $processName = 'artisan rabbitmq:consume';
         exec("pgrep -f '{$processName}'", $output, $return_var);
 
-        if (count($output) === 1) {
+        if (count($output) === 0) {
             $this->info('Process not found. Starting consumer...');
             $command = "/usr/bin/php artisan rabbitmq:consume > /dev/null 2>&1 &";
             exec($command, $output, $return_var);
