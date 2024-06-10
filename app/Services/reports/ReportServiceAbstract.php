@@ -382,7 +382,7 @@ abstract class ReportServiceAbstract
 		if (isset ( $this->params [self::SQL_WHERE] ) && (count ( $this->params [self::SQL_WHERE] ))) {
 			$sql .= ' WHERE ' . implode ( ' AND ', $this->params [self::SQL_WHERE] );
 		}
-		if (isset ( $this->params [self::SQL_GROUP_BY] ) && (count ( $this->params [self::SQL_GROUP_BY] ))) {
+		if (isset ( $this->params [self::SQL_GROUP_BY] ) && is_array($this->params [self::SQL_GROUP_BY]) && (count ( $this->params [self::SQL_GROUP_BY] ))) {
 			$sql .= ' GROUP BY ' . implode ( ',', $this->params [self::SQL_GROUP_BY] );
 		}
 		if (isset ( $this->params [self::SQL_ORDER_BY] ) && (count ( $this->params [self::SQL_ORDER_BY] ))) {

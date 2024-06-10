@@ -24,6 +24,7 @@ class CheckoutController extends Controller
             if ($response['redeem_result']) {
                 $rabbitMQService = new RabbitMQService();
                 $user = auth()->user();
+                $cart['medium_info_id'] = $response['redeem_result']['medium_info_id'];
                 $rabbitMQService->redeem($cart, $program, $user);
             }
             if( !empty($response['errors']) )   {
