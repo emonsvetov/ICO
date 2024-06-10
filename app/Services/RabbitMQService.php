@@ -106,7 +106,6 @@ class RabbitMQService
     public function markRedeemed($data)
     {
         $mediumInfo = MediumInfo::where('v2_medium_info_id', $data['gift_code_id'])->first();
-        Log::info(print_r($data,true));
         if (isset($mediumInfo)) {
             $mediumInfo->purchased_by_v2 = 1;
             $mediumInfo->purchased_in_system = $data['system_name'];
