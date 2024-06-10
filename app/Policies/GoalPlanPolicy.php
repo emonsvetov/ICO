@@ -13,7 +13,7 @@ class GoalPlanPolicy
     use HandlesAuthorization;
     private function __authCheck($authUser, $organization, $program): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id) return false;
         return true;
     }
@@ -32,7 +32,7 @@ class GoalPlanPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-create');
@@ -52,7 +52,7 @@ class GoalPlanPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-list');
@@ -73,7 +73,7 @@ class GoalPlanPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-view');
@@ -94,7 +94,7 @@ class GoalPlanPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-update');
@@ -110,13 +110,13 @@ class GoalPlanPolicy
      */
     public function delete(User $authUser, Organization $organization, Program $program, GoalPlan $goalPlan)
     {
-       
+
         // return true;
         if ( !$this->__authCheck($authUser, $organization, $program ) )
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-delete');
@@ -128,7 +128,7 @@ class GoalPlanPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('goal-plan-read-active-by-program');

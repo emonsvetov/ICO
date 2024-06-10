@@ -14,7 +14,7 @@ class ProgramPolicy
     use HandlesAuthorization;
 
     private function __preAuthCheck($authUser, $organization, $program = null, $invoice = null)   {
-        if( $authUser->organization_id != $organization->id) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $program && $program->organization_id != $organization->id) return false;
         if( $program && $invoice && $program->id != $invoice->program_id) return false;
         return true;

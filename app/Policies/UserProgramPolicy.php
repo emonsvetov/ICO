@@ -14,10 +14,9 @@ class UserProgramPolicy
 
     private function __preAuthCheck($authUser, $organization, $user = null, $program = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
-        if( $user && $organization->id != $user->organization_id) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
+        if( $user && !$organization->hasUser($user)) return false;
         // if( $program && $organization->id != $program->organization_id) return false;
-        // if( $user && $program && $user->organization_id != $program->organization_id) return false;
         return true;
     }
 
@@ -33,7 +32,7 @@ class UserProgramPolicy
         if($authUser->isAdmin()) return true;
         return $user->can('user-program-list');
     }
-  
+
     public function add(User $authUser, Organization $organization, User $user)
     {
         if(!$this->__preAuthCheck($authUser, $organization, $user)) return false;

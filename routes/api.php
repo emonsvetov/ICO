@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\HmiController;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -139,6 +140,8 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
     Route::post('/v1/invitation/accept', [App\Http\Controllers\API\InvitationController::class, 'accept']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/refer-participants', [App\Http\Controllers\API\ReferralController::class, 'refer']);
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {
@@ -489,6 +492,18 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     Route::delete('/v1/tango-settings/delete/{id}', [App\Http\Controllers\API\TangoApiController::class, 'deleteConfiguration'])
         ->middleware('can:delete,App\TangoApi,organization,program');
+
+    //HMI Configuration
+    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])->middleware('can:viewAny,App\Hmi,organization,program');
+
+    Route::get('/v1/hmi/{id}', [App\Http\Controllers\API\HmiController::class, 'view'])
+        ->middleware('can:view,App\Hmi');
+
+    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])->middleware('can:create,App\Hmi');
+
+    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])->middleware('can:update,App\Hmi');
+
+    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])->middleware('can:delete,App\Hmi');
 
     //ProgramLogin
 

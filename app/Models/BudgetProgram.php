@@ -10,7 +10,21 @@ class BudgetProgram extends Model
     use HasFactory;
     protected $guarded = [];
     public $timestamp = true;
+    protected $appends = ['cascading_data'];
 
+    private $cascadingData = [];
+
+    // Accessor for cascading data
+    public function getCascadingDataAttribute()
+    {
+        return $this->cascadingData;
+    }
+
+    // Mutator for cascading data
+    public function setCascadingDataAttribute($value)
+    {
+        $this->cascadingData = $value;
+    }
     public function budget_types()
     {
         return $this->belongsTo(BudgetType::class, 'budget_type_id');
