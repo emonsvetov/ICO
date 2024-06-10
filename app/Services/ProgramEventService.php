@@ -29,7 +29,7 @@ class ProgramEventService
     {
         $data = $this->_handleEmailTemplateData($data);
 
-        if ($data['event_type_id'] == EventType::ET_BADGE) {
+        if ($data['event_type_id'] == EventType::ET_BADGE || $data['event_type_id'] == EventType::ET_CUSTOM) {
             $data['max_awardable_amount'] = 0;
         }
         return Event::create($data);

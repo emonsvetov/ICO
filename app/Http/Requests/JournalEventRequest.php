@@ -27,6 +27,7 @@ class JournalEventRequest extends FormRequest
             'prime_account_holder_id' => 'required|integer',
             'journal_event_type_id' => 'required|integer',
             'notes' => 'nullable|string',
+            'restrictions' => 'nullable|string',
             'event_xml_data_id' => 'nullable|integer',
             'invoice_id' => 'nullable|integer',
             'parent_journal_event_id' => 'nullable|integer',
