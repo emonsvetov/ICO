@@ -27,6 +27,7 @@ class AwardRequest extends FormRequest
             'email_template_id' => 'nullable|integer', // TODO: email templates
             'event_id' => 'required|integer',
             'message' => 'required|string',
+            'restrictions' => 'nullable|string',
             'notes' => 'nullable|string',
             'override_cash_value' => 'nullable|numeric',
             'referrer' => 'nullable|string',
