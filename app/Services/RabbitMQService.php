@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Giftcode;
+use App\Models\MediumInfo;
 use App\Models\Merchant;
 use App\Models\Program;
 use App\Models\User;
@@ -72,15 +74,46 @@ class RabbitMQService
 
     }
 
-    public function redeem($data,$program,$user)
+    public function redeemByCodeID($codeID, $program)
+    {
+        $giftcode = Giftcode::where('id', $codeID)->first();
+        if (env('RABBITMQ_ENABLE') && $giftcode->virtual_inventory == 0) {
+            // $userV2User = UserV2User::where('user_id', $user->id)->first();
+            $merchant = Merchant::where('id', $giftcode->merchant_id)->first();
+
+            $transportData = [
+                'action' => 'redeem_multiple',
+                'data' => [
+                    'system_name' => env('RABBITMQ_ROUTINGKEY'),
+                    'merchant_account_holder_id' => $merchant->v2_account_holder_id,
+                    'account_holder_id' => 1,
+                    'program_id' => $program->v2_account_holder_id,
+                    'owner_id' => '0',
+                    'points_to_redeem' => $giftcode->redemption_value,
+                    'cost_basis' => $giftcode->cost_basis,
+                    'discount' => 0,
+                    'gift_code_id' => $giftcode->v2_medium_info_id,
+                    'currency_type' => '',
+                    'medium_info_id' => $giftcode->v2_medium_info_id,
+                ]
+            ];
+            $transportData = base64_encode(json_encode($transportData));
+            $this->publish(env('RABBITMQ_ROUTINGKEY'), $transportData);
+
+        }
+    }
+
+    public function redeem($data, $program, $user)
     {
         if ($data['items'] && env('RABBITMQ_ENABLE')) {
             foreach ($data['items'] as $item) {
                 $userV2User = UserV2User::where('user_id', $user->id)->first();
                 $merchant = Merchant::where('id', $item['merchant_id'])->first();
+                $giftcode = Giftcode::where('id', $data['medium_info_id'])->first();
                 $transportData = [
                     'action' => 'redeem_multiple',
                     'data' => [
+                        'system_name' => env('RABBITMQ_ROUTINGKEY'),
                         'merchant_account_holder_id' => $merchant->v2_account_holder_id,
                         'account_holder_id' => $userV2User->v2_user_account_holder_id,
                         'program_id' => $program->v2_account_holder_id,
@@ -88,8 +121,9 @@ class RabbitMQService
                         'points_to_redeem' => $item['redemption_value'],
                         'cost_basis' => $item['sku_value'],
                         'discount' => 0,
-                        'gift_code_id' => '',
+                        'gift_code_id' => $giftcode->v2_medium_info_id,
                         'currency_type' => '',
+                        'medium_info_id' => $giftcode->v2_medium_info_id,
                     ]
                 ];
                 $transportData = base64_encode(json_encode($transportData));
@@ -98,20 +132,50 @@ class RabbitMQService
         }
     }
 
+    public function markRedeemed($data)
+    {
+        $mediumInfo = MediumInfo::where('v2_medium_info_id', $data['gift_code_id'])->first();
+        if (isset($mediumInfo)) {
+            $mediumInfo->purchased_by_v2 = 1;
+            $mediumInfo->purchased_in_system = $data['system_name'];
+            $mediumInfo->save();
+        }
+    }
+
+    public function syncGiftCode($data)
+    {
+        $giftcodeService = new GiftcodeService();
+        $merchant = Merchant::where('v2_account_holder_id', $data['v2_account_holder_id'])->first();
+        $user = User::where('id', 1)->first();
+        foreach ($data['gift_codes'] as $row) {
+            try {
+                //todo
+                if (strpos(env('RABBITMQ_QUEUE_EXCHANGE'),'qa_') !== false) {
+                    $row['medium_info_is_test'] = 1;
+                }
+
+                $imported[] = $giftcodeService->createGiftcode($merchant, $row,$user);
+            } catch (\Exception $e) {
+                $errorrs[] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
+            }
+        }
+    }
+
+
     public function redeemMultiple($data)
     {
         $response = [];
-        $program = Program::where('v2_account_holder_id', $data->program_id)->first();
+        $program = Program::where('v2_account_holder_id', $data['program_id'])->first();
         if (!$program) {
             $response['error'][] = 'Program not found';
         }
 
-        $merchant = Merchant::where('v2_account_holder_id', $data->merchant_account_holder_id)->first();
+        $merchant = Merchant::where('v2_account_holder_id', $data['merchant_account_holder_id'])->first();
         if (!$merchant) {
             $response['error'][] = 'Merchant not found';
         }
 
-        $userV2User = UserV2User::where('v2_user_account_holder_id', $data->account_holder_id)->first();
+        $userV2User = UserV2User::where('v2_user_account_holder_id', $data['account_holder_id'])->first();
         if (!$userV2User) {
             $response['error'][] = 'UserV2User not found';
         }
@@ -132,8 +196,8 @@ class RabbitMQService
             $cart['items'][] = [
                 'merchant_id' => $merchant->id,
                 'merchant_account_holder_id' => $merchant->account_holder_id,
-                'redemption_value' => $data->points_to_redeem,
-                'sku_value' => $data->points_to_redeem,
+                'redemption_value' => $data['points_to_redeem'],
+                'sku_value' => $data['points_to_redeem'],
                 'virtual_inventory' => 0,
                 'redemption_fee' => '0.0000',
                 'merchant_name' => $merchant->name,
