@@ -80,7 +80,7 @@ class BudgetProgramController extends Controller
 
     public function getBudgetCascading(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-        $budgetProgram = $this->budgetProgramService->getBudgetCascading($budgetProgram);
+        $budgetProgram = $this->budgetProgramService->getBudgetCascading($budgetProgram, $program);
         return response($budgetProgram);
     }
 
