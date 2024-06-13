@@ -133,7 +133,7 @@ class AwardService
         return $result;
     }
 
-    public function SaveBudgetCascadingApprovalDetail($event, $awardee, $awarder, object $data = null)
+    public function SaveBudgetCascadingApprovalDetail($event, $user, $awarder, object $data = null)
     {
         $program = $event->program;
         $event_award = $event->event_award_level;
@@ -142,9 +142,9 @@ class AwardService
             if ($program->use_cascading_approvals && $event->include_in_budget) {
                 BudgetCascadingApproval::create([
                     'parent_id' => $program->parent_id,
-                    'awarder_id' => $awarder->account_holder_id,
-                    'user_id' => $awardee->account_holder_id,
-                    'requestor_id' => $awarder->account_holder_id,
+                    'awarder_id' => $awarder->id,
+                    'user_id' => $user->id,
+                    'requestor_id' => $awarder->id,
                     'manager_id' => 0,
                     'event_id' => $event->id,
                     'award_id' =>  $eventAwardLevel->award_level_id,
@@ -158,7 +158,7 @@ class AwardService
                     'budgets_cascading_id' => "",
                     'rejection_note' => "",
                     'scheduled_date' => Carbon::now(),
-                    'action_by' => $awarder->account_holder_id,
+                    'action_by' => $awarder->id,
                 ]);
             }
         }
