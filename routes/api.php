@@ -866,20 +866,14 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // PositionLevel
     Route::post('/v1/organization/{organization}/program/{program}/positionlevel', [App\Http\Controllers\API\PositionLevelController::class, 'store'])->middleware('can:create,App\PositionLevel,organization,program');
-
     Route::get('/v1/organization/{organization}/program/{program}/positionlevel', [App\Http\Controllers\API\PositionLevelController::class, 'index'])->middleware('can:viewAny,App\PositionLevel,organization,program');
-
     Route::put('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}', [App\Http\Controllers\API\PositionLevelController::class, 'update'])->middleware('can:update,App\PositionLevel,organization,program,positionLevel');
-
     Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}', [App\Http\Controllers\API\PositionLevelController::class, 'show'])->middleware('can:view,App\PositionLevel,organization,program,positionLevel');
-
     Route::delete('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}', [App\Http\Controllers\API\PositionLevelController::class, 'delete'])->middleware('can:delete,App\PositionLevel,organization,program,positionLevel');
 
     //Position Permission Assignment
     Route::get('/v1/organization/{organization}/program/{program}/positionpermissions', [App\Http\Controllers\API\PositionPermissionController::class, 'index']);
-
     Route::post('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/permissions', [App\Http\Controllers\API\PositionLevelController::class, 'assignPermissions'])->middleware('can:assign,App\PositionPermissionAssignment,organization,program');
-
     Route::get('/v1/organization/{organization}/program/{program}/positionlevel/{positionLevel}/permissions', [App\Http\Controllers\API\PositionLevelController::class, 'getPermissions'])->middleware('can:view,App\PositionLevel,organization,program,positionLevel');
 
     //Budget Type
@@ -901,9 +895,9 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         '/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/assign',
         [App\Http\Controllers\API\BudgetProgramController::class, 'assign']
     )->middleware('can:close,App\Models\BudgetProgram,organization,program,budgetProgram');
-
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/cascading', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascading'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
-    
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/template', [App\Http\Controllers\API\BudgetProgramController::class, 'downloadAssignBudgetTemplate'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
-
+    
+    //Budget Cascading approval
+    Route::get('/v1/organization/{organization}/program/{program}/cascading-approvals', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
 });

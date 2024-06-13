@@ -18,6 +18,7 @@ class BudgetProgramService
 {
     const ASSIGN_BUDGET_CSV_FROM_HEADER = ["Total Budget", "Remaining Budget", "Budget Type", "Budget Start Date", "Budget End Date"];
     const ASSIGN_BUDGET_CSV_TO_HEADER = ["Assign Budget to Program Id", "Assign Budget to program Name"];
+
     public function getAllBudgetTypes()
     {
         return BudgetProgram::all();
@@ -182,22 +183,16 @@ class BudgetProgramService
 
         if ($existingBudget) {
             $amount = $existingBudget->budget_amount;
-
             $updated_amount = $budgetProgram->remaining_amount + $amount;
-
             BudgetCascading::where('id', $budgetsCascadingId)
                 ->where('program_id', $programId)
                 ->where('budget_start_date', $budgetStartDate)
                 ->where('budget_end_date', $budgetEndDate)
                 ->delete();
-
             $budgetProgram->remaining_amount = $updated_amount;
             $budgetProgram->save();
         }
     }
-
-
-
 
     public function getBudgetCascading(BudgetProgram $budgetProgram)
     {
@@ -207,9 +202,7 @@ class BudgetProgramService
             }
         ])
             ->where('budget_program_id', $budgetProgram->id)
-
             ->get();
-
         return $budgetCascadingData;
     }
 

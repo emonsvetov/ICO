@@ -15,4 +15,14 @@ class EventAwardLevel extends Model
         'award_level_id',
         'amount',
     ];
+
+    public function event_award_level()
+    {
+        return $this->belongsTo(Program::class);
+    }
+
+    public function event_award_levels()
+    {
+        return $this->belongsTo(Event::class);
+    }
 }

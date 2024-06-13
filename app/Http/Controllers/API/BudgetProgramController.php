@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Program;
 use App\Models\BudgetType;
 use App\Models\Organization;
-use App\Models\BudgetCascading;
 use App\Models\BudgetProgram;
 use App\Services\BudgetProgramService;
+use App\Models\BudgetCascadingApproval;
 use App\Http\Requests\BudgetProgramRequest;
 use App\Http\Requests\BudgetProgramAssignRequest;
 use Illuminate\Http\Request;
@@ -77,15 +77,29 @@ class BudgetProgramController extends Controller
         return response($budgetProgram);
     }
 
-
     public function getBudgetCascading(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
         $budgetProgram = $this->budgetProgramService->getBudgetCascading($budgetProgram, $program);
         return response($budgetProgram);
     }
 
+    public function getBudgetCascadingApproval(Organization $organization, Program $program)
+    {
+        $cascadingApproval = BudgetCascadingApproval::where('program_id', $program->id)
+            ->get();
+        return response($cascadingApproval);
+    }
+
+    public function acceptBudgetCascadingApproval(Organization $organization, Program $program)
+    {
+    }
+    
+    public function rejectBudgetCascadingApproval(Organization $organization, Program $program)
+    {
+    }
+
     public function downloadAssignBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-        return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));
+        //return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));
     }
 }
