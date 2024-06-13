@@ -98,6 +98,13 @@ class BudgetProgramController extends Controller
     {
     }
 
+    public function getCurrentBudget(Organization $organization, Program $program)
+    {
+        $currentBudget = $this->budgetProgramService->getCurrentBudget($program);
+        return response($currentBudget);
+    }
+
+
     public function downloadAssignBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
         //return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));

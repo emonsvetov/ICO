@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\API\HmiController;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -494,16 +493,20 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         ->middleware('can:delete,App\TangoApi,organization,program');
 
     //HMI Configuration
-    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])->middleware('can:viewAny,App\Hmi,organization,program');
+    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])
+        ->middleware('can:viewAny,App\Hmi,organization,program');
 
     Route::get('/v1/hmi/{id}', [App\Http\Controllers\API\HmiController::class, 'view'])
-        ->middleware('can:view,App\Hmi');
+        ->middleware('can:view,App\Hmi,organization,program');
 
-    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])->middleware('can:create,App\Hmi');
+    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])
+        ->middleware('can:create,App\Hmi,organization,program');
 
-    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])->middleware('can:update,App\Hmi');
+    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])
+        ->middleware('can:update,App\Hmi');
 
-    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])->middleware('can:delete,App\Hmi');
+    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])
+        ->middleware('can:delete,App\Hmi');
 
     //ProgramLogin
 
@@ -881,6 +884,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     //Budget Program
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram', [App\Http\Controllers\API\BudgetProgramController::class, 'index'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/currentbudget', [App\Http\Controllers\API\BudgetProgramController::class, 'getCurrentBudget'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/budgetprogram', [App\Http\Controllers\API\BudgetProgramController::class, 'store'])->middleware('can:create,App\BudgetProgram,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}', [App\Http\Controllers\API\BudgetProgramController::class, 'update'])->middleware('can:update,App\BudgetProgram,organization,program,budgetProgram');
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}', [App\Http\Controllers\API\BudgetProgramController::class, 'show'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');

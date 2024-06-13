@@ -206,6 +206,25 @@ class BudgetProgramService
         return $budgetCascadingData;
     }
 
+    public function getCurrentBudget(Program $program)
+    {
+        $startOfMonth = Carbon::now()->startOfMonth()->toDateString();
+        $startOfYear = Carbon::now()->startOfYear()->toDateString();
+        $endOfYear = Carbon::now()->endOfYear()->toDateString();
+        $currentMonthBudget = BudgetCascading::where('program_id', $program->id)
+            ->where('budget_start_date', $startOfMonth)
+            ->get();
+        $currentYearBudget = BudgetCascading::where('program_id', $program->id)
+            ->where('budget_start_date', $startOfYear)
+            ->where('budget_end_date', $endOfYear)
+            ->get();
+
+        return [
+            'current_month_budget' => $currentMonthBudget,
+            'current_year_budget' => $currentYearBudget
+        ];
+    }
+
     public function getManageBudgetTemplateCSVStream(Program $program, BudgetProgram $budgetProgram)
     {
         //templete
