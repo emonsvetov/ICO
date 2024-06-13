@@ -136,30 +136,31 @@ class AwardService
     public function SaveBudgetCascadingApprovalDetail($event, $awardee, $awarder, object $data = null)
     {
         $program = $event->program;
-        $event_award = $event->event_award_levels;
-        //dd($program->use_cascading_approvals);
-        if ($program->use_cascading_approvals && $event->include_in_budget) {
-            $awardData = [];
-            BudgetCascadingApproval::create([
-                'parent_id' => $program->parent_id,
-                'awarder_id' => $awarder->account_holder_id,
-                'user_id' => $awardee->account_holder_id,
-                'requestor_id' => $awarder->account_holder_id,
-                'manager_id' => 0,
-                'event_id' => $event->id,
-                'award_id' => $event_award->award_level_id,
-                'amount' => $event_award->amount,
-                'approved' => 0,
-                'award_data' =>  json_encode($awardData),
-                'transaction_id' => 1,
-                'program_approval_id' => 0,
-                'program_id' => $data->program_id,
-                'include_in_budget' => $event->include_in_budget,
-                'budgets_cascading_id' => "",
-                'rejection_note' => "",
-                'scheduled_date' => Carbon::now(),
-                'action_by' => $awarder->account_holder_id,
-            ]);
+        $event_award = $event->event_award_level;
+        $awardData = [];
+        foreach ($event_award as $eventAwardLevel) {
+            if ($program->use_cascading_approvals && $event->include_in_budget) {
+                BudgetCascadingApproval::create([
+                    'parent_id' => $program->parent_id,
+                    'awarder_id' => $awarder->account_holder_id,
+                    'user_id' => $awardee->account_holder_id,
+                    'requestor_id' => $awarder->account_holder_id,
+                    'manager_id' => 0,
+                    'event_id' => $event->id,
+                    'award_id' =>  $eventAwardLevel->award_level_id,
+                    'amount' => $eventAwardLevel->amount,
+                    'approved' => 0,
+                    'award_data' =>  json_encode($awardData),
+                    'transaction_id' => 1,
+                    'program_approval_id' => 0,
+                    'program_id' => $data->program_id,
+                    'include_in_budget' => $event->include_in_budget,
+                    'budgets_cascading_id' => "",
+                    'rejection_note' => "",
+                    'scheduled_date' => Carbon::now(),
+                    'action_by' => $awarder->account_holder_id,
+                ]);
+            }
         }
     }
 

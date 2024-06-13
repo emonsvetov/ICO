@@ -10,6 +10,7 @@ use App\Models\BudgetProgram;
 use App\Services\BudgetProgramService;
 use App\Models\BudgetCascadingApproval;
 use App\Http\Requests\BudgetProgramRequest;
+use App\Http\Requests\BudgetCascadinApprovalRequest;
 use App\Http\Requests\BudgetProgramAssignRequest;
 use Illuminate\Http\Request;
 
@@ -86,15 +87,25 @@ class BudgetProgramController extends Controller
     public function getBudgetCascadingApproval(Organization $organization, Program $program)
     {
         $cascadingApproval = BudgetCascadingApproval::where('program_id', $program->id)
-            ->get();
+        ->with('event')
+        ->with('program')
+       ->with('requestor')
+        ->with('user')
+        ->get();
         return response($cascadingApproval);
     }
 
-    public function acceptBudgetCascadingApproval(Organization $organization, Program $program)
+    public function acceptRejectBudgetCascadingApproval(BudgetCascadinApprovalRequest $approvalRequest, Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadinApproval)
     {
+        $data = $approvalRequest->validated();
+        // Update the approved status
+        BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])
+            ->update(['approved' => $data['approved']]);
+
+        return response()->json(['message' => 'Approval status updated successfully.']);
     }
-    
-    public function rejectBudgetCascadingApproval(Organization $organization, Program $program)
+
+    public function revokeBudgetCascadingApproval(Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadingApproval)
     {
     }
 
