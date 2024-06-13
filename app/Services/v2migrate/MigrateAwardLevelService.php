@@ -21,7 +21,7 @@ class MigrateAwardLevelService extends MigrationService
         ];
     }
 
-    public function awardLevelsHasUsers($v2AwardLevelsId, $v3AwardLevelsId, $v3programId)
+    public function awardLevelsHasUsers($v2AwardLevelsId, $v3AwardLevelsId, $v3programId, $programsId)
     {
         $res = true;
         $itemsCount = 0;
@@ -38,7 +38,7 @@ class MigrateAwardLevelService extends MigrationService
         $programUser = DB::table('program_user')
             ->join('users as u', 'u.id', '=', 'program_user.user_id')
             ->select('u.email', 'u.id')
-            ->where('program_user.program_id', $v3programId)
+            ->whereIn('program_user.program_id', $programsId)
             ->whereIn('u.email', $uEmail)->get('u.email, u.id');
         $itemsCount = count($programUser->toArray());
 
@@ -75,6 +75,10 @@ class MigrateAwardLevelService extends MigrationService
         )[0];
         $program = Program::where('name', $v2Program->name)->first();
 
+        $topProgramId = $program->getRoot('id')->id;
+        $topLevelProgram = Program::where('id', $topProgramId)->first();
+        $programsId = $topLevelProgram->descendantsAndSelf()->get()->pluck('id')->toArray();
+
         if (!$program) {
             return [
                 'success' => $res,
@@ -100,7 +104,7 @@ class MigrateAwardLevelService extends MigrationService
                 $awardLevelModel->v2id = $awardLevel->id;
                 $res =  $awardLevelModel->save();
             }
-            $this->awardLevelsHasUsers($awardLevel->id,$awardLevelModel->id,$program->id);
+            $this->awardLevelsHasUsers($awardLevel->id,$awardLevelModel->id,$program->id, $programsId);
         }
 
         return [
