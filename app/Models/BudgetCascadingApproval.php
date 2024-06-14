@@ -48,4 +48,9 @@ class BudgetCascadingApproval extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function budget_cascading()
+    {
+        return $this->belongsTo(BudgetCascading::class, 'budgets_cascading_id');
+    }
 }

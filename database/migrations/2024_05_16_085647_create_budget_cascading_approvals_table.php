@@ -15,15 +15,15 @@ class CreateBudgetCascadingApprovalsTable extends Migration
     {
         Schema::create('budget_cascading_approvals', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('parent_id');
+            $table->integer('parent_id')->nullable();
             $table->unsignedBigInteger('awarder_id');
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('requestor_id');
             $table->unsignedBigInteger('manager_id');
             $table->unsignedBigInteger('event_id');
-            $table->unsignedBigInteger('award_id');
+            $table->unsignedBigInteger('award_id'); 
             $table->unsignedBigInteger('program_approval_id');
-            $table->double('amount', 15, 4);
+            $table->double('amount', 15, 2);
             $table->smallInteger('approved');
             $table->string('award_data');
             $table->integer('transaction_id');

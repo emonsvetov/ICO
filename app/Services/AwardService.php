@@ -137,6 +137,7 @@ class AwardService
     {
         $program = $event->program;
         $event_award = $event->event_award_level;
+        $transaction_id = generate_unique_id();
         $awardData = [];
         foreach ($event_award as $eventAwardLevel) {
             if ($program->use_cascading_approvals && $event->include_in_budget) {
@@ -151,7 +152,7 @@ class AwardService
                     'amount' => $eventAwardLevel->amount,
                     'approved' => 0,
                     'award_data' =>  json_encode($awardData),
-                    'transaction_id' => 1,
+                    'transaction_id' => $transaction_id,
                     'program_approval_id' => 0,
                     'program_id' => $data->program_id,
                     'include_in_budget' => $event->include_in_budget,
