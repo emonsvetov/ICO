@@ -155,7 +155,7 @@ class ProgramUserController extends Controller
     public function giftCodesRedeemed(Request $request, Organization $organization, Program $program, User $user)
     {
         $params = [
-            'programId' => $program->id,
+            'programId' => null,
             'user_id' => $user->id,
             'paginate' => true,
             'limit' => $request->get('limit'),
