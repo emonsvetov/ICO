@@ -177,7 +177,8 @@ class AwardService
 
         $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
-
+        
+        $isCustom = $eventType->isEventTypeCustom();
         $isBadge = $eventType->isEventTypeBadge();
         $isPeer2peer = $eventType->isEventTypePeer2Peer();
         $isAutoAward = $eventType->isEventTypeAutoAward();
@@ -203,7 +204,12 @@ class AwardService
         //Set notification type
         $notificationType = 'Award';
 
-        if ($isBadge) {
+        if( $isCustom )
+        {
+            $notificationType = 'CustomAward';
+        }
+        if( $isBadge )
+        {
             $notificationType = 'BadgeAward';
         }
         if ($isMilestoneAward) {
@@ -256,6 +262,7 @@ class AwardService
         $awarderAccountHolderId = $awarder->account_holder_id;
 
         $notificationBody = $data->message ?? ''; //TODO
+        $restrictions = $data->restrictions ?? '';
         $notes = $data->notes ?? '';
 
         $referrer = $data->referrer ?? null;
@@ -300,6 +307,7 @@ class AwardService
             'amount_override' => $eventAmountOverride,
             'notification_body' => $notificationBody,
             'notes' => $notes,
+            'restrictions' => $restrictions,
             'referrer' => $referrer,
             'lease_number' => $leaseNumber,
             'token' => $token,
@@ -318,6 +326,7 @@ class AwardService
             'journal_event_type_id' => $journalEventTypeId,
             'event_xml_data_id' => $eventXmlDataID,
             'notes' => $notes,
+            'restrictions' => $restrictions,
             'prime_account_holder_id' => $awarderAccountHolderId,
             'created_at' => now()
         ]);
@@ -459,6 +468,11 @@ class AwardService
             $notification['awarder_first_name'] = $awarder->first_name;
             $notification['awarder_last_name'] = $awarder->last_name;
             $notification['availableAwardPoints'] = $awardee->readAvailableBalance($program) * $factor_valuation;
+        }
+
+        if( $notificationType == 'CustomAward')
+        {
+            $notification['restrictions'] = $restrictions;
         }
 
         // If the event template used has post to social wall turned on. Create a new social wall post
@@ -714,6 +728,7 @@ class AwardService
 				if(is_credit = 1, `postings`.posting_amount, -`postings`.posting_amount) AS amount ,
 				`event_xml_data`.award_level_name ,
 				if(`event_xml_data`.notes is null, `journal_events`.notes, `event_xml_data`.notes) AS notes,
+                if(`event_xml_data`.restrictions is null, `journal_events`.restrictions, `event_xml_data`.restrictions) AS restrictions,
 				`journal_events`.created_at as 'journal_event_timestamp',
 				`event_xml_data`.referrer,
 				`event_xml_data`.lease_number,

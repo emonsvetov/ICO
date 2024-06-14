@@ -15,7 +15,9 @@ class EventType extends Model
     ];
 
     const ET_BADGE = 5;
+    const ET_CUSTOM = 13;
 
+    const EVENT_TYPE_CUSTOM = 'custom';
     const EVENT_TYPE_BADGE = 'badge';
     const EVENT_TYPE_PEER2PEER_BADGE = 'peer2peer badge';
     const EVENT_TYPE_STANDARD = 'standard';
@@ -53,6 +55,11 @@ class EventType extends Model
     public function isEventTypeBadge(): bool
     {
         return $this->type == self::EVENT_TYPE_BADGE;
+    }
+
+    public function isEventTypeCustom(): bool
+    {
+        return $this->type == self::EVENT_TYPE_CUSTOM;
     }
 
     public function isEventTypePeer2PeerBadge(): bool

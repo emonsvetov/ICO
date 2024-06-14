@@ -37,9 +37,9 @@ class ReferralRequest extends FormRequest
                 "nullable",
                 "email:filter"
             ],
-            'recipient_area_code' => 'required|string',
+            'recipient_area_code' => 'nullable|string',
             'recipient_phone' => [
-                "required",
+                "nullable",
                 'regex:/^[\w-]*$/'
             ],
             'message' => 'required|string'
