@@ -33,6 +33,11 @@ class ConsumeRabbitMQ extends Command
                     $rabbitMQService->syncGiftCode($transportData['data']);
                     $this->info(print_r($transportData,true));
                 }
+                if ($transportData['action'] == 'syn_systems') {
+                    $rabbitMQService->synSystems($transportData['data']);
+                    $this->info(print_r($transportData,true));
+                }
+
             }
         });
     }
