@@ -180,7 +180,6 @@ class RabbitMQService
 
                     unset($row['merchant_account_holder_id']);
                     $imported[] = $giftcodeService->createGiftcode($merchant, $row, $user);
-                    Log::info(print_r($imported,true));
                 } catch (\Exception $e) {
                     $errorrs[] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
                 }
