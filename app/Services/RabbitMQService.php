@@ -138,6 +138,8 @@ class RabbitMQService
         if (isset($mediumInfo)) {
             $mediumInfo->purchased_by_v2 = 1;
             $mediumInfo->purchased_in_system = $data['system_name'];
+            $mediumInfo->redemption_date = date('Y-m-d');
+            $mediumInfo->redemption_datetime = date('Y-m-d h:m:s');
             $mediumInfo->save();
         }
     }
@@ -157,6 +159,31 @@ class RabbitMQService
                 $imported[] = $giftcodeService->createGiftcode($merchant, $row,$user);
             } catch (\Exception $e) {
                 $errorrs[] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
+            }
+        }
+    }
+
+    public function synSystems($data)
+    {
+        $giftcodeService = new GiftcodeService();
+        $user = User::where('id', 1)->first();
+        foreach ($data['gift_codes'] as $row) {
+            $merchant = Merchant::where('v2_account_holder_id', $row['merchant_account_holder_id'])->first();
+            if ($merchant) {
+                try {
+                    //todo
+                    if (strpos(env('RABBITMQ_QUEUE_EXCHANGE'), 'qa_') !== false) {
+                        $row['medium_info_is_test'] = 1;
+                    }
+
+                    $row['v2_sync_status'] = 3;
+
+                    unset($row['merchant_account_holder_id']);
+                    $imported[] = $giftcodeService->createGiftcode($merchant, $row, $user);
+                    Log::info(print_r($imported,true));
+                } catch (\Exception $e) {
+                    $errorrs[] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
+                }
             }
         }
     }
