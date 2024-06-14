@@ -3,10 +3,16 @@ namespace App\Services\v2migrate;
 use App\Models\AwardLevel;
 use App\Models\AwardLevelHasUser;
 use App\Models\Program;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class MigrateAwardLevelService extends MigrationService
 {
+    public $programsId;
+    public $countUpdateAwardlevel = 0;
+    public $countCreateAwardLevel = 0;
+
     public function __construct()
     {
         parent::__construct();
@@ -14,11 +20,28 @@ class MigrateAwardLevelService extends MigrationService
 
     public function migrate($v2AccountHolderID)
     {
-        $res = $this->syncAwardLevel($v2AccountHolderID);
-        return [
-            'success' => $res['success'],
-            'info' => "number of lines ". $res['itemsCount'],
-        ];
+        $v3Program = Program::where('v2_account_holder_id', $v2AccountHolderID)->first();
+        $v3AccountHolderID = $v3Program->account_holder_id ?? NULL;
+
+        // Checking.
+        if (empty($v3AccountHolderID)) {
+            throw new Exception("v3 program with ID: " . $v2AccountHolderID . " not found.");
+        }
+
+        $topProgramId = $v3Program->getRoot('id')->id;
+        $topLevelProgram = Program::where('id', $topProgramId)->first();
+        $this->programsId = $topLevelProgram->descendantsAndSelf()->get()->pluck('id')->toArray();
+
+        $this->syncSubProgram($v3Program);
+
+        try {
+            $result['success'] = TRUE;
+            $result['info'] = "update $this->countUpdateAwardlevel items, create $this->countCreateAwardLevel items";
+        } catch (\Exception $exception) {
+            throw new Exception("Migrate goal plans is failed.");
+        }
+
+        return $result;
     }
 
     public function awardLevelsHasUsers($v2AwardLevelsId, $v3AwardLevelsId, $v3programId, $programsId)
@@ -60,56 +83,55 @@ class MigrateAwardLevelService extends MigrationService
                 }
             }
         }
-        return [
-            'success' => $res,
-            'itemsCount' => $itemsCount,
-        ];
     }
 
-    public function syncAwardLevel($v2AccountHolderID)
+    /**
+     * Sync program hierarchy.
+     *
+     * @param $v3Program
+     * @throws Exception
+     */
+    public function syncSubProgram($v3Program)
     {
-        $res = true;
-        $itemsCount = 0;
-        $v2Program = $this->v2db->select(
-            sprintf("select * from programs where account_holder_id = %d", $v2AccountHolderID)
-        )[0];
-        $program = Program::where('name', $v2Program->name)->first();
+        $v2AccountHolderID = $v3Program->v2_account_holder_id ?? FALSE;
+        $subPrograms = $v3Program->children ?? [];
 
-        $topProgramId = $program->getRoot('id')->id;
-        $topLevelProgram = Program::where('id', $topProgramId)->first();
-        $programsId = $topLevelProgram->descendantsAndSelf()->get()->pluck('id')->toArray();
-
-        if (!$program) {
-            return [
-                'success' => $res,
-                'itemsCount' => $itemsCount,
-            ];
+        if ($v2AccountHolderID) {
+            $this->migrateAwardLevels($v2AccountHolderID, $v3Program);
         }
 
+        if (!empty($subPrograms)) {
+            foreach ($subPrograms as $subProgram) {
+                $this->syncSubProgram($subProgram);
+            }
+        }
+    }
+
+    public function migrateAwardLevels($v2AccountHolderID, $program)
+    {
         $awardLevels = $this->v2db->select(
             sprintf("select * from award_level where program_account_holder_id = %d", $v2AccountHolderID)
         );
-        $itemsCount = count($awardLevels);
-        foreach ($awardLevels as $awardLevel) {
-            $awardLevelModel = AwardLevel::where('name', $awardLevel->name)
-                ->where('program_id', $program->id)->first();
-            if ($awardLevelModel) {
-                $awardLevelModel->v2id = $awardLevel->id;
-                $res = $awardLevelModel->save();
-            } else {
-                $awardLevelModel = new AwardLevel();
-                $awardLevelModel->program_account_holder_id = $v2AccountHolderID;
-                $awardLevelModel->program_id = $program->id;
-                $awardLevelModel->name = $awardLevel->name;
-                $awardLevelModel->v2id = $awardLevel->id;
-                $res =  $awardLevelModel->save();
+        if (!empty($awardLevels)) {
+            foreach ($awardLevels as $awardLevel) {
+                $awardLevelModel = AwardLevel::where('program_account_holder_id', $v2AccountHolderID)
+                    ->where('program_id', $program->id)->first();
+                if ($awardLevelModel) {
+                    $awardLevelModel->v2id = $awardLevel->id;
+                    $awardLevelModel->save();
+                    $this->countUpdateAwardlevel++;
+                } else {
+                    $awardLevelModel = new AwardLevel();
+                    $awardLevelModel->program_account_holder_id = $v2AccountHolderID;
+                    $awardLevelModel->program_id = $program->id;
+                    $awardLevelModel->name = $awardLevel->name;
+                    $awardLevelModel->v2id = $awardLevel->id;
+                    $awardLevelModel->save();
+                    $this->countCreateAwardLevel++;
+                }
+                $this->awardLevelsHasUsers($awardLevel->id,$awardLevelModel->id,$program->id, $this->programsId);
             }
-            $this->awardLevelsHasUsers($awardLevel->id,$awardLevelModel->id,$program->id, $programsId);
         }
-
-        return [
-            'success' => $res,
-            'itemsCount' => $itemsCount,
-        ];
     }
+
 }
