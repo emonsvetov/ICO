@@ -6,8 +6,8 @@ use Illuminate\Support\Facades\DB;
 use net\authorize\api\contract\v1 as AnetAPI;
 use net\authorize\api\controller as AnetController;
 
-define('MERCHANT_LOGIN_ID', '24esm7EHxz4');
-define('MERCHANT_TRANSACTION_KEY', '635wP9MBj33ZbmWh');
+define('MERCHANT_LOGIN_ID', '63Uws6VR');
+define('MERCHANT_TRANSACTION_KEY', '4gFE777Qxjg8h4PY');
 
 use App\Models\JournalEventType;
 use App\Models\Program;
