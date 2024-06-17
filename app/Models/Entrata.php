@@ -30,12 +30,15 @@ class Entrata extends Model
     public static function readList(array $extra_args = [], int $limit = 0, int $offset = 0): Collection
     {
         try {
-            return self::when($extra_args, function ($query, $extra_args) {
-                foreach ($extra_args as $key => $value) {
+            $query = self::query();
+
+            foreach ($extra_args as $key => $value) {
+                if (in_array($key, (new self)->getFillable())) {
                     $query->where($key, $value);
                 }
-            })
-                ->limit($limit)
+            }
+
+            return $query->limit($limit)
                 ->offset($offset)
                 ->get();
         } catch (\Exception $e) {
@@ -53,11 +56,15 @@ class Entrata extends Model
     public static function readListCount(array $extra_args = []): int
     {
         try {
-            return self::when($extra_args, function ($query, $extra_args) {
-                foreach ($extra_args as $key => $value) {
+            $query = self::query();
+
+            foreach ($extra_args as $key => $value) {
+                if (in_array($key, (new self)->getFillable())) {
                     $query->where($key, $value);
                 }
-            })->count();
+            }
+
+            return $query->count();
         } catch (\Exception $e) {
             Log::error("Failed to read list count: " . $e->getMessage());
             throw new \RuntimeException($e->getMessage(), 500);
