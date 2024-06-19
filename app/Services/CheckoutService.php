@@ -52,17 +52,16 @@ class CheckoutService
 
 		if( !$gift_codes ) return ['errors' => "No cart items in CheckoutService:processOrder"];
 
-        if (!$user){
-            $user = auth()->user();
-        }
-
+    if (!$user){
+        $user = auth()->user();
+    }
 		// $user->account_holder_id = $user->account_holder_id;
 
         $merchantsCostToProgram = array ();
 		// $air_premium_cost_to_program = $program->air_premium_cost_to_program;
 		$air_premium_cost_to_program = true;
 		if ( $air_premium_cost_to_program ) {
-			$merchants = Merchant::readListByProgram ( $program );
+            $merchants = Merchant::readListByProgram ( $program );
 			foreach ( $merchants as $merchant ) {
 				if ($merchant->pivot->cost_to_program) {
 					$merchantsCostToProgram [] = $merchant->id;
