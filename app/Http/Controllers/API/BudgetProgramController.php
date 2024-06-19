@@ -94,16 +94,16 @@ class BudgetProgramController extends Controller
             ->get();
         $cascading = [];
         foreach ($cascadingApprovals as $key => $cascadingApproval) {
-            $cascading[$key]['cascading_id'] =  $cascadingApproval['id'];
-            $cascading[$key]['program_name'] =  $cascadingApproval['program']['name'];
-            $cascading[$key]['requested_by'] =  $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
-            $cascading[$key]['recipient'] =  $cascadingApproval['user']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
-            $cascading[$key]['approved_by'] =  '';
-            $cascading[$key]['event_name'] =  $cascadingApproval['event']['name'];
-            $cascading[$key]['amount'] =  $cascadingApproval['amount'];
-            $cascading[$key]['scheduled_date'] =  $cascadingApproval['scheduled_date'];
+            $cascading[$key]['cascading_id'] = $cascadingApproval['id'];
+            $cascading[$key]['program_name'] = $cascadingApproval['program']['name'];
+            $cascading[$key]['requested_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
+            $cascading[$key]['recipient'] = $cascadingApproval['user']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
+            $cascading[$key]['approved_by'] = '';
+            $cascading[$key]['event_name'] = $cascadingApproval['event']['name'];
+            $cascading[$key]['amount'] = $cascadingApproval['amount'];
+            $cascading[$key]['scheduled_date'] = $cascadingApproval['scheduled_date'];
             $cascading[$key]['budgets_available'] = '';
-            $cascading[$key]['created_date'] =  $cascadingApproval['created_at'];
+            $cascading[$key]['created_date'] = $cascadingApproval['created_at'];
         }
         if ($cascading) {
             return response($cascading);
@@ -117,7 +117,7 @@ class BudgetProgramController extends Controller
         $data = $approvalRequest->validated();
         // Update the approved status
         BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])
-            ->update(['approved' => $data['approved'], 'action_by' => $approver]);
+            ->update(['approved' => $data['approved'], 'action_by' => $approver->id]);
 
         if ($data['approved'] == '1') {
         }

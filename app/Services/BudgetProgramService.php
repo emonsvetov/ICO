@@ -7,7 +7,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\BudgetProgram;
 use App\Models\BudgetType;
 use App\Models\BudgetCascading;
-use App\Services\ProgramService;
+use App\Models\BudgetCascadingApproval;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use App\Models\Program;
 use RuntimeException;
@@ -222,6 +223,36 @@ class BudgetProgramService
         return [
             'current_month_budget' => $currentMonthBudget,
             'current_year_budget' => $currentYearBudget
+        ];
+    }
+
+    public static function getParticipantCascadings(Program $program, User $user)
+    {
+        $budgetCascading = BudgetCascadingApproval::where('user_id', $user->id)->get();
+        if ($budgetCascading->isEmpty()) {
+            // If the user has no subjects, return a count of 0
+            return [
+                'budget_cascading' => null,
+                'count' => 0
+            ];
+        }
+
+
+        $groupedBudgetCascadings = $budgetCascading->groupBy('id')->map(function ($group) {
+            return [
+                'budget_cascading' => $group->first(),
+                'count' => $group->count(),
+            ];
+        });
+        $totalCount = $budgetCascading->count();
+        $result = $groupedBudgetCascadings->values()->map(function ($item) {
+            $budget_cascading = $item['budget_cascading'];
+            $budget_cascading->count = $item['count'];
+            return $budget_cascading;
+        });
+        return [
+            'budget_cascading' => $result,
+            'count' => $totalCount
         ];
     }
 
