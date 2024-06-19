@@ -37,14 +37,17 @@ class ReportServiceUserGiftCodeReedemed extends ReportServiceAbstractBase
         $query->where('medium_info.redeemed_user_id', '=', $this->params[self::USER_ID]);
 
         if (blank($this->params[self::PROGRAMS])) {
-            $programs = blank($this->params[self::PROGRAM_ID]) ? [] : [$this->params[self::PROGRAM_ID]];
+            if ($this->params[self::PROGRAM_ID]){
+                $programs =  [$this->params[self::PROGRAM_ID]];
+                $query->whereIn('medium_info.redeemed_program_id', $programs);
+            }
         }
         else {
             $programIDs = explode(',', $this->params[self::PROGRAMS]);
             $programs = Program::whereIn('account_holder_id', $programIDs)->get()->pluck('id')->toArray();
+            $query->whereIn('medium_info.redeemed_program_id', $programs);
         }
 
-        $query->whereIn('medium_info.redeemed_program_id', $programs);
         return $query;
     }
 

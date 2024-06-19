@@ -179,15 +179,14 @@ class RabbitMQService
                     $row['v2_sync_status'] = 3;
 
                     unset($row['merchant_account_holder_id']);
-                    $imported[] = $giftcodeService->createGiftcode($merchant, $row, $user);
-                    Log::info(print_r($imported,true));
+                    $giftCode = $giftcodeService->createGiftcode($merchant, $row, $user);
+                    Log::info(print_r($giftCode,true));
                 } catch (\Exception $e) {
                     $errorrs[] = sprintf('Exception while creating giftcode. Error:%s in line %d ', $e->getMessage(), $e->getLine());
                 }
             }
         }
     }
-
 
     public function redeemMultiple($data)
     {

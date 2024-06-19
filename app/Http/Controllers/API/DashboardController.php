@@ -26,7 +26,7 @@ class DashboardController extends Controller
         ProgramService $programService,
         Request $request
     ) {
-        $programAccountHolderIds = [$program->account_holder_id];
+        $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
         $dateFrom = date("Y-m-d");
         $dateTo = date("Y-m-d");
 
@@ -172,8 +172,7 @@ class DashboardController extends Controller
                 $dateFrom = date('Y', strtotime($dateTo)) . '-01-01 00:00:00';
                 break;
         endswitch;
-
-        $programAccountHolderIds = [$program->account_holder_id];
+        $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
         $params = [
             'programs' => $programAccountHolderIds,
             'dateFrom' => $dateFrom,
@@ -218,11 +217,13 @@ class DashboardController extends Controller
                 break;
         endswitch;
 
+        $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
+
         $reporthelper = new ReportHelper();
         $args['group'] = 'event_name';
         $args['order'] = $unit === 0 ? 'total' : 'count';
         $args['limit'] = 6;
-        $awardsAudit = $reporthelper->awardsAudit([$program->account_holder_id], $dateFrom, $dateTo, $args);
+        $awardsAudit = $reporthelper->awardsAudit($programAccountHolderIds, $dateFrom, $dateTo, $args);
         $data = [];
         foreach ($awardsAudit as $item) {
             $tmp = [];
@@ -243,6 +244,8 @@ class DashboardController extends Controller
         int $unit
     ) {
         $dateTo = date("Y-m-d");
+        $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
+
         switch ($duration):
             case '7days':
                 $dateFrom = date('Y-m-d', strtotime('-7 days'));
@@ -250,7 +253,7 @@ class DashboardController extends Controller
                 $args['group'] = 'date';
                 $args['order'] = $unit === 0 ? 'total' : 'count';
                 $args['limit'] = 7;
-                $awardsAudit = $reporthelper->awardsAudit([$program->account_holder_id], $dateFrom, $dateTo, $args);
+                $awardsAudit = $reporthelper->awardsAudit($programAccountHolderIds, $dateFrom, $dateTo, $args);
                 $reportData = [];
                 foreach ($awardsAudit as $item) {
                     $reportData[$item->date] = $item->toArray();
@@ -294,7 +297,7 @@ class DashboardController extends Controller
                 $args['group'] = 'date';
                 $args['order'] = $unit === 0 ? 'total' : 'count';
                 $args['limit'] = 30;
-                $awardsAudit = $reporthelper->awardsAudit([$program->account_holder_id], $dateFrom, $dateTo, $args);
+                $awardsAudit = $reporthelper->awardsAudit($programAccountHolderIds, $dateFrom, $dateTo, $args);
                 $reportData = [];
                 foreach ($awardsAudit as $item) {
                     $reportData[$item->date] = $item->toArray();
@@ -338,7 +341,7 @@ class DashboardController extends Controller
                 $args['group'] = 'month';
                 $args['order'] = $unit === 0 ? 'total' : 'count';
 //                $args['limit'] = 12;
-                $awardsAudit = $reporthelper->awardsAudit([$program->account_holder_id], $dateFrom, $dateTo, $args);
+                $awardsAudit = $reporthelper->awardsAudit($programAccountHolderIds, $dateFrom, $dateTo, $args);
                 $reportData = [];
                 foreach ($awardsAudit as $item) {
                     $reportData[$item->month] = $item->toArray();
@@ -388,6 +391,8 @@ class DashboardController extends Controller
         int $unit
     ) {
         $dateTo = date("Y-m-d");
+        $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
+
         switch ($duration):
             case '7days':
                 $dateFrom = date('Y-m-d', strtotime('-7 days'));
@@ -395,7 +400,7 @@ class DashboardController extends Controller
                 $args['group'] = 'date';
                 $args['p2p'] = true;
                 $args['order'] = $unit === 0 ? 'total' : 'count';
-                $awardsAudit = $reporthelper->awardsAudit([$program->account_holder_id], $dateFrom, $dateTo, $args);
+                $awardsAudit = $reporthelper->awardsAudit($programAccountHolderIds, $dateFrom, $dateTo, $args);
                 $reportData = [];
                 foreach ($awardsAudit as $item) {
                     $reportData[$item->date] = $item->toArray();
@@ -437,7 +442,7 @@ class DashboardController extends Controller
                 $args['group'] = 'date';
                 $args['p2p'] = true;
                 $args['order'] = $unit === 0 ? 'total' : 'count';
-                $awardsAudit = $reporthelper->awardsAudit([$program->account_holder_id], $dateFrom, $dateTo, $args);
+                $awardsAudit = $reporthelper->awardsAudit($programAccountHolderIds, $dateFrom, $dateTo, $args);
                 $reportData = [];
                 foreach ($awardsAudit as $item) {
                     $reportData[$item->date] = $item->toArray();
@@ -479,7 +484,7 @@ class DashboardController extends Controller
                 $args['group'] = 'month';
                 $args['p2p'] = true;
                 $args['order'] = $unit === 0 ? 'total' : 'count';
-                $awardsAudit = $reporthelper->awardsAudit([$program->account_holder_id], $dateFrom, $dateTo, $args);
+                $awardsAudit = $reporthelper->awardsAudit($programAccountHolderIds, $dateFrom, $dateTo, $args);
                 $reportData = [];
                 foreach ($awardsAudit as $item) {
                     $reportData[$item->month] = $item->toArray();
