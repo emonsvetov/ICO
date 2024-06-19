@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\EventIcon;
 use App\Models\Organization;
 use App\Http\Requests\EventIconRequest;
+use Illuminate\Support\Facades\Storage;
 
 class EventIconController extends Controller
 {
@@ -34,6 +35,12 @@ class EventIconController extends Controller
         }
 
         $eventIcons = $query->get();
+        $filesystemDriver = config('filesystems.default');
+        foreach ($eventIcons as $key => $eventIcon) {
+            if (!Storage::disk($filesystemDriver)->exists($eventIcon->path)) {
+                $eventIcon->path = 'eventIcons\default\1.jpg';
+            }
+        }
 
         if ( $eventIcons->isNotEmpty() )
         {

@@ -11,6 +11,7 @@ use App\Mail\templates\AwardBadgeEmail;
 use App\Mail\templates\PeerAwardEmail;
 use App\Mail\templates\AwardEmail;
 use App\Mail\templates\BirthdayBadgeEmail;
+use App\Mail\templates\CustomAwardEmail;
 
 class AwardNotification extends Notification implements ShouldQueue
 {
@@ -80,6 +81,15 @@ class AwardNotification extends Notification implements ShouldQueue
                 return (new BirthdayBadgeEmail(
                     $this->data->awardee_first_name,
                     $this->data->awardNotificationBody,
+                    $this->data->program
+                ))->convertToMailMessage();
+            break;
+            case 'CustomAward':
+                return (new CustomAwardEmail(
+                    $this->data->awardee_first_name,
+                    $this->data->eventName,
+                    $this->data->awardNotificationBody,
+                    $this->data->restrictions,
                     $this->data->program
                 ))->convertToMailMessage();
             break;

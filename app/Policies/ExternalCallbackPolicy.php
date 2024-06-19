@@ -14,9 +14,8 @@ class ExternalCallbackPolicy
 
     private function __authCheck($authUser, $organization, $program, $user = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id) return false;
-        if( $user && $program->organization_id != $user->organization_id) return false;
         return true;
     }
 
@@ -26,7 +25,7 @@ class ExternalCallbackPolicy
         {
             return false;
         }
-        
+
         if( $authUser->isManagerToProgram( $program ) ) return true;
         return $__authCheck->can('external-callback-list');
     }

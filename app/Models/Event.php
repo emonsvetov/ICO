@@ -77,8 +77,9 @@ class Event extends Model
     public static function getIndexData(Organization $organization, Program $program, array $params)
     {
         $query = self::where('organization_id', $organization->id);
-        $parentProgram = (new \App\Models\Program)->getParentProgramId($program->id);
-        $query->whereIn('program_id', [$program->id, $parentProgram]);
+//        $parentProgram = (new \App\Models\Program)->getParentProgramId($program->id);
+//        $query->whereIn('program_id', [$program->id, $parentProgram]);
+        $query->whereIn('program_id', [$program->id]);
 
         $include_disabled = request()->get('disabled', false);
 
@@ -132,6 +133,18 @@ class Event extends Model
     {
         $goalPlan = Event::where(['program_id'=> $program_id, 'id'=>$id])->first();
         return $goalPlan;
+    }
+
+    public static function readListInHierarchyByName($name, $programId)
+    {
+        $program = Program::where('id', $programId)->first();
+        $topProgramId = $program->getRoot('id')->id;
+        $topLevelProgram = Program::where('id', $topProgramId)->first();
+        $programIds = $topLevelProgram->descendantsAndSelf()->get()->pluck('id')->toArray();
+
+        return self::where('name', $name)
+            ->whereIn('program_id', $programIds)
+            ->get();
     }
 
 }

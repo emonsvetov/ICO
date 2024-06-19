@@ -18,7 +18,7 @@ class ReportPolicy
 
     public function viewAny(User $user, Organization $organization)
     {
-        if( $user->organization_id !== $organization->id ) return false;
+        if( !$user->belongsToOrg( $organization ) ) return false;
         return $user->permissions()->contains('view-reports');
     }
 }

@@ -13,11 +13,11 @@ class UserGoalPolicy
     use HandlesAuthorization;
     private function __authCheck($authUser, $organization, $program): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id) return false;
         return true;
     }
-    
+
 	 public function createUserGoalPlans(User $authUser, Organization $organization, Program $program)
     {
        // return true;
@@ -25,7 +25,7 @@ class UserGoalPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-create');
@@ -38,10 +38,10 @@ class UserGoalPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
-        return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-list');
+        return $authUser->isParticipantToProgram( $program ) || $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-list');
     }
 
     public function readActiveByProgramAndUser(User $authUser, Organization $organization, Program $program, User $user)
@@ -51,7 +51,7 @@ class UserGoalPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-list');
@@ -64,7 +64,7 @@ class UserGoalPolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-view');
@@ -77,10 +77,10 @@ class UserGoalPolicy
          {
              return false;
          }
-         
+
          if($authUser->isAdmin()) return true;
- 
+
          return $authUser->isManagerToProgram( $program ) || $authUser->can('user-goal-progress-view');
     }
-    
+
 }

@@ -35,28 +35,39 @@ class ProgramUserController extends Controller
     public function index(Request $request, Organization $organization, Program $program)
     {
         $selectedRoleId = request()->query('role_id');
+        $forceOrg = request()->query('forceOrg', false);
 
         if (empty($selectedRoleId)) {
             $selectedRoleId = null;
         }
 
-        if (is_null($selectedRoleId)) {
-            $userIds = $program->users->pluck('id')->toArray();
-        } else {
-            $userIds = $program->users->filter(function ($user) use ($selectedRoleId) {
-                return $user->roles->contains('id', $selectedRoleId);
-            })->pluck('id')->toArray();
-        }
+        // return $selectedRoleId;
 
+        $query = $program->users();
 
-        $query = User::whereIn('id', $userIds)
-            ->where(['organization_id' => $organization->id]);
-
-        if ($selectedRoleId) {
-            $query->whereHas('roles', function ($query) use ($selectedRoleId) {
-                $query->where('role_id', $selectedRoleId);
+        if (!empty($selectedRoleId)) {
+            $query->whereHas('roles', function ($query) use ($selectedRoleId, $program) {
+                $query->where('roles.id', $selectedRoleId);
+                $query->where('model_has_roles.program_id', '=', $program->id);
             });
+            // $userIds = $program->users->filter(function ($user) use ($selectedRoleId) {
+            //     return $user->roles->contains('id', $selectedRoleId);
+            // })->pluck('id')->toArray();
+            // return $userIds;
         }
+
+
+        // $query = User::whereIn('id', $userIds);
+        if( $forceOrg )
+        {
+            $query->where(['organization_id' => $organization->id]);
+        }
+
+        // if ($selectedRoleId) {
+        //     $query->whereHas('roles', function ($query) use ($selectedRoleId) {
+        //         $query->where('role_id', $selectedRoleId);
+        //     });
+        // }
 
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
@@ -144,7 +155,7 @@ class ProgramUserController extends Controller
     public function giftCodesRedeemed(Request $request, Organization $organization, Program $program, User $user)
     {
         $params = [
-            'programId' => $program->id,
+            'programId' => null,
             'user_id' => $user->id,
             'paginate' => true,
             'limit' => $request->get('limit'),
@@ -221,7 +232,7 @@ class ProgramUserController extends Controller
             'points' => $pointsEarned,
             'amount' => $amount_balance,
             'factor' => $factor_valuation,
-            'peerBalance' => $peerBalance, //todo
+            'peerBalance' => $peerBalance,
             'redeemedBalance' => $redeemedBalance,
             'expiredBalance' => $expiredBalance,
         ]);

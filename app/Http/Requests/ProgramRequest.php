@@ -103,7 +103,7 @@ class ProgramRequest extends FormRequest
             'fixed_fee' => 'nullable|numeric',
             'convenience_fee' => 'nullable|numeric',
             'monthly_usage_fee' => 'nullable|numeric',
-            'accounts_receivable_email' => 'nullable|string|email',
+            'accounts_receivable_email' => 'nullable',
             'bcc_email_list' => 'nullable|string',
             'cc_email_list' => 'nullable|string',
             'notification_email_list' => 'nullable|string',

@@ -11,6 +11,7 @@ use App\Models\Program;
 use App\Models\User;
 use App\Models\Country;
 use App\Models\State;
+use App\Services\RabbitMQService;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -20,7 +21,7 @@ class CheckoutController extends Controller
     {
         $cart = $request->validated();
         try {
-            $response = $checkoutService->processOrder( $cart, $program );
+            $response = $checkoutService->processOrder($cart, $program);
             if( !empty($response['errors']) )   {
                 return response(['errors' => $response['errors']], 422);
             }

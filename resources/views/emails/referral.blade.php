@@ -23,16 +23,22 @@ border-left:solid 1px;
                 <p style="margin-left:20px; margin-right:20px;">
                     Congratulations! You've just received a submission from {{$referrer_first_name}} {{$referrer_last_name}}.
                 </p>
+                @if (!empty($referee_first_name) && !empty($referee_last_name) && !empty($referee_email))
+                    <p style="margin-left:20px; margin-right:20px;">
+                        Full name: {{$referee_first_name}} {{$referee_last_name}}
+                    </p>
+                    <p style="margin-left:20px; margin-right:20px;">
+                        Email: {{$referee_email}}
+                    </p>
+                    @if (!empty($referee_area_code) && !empty($referee_phone))
+                        <p style="margin-left:20px; margin-right:20px;">
+                            Phone number: {{ $referee_area_code }}-{{ $referee_phone }}
+                        </p>
+                    @endif
+                @endif
                 <p style="margin-left:20px; margin-right:20px;">
-                    Full name: {{$referee_first_name}} {{$referee_last_name}}
+                    Message: {{$msg}}
                 </p>
-                <p style="margin-left:20px; margin-right:20px;">
-                    Email: {{$referee_email}}
-                </p>
-                <p style="margin-left:20px; margin-right:20px;">
-                    Phone number: {{$referee_area_code}}-{{$referee_phone}}
-                </p>
-
                 <p style="margin-left:20px; margin-right:20px;">
                     Log-in to your dashboard to view the submission in the reports section. Remember to give a reward to increase engagement AND get more submissions!
                 </p>

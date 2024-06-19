@@ -51,6 +51,7 @@ class ReferralNotification extends Notification
             $this->data->recipient_email,
             $this->data->recipient_area_code,
             $this->data->recipient_phone,
+            $this->data->message,
             $this->data->program,
         ))->convertToMailMessage();
     }

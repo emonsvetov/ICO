@@ -15,9 +15,9 @@ class ProgramMerchantPolicy
 
     private function __preAuthCheck($user, $organization, $program = null, $merchant = null): bool
     {
-        if( $organization->id != $user->organization_id ) return false;
+        if( !$organization->hasUser($user) ) return false;
         if( $program && $organization->id != $program->organization_id) return false;
-        if( $program && $merchant && !$program->merchants->contains( $merchant )) return false;
+        // if( $program && $merchant && !$program->merchants->contains( $merchant )) return false;
         return true;
     }
 
@@ -39,7 +39,7 @@ class ProgramMerchantPolicy
 
     public function view(User $user, Organization $organization, Program $program, Merchant $merchant)
     {
-        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        if ( !$organization->hasUser($user) || $organization->id != $program->organization_id )
         {
             return false;
         }
@@ -48,7 +48,7 @@ class ProgramMerchantPolicy
 
     public function viewGiftcodes(User $user, Organization $organization, Program $program, Merchant $merchant)
     {
-        if ( $organization->id != $user->organization_id || $organization->id != $program->organization_id )
+        if ( !$organization->hasUser($user) || $organization->id != $program->organization_id )
         {
             return false;
         }
@@ -60,9 +60,9 @@ class ProgramMerchantPolicy
         {
             return false;
         }
-        return $user->canReadProgram($program, 'program-merchant-view-redeemable');
+        return true;
     }
-  
+
     public function add(User $user, Organization $organization, Program $program)
     {
         if ( !$this->__preAuthCheck($user, $organization, $program) )

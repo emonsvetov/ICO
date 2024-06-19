@@ -14,7 +14,7 @@ class ProgramEmailTemplatePolicy
     use HandlesAuthorization;
     private function __authCheck($authUser, $organization, $program): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id) return false;
         return true;
     }
@@ -24,10 +24,10 @@ class ProgramEmailTemplatePolicy
         {
             return false;
         }
-        
+
         if($authUser->isAdmin()) return true;
 
         return $authUser->isManagerToProgram( $program ) || $authUser->can('program-email-template-list');
     }
-   
+
 }

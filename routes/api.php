@@ -90,6 +90,8 @@ Route::group([
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
         Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class,'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class,'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
         Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
     Route::group([
@@ -140,6 +142,8 @@ Route::group(['middleware' => ['json.response']], function () {
     Route::get('/v1/domain', [App\Http\Controllers\API\DomainController::class, 'getProgram']);
 
     Route::post('/v1/invitation/accept', [App\Http\Controllers\API\InvitationController::class, 'accept']);
+
+    Route::post('/v1/organization/{organization}/program/{program}/refer-participants', [App\Http\Controllers\API\ReferralController::class, 'refer']);
 });
 
 Route::middleware(['auth:api', 'json.response'])->group(function () {
@@ -411,6 +415,64 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
 
     // Tango API
     Route::get('/v1/tango-api/index',[App\Http\Controllers\API\TangoApiController::class, 'index'])->middleware('can:viewAny,App\TangoApi,organization,program');
+
+    Route::get('/v1/tango-settings',[App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
+
+    Route::get('/v1/tango-settings/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
+        ->middleware('can:view,App\TangoApi');
+
+    Route::get('/v1/tango-settings/view/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
+        ->middleware('can:view,App\TangoApi,organization,program');
+
+    Route::post('/v1/tango-settings/create', [App\Http\Controllers\API\TangoApiController::class, 'createConfiguration'])
+        ->middleware('can:create,App\TangoApi,organization,program');
+
+    Route::put('/v1/tango-settings/edit/{id}', [App\Http\Controllers\API\TangoApiController::class, 'updateConfiguration'])
+        ->middleware('can:update,App\TangoApi,organization,program');
+
+    Route::delete('/v1/tango-settings/delete/{id}', [App\Http\Controllers\API\TangoApiController::class, 'deleteConfiguration'])
+        ->middleware('can:delete,App\TangoApi,organization,program');
+
+    //HMI Configuration
+    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])
+        ->middleware('can:viewAny,App\Hmi,organization,program');
+
+    Route::get('/v1/hmi/{id}', [App\Http\Controllers\API\HmiController::class, 'view'])
+        ->middleware('can:view,App\Hmi,organization,program');
+
+    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])
+        ->middleware('can:create,App\Hmi,organization,program');
+
+    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])
+        ->middleware('can:update,App\Hmi');
+
+    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])
+        ->middleware('can:delete,App\Hmi');
+
+    // Server IPs
+    Route::get('/v1/server-ips', [App\Http\Controllers\API\ServerIpController::class, 'readList'])
+        ->middleware('can:viewAny,App\ServerIp,organization,program');
+
+    Route::get('/v1/server-ips/view/{id}', [App\Http\Controllers\API\ServerIpController::class, 'readById'])
+        ->middleware('can:view,App\ServerIp,organization,program');
+
+    Route::post('/v1/server-ips/create', [App\Http\Controllers\API\ServerIpController::class, 'create'])
+        ->middleware('can:create,App\ServerIp,organization,program');
+
+    Route::put('/v1/server-ips/edit/{id}', [App\Http\Controllers\API\ServerIpController::class, 'update'])
+        ->middleware('can:update,App\ServerIp,organization,program');
+
+    Route::delete('/v1/server-ips/delete/{id}', [App\Http\Controllers\API\ServerIpController::class, 'delete'])
+        ->middleware('can:delete,App\ServerIp,organization,program');
+
+    // Server IP Targets
+
+    Route::get('/v1/server-ips-target', [App\Http\Controllers\API\ServerIpsTargetController::class, 'readList'])
+        ->middleware('can:viewAny,App\ServerIpTarget,organization,program');
+
+    Route::post('/v1/server-ips-target/create', [App\Http\Controllers\API\ServerIpsTargetController::class, 'create'])
+        ->middleware('can:create,App\ServerIpTarget,organization,program');
+
 
     //ProgramLogin
 

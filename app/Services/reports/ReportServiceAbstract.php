@@ -252,6 +252,10 @@ abstract class ReportServiceAbstract
         }
     }
 
+    protected function prepareCalcResults($data){
+        return $data;
+    }
+
 	protected function calcByDateRange( $params = [] )
     {
         $this->table = [];
@@ -265,7 +269,7 @@ abstract class ReportServiceAbstract
                 // pr($query->count());
                 $query = $this->setOrderBy($query);
                 $query = $this->setLimit($query);
-                $this->table = $query->get()->toArray();
+                $this->table = $this->prepareCalcResults($query->get()->toArray());
             } catch (\Exception $exception) {
                print_r($exception->getMessage());
                die;
@@ -378,7 +382,7 @@ abstract class ReportServiceAbstract
 		if (isset ( $this->params [self::SQL_WHERE] ) && (count ( $this->params [self::SQL_WHERE] ))) {
 			$sql .= ' WHERE ' . implode ( ' AND ', $this->params [self::SQL_WHERE] );
 		}
-		if (isset ( $this->params [self::SQL_GROUP_BY] ) && (count ( $this->params [self::SQL_GROUP_BY] ))) {
+		if (isset ( $this->params [self::SQL_GROUP_BY] ) && is_array($this->params [self::SQL_GROUP_BY]) && (count ( $this->params [self::SQL_GROUP_BY] ))) {
 			$sql .= ' GROUP BY ' . implode ( ',', $this->params [self::SQL_GROUP_BY] );
 		}
 		if (isset ( $this->params [self::SQL_ORDER_BY] ) && (count ( $this->params [self::SQL_ORDER_BY] ))) {

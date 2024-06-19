@@ -14,9 +14,8 @@ class ProgramUserPolicy
 
     private function __authCheck($authUser, $organization, $program, $user = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id) return false;
-        if( $user && $program->organization_id != $user->organization_id) return false;
         return true;
     }
     /**
@@ -79,9 +78,8 @@ class ProgramUserPolicy
     {
         /*
         throw new \Exception('program: ' . $program->organization_id);
-        if( $organization->id != $authUser->organization_id ) return false;
+        if( !$authUser->belongsToOrg($organization) ) return false;
         if( $organization->id != $program->organization_id) return false;
-        if( $user && $program->organization_id != $user->organization_id) return false;
         return true;
         */
 

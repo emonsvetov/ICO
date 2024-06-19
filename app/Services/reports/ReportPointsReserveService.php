@@ -10,6 +10,7 @@ use App\Models\OptimalValue;
 use App\Models\Program;
 use App\Models\User;
 use App\Models\Posting;
+use Faker\Core\DateTime;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use PhpParser\Node\Expr\Cast\Object_;
@@ -107,82 +108,36 @@ class ReportPointsReserveService extends ReportServiceAbstract
                     foreach ( $programs_credits_report_table as $account_type_name => $account ) {
                         if (is_array ( $account ) && count ( $account ) > 0) {
                             foreach ( $account as $journal_event_type => $amount ) {
-                                switch ($account_type_name) {
-                                    case [self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER] :
-                                        switch ($journal_event_type) {
-                                            case [self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS] :
-                                                if ($program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->reclaimed += $amount;
-                                                }
-                                                break;
-                                            case [self::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS] :
-                                                if ($program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->value_paid += $amount;
-                                                }
-                                                break;
-                                        }
-                                        break;
-                                    case [self::ACCOUNT_TYPE_MONIES_AVAILABLE] :
-                                        switch ($journal_event_type) {
-                                            case [self::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING] :
-                                                if (! $program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->value_paid += $amount;
-                                                }
-                                                break;
-                                            case [self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES] :
-                                                if (! $program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->reclaimed += $amount;
-                                                }
-                                                break;
-                                        }
-                                        break;
-                                    case [self::ACCOUNT_TYPE_MONIES_EXPIRED] :
-                                        switch ($journal_event_type) {
-                                            case [self::JOURNAL_EVENT_TYPES_EXPIRE_MONIES] :
-                                                if (! $program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->expired += $amount; // Add so expire and deactive are summed
-                                                }
-                                                break;
-                                            case [self::JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES] :
-                                                if (! $program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->expired += $amount; // Add so expire and deactive are summed
-                                                }
-                                                break;
-                                        }
-                                        break;
-                                    case [self::ACCOUNT_TYPE_POINTS_EXPIRED] :
-                                        switch ($journal_event_type) {
-                                            case [self::JOURNAL_EVENT_TYPES_EXPIRE_POINTS] :
-                                                if ($program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->expired += $amount; // Add so expire and deactive are summed
-                                                }
-                                                break;
-                                            case [self::JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS] :
-                                                if ($program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->expired += $amount; // Add so expire and deactive are summed
-                                                }
-                                                break;
-                                        }
-                                        break;
-                                    case [self::ACCOUNT_TYPE_MONIES_REDEEMED] :
-                                        switch ($journal_event_type) {
-                                            case [self::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES] :
-                                                if (! $program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->redeemed += $amount;
-                                                }
-                                                break;
-                                        }
-                                        break;
-                                    case [self::ACCOUNT_TYPE_POINTS_REDEEMED] :
-                                        switch ($journal_event_type) {
-                                            case [self::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES] :
-                                            case [self::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING] :
-                                                if ($program->invoice_for_awards) {
-                                                    $this->table [( int ) $program->account_holder_id]->redeemed = $amount;
-                                                }
-                                                break;
-                                        }
-                                        break;
+
+                                if ($account_type_name === self::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER) {
+                                    if ($journal_event_type === self::JOURNAL_EVENT_TYPES_RECLAIM_POINTS && $program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->reclaimed += $amount;
+                                    } elseif ($journal_event_type === self::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_POINTS && $program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->value_paid += $amount;
+                                    }
+                                } elseif ($account_type_name === self::ACCOUNT_TYPE_MONIES_AVAILABLE) {
+                                    if ($journal_event_type === self::JOURNAL_EVENT_TYPES_PROGRAM_PAYS_FOR_MONIES_PENDING && !$program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->value_paid += $amount;
+                                    } elseif ($journal_event_type === self::JOURNAL_EVENT_TYPES_RECLAIM_MONIES && !$program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->reclaimed += $amount;
+                                    }
+                                } elseif ($account_type_name === self::ACCOUNT_TYPE_MONIES_EXPIRED) {
+                                    if (($journal_event_type === self::JOURNAL_EVENT_TYPES_EXPIRE_MONIES || $journal_event_type === self::JOURNAL_EVENT_TYPES_DEACTIVATE_MONIES) && !$program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->expired += $amount;
+                                    }
+                                } elseif ($account_type_name === self::ACCOUNT_TYPE_POINTS_EXPIRED) {
+                                    if (($journal_event_type === self::JOURNAL_EVENT_TYPES_EXPIRE_POINTS || $journal_event_type === self::JOURNAL_EVENT_TYPES_DEACTIVATE_POINTS) && $program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->expired += $amount;
+                                    }
+                                } elseif ($account_type_name === self::ACCOUNT_TYPE_MONIES_REDEEMED) {
+                                    if ($journal_event_type === self::JOURNAL_EVENT_TYPES_REDEEM_MONIES_FOR_GIFT_CODES && !$program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->redeemed += $amount;
+                                    }
+                                } elseif ($account_type_name === self::ACCOUNT_TYPE_POINTS_REDEEMED) {
+                                    if (($journal_event_type === self::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES || $journal_event_type === self::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_INTERNATIONAL_SHOPPING) && $program->invoice_for_awards) {
+                                        $this->table[(int)$program->account_holder_id]->redeemed = $amount;
+                                    }
+
                                 }
                             }
                         }
@@ -351,8 +306,15 @@ class ReportPointsReserveService extends ReportServiceAbstract
          // Get the monies awards for this year
          $subreport_params [self::ACCOUNT_TYPES] = array ();
          $subreport_params [self::JOURNAL_EVENT_TYPES] = array ();
-         if ($year)
-            $subreport_params [self::YEAR] = $year;
+        if ($year) {
+            $from_date = new \DateTime($subreport_params['from']);
+            $to_date = new \DateTime($subreport_params['to']);
+            $from_date->modify('-1 year');
+            $to_date->modify('-1 year');
+            $subreport_params['from'] = $from_date->format('Y-m-d H:i:s');
+            $subreport_params['to'] = $to_date->format('Y-m-d H:i:s');
+        }
+
          $points_report = new ReportSumProgramAwardsMoniesService ( $subreport_params );
          $points_report_table = $points_report->getTable ();
          // Sort the points awards

@@ -102,15 +102,10 @@ class Merchant extends Model
     }
 
     public static function readListByProgram( $program ) {
-        if( count($program->merchants) )    {
-            return $program->merchants;
+        $merchants = $program->getMerchantsRecursively();
+        if ($merchants->isNotEmpty()) {
+            return $merchants;
         }
-        //TODO - If there is no merchants for this program the we need to check whether this is a subprogram, and hence get list of merchants by parent program id
-        // if (Program::is_sub_program ( $program_account_holder_id )) {
-        //     $parent_id = Program::read_parent_account_holder_id ( $program_account_holder_id );
-        //     return self::read_list_by_program ( $parent_id, $offset, $limit );
-        // }
-
         return [];
     }
 

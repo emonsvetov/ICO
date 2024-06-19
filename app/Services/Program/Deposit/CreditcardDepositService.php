@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\DB;
 use net\authorize\api\contract\v1 as AnetAPI;
 use net\authorize\api\controller as AnetController;
 
-define('MERCHANT_LOGIN_ID', '24esm7EHxz4');
-define('MERCHANT_TRANSACTION_KEY', '635wP9MBj33ZbmWh');
-
 use App\Models\JournalEventType;
 use App\Models\Program;
 use App\Models\Invoice;
@@ -23,6 +20,8 @@ class CreditcardDepositService extends DepositServiceAbstract
             $resp = $this->getAuthorizeNetToken($invoice, $data);
             if( !empty($resp['token']) )    {
                 // DB::commit();
+                return $resp;
+            }else{
                 return $resp;
             }
         } catch (\RuntimeException $e)  {
@@ -112,8 +111,8 @@ class CreditcardDepositService extends DepositServiceAbstract
         $hash = $this->get_encrypted_hash($aNetReadyInvoice);
 
         $merchantAuthentication = new AnetAPI\MerchantAuthenticationType();
-        $merchantAuthentication->setName(MERCHANT_LOGIN_ID);
-        $merchantAuthentication->setTransactionKey(MERCHANT_TRANSACTION_KEY);
+        $merchantAuthentication->setName(env('ANET.MERCHANT_LOGIN_ID'));
+        $merchantAuthentication->setTransactionKey(env('ANET.MERCHANT_TRANSACTION_KEY'));
 
         // Set the transaction's refId
         $refId = 'ref' . time();
@@ -192,7 +191,11 @@ class CreditcardDepositService extends DepositServiceAbstract
 
         //execute request
         $controller = new AnetController\GetHostedPaymentPageController($anetRequest);
-        $response = $controller->executeWithApiResponse(\net\authorize\api\constants\ANetEnvironment::SANDBOX);
+        $requestUrl = \net\authorize\api\constants\ANetEnvironment::SANDBOX;
+        if( env('APP_ENV') == 'production' ){
+            $requestUrl = \net\authorize\api\constants\ANetEnvironment::PRODUCTION;
+        }
+        $response = $controller->executeWithApiResponse($requestUrl);
 
         if (($response != null) && ($response->getMessages()->getResultCode() == "Ok")) {
             // echo $response->getToken()."\n";
@@ -202,7 +205,7 @@ class CreditcardDepositService extends DepositServiceAbstract
         } else {
             $errorMessages = $response->getMessages()->getMessage();
             $errorText = "RESPONSE : " . $errorMessages[0]->getCode() . "  " .$errorMessages[0]->getText() . "\n";
-            $data['txt'] = $errorMessages[0]->getCode();
+            $data['txt'] = $errorText;
             $data['status'] = 'error';
         }
         return $data;

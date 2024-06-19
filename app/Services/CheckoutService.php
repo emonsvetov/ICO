@@ -30,7 +30,8 @@ class CheckoutService
         $this->tangoVisaApiService = $tangoVisaApiService;
     }
 
-    public function processOrder( $cart, $program, $user=null )   {
+    public function processOrder($cart, $program, $user = null)
+    {
 		// return Merchant::getRoot( 6 );
 
 		// pr($cart);
@@ -51,9 +52,9 @@ class CheckoutService
 
 		if( !$gift_codes ) return ['errors' => "No cart items in CheckoutService:processOrder"];
 
-        if($user == null) {
-            $user = auth()->user();
-        }
+    if (!$user){
+        $user = auth()->user();
+    }
 		// $user->account_holder_id = $user->account_holder_id;
 
         $merchantsCostToProgram = array ();
@@ -517,7 +518,8 @@ class CheckoutService
 
             // purchase codes from Tango since all transactions are final
             foreach($reserved_codes as $code){
-
+                $rabbitMQService = new RabbitMQService();
+                $rabbitMQService->redeemByCodeID($code->id,$program);
                 $gift_code_id = ( int )$code->id;
 
                 if(!$code->virtual_inventory &&
@@ -580,6 +582,7 @@ class CheckoutService
                         if($gift_codes_redeemed_item->id == $gift_code_id){
                             $gift_codes_redeemed_for[$index]->pin = $tangoResult['pin'];
                             $gift_codes_redeemed_for[$index]->code = $tangoResult['code'];
+                            $gift_codes_redeemed_for[$index]->tango_reference_order_id = $tangoResult['referenceOrderID'];
                             break;
                         }
                     }
