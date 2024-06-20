@@ -134,6 +134,29 @@ class BudgetProgramController extends Controller
         return response($currentBudget);
     }
 
+    public function getPendingCascadingApproval(Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadingApproval, Request $request, $participant)
+    {
+        $budgetCascadingPendingData = BudgetCascadingApproval::where('user_id', $participant)
+            ->where('approved', 0)
+            ->with('event')
+            ->with('requestor')
+            ->get();
+        $cascading = [];
+        foreach ($budgetCascadingPendingData as $key => $cascadingApproval) {
+            $cascading[$key]['id'] = $cascadingApproval['id'];
+            $cascading[$key]['event_name'] = $cascadingApproval['event']['name'];
+            $cascading[$key]['amount'] = $cascadingApproval['amount'];
+            $cascading[$key]['created_date'] = $cascadingApproval['created_at'];
+            $cascading[$key]['submitted_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
+            $cascading[$key]['date_of_award_submission'] = $cascadingApproval['scheduled_date'];
+
+        }
+        if ($cascading) {
+            return response($cascading);
+        }
+        return response([]);
+    }
+
 
     public function downloadAssignBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {

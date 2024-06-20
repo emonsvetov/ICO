@@ -945,6 +945,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     
     //Budget Cascading approval
     Route::get('/v1/organization/{organization}/program/{program}/cascading-approvals', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/{participant}/pending-approvals', [App\Http\Controllers\API\BudgetProgramController::class, 'getPendingCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/budget-cascading-approval', [App\Http\Controllers\API\BudgetProgramController::class, 'acceptRejectBudgetCascadingApproval'])->middleware('can:update,App\BudgetProgram,organization,program');
 });
 Route::post('/v1/user/{account_holder_id}/hmi/checkout',[App\Http\Controllers\API\CheckoutController::class, 'hmiStore']);

@@ -228,15 +228,16 @@ class BudgetProgramService
 
     public static function getParticipantCascadings(Program $program, User $user)
     {
-        $budgetCascading = BudgetCascadingApproval::where('user_id', $user->id)->get();
+        $budgetCascading = BudgetCascadingApproval::where('user_id', $user->id)
+            ->where('approved', 0)
+            ->get();
         if ($budgetCascading->isEmpty()) {
-            // If the user has no subjects, return a count of 0
+            // If the user has no budget cascading for approval, return a count of 0
             return [
                 'budget_cascading' => null,
                 'count' => 0
             ];
         }
-
 
         $groupedBudgetCascadings = $budgetCascading->groupBy('id')->map(function ($group) {
             return [
