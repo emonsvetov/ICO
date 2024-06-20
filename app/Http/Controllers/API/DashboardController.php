@@ -28,7 +28,7 @@ class DashboardController extends Controller
     ) {
         $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
         $dateFrom = date("Y-m-d");
-        $dateTo = date("Y-m-d");
+        $dateTo = date("Y-m-d H:i:s");
 
         $params = [
             'program_account_holder_ids' => $programAccountHolderIds,
@@ -105,7 +105,7 @@ class DashboardController extends Controller
 
         /** Today's Active Participants */
         $params = [
-            'programId' => $program->account_holder_id,
+            'programId' => $programAccountHolderIds,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
             'limit' => null,
@@ -116,7 +116,7 @@ class DashboardController extends Controller
         $participantToday = $report['data'] ?? 0;
 
         $params = [
-            'programId' => $program->account_holder_id,
+            'programId' => $programAccountHolderIds,
             'dateFrom' => $dateBeginMonth,
             'dateTo' => $dateTo,
             'limit' => null,
@@ -127,7 +127,7 @@ class DashboardController extends Controller
         $participantMTD = $report['data'] ?? 0;
 
         $params = [
-            'programId' => $program->account_holder_id,
+            'programId' => $programAccountHolderIds,
             'dateFrom' => $dateBeginYear,
             'dateTo' => $dateTo,
             'limit' => null,
@@ -159,7 +159,7 @@ class DashboardController extends Controller
         int $unit
     ) {
         $dateFrom = date("Y-m-d");
-        $dateTo = date("Y-m-d");
+        $dateTo = date("Y-m-d H:i:s");
         switch ($duration):
             case 'day':
                 $dateFrom = date("Y-m-d");
@@ -202,11 +202,11 @@ class DashboardController extends Controller
         int $unit
     ) {
         $dateFrom = date("Y-m-d");
-        $dateTo = date("Y-m-d");
+        $dateTo = date("Y-m-d H:i:s");
         switch ($duration):
             case 'day':
                 $dateFrom = date("Y-m-d 00:00:01");
-                $dateTo = date("Y-m-d 23:59:59");
+                // $dateTo = date("Y-m-d 23:59:59");
                 break;
             case 'month':
                 $month = date('m', strtotime($dateTo));
@@ -243,7 +243,7 @@ class DashboardController extends Controller
         string $duration,
         int $unit
     ) {
-        $dateTo = date("Y-m-d");
+        $dateTo = date("Y-m-d H:i:s");
         $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
 
         switch ($duration):
@@ -390,7 +390,7 @@ class DashboardController extends Controller
         string $duration,
         int $unit
     ) {
-        $dateTo = date("Y-m-d");
+        $dateTo = date("Y-m-d H:i:s");
         $programAccountHolderIds = $program->descendantsAndSelf()->get()->pluck('account_holder_id')->toArray();
 
         switch ($duration):
