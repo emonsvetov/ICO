@@ -95,6 +95,7 @@ class RabbitMQService
                     'gift_code_id' => $giftcode->v2_medium_info_id,
                     'currency_type' => '',
                     'medium_info_id' => $giftcode->v2_medium_info_id,
+                    'code' => $giftcode->code,
                 ]
             ];
             $transportData = base64_encode(json_encode($transportData));
@@ -134,7 +135,7 @@ class RabbitMQService
 
     public function markRedeemed($data)
     {
-        $mediumInfo = MediumInfo::where('v2_medium_info_id', $data['gift_code_id'])->first();
+        $mediumInfo = MediumInfo::where('code', $data['code'])->first();
         if (isset($mediumInfo)) {
             $mediumInfo->purchased_by_v2 = 1;
             $mediumInfo->purchased_in_system = $data['system_name'];
