@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\EntrataController;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -473,6 +474,21 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/server-ips-target/create', [App\Http\Controllers\API\ServerIpsTargetController::class, 'create'])
         ->middleware('can:create,App\ServerIpTarget,organization,program');
 
+    // Entrata
+    Route::get('/v1/entrata', [App\Http\Controllers\API\EntrataController::class, 'index'])
+        ->middleware('can:view,App\Entrata,organization,program');
+    Route::get('/v1/entrata/{id}', [App\Http\Controllers\API\EntrataController::class, 'show'])
+        ->middleware('can:view,App\Entrata,organization,program');
+    Route::post('/v1/entrata', [App\Http\Controllers\API\EntrataController::class, 'store'])
+        ->middleware('can:create,App\Entrata,organization,program');
+    Route::put('/v1/entrata/{id}', [App\Http\Controllers\API\EntrataController::class, 'update'])
+        ->middleware('can:update,App\Entrata,organization,program');
+    Route::delete('/v1/entrata/delete/{id}', [App\Http\Controllers\API\EntrataController::class, 'destroy'])
+        ->middleware('can:delete,App\Entrata,organization,program');
+    Route::post('/v1/entrata/verify', [App\Http\Controllers\API\EntrataController::class, 'verify'])
+        ->middleware('can:view,App\Entrata,organization,program');
+
+
 
     //ProgramLogin
 
@@ -833,3 +849,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/budgetprogram',[App\Http\Controllers\API\BudgetProgramController::class, 'store'])->middleware('can:create,App\BudgetProgram,organization,program');
 
 });
+Route::post('/v1/user/{account_holder_id}/hmi/checkout',[App\Http\Controllers\API\CheckoutController::class, 'hmiStore']);
+
+Route::get('/v1/user/{account_holder_id}/hmi/balance',[App\Http\Controllers\API\ProgramUserController::class, 'sendBalanceToHMI']);
+
+Route::get('/v1/user/{account_holder_id}/return/url',[App\Http\Controllers\API\ProgramUserController::class, 'returnLastLocation']);
