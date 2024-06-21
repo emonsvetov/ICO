@@ -157,7 +157,7 @@ class ProgramUserController extends Controller
     public function giftCodesRedeemed(Request $request, Organization $organization, Program $program, User $user)
     {
         $params = [
-            'programId' => $program->id,
+            'programId' => null,
             'user_id' => $user->id,
             'paginate' => true,
             'limit' => $request->get('limit'),
@@ -237,6 +237,25 @@ class ProgramUserController extends Controller
             'peerBalance' => $peerBalance,
             'redeemedBalance' => $redeemedBalance,
             'expiredBalance' => $expiredBalance,
+        ]);
+    }
+
+    public function sendBalanceToHMI(
+        $account_holder_id) {
+        $user = User::where('account_holder_id', $account_holder_id)->with('programs')->first();
+        $program = Program::where('id', $user->programs[0]->id)->first();
+        $factor_valuation = $program->factor_valuation;
+        $amount_balance = $user->readAvailableBalance($program, $user);
+        $pointBalance = $amount_balance * $program->factor_valuation;
+        return response([
+            'pointBalance' => $pointBalance,
+        ]);
+    }
+
+    public function returnLastLocation($account_holder_id) {
+        $user = User::where('account_holder_id', $account_holder_id)->first();
+        return response([
+            'return_url' => $user->last_location,
         ]);
     }
 

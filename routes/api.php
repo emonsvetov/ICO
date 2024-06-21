@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\API\HmiController;
+use App\Http\Controllers\API\EntrataController;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
@@ -434,16 +434,60 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         ->middleware('can:delete,App\TangoApi,organization,program');
 
     //HMI Configuration
-    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])->middleware('can:viewAny,App\Hmi,organization,program');
+    Route::get('/v1/hmi', [App\Http\Controllers\API\HmiController::class, 'index'])
+        ->middleware('can:viewAny,App\Hmi,organization,program');
 
     Route::get('/v1/hmi/{id}', [App\Http\Controllers\API\HmiController::class, 'view'])
-        ->middleware('can:view,App\Hmi');
+        ->middleware('can:view,App\Hmi,organization,program');
 
-    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])->middleware('can:create,App\Hmi');
+    Route::post('/v1/hmi/create', [App\Http\Controllers\API\HmiController::class, 'create'])
+        ->middleware('can:create,App\Hmi,organization,program');
 
-    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])->middleware('can:update,App\Hmi');
+    Route::put('/v1/hmi/edit/{id}', [App\Http\Controllers\API\HmiController::class, 'update'])
+        ->middleware('can:update,App\Hmi');
 
-    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])->middleware('can:delete,App\Hmi');
+    Route::delete('/v1/hmi/delete/{id}', [App\Http\Controllers\API\HmiController::class, 'destroy'])
+        ->middleware('can:delete,App\Hmi');
+
+    // Server IPs
+    Route::get('/v1/server-ips', [App\Http\Controllers\API\ServerIpController::class, 'readList'])
+        ->middleware('can:viewAny,App\ServerIp,organization,program');
+
+    Route::get('/v1/server-ips/view/{id}', [App\Http\Controllers\API\ServerIpController::class, 'readById'])
+        ->middleware('can:view,App\ServerIp,organization,program');
+
+    Route::post('/v1/server-ips/create', [App\Http\Controllers\API\ServerIpController::class, 'create'])
+        ->middleware('can:create,App\ServerIp,organization,program');
+
+    Route::put('/v1/server-ips/edit/{id}', [App\Http\Controllers\API\ServerIpController::class, 'update'])
+        ->middleware('can:update,App\ServerIp,organization,program');
+
+    Route::delete('/v1/server-ips/delete/{id}', [App\Http\Controllers\API\ServerIpController::class, 'delete'])
+        ->middleware('can:delete,App\ServerIp,organization,program');
+
+    // Server IP Targets
+
+    Route::get('/v1/server-ips-target', [App\Http\Controllers\API\ServerIpsTargetController::class, 'readList'])
+        ->middleware('can:viewAny,App\ServerIpTarget,organization,program');
+
+    Route::post('/v1/server-ips-target/create', [App\Http\Controllers\API\ServerIpsTargetController::class, 'create'])
+        ->middleware('can:create,App\ServerIpTarget,organization,program');
+
+    // Entrata
+    Route::get('/v1/entrata', [App\Http\Controllers\API\EntrataController::class, 'index'])
+        ->middleware('can:view,App\Entrata,organization,program');
+    Route::get('/v1/entrata/{id}', [App\Http\Controllers\API\EntrataController::class, 'show'])
+        ->middleware('can:view,App\Entrata,organization,program');
+    Route::post('/v1/entrata', [App\Http\Controllers\API\EntrataController::class, 'store'])
+        ->middleware('can:create,App\Entrata,organization,program');
+    Route::put('/v1/entrata/{id}', [App\Http\Controllers\API\EntrataController::class, 'update'])
+        ->middleware('can:update,App\Entrata,organization,program');
+    Route::delete('/v1/entrata/delete/{id}', [App\Http\Controllers\API\EntrataController::class, 'destroy'])
+        ->middleware('can:delete,App\Entrata,organization,program');
+    Route::post('/v1/entrata/verify', [App\Http\Controllers\API\EntrataController::class, 'verify'])
+        ->middleware('can:view,App\Entrata,organization,program');
+
+
 
     //ProgramLogin
 
@@ -779,3 +823,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::post('/v1/organization/{organization}/program/{program}/unitnumber/{unitNumber}/unassign',[App\Http\Controllers\API\UnitNumberController::class, 'unassign'])->middleware('can:assign,App\UnitNumber,organization,program,unitNumber');
 });
 
+Route::post('/v1/user/{account_holder_id}/hmi/checkout',[App\Http\Controllers\API\CheckoutController::class, 'hmiStore']);
+
+Route::get('/v1/user/{account_holder_id}/hmi/balance',[App\Http\Controllers\API\ProgramUserController::class, 'sendBalanceToHMI']);
+
+Route::get('/v1/user/{account_holder_id}/return/url',[App\Http\Controllers\API\ProgramUserController::class, 'returnLastLocation']);

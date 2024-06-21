@@ -416,7 +416,7 @@ class MigrateProgramAccountsService extends MigrationService
             }
             foreach ($v3ProgramAttributes as $field) {
                 if (isset($v2Settings[$field])) {
-                    $v3ProgramData[$field] = empty($v2Settings[$field]) ? 0 : $v2Settings[$field];
+                    $v3ProgramData[$field] = $v2Settings[$field];
                 }
             }
             foreach ($v3ProgramAddressAttributes as $field) {

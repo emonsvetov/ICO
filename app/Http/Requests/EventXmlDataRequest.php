@@ -30,6 +30,7 @@ class EventXmlDataRequest extends FormRequest
             'amount_override' => 'nullable|integer',
             'notification_body' => 'nullable|string',
             'notes' => 'nullable|string',
+            'restrictions' => 'nullable|string',
             'referrer' => 'nullable|string',
             'email_template_id' => 'nullable|integer',
             'event_type_id' => 'nullable|integer',

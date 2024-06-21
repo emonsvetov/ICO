@@ -9,11 +9,6 @@ border-bottom:solid 1px;
         <tbody>
         <tr>
             <td>
-                <h2 style="margin-left:20px; margin-right:20px;">You have been sent monthly invoice!</h2>
-                <!-- <img src="{{ $imagePath }}nk110-75933eb3-d85d-4093-aaab-7c450915f0e0-v2.jpeg"> -->
-                <p style="margin-left:20px; margin-right:20px;">
-                    Dear {{ $program->name }} Manager,
-                </p>
                 <div style="margin-left:20px; margin-right:20px; padding-bottom:10px;">
                 <h3> Attached is your Incentco bill for </h3><b>{{ $program->name }}</b> for <b>{{ $date_begin }}</b> through <b> {{ $date_end }}</b>
 
