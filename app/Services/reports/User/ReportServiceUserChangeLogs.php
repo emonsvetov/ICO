@@ -58,10 +58,12 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
     protected function setWhereFilters(Builder $query): Builder
     {
         $programs = [];
+        $rootPrograms = [];
         if (blank($this->params[self::PROGRAMS])) {
             if (!blank($this->params[self::PROGRAM_ID])) {
                 $program = Program::where('id', $this->params[self::PROGRAM_ID])->first();
                 $topLevelProgram = $program->getRoot(['id', 'name']);
+                $rootPrograms[] = $topLevelProgram->id;
                 $programs[] = $program->id;
                 $query->whereIn('programs.id', $programs);
             }
@@ -72,15 +74,27 @@ class ReportServiceUserChangeLogs extends ReportServiceAbstractBase
                 foreach ($programIDs as $programID) {
                     $program = Program::where('account_holder_id', $programID)->first();
                     $topLevelProgram = $program->getRoot(['id', 'name']);
+                    $rootPrograms[] = $topLevelProgram->id;
                     $programs[] = $program->id;
                 }
                 $programs = array_unique($programs);
             }
         }
 
-        $query->whereIn('users_log.parent_program_id', $programs);
-        if ($this->params[self::USER_ACCOUNT_HOLDER_ID]){
-            $query->where('users_log.user_account_holder_id', $this->params[self::USER_ACCOUNT_HOLDER_ID]);
+        $query->whereIn('users_log.parent_program_id', $rootPrograms);
+
+        $user_account_holder_id = $this->params[self::USER_ACCOUNT_HOLDER_ID] ?? FALSE;
+        $user_id = $this->params[self::USER_ID] ?? FALSE;
+
+        if ($user_id && !$user_account_holder_id) {
+            $user = User::where('id', $user_id)->first();
+            if (!blank($user)) {
+                $user_account_holder_id = $user->account_holder_id;
+            }
+        }
+
+        if ($user_account_holder_id) {
+            $query->where('users_log.user_account_holder_id', $user_account_holder_id);
         }
 
         return $query;
