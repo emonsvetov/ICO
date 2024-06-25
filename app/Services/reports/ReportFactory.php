@@ -49,6 +49,7 @@ class ReportFactory
         $keyword = $params['keyword'] ?? null;
         $orderStatus = $params['orderStatus'] ?? null;
         $purchaseByV2 = $params['purchaseByV2'] ?? null;
+        $purchasedInSystem = $params['purchasedInSystem'] ?? null;
         $flatData = $params['flatData'] ?? null;
         if ($paramPage && $paramLimit) {
             $paginate = true;
@@ -84,6 +85,7 @@ class ReportFactory
             'keyword' => $keyword,
             'orderStatus' => $orderStatus,
             'purchaseByV2' => $purchaseByV2,
+            'purchasedInSystem' => $purchasedInSystem,
             'programs'=> $programs,
             'flatData'=> $flatData
         ];

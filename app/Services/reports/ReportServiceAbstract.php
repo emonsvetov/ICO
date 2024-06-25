@@ -17,6 +17,7 @@ abstract class ReportServiceAbstract
     const INVENTORY_TYPE = 'inventoryType';
     const ORDER_STATUS = 'orderStatus';
     const PURCHASE_BY_V2 = 'purchaseByV2';
+    const PURCHASED_IN_SYSTEM = 'purchasedInSystem';
     const KEYWORD = 'keyword';
     const DATE_BEGIN = 'from';
     const DATE_END = "to";
@@ -150,6 +151,7 @@ abstract class ReportServiceAbstract
         $this->params[self::KEYWORD] = $params[self::KEYWORD] ?? null;
         $this->params[self::ORDER_STATUS] = $params[self::ORDER_STATUS] ?? null;
         $this->params[self::PURCHASE_BY_V2] = $params[self::PURCHASE_BY_V2] ?? null;
+        $this->params[self::PURCHASED_IN_SYSTEM] = $params[self::PURCHASED_IN_SYSTEM] ?? null;
         $this->reportHelper = new ReportHelper() ?? null;
     }
 

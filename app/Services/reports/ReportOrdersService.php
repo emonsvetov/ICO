@@ -63,6 +63,10 @@ class ReportOrdersService extends ReportServiceAbstract
             }
         }
 
+        if ($this->params[self::PURCHASED_IN_SYSTEM] != '') {
+            $query->where('purchased_in_system', '=', $this->params[self::PURCHASED_IN_SYSTEM]);
+        }
+
         $purchaseByV2 = $this->params[self::PURCHASE_BY_V2];
         if ($purchaseByV2) {
             $query->where('purchased_by_v2', '=', [1 => 0, 2 => 1][$purchaseByV2]);
