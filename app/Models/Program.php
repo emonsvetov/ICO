@@ -79,6 +79,11 @@ class Program extends BaseModel
         return $this->hasMany(UnitNumber::class);
     }
 
+    public function position_levels()
+    {
+        return $this->hasMany(PositionLevel::class);
+    }
+
     public function address()
     {
         return $this->hasOne(Address::class, 'account_holder_id', 'account_holder_id')->with(['state', 'country']);
