@@ -78,6 +78,14 @@ class BudgetProgramPolicy
         return $user->can('budget-program-update');
     }
 
+    public function updateCascadingApprovals(User $user,Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    {
+        if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+        if($user->isAdmin()) return true;
+        if($user->isManagerToProgram($program)) return true;
+        return $user->can('budget-program-updateCascadingApprovals');
+    }
+
     /**
      * Determine whether the user can delete the model.
      *

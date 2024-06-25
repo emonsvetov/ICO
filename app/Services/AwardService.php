@@ -156,7 +156,7 @@ class AwardService
                     'program_approval_id' => 0,
                     'program_id' => $data->program_id,
                     'include_in_budget' => $event->include_in_budget,
-                    'budgets_cascading_id' => "",
+                    'budgets_cascading_id' =>$data->budget_cascading_id,
                     'rejection_note' => "",
                     'scheduled_date' => Carbon::now(),
                     'action_by' => $awarder->id,
