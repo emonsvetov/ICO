@@ -115,7 +115,8 @@ class ImportController extends Controller
         $csvImport = new CsvImport;
         $newCsvImport = $csvImport->createCsvImport($fileUpload + [
             'organization_id'       => $organization->id,
-            'csv_import_type_id'    => $csvImportType->id
+            'csv_import_type_id'    => $csvImportType->id,
+            'program_id' => $program->id,
         ]);
 
         // ImportUserForProgramValidationJob::dispatch($newCsvImport, $validated['fieldsToMap'], $supplied_constants, $validated['setups']);
