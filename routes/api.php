@@ -829,3 +829,10 @@ Route::post('/v1/user/{account_holder_id}/hmi/checkout',[App\Http\Controllers\AP
 Route::get('/v1/user/{account_holder_id}/hmi/balance',[App\Http\Controllers\API\ProgramUserController::class, 'sendBalanceToHMI']);
 
 Route::get('/v1/user/{account_holder_id}/return/url',[App\Http\Controllers\API\ProgramUserController::class, 'returnLastLocation']);
+
+
+Route::post('/v1/organization/{organization}/subscribe',[App\Http\Controllers\API\PaymentController::class, 'subscribe']);
+Route::post('/v1/organization/{organization}/unsubscribe',[App\Http\Controllers\API\PaymentController::class, 'unsubscribe']);
+
+Route::post('/v1/organization/{organization}/program/{program}/fundby/creditCardPayment',[App\Http\Controllers\API\PaymentController::class, 'creditCard']);
+Route::post('/v1/organization/{organization}/program/{program}/fundby/bankDebitPayment',[App\Http\Controllers\API\PaymentController::class, 'bankDebit']);
