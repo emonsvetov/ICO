@@ -7,6 +7,7 @@ use App\Models\Program;
 use App\Models\BudgetType;
 use App\Models\Organization;
 use App\Models\BudgetProgram;
+use App\Models\BudgetCascading;
 use App\Services\BudgetProgramService;
 use App\Models\BudgetCascadingApproval;
 use App\Http\Requests\BudgetProgramRequest;
@@ -115,17 +116,32 @@ class BudgetProgramController extends Controller
     {
         $approver = auth()->user();
         $data = $approvalRequest->validated();
+        $budgetCascadingApprovals = BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])->get();
         // Update the approved status
         BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])
             ->update(['approved' => $data['approved'], 'action_by' => $approver->id]);
 
         if ($data['approved'] == '1') {
+            // Additional steps when the approval is accepted
+            foreach ($budgetCascadingApprovals as $approval) {
+                $budgetCascading = BudgetCascading::find($approval->budgets_cascading_id);
+                if ($budgetCascading) {
+                    $budgetCascading->budget_amount_remaining -= $approval->amount;
+                    $budgetCascading->save();
+                }
+            }
         }
         return response()->json(['message' => 'Approval status updated successfully.']);
     }
 
-    public function revokeBudgetCascadingApproval(Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadingApproval)
+    public function revokeBudgetCascadingApproval(BudgetCascadinApprovalRequest $approvalRequest, Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadingApproval)
     {
+        $data = $approvalRequest->validated();
+        $ids = $data['budget_cascading_approval_id'];
+        if (is_array($ids) && !empty($ids)) {
+            BudgetCascadingApproval::whereIn('id', $ids)->delete();
+        }
+        return response()->json(['message' => 'Revoked successfully.']);
     }
 
     public function getCurrentBudget(Organization $organization, Program $program)
@@ -149,7 +165,6 @@ class BudgetProgramController extends Controller
             $cascading[$key]['created_date'] = $cascadingApproval['created_at'];
             $cascading[$key]['submitted_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
             $cascading[$key]['date_of_award_submission'] = $cascadingApproval['scheduled_date'];
-
         }
         if ($cascading) {
             return response($cascading);

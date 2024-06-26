@@ -26,7 +26,7 @@ class BudgetCascadinApprovalRequest extends FormRequest
         return [
             'budget_cascading_approval_id' => 'required|array',
             'budget_cascading_approval_id.*' => 'required|integer',
-            'approved' => 'required|integer',
+            'approved' => 'integer',
         ];
     }
 }

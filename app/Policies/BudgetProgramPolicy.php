@@ -118,6 +118,14 @@ class BudgetProgramPolicy
     }
 
 
+    public function revokeApproval(User $user, Organization $organization, Program $program)
+    {
+       if(!$this->__preAuthCheck($user, $organization, $program)) return false;
+       if($user->isAdmin()) return true;
+       if($user->isManagerToProgram($program)) return true;
+       return $user->can('budget-program-revokeApproval');
+    }
+
     /**
      * Determine whether the user can restore the model.
      *

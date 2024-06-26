@@ -87,11 +87,11 @@ Route::group([
     ], function () {
         Route::get('', [App\Http\Controllers\API\EventController::class, 'index'])->name('api.v1.organization.program.event.index')->middleware('can:view,App\ProgramEvent,organization,program');
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
-        Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
-        Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class,'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class,'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
+        Route::post('', [App\Http\Controllers\API\EventController::class, 'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
+        Route::put('{event}', [App\Http\Controllers\API\EventController::class, 'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class, 'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class, 'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::delete('{event}', [App\Http\Controllers\API\EventController::class, 'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
     Route::group([
         'prefix' => '/event-award-level',
@@ -459,7 +459,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     // Tango API
     Route::get('/v1/tango-api/index', [App\Http\Controllers\API\TangoApiController::class, 'index'])->middleware('can:viewAny,App\TangoApi,organization,program');
 
-    Route::get('/v1/tango-settings',[App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
+    Route::get('/v1/tango-settings', [App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
 
     Route::get('/v1/tango-settings/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
         ->middleware('can:view,App\TangoApi');
@@ -476,7 +476,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/tango-settings/delete/{id}', [App\Http\Controllers\API\TangoApiController::class, 'deleteConfiguration'])
         ->middleware('can:delete,App\TangoApi,organization,program');
 
-    Route::get('/v1/tango-settings',[App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
+    Route::get('/v1/tango-settings', [App\Http\Controllers\API\TangoApiController::class, 'listConfigurations'])->middleware('can:viewAny,App\TangoApi,organization,program');
 
     Route::get('/v1/tango-settings/{id}', [App\Http\Controllers\API\TangoApiController::class, 'viewConfiguration'])
         ->middleware('can:view,App\TangoApi');
@@ -942,14 +942,16 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     )->middleware('can:close,App\Models\BudgetProgram,organization,program,budgetProgram');
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/cascading', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascading'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/template', [App\Http\Controllers\API\BudgetProgramController::class, 'downloadAssignBudgetTemplate'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
-    
+
     //Budget Cascading approval
     Route::get('/v1/organization/{organization}/program/{program}/cascading-approvals', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/{participant}/pending-approvals', [App\Http\Controllers\API\BudgetProgramController::class, 'getPendingCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/budget-cascading-approval', [App\Http\Controllers\API\BudgetProgramController::class, 'acceptRejectBudgetCascadingApproval'])->middleware('can:updateCascadingApprovals,App\BudgetProgram,organization,program');
+    Route::delete('/v1/organization/{organization}/program/{program}/budget-cascading-approval/{budgetcascadingapproval}', [App\Http\Controllers\API\BudgetProgramController::class, 'revokeBudgetCascadingApproval'])->middleware('can:revokeApproval,App\BudgetProgram,organization,program');
 });
-Route::post('/v1/user/{account_holder_id}/hmi/checkout',[App\Http\Controllers\API\CheckoutController::class, 'hmiStore']);
 
-Route::get('/v1/user/{account_holder_id}/hmi/balance',[App\Http\Controllers\API\ProgramUserController::class, 'sendBalanceToHMI']);
+Route::post('/v1/user/{account_holder_id}/hmi/checkout', [App\Http\Controllers\API\CheckoutController::class, 'hmiStore']);
 
-Route::get('/v1/user/{account_holder_id}/return/url',[App\Http\Controllers\API\ProgramUserController::class, 'returnLastLocation']);
+Route::get('/v1/user/{account_holder_id}/hmi/balance', [App\Http\Controllers\API\ProgramUserController::class, 'sendBalanceToHMI']);
+
+Route::get('/v1/user/{account_holder_id}/return/url', [App\Http\Controllers\API\ProgramUserController::class, 'returnLastLocation']);
