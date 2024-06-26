@@ -24,8 +24,9 @@ class ProgramUserAssignRoleRequest extends FormRequest
     public function rules()
     {
         return [
-            'roles' => 'required|array',
-            'roles.*' => 'required|integer',
+            'roles' => 'array|nullable',
+            'roles.*' => 'integer|nullable',
+            'is_organization_admin'=> 'sometimes|boolean',
         ];
     }
 }
