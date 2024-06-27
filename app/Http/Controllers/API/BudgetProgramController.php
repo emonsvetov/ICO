@@ -138,11 +138,21 @@ class BudgetProgramController extends Controller
     {
         $data = $approvalRequest->validated();
         $ids = $data['budget_cascading_approval_id'];
+
         if (is_array($ids) && !empty($ids)) {
+            $approvals = BudgetCascadingApproval::whereIn('id', $ids)->get();
+            foreach ($approvals as $approval) {
+                $updatedAmount = $approval->budget_cascading->budget_amount_remaining + $approval->amount;
+                BudgetCascading::where('id', $approval->budgets_cascading_id)
+                    ->update(['budget_amount_remaining' => $updatedAmount]);
+            }
+
             BudgetCascadingApproval::whereIn('id', $ids)->delete();
         }
+
         return response()->json(['message' => 'Revoked successfully.']);
     }
+
 
     public function getCurrentBudget(Organization $organization, Program $program)
     {

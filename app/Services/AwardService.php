@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Exception;
 
 use App\Models\BudgetCascadingApproval;
+use App\Models\BudgetCascading;
 use App\Models\JournalEventType;
 use App\Models\Organization;
 use App\Models\EventXmlData;
@@ -113,7 +114,7 @@ class AwardService
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach ($users as $user) {
-                //$result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
+                $result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
                 $this->SaveBudgetCascadingApprovalDetail($event, $user, $awarder, $award);
             }
 
@@ -138,7 +139,6 @@ class AwardService
         $program = $event->program;
         $budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
-      
         $transaction_id = generate_unique_id();
         $awardData = [];
         foreach ($event_award as $eventAwardLevel) {
@@ -158,12 +158,15 @@ class AwardService
                     'program_approval_id' => 0,
                     'program_id' => $data->program_id,
                     'include_in_budget' => $event->include_in_budget,
-                    'budgets_cascading_id' =>$budgets_cascading[0]['id'],
+                    'budgets_cascading_id' => $budgets_cascading[0]['id'],
                     'rejection_note' => "",
                     'scheduled_date' => Carbon::now(),
                     'action_by' => $awarder->id,
                 ]);
             }
+            $updatedAmount = $budgets_cascading[0]['budget_amount_remaining'] - $eventAwardLevel->amount;
+            BudgetCascading::where('id', $budgets_cascading[0]['id'])
+                ->update(['budget_amount_remaining' => $updatedAmount]);
         }
     }
 
@@ -179,7 +182,7 @@ class AwardService
 
         $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
-        
+
         $isCustom = $eventType->isEventTypeCustom();
         $isBadge = $eventType->isEventTypeBadge();
         $isPeer2peer = $eventType->isEventTypePeer2Peer();
@@ -206,12 +209,10 @@ class AwardService
         //Set notification type
         $notificationType = 'Award';
 
-        if( $isCustom )
-        {
+        if ($isCustom) {
             $notificationType = 'CustomAward';
         }
-        if( $isBadge )
-        {
+        if ($isBadge) {
             $notificationType = 'BadgeAward';
         }
         if ($isMilestoneAward) {
@@ -472,8 +473,7 @@ class AwardService
             $notification['availableAwardPoints'] = $awardee->readAvailableBalance($program) * $factor_valuation;
         }
 
-        if( $notificationType == 'CustomAward')
-        {
+        if ($notificationType == 'CustomAward') {
             $notification['restrictions'] = $restrictions;
         }
 
