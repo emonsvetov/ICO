@@ -172,6 +172,17 @@ class BudgetProgramController extends Controller
         return response([]);
     }
 
+    public function awardsPending(Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadingApproval)
+    {
+        $pendingCount = BudgetCascadingApproval::where('program_id', $program->id)
+            ->where('approved', 0)
+            ->count();
+
+        return response()->json([
+            'pending_count' => $pendingCount
+        ], 200);
+    }
+
 
     public function downloadAssignBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {

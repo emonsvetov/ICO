@@ -113,7 +113,7 @@ class AwardService
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach ($users as $user) {
-                $result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
+                //$result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
                 $this->SaveBudgetCascadingApprovalDetail($event, $user, $awarder, $award);
             }
 
@@ -136,7 +136,9 @@ class AwardService
     public function SaveBudgetCascadingApprovalDetail($event, $user, $awarder, object $data = null)
     {
         $program = $event->program;
+        $budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
+      
         $transaction_id = generate_unique_id();
         $awardData = [];
         foreach ($event_award as $eventAwardLevel) {
@@ -156,7 +158,7 @@ class AwardService
                     'program_approval_id' => 0,
                     'program_id' => $data->program_id,
                     'include_in_budget' => $event->include_in_budget,
-                    'budgets_cascading_id' =>$data->budget_cascading_id,
+                    'budgets_cascading_id' =>$budgets_cascading[0]['id'],
                     'rejection_note' => "",
                     'scheduled_date' => Carbon::now(),
                     'action_by' => $awarder->id,

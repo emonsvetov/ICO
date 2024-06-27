@@ -214,15 +214,26 @@ class BudgetProgramService
         $endOfYear = Carbon::now()->endOfYear()->toDateString();
         $currentMonthBudget = BudgetCascading::where('program_id', $program->id)
             ->where('budget_start_date', $startOfMonth)
-            ->get();
+            ->count();
         $currentYearBudget = BudgetCascading::where('program_id', $program->id)
             ->where('budget_start_date', $startOfYear)
             ->where('budget_end_date', $endOfYear)
-            ->get();
+            ->count();
 
+            $award_pendings = BudgetCascadingApproval::where('program_id', $program->id)
+            ->where('approved', 0)
+            ->count();
         return [
             'current_month_budget' => $currentMonthBudget,
-            'current_year_budget' => $currentYearBudget
+            'current_month_awaiting' => $currentMonthBudget,
+            'current_month_remaining' => $currentMonthBudget,
+            'current_month_award_distributed:' => $currentMonthBudget,
+            'current_year_budget' => $currentYearBudget,
+            'current_year_awaiting' => $currentMonthBudget,
+            'current_year_remaining' => $currentMonthBudget,
+            'current_year_award_distributed:' => $currentMonthBudget,
+            'awards_pending' => $award_pendings,
+            'awards_schedule' => $award_pendings,
         ];
     }
 
