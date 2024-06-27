@@ -40,7 +40,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 					'deposit_reversal' => 0,
 					'deposit_fee_reversal' => 0,
 					'transaction_fee' => 0,
-					'refunded_transaction_fee' => 0,
+					'refunded_transaction_fees' => 0,
                     'program_pays_for_saas_fees' => 0,
                     'reversal_program_pays_for_saas_fees' => 0,
                     'program_refunds_for_monies_pending' => 0,
@@ -178,7 +178,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 														$table[$program->account_holder_id]->convenience_fees = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_POINTS_TRANSACTION_FEE :
-														$table[$program->account_holder_id]->refunded_transaction_fee = $amount;
+														$table[$program->account_holder_id]->refunded_transaction_fees = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_POINTS :
 														$table[$program->account_holder_id]->reclaims = $amount;
@@ -197,7 +197,7 @@ class ReportJournalDetailedService extends ReportServiceAbstract
 														$table[$program->account_holder_id]->reclaims = $amount;
 														break;
 													case JournalEventType::JOURNAL_EVENT_TYPES_REFUND_PROGRAM_FOR_MONIES_TRANSACTION_FEE :
-														$table[$program->account_holder_id]->refunded_transaction_fee = $amount;
+														$table[$program->account_holder_id]->refunded_transaction_fees = $amount;
 														break;
 												}
                                                 if ($journal_event_type == JournalEventType::JOURNAL_EVENT_TYPES_PROGRAM_TRANSFERS_MONIES_AVAILABLE) {

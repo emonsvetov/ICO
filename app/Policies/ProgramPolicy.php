@@ -14,7 +14,7 @@ class ProgramPolicy
     use HandlesAuthorization;
 
     private function __preAuthCheck($authUser, $organization, $program = null, $invoice = null)   {
-        if( !$authUser->belongsToOrg($organization) ) return false;
+        // if( !$authUser->belongsToOrg($organization) ) return false;
         if( $program && $program->organization_id != $organization->id) return false;
         if( $program && $invoice && $program->id != $invoice->program_id) return false;
         return true;
@@ -29,7 +29,7 @@ class ProgramPolicy
     public function viewAny(User $user, Organization $organization)
     {
         if( !$this->__preAuthCheck($user,$organization) ) return false;
-        if( $user->isAdmin() )
+        if( $user->isAdmin($organization) )
         {
             return true;
         }
@@ -39,7 +39,7 @@ class ProgramPolicy
     public function view(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         if( $user->isManagerToProgram( $program )) return true;
         if( $user->isParticipantToProgram( $program )) return true;
         return $user->can('program-view');
@@ -48,14 +48,14 @@ class ProgramPolicy
     public function create(User $user, Organization $organization)
     {
         if( !$this->__preAuthCheck($user, $organization) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-create');
     }
 
     public function update(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() )
+        if( $user->isAdmin($organization) )
         {
             return true;
         }
@@ -65,42 +65,42 @@ class ProgramPolicy
     public function delete(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-delete');
     }
 
     public function move(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-move');
     }
 
     public function restore(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-restore');
     }
 
     public function listPayments(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-list-payments');
     }
 
     public function viewBalance(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->isManagerToProgram( $program ) || $user->can('program-view-balance');
     }
 
     public function updatePayments(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         if( $user->isManagerToProgram($program) ) return true;
         return $user->can('program-update-payments');
     }
@@ -108,14 +108,14 @@ class ProgramPolicy
     public function reversePayments(User $user, Organization $organization, Program $program, Invoice $invoice)
     {
         if( !$this->__preAuthCheck($user, $organization, $program, $invoice) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-reverse-payments');
     }
 
     public function transferMonies(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         if( $user->isManagerToProgram( $program ) )  return true;
         return $user->can('program-transfer-monies');
     }
@@ -123,49 +123,49 @@ class ProgramPolicy
     public function listStatus(User $user, Organization $organization)
     {
         if( !$this->__preAuthCheck($user, $organization) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-list-status');
     }
 
     public function updateStatus(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-update-status');
     }
 
     public function liveMode(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->isManagerToProgram( $program ) || $user->can('program-live-mode');
     }
 
     public function listLedgerCodes(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         if( $user->isManagerToProgram( $program ) )  return true;
         return $user->can('program-list-ledgercodes');
     }
     public function createLedgerCodes(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-update-ledgercodes');
     }
 
     public function updateLedgerCodes(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-update-ledgercodes');
     }
 
     public function deleteLedgerCodes(User $user, Organization $organization, Program $program)
     {
         if( !$this->__preAuthCheck($user, $organization, $program) ) return false;
-        if( $user->isAdmin() ) return true;
+        if( $user->isAdmin($organization) ) return true;
         return $user->can('program-del-ledgercodes');
     }
 }

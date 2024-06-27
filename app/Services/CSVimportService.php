@@ -50,7 +50,7 @@ class CSVimportService
             if ($file instanceof \App\Models\CsvImport) {
                 $filepath = $file['path'];
                 if (config('app.env') == 'local') {
-                    $filepath = storage_path('app/' . $filepath);
+                    $filepath = storage_path('app/public/' . $filepath);
                 }
             }
         }

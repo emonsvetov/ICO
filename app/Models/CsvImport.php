@@ -33,7 +33,7 @@ class CsvImport extends BaseModel
 
     public function createCsvImport($fileUpload)
     {
-        $disk = config('app.env') == 'local' ? 'local' : 's3';
+        $disk = config('app.env') == 'local' ? 'public' : 's3';
         $path = Storage::disk($disk)->put($fileUpload['organization_id'] . '/uploads', $fileUpload['upload-file']);
 
         $csv = [
@@ -43,7 +43,8 @@ class CsvImport extends BaseModel
             'path'                  => $path,
             'size'                  => $fileUpload['upload-file']->getSize(),
             'rowcount'              => count( file( $fileUpload['upload-file'], FILE_SKIP_EMPTY_LINES ) ),
-            'is_processed'          => 1
+            'is_processed'          => 1,
+            'program_id'            => $fileUpload['program_id'],
         ];
 
         return parent::create($csv);

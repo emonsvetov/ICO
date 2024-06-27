@@ -153,7 +153,6 @@ Route::middleware(['auth:api', 'json.response'])->group(function () {
 
     Route::post('/v1/email/verification-notification', [App\Http\Controllers\API\EmailVerificationController::class, 'sendVerificationEmail']);
     Route::get('/v1/email/verify/{id}/{hash}', [App\Http\Controllers\API\EmailVerificationController::class, 'verify'])->name('verification.verify');
-
 });
 
 

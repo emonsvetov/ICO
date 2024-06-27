@@ -8,7 +8,8 @@ class Role extends SpatieRole
     // use WithOrganizationScope;
 
     protected $withPivot = [
-        'program_id'
+        'program_id',
+        'organization_id'
     ];
 
     const ROLE_SUPER_ADMIN = 'Super Admin';

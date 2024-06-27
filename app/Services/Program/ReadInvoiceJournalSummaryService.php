@@ -94,7 +94,7 @@ class ReadInvoiceJournalSummaryService
 			if ($data->invoice_for_awards) {
 				$result [1] [$TOTAL_AWARDS] += ( float ) $data->points_purchased;
 				$result [2] [$TOTAL_TXN_FEES] += ( float ) $data->transaction_fee;
-				$result [7] [$TOTAL_REFUNDS] -= ( float ) $data->reclaims + ( float ) $data->refunded_transaction_fee;
+				$result [7] [$TOTAL_REFUNDS] -= ( float ) $data->reclaims + ( float ) $data->refunded_transaction_fees;
 			}
 			$result [3] [$TOTAL_ADMIN_FEES] += ( float ) $data->admin_fee;
 			$result [4] [$TOTAL_SETUP_FEES] += ( float ) $data->setup_fee;
