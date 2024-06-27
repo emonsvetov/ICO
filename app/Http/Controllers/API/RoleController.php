@@ -63,6 +63,8 @@ class RoleController extends Controller
             $query->where('name', '!=', config('roles.super_admin'));
         }
 
+        $query->where('name', '!=', config('roles.admin')); //hide admin
+
         if( $sortby == "name" )
         {
             $collation =  "COLLATE utf8mb4_unicode_ci"; //COLLATION is required to support case insensitive ordering

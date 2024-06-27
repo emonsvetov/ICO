@@ -37,4 +37,9 @@ class BudgetCascading extends Model
     {
         return $this->belongsTo(Program::class);
     }
+
+    public function budgetCascadingApprovals()
+    {
+        return $this->hasMany(BudgetCascadingApproval::class, 'budgets_cascading_id');
+    }
 }

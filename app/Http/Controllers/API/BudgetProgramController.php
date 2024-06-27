@@ -146,7 +146,7 @@ class BudgetProgramController extends Controller
 
     public function getCurrentBudget(Organization $organization, Program $program)
     {
-        $currentBudget = $this->budgetProgramService->getCurrentBudget($program);
+        $currentBudget = $this->budgetProgramService->getCurrentBudget($organization, $program);
         return response($currentBudget);
     }
 

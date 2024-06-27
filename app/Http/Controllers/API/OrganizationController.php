@@ -14,11 +14,16 @@ class OrganizationController extends Controller
 {
     public function index()
     {
-        $organization = Organization::orderBy('name')->get();
-
-        if ( $organization->isNotEmpty() )
+        $query = Organization::query();
+        $query->orderBy('name');
+        $query->authorized();
+        // $user->load('organization');
+        // $user->getDefaultOrganization();
+        // pr($user->organization);
+        $organizations = $query->get();
+        if ( $organizations->isNotEmpty() )
         {
-            return response( $organization );
+            return response( $organizations );
         }
 
         return response( [] );
