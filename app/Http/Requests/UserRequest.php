@@ -62,6 +62,7 @@ class UserRequest extends FormRequest
             'send_invite' => 'sometimes|boolean',
             'external_id'=> 'nullable|string',
             'unit_number'=> 'sometimes|nullable|integer',
+            'is_organization_admin'=> 'sometimes|boolean',
         ];
     }
 

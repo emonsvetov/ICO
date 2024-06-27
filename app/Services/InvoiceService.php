@@ -51,7 +51,7 @@ class InvoiceService
         $query = self::filterable(Invoice::class);
 		if(request()->has('programs')){
 			$programs = Program::whereIn('account_holder_id', self::$PARAMS['programs'])->get()->pluck('id')->toArray();
-			$query->whereIn('program_id', $programs);	
+			$query->whereIn('program_id', $programs);
 		}else{
 			$query->where('program_id', $program->id);
 		}
@@ -192,7 +192,7 @@ class InvoiceService
 			foreach ( $report_items_to_charge as $report_index => $journal_event_type ) {
 				// pr([$journal_event_type, $report_index, $data->$report_index]);
 				// continue;
-				if ($data->$report_index <= 0) {
+				if (!isset($data->$report_index) || $data->$report_index <= 0) {
 					continue;
 				}
 				// Check to see if we already have a debit of this journal event type, if not create it

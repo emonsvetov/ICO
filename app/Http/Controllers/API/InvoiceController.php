@@ -63,7 +63,7 @@ class InvoiceController extends Controller
             $invoice = $invoiceService->getInvoice($invoice);
             return response( $invoice );
         } catch ( \Exception $e ) {
-            return response( [ 'errors' => $e ], 422);
+            return response( [ 'errors' => $e->getFile() . ' ' . $e->getLine() . ' ' . $e->getMessage() ], 422);
         }
     }
 
