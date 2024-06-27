@@ -13,6 +13,9 @@ use App\Services\AuthorizeNet\PaymentService;
 
 use App\Http\Requests\AnetCreditCardPaymentRequest;
 use App\Http\Requests\AnetBankDebitPaymentRequest;
+use App\Http\Requests\AnetPayPalPaymentRequest;
+use App\Http\Requests\AnetGooglePaymentRequest;
+use App\Http\Requests\AnetApplePaymentRequest;
 use App\Http\Requests\AnetSubscribeRequest;
 
 class PaymentController extends Controller
@@ -116,24 +119,60 @@ class PaymentController extends Controller
         
     }
     
-    public function googlePay()
+    public function googlePay( PaymentService $pay, AnetGooglePaymentRequest $request, $organization, $program )
     {
+        $details = $request->validated();
 
+        $payment = $pay->byGooglePay( $details );
+
+        if ( $payment['successful'] )
+        {
+            //Figure out what to do with invoicing or rollback
+        }
+
+        return response($payment);
     }
 
-    public function applePay()
+    public function applePay( PaymentService $pay, AnetApplePaymentRequest $request, $organization, $program )
     {
+        $details = $request->validated();
 
+        $payment = $pay->byApplePay( $details );
+
+        if ( $payment['successful'] )
+        {
+            //Figure out what to do with invoicing or rollback
+        }
+
+        return response($payment);
     }
 
-    public function paypal()
+    public function paypal( PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, $program )
     {
-        
+        $details = $request->validated();
+
+        $payment = $pay->byPayPal( $details );
+
+        if ( $payment['successful'] )
+        {
+            //Figure out what to do with invoicing or rollback
+        }
+
+        return response($payment);
     }
 
-    public function paypalRedirect()
+    public function paypalRedirect( PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, $program )
     {
-        
+        $details = $request->validated();
+
+        $payment = $pay->processPayPalRedirect( $details );
+
+        if ( $payment['successful'] )
+        {
+            //Figure out what to do with invoicing or rollback
+        }
+
+        return response($payment);
     }
 
 }

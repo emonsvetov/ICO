@@ -834,5 +834,9 @@ Route::get('/v1/user/{account_holder_id}/return/url',[App\Http\Controllers\API\P
 Route::post('/v1/organization/{organization}/subscribe',[App\Http\Controllers\API\PaymentController::class, 'subscribe']);
 Route::post('/v1/organization/{organization}/unsubscribe',[App\Http\Controllers\API\PaymentController::class, 'unsubscribe']);
 
-Route::post('/v1/organization/{organization}/program/{program}/fundby/creditCardPayment',[App\Http\Controllers\API\PaymentController::class, 'creditCard']);
-Route::post('/v1/organization/{organization}/program/{program}/fundby/bankDebitPayment',[App\Http\Controllers\API\PaymentController::class, 'bankDebit']);
+Route::post('/v1/organization/{organization}/program/{program}/fundby/creditcard', [App\Http\Controllers\API\PaymentController::class, 'creditCard']);
+Route::post('/v1/organization/{organization}/program/{program}/fundby/bankdebit', [App\Http\Controllers\API\PaymentController::class, 'bankDebit']);
+Route::post('/v1/organization/{organization}/program/{program}/fundby/paypal', [App\Http\Controllers\API\PaymentController::class, 'paypal']);
+Route::post('/v1/organization/{organization}/program/{program}/fundby/paypalreturn', [App\Http\Controllers\API\PaymentController::class, 'paypalRedirect']);
+Route::post('/v1/organization/{organization}/program/{program}/fundby/googlepay', [App\Http\Controllers\API\PaymentController::class, 'googlePay']);
+Route::post('/v1/organization/{organization}/program/{program}/fundby/applepay', [App\Http\Controllers\API\PaymentController::class, 'applePay']);

@@ -11,6 +11,8 @@ class PaymentService
 {    
     private $merchantAuthentication;
     private $referenceId;
+    private $organizationId = null;
+    private $programId = null;
 
     public function __construct() 
     {
@@ -21,15 +23,23 @@ class PaymentService
         $this->referenceId = 'ref' . time();
     }
 
-    public function byCreditCard($invoice, $details)
+    private function aNetTransaction( $transactionRequestType )
     {
-                
-        // Create order information
-        $order = new AnetAPI\OrderType();
-        $order->setInvoiceNumber($invoice); //This needs to be unique $invoice
-        $order->setDescription("Golf Shirts");
+        $request = new AnetAPI\CreateTransactionRequest();
+		$request->setMerchantAuthentication( $this->merchantAuthentication );
+        $request->setRefId( $this->referenceId );
+		$request->setTransactionRequest( $transactionRequestType );
+		$controller = new AnetController\CreateTransactionController($request);
+		
+        //Add production URL as well
+        $response = $controller->executeWithApiResponse( \net\authorize\api\constants\ANetEnvironment::SANDBOX);
 
-        // Set the customer's Bill To address
+        //You need to log the responses
+        return $response;
+    }
+
+    private function setCustomerAddress( $details )
+    {
         $customerAddress = new AnetAPI\CustomerAddressType();
         $customerAddress->setFirstName($details['first_name']);
         $customerAddress->setLastName( $details['last_name'] );
@@ -39,7 +49,7 @@ class PaymentService
         if ( isset($details['address']) )
             $customerAddress->setAddress( $details['address'] );
         if ( isset($details['city']) )
-            $customerAddress->setCity( $details['city'] );
+            $customerAddress->setCity(  $details['city'] );
         if ( isset($details['state']) )
             $customerAddress->setState( $details['state'] );
         if ( isset($details['zip']) )
@@ -47,6 +57,166 @@ class PaymentService
         if ( isset($details['country']) )
             $customerAddress->setCountry( $details['country'] );
 
+        return $customerAddress;
+    }
+
+    private function buildResponse( $response )
+    {
+        if ( is_null( $response ) ) 
+        {
+            $data['successful'] = false;
+            $data['errorCode'] = "Unknown";
+            $data['errorMessage'] = "No response returned";
+
+            return $data;
+        }
+
+        $tresponse = $response->getTransactionResponse();
+
+        if ($response->getMessages()->getResultCode() == "Ok") 
+        {
+            if ( !is_null($tresponse->getMessages()) )
+            {
+                $data['successful'] = true;
+                $data['transactionResponseCode'] = $tresponse->getResponseCode();
+                $data['transactionId'] = $tresponse->getTransId();
+                $data['authCode'] = $tresponse->getAuthCode();
+                $data['messageCode'] = $tresponse->getMessages()[0]->getCode();
+                $data['description'] = $tresponse->getMessages()[0]->getDescription();
+
+                if ( !is_null($tresponse->getSecureAcceptance()) )
+                    $data['redirectUrl'] = $tresponse->getSecureAcceptance()->getSecureAcceptanceUrl();
+
+            } else {
+                
+                $data['successful'] = false;
+
+                if ($tresponse->getErrors() != null) 
+                {
+                    $data['errorCode'] = $tresponse->getErrors()[0]->getErrorCode();
+                    $data['errorMessage'] = $tresponse->getErrors()[0]->getErrorText();                    
+                }
+            }
+        } else {
+            
+            $data['successful'] = false;
+            
+            if ($tresponse != null && $tresponse->getErrors() != null) 
+            {
+                $data['errorCode'] = $tresponse->getErrors()[0]->getErrorCode();
+                $data['errorMessage'] = $tresponse->getErrors()[0]->getErrorText();
+            } else {
+                
+                $data['errorCode'] = $response->getMessages()->getMessage()[0]->getCode();
+                $data['errorMessage'] = $response->getMessages()->getMessage()[0]->getText();
+            }
+        }
+
+        return $data;
+    }
+
+    public function byApplePay( $details )
+    {
+        /*/setOpaqueData
+        THis is the base64 encoding of the result from apple. The contents of Payment Token: { "paymentData": {this must be base64 encoded}
+        */
+
+        $op = new AnetAPI\OpaqueDataType();
+        $op->setDataDescriptor("COMMON.APPLE.INAPP.PAYMENT");
+        $op->setDataValue( $details['opaqueData'] );
+   
+        $paymentOne = new AnetAPI\PaymentType();
+        $paymentOne->setOpaqueData($op);
+
+        $transactionRequestType = new AnetAPI\TransactionRequestType();
+        $transactionRequestType->setTransactionType( "authCaptureTransaction");        
+        $transactionRequestType->setPayment($paymentOne);
+        $transactionRequestType->setAmount( $details['amount'] );
+
+        if ( array_key_exists('first_name', $details) )
+            $transactionRequestType->setBillTo( $this->setCustomerAddress( $details ) );
+
+        $response = $this->aNetTransaction( $transactionRequestType );
+
+        return $this->buildResponse( $response );
+    }
+
+    public function byGooglePay( $details )
+    {
+        //opaqueData
+
+        $opaqueData = new AnetAPI\OpaqueDataType();
+        $opaqueData->setDataDescriptor("COMMON.GOOGLE.INAPP.PAYMENT");
+        $opaqueData->setDataValue( base64_encode( $details['opaqueData']) );
+        $paymentType = new AnetAPI\PaymentType();
+        $paymentType->setOpaqueData($opaqueData);
+
+        //Ask if invoice must be build
+
+       
+        $transactionRequestType = new AnetAPI\TransactionRequestType();
+        $transactionRequestType->setTransactionType("authCaptureTransaction");        
+        $transactionRequestType->setPayment($paymentType);
+        $transactionRequestType->setAmount( $details['amount'] );
+
+        if ( array_key_exists('first_name', $details) )
+            $transactionRequestType->setBillTo( $this->setCustomerAddress( $details ) );
+        
+
+        $response = $this->aNetTransaction( $transactionRequestType );
+
+        return $this->buildResponse( $response );
+    }
+
+    public function byPayPal( $details )
+    {
+        
+        $payPalType=new AnetAPI\PayPalType();
+        $payPalType->setCancelUrl( $details['redirectUrl'] );
+        $payPalType->setSuccessUrl( $details['redirectUrl'] );
+        
+        $paymentOne = new AnetAPI\PaymentType();
+        $paymentOne->setPayPal($payPalType);
+
+        // Create an authorize and capture transaction
+		$transactionRequestType = new AnetAPI\TransactionRequestType();
+		$transactionRequestType->setTransactionType( "authCaptureTransaction");
+		$transactionRequestType->setPayment($paymentOne);
+		$transactionRequestType->setAmount( $details['amount'] );
+
+        $response = $this->aNetTransaction( $transactionRequestType );
+
+        return $this->buildResponse( $response );
+    }
+
+    public function processPayPalRedirect($invoice, $details)
+    {
+        // Set PayPal compatible merchant credentials
+        $payPalType=new AnetAPI\PayPalType();
+        $payPalType->setPayerID( $details['payerID'] );
+
+        $paymentOne = new AnetAPI\PaymentType();
+        $paymentOne->setPayPal($payPalType);
+
+        $transactionRequestType = new AnetAPI\TransactionRequestType();
+        $transactionRequestType->setTransactionType("authCaptureContinueTransaction");
+        $transactionRequestType->setPayment($paymentOne);
+        $transactionRequestType->setRefTransId( $details['refTransId'] );
+
+        $response = $this->aNetTransaction( $transactionRequestType );
+
+        return $this->buildResponse( $response );
+    }
+
+    public function byCreditCard($invoice, $details)
+    {
+                
+        // Create order information
+        $order = new AnetAPI\OrderType();
+        $order->setInvoiceNumber($invoice); //This needs to be unique $invoice
+        $order->setDescription("Golf Shirts");
+
+        $customerAddress = $this->setCustomerAddress( $details );
 
         // Create the payment data for a credit card
         $creditCard = new AnetAPI\CreditCardType();
@@ -59,72 +229,15 @@ class PaymentService
 
         // Create a TransactionRequestType object and add the previous objects to it
         $transactionRequestType = new AnetAPI\TransactionRequestType();
-        $transactionRequestType->setTransactionType("authCaptureTransaction");
-        $transactionRequestType->setAmount( $details['amount'] );
+        $transactionRequestType->setTransactionType("authCaptureTransaction");        
         $transactionRequestType->setOrder($order);
         $transactionRequestType->setPayment($paymentOne);
         $transactionRequestType->setBillTo($customerAddress);
+        $transactionRequestType->setAmount( $details['amount'] );
 
+        $response = $this->aNetTransaction( $transactionRequestType );
 
-        // Assemble the complete transaction request
-        $request = new AnetAPI\CreateTransactionRequest();
-        $request->setMerchantAuthentication($this->merchantAuthentication);
-        $request->setRefId($this->referenceId);
-        $request->setTransactionRequest($transactionRequestType);
-
-
-        // Create the controller and get the response
-        $controller = new AnetController\CreateTransactionController($request);
-        $response = $controller->executeWithApiResponse(\net\authorize\api\constants\ANetEnvironment::SANDBOX);
-        
-        
-        if ($response != null) 
-        {
-            // Check to see if the API request was successfully received and acted upon
-            if ($response->getMessages()->getResultCode() == "Ok") 
-            {
-                // Since the API request was successful, look for a transaction response
-                // and parse it to display the results of authorizing the card
-                $tresponse = $response->getTransactionResponse();
-            
-                if ($tresponse != null && $tresponse->getMessages() != null) 
-                {                    
-                    $data['successful'] = true;
-                    $data['transactionId'] = $tresponse->getTransId();
-                    $data['messageCode'] = $tresponse->getMessages()[0]->getCode();
-                    $data['authCode'] = $tresponse->getAuthCode();
-                    $data['description'] = $tresponse->getMessages()[0]->getDescription();
-
-                } else {
-                    
-                    $data['successful'] = false;
-                    if ($tresponse->getErrors() != null) {
-                        
-                        $data['errorCode'] = $tresponse->getErrors()[0]->getErrorCode();
-                        $data['errorMessage'] = $tresponse->getErrors()[0]->getErrorText();
-                    }
-                }
-
-            } else {
-                //Transaction Failed                
-                $tresponse = $response->getTransactionResponse();
-                $data['successful'] = false;
-            
-                if ($tresponse != null && $tresponse->getErrors() != null) {
-                    $data['errorCode'] = $tresponse->getErrors()[0]->getErrorCode();
-                    $data['errorMessage'] = $tresponse->getErrors()[0]->getErrorText();
-                } else {
-                    $data['errorCode'] = $response->getMessages()->getMessage()[0]->getCode();
-                    $data['errorMessage'] = $response->getMessages()->getMessage()[0]->getText();
-                }
-            }
-        } else {
-            $data['successful'] = false;
-            $data['errorCode'] = "Unknown";
-            $data['errorMessage'] = "No response returned";
-        }
-        
-        return $data;
+        return $this->buildResponse( $response );
     }
 
 
@@ -136,24 +249,7 @@ class PaymentService
         $order->setInvoiceNumber($invoice); //This needs to be unique $invoice
         $order->setDescription("Golf Shirts");
 
-        // Set the customer's Bill To address
-        $customerAddress = new AnetAPI\CustomerAddressType();
-        $customerAddress->setFirstName($details['first_name']);
-        $customerAddress->setLastName( $details['last_name'] );
-
-        if ( isset($details['company']) )
-            $customerAddress->setCompany( $details['company'] );
-        if ( isset($details['address']) )
-            $customerAddress->setAddress( $details['address'] );
-        if ( isset($details['city']) )
-            $customerAddress->setCity( $details['city'] );
-        if ( isset($details['state']) )
-            $customerAddress->setState( $details['state'] );
-        if ( isset($details['zip']) )
-            $customerAddress->setZip( $details['zip'] );
-        if ( isset($details['country']) )
-            $customerAddress->setCountry( $details['country'] );
-
+        $customerAddress = $this->setCustomerAddress( $details );
 
         $bankAccount = new AnetAPI\BankAccountType();
         $bankAccount->setEcheckType('WEB');
@@ -175,60 +271,8 @@ class PaymentService
         $transactionRequestType->setBillTo($customerAddress);
         $transactionRequestType->setAmount( $details['amount'] );
 
-        $request = new AnetAPI\CreateTransactionRequest();
-        $request->setMerchantAuthentication($this->merchantAuthentication);
-        $request->setRefId($this->referenceId);
-        $request->setTransactionRequest($transactionRequestType);
+        $response = $this->aNetTransaction( $transactionRequestType );
 
-        $controller = new AnetController\CreateTransactionController($request);
-        $response = $controller->executeWithApiResponse(\net\authorize\api\constants\ANetEnvironment::SANDBOX);
-
-    if ($response != null) {
-        if ($response->getMessages()->getResultCode() == "Ok") 
-        {
-            $tresponse = $response->getTransactionResponse();
-        
-            if ($tresponse != null && $tresponse->getMessages() != null) 
-            {                
-                $data['successful'] = true;
-                $data['transactionResponseCode'] = $tresponse->getResponseCode();
-                $data['transactionId'] = $tresponse->getTransId();
-                $data['authCode'] = $tresponse->getAuthCode();
-                $data['messageCode'] = $tresponse->getMessages()[0]->getCode();
-                $data['description'] = $tresponse->getMessages()[0]->getDescription();                    
-
-            } else {
-                
-                $data['successful'] = false;
-
-                if ($tresponse->getErrors() != null) 
-                {
-                    $data['errorCode'] = $tresponse->getErrors()[0]->getErrorCode();
-                    $data['errorMessage'] = $tresponse->getErrors()[0]->getErrorText();                    
-                }
-            }
-        } else {
-            
-            $tresponse = $response->getTransactionResponse();
-            $data['successful'] = false;
-            
-            if ($tresponse != null && $tresponse->getErrors() != null) 
-            {
-                $data['errorCode'] = $tresponse->getErrors()[0]->getErrorCode();
-                $data['errorMessage'] = $tresponse->getErrors()[0]->getErrorText();
-            } else {
-                
-                $data['errorCode'] = $response->getMessages()->getMessage()[0]->getCode();
-                $data['errorMessage'] = $response->getMessages()->getMessage()[0]->getText();
-            }
-        }
-    } else {
-        $data['successful'] = false;
-        $data['errorCode'] = "Unknown";
-        $data['errorMessage'] = "No response returned";
+        return $this->buildResponse( $response );
     }
-
-    return $data;
-    }
-
 }
