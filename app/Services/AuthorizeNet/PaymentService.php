@@ -147,7 +147,7 @@ class PaymentService
 
         $opaqueData = new AnetAPI\OpaqueDataType();
         $opaqueData->setDataDescriptor("COMMON.GOOGLE.INAPP.PAYMENT");
-        $opaqueData->setDataValue( base64_encode( $details['opaqueData']) );
+        $opaqueData->setDataValue( $details['opaqueData'] );
         $paymentType = new AnetAPI\PaymentType();
         $paymentType->setOpaqueData($opaqueData);
 
