@@ -405,6 +405,10 @@ class ProgramController extends Controller
     }
 
     public function getCsvImportTypes(Organization $organization, Program $program) {
+
+        $checkOnly = request()->get('checkOnly');
+        if( $checkOnly ) return response(['exists' => $program->hasCsvImportypes( true )]);
+
         $onlyIds = request()->get('onlyIds');
         $collection = $program->getCsvImportypesRecursively($onlyIds);
         return response($collection);
