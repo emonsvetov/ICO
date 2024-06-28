@@ -14,10 +14,10 @@ class ChangeColumnInModelHasRolesTable extends Migration
      */
     public function up()
     {
-        Schema::table('model_has_roles', function (Blueprint $table) {
-            $table->unsignedBigInteger('program_id')->nullable()->default(NULL)->change();
-        });
-        DB::statement('UPDATE `model_has_roles` SET `program_id`=NULL WHERE `program_id`=0');
+        // Schema::table('model_has_roles', function (Blueprint $table) {
+        //     $table->unsignedBigInteger('program_id')->nullable()->default(NULL)->change();
+        // });
+        // DB::statement('UPDATE `model_has_roles` SET `program_id`=NULL WHERE `program_id`=0');
     }
 
     /**
@@ -27,9 +27,9 @@ class ChangeColumnInModelHasRolesTable extends Migration
      */
     public function down()
     {
-        Schema::table('model_has_roles', function (Blueprint $table) {
-            $table->unsignedBigInteger('program_id')->nullable(false)->default(0)->change();
-        });
-        DB::statement('UPDATE `model_has_roles` SET `program_id`=0 WHERE `program_id` IS NULL');
+        // Schema::table('model_has_roles', function (Blueprint $table) {
+        //     $table->unsignedBigInteger('program_id')->nullable(false)->default(0)->change();
+        // });
+        // DB::statement('UPDATE `model_has_roles` SET `program_id`=0 WHERE `program_id` IS NULL');
     }
 }
