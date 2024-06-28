@@ -98,7 +98,7 @@ class BudgetProgramController extends Controller
             $cascading[$key]['cascading_id'] = $cascadingApproval['id'];
             $cascading[$key]['program_name'] = $cascadingApproval['program']['name'];
             $cascading[$key]['requested_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
-            $cascading[$key]['recipient'] = $cascadingApproval['user']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
+            $cascading[$key]['recipient'] = $cascadingApproval['user']['first_name'] . ' ' . $cascadingApproval['user']['last_name'];
             $cascading[$key]['approved_by'] = '';
             $cascading[$key]['event_name'] = $cascadingApproval['event']['name'];
             $cascading[$key]['amount'] = $cascadingApproval['amount'];
