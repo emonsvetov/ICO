@@ -134,11 +134,13 @@ class AwardService
         return $result;
     }
 
+   
     public function SaveBudgetCascadingApprovalDetail($event, $user, $awarder, object $data = null)
     {
         $program = $event->program;
         $budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
+        
         $transaction_id = generate_unique_id();
         $awardData = [];
         foreach ($event_award as $eventAwardLevel) {
@@ -150,10 +152,10 @@ class AwardService
                     'requestor_id' => $awarder->id,
                     'manager_id' => 0,
                     'event_id' => $event->id,
-                    'award_id' =>  $eventAwardLevel->award_level_id,
+                    'award_id' => $eventAwardLevel->award_level_id,
                     'amount' => $eventAwardLevel->amount,
                     'approved' => 0,
-                    'award_data' =>  json_encode($awardData),
+                    'award_data' => json_encode($awardData),
                     'transaction_id' => $transaction_id,
                     'program_approval_id' => 0,
                     'program_id' => $data->program_id,
@@ -164,11 +166,13 @@ class AwardService
                     'action_by' => $awarder->id,
                 ]);
             }
+            
             $updatedAmount = $budgets_cascading[0]['budget_amount_remaining'] - $eventAwardLevel->amount;
             BudgetCascading::where('id', $budgets_cascading[0]['id'])
                 ->update(['budget_amount_remaining' => $updatedAmount]);
         }
     }
+    
 
     public function awardUser($event, $awardee, $awarder, object $data = null, $dontSendEmail = null)
     {
