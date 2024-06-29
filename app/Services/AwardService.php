@@ -48,7 +48,6 @@ class AwardService
 
     public function awardMany(Program $program, Organization $organization, User $awarder, array $data)
     {
-
         $userIds = $data['user_id'] ?? [];
 
         if (sizeof($userIds) <= 0) {
@@ -115,9 +114,13 @@ class AwardService
 
             foreach ($users as $user) {
                 $result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
-                $this->SaveBudgetCascadingApprovalDetail($event, $user, $awarder, $award);
             }
 
+            // save budget cascading approval data
+            foreach ($data['user_id'] as $userId) {
+                $this->SaveBudgetCascadingApprovalDetail($event, $userId, $awarder, $award);
+            }
+           
             // print_r( $journalEventType );
 
             // TODO
@@ -140,7 +143,6 @@ class AwardService
         $program = $event->program;
         $budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
-        
         $transaction_id = generate_unique_id();
         $awardData = [];
         foreach ($event_award as $eventAwardLevel) {
@@ -148,7 +150,7 @@ class AwardService
                 BudgetCascadingApproval::create([
                     'parent_id' => $program->parent_id,
                     'awarder_id' => $awarder->id,
-                    'user_id' => $user->id,
+                    'user_id' => $user,
                     'requestor_id' => $awarder->id,
                     'manager_id' => 0,
                     'event_id' => $event->id,
