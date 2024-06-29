@@ -211,7 +211,7 @@ class BudgetProgramService
     {
         $currentMonth = Carbon::now()->startOfMonth()->toDateString();
         $currentYear = Carbon::now()->year;
-        $currentBudget = BudgetCascading::where('program_id', $program->id)
+        $currentBudgetCascading = BudgetCascading::where('program_id', $program->id)
             ->where(function ($query) use ($currentYear, $currentMonth) {
                 $query->where('budget_start_date', $currentMonth)
                     ->orWhereRaw('YEAR(budget_start_date) = ?', [$currentYear]);
@@ -220,7 +220,7 @@ class BudgetProgramService
             ->get();
         $result = [];
 
-        if (!$currentBudget->isEmpty()) {
+        if (!$currentBudgetCascading->isEmpty()) {
             $budgetCascadingProgramData = [
                 'monthly_budget_amount' => 0,
                 'monthly_award_pending' => 0,
@@ -230,34 +230,43 @@ class BudgetProgramService
                 'yearly_award_pending' => 0,
                 'yerly_budget_amount_remaining' => 0,
                 'yearly_awarded_distributed' => 0,
+                'award_pending' => 0,
+                'award_schedule' => 0,
             ];
             $monthlyAwardDistributedAmount = 0;
             $yearlyAwardDistributedAmount = 0;
 
-            foreach ($currentBudget as $key => $approval) {
-                $approvalMonth = $approval->budget_start_date;
+            foreach ($currentBudgetCascading as $key => $budgetCascading) {
+                $approvalMonth = $budgetCascading->budget_start_date;
+                $scheduled_date = $budgetCascading->scheduled_date;
                 if ($approvalMonth == $currentMonth) {
-                    $budgetCascadingProgramData['monthly_budget_amount'] += $approval->budget_amount;
-                    $budgetCascadingProgramData['monthly_budget_amount_remaining'] += $approval->budget_amount_remaining;
+                    $budgetCascadingProgramData['monthly_budget_amount'] += $budgetCascading->budget_amount;
+                    $budgetCascadingProgramData['monthly_budget_amount_remaining'] += $budgetCascading->budget_amount_remaining;
                 }
-                $budgetCascadingProgramData['yearly_budget_amount'] += $approval->budget_amount;
-                $budgetCascadingProgramData['yerly_budget_amount_remaining'] += $approval->budget_amount_remaining;
-                foreach ($approval->budgetCascadingApprovals as $value) {
-                    if ($value->approved == 0 && $currentMonth) {
-                        $budgetCascadingProgramData['monthly_award_pending'] += $value->amount;
+                $budgetCascadingProgramData['yearly_budget_amount'] += $budgetCascading->budget_amount;
+                $budgetCascadingProgramData['yerly_budget_amount_remaining'] += $budgetCascading->budget_amount_remaining;
+                foreach ($budgetCascading->budgetCascadingApprovals as $budgetCascadingApproval) {
+                    if ($budgetCascadingApproval->approved == 0 && $currentMonth) {
+                        $budgetCascadingProgramData['monthly_award_pending'] += $budgetCascadingApproval->amount;
                     }
-                    if ($value->approved == 0 && $currentYear) {
-                        $budgetCascadingProgramData['yearly_award_pending'] += $value->amount;
+                    if ($budgetCascadingApproval->approved == 0 && $currentYear) {
+                        $budgetCascadingProgramData['yearly_award_pending'] += $budgetCascadingApproval->amount;
+                        $budgetCascadingProgramData['award_pending'] += $budgetCascadingApproval->amount;
                     }
 
-                    if ($value->approved == 1 && $approvalMonth == $currentMonth) {
-                        $monthlyAwardDistributedAmount += $value->amount;
+                    if ($budgetCascadingApproval->approved == 1 && $approvalMonth == $currentMonth) {
+                        $monthlyAwardDistributedAmount += $budgetCascadingApproval->amount;
                     }
-                    if ($value->approved == 1) {
-                        $yearlyAwardDistributedAmount += $value->amount;
+                    if ($budgetCascadingApproval->approved == 1) {
+                        $yearlyAwardDistributedAmount += $budgetCascadingApproval->amount;
+                    }
+                    if ($scheduled_date) {
+                        //todo it pending
+                        $budgetCascadingProgramData['award_schedule'] += $budgetCascadingApproval->amount;
                     }
                 }
             }
+           
             $budgetCascadingProgramData['monthly_awarded_distributed'] += $monthlyAwardDistributedAmount;
             $budgetCascadingProgramData['yearly_awarded_distributed'] += $yearlyAwardDistributedAmount;
             $result[] = $budgetCascadingProgramData;

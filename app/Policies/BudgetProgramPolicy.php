@@ -78,9 +78,9 @@ class BudgetProgramPolicy
         return $user->can('budget-program-update');
     }
 
-    public function updateCascadingApprovals(User $user,Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    public function updateCascadingApprovals(User $user,Organization $organization, Program $program)
     {
-        if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+        if(!$this->__preAuthCheck($user, $organization, $program)) return false;
         if($user->isAdmin()) return true;
         if($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-updateCascadingApprovals');
