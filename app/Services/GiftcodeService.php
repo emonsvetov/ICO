@@ -1,6 +1,7 @@
 <?php
 namespace App\Services;
 
+use App\Models\MediumInfo;
 use App\Models\Program;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
@@ -356,5 +357,31 @@ class GiftcodeService
     }
     public function getRedeemedCountByMerchant( int|Merchant $merchant, array $extra_args ) {
         return $this->getRedeemedByMerchant( $merchant, $extra_args + [ 'count'=>1 ] );
+    }
+
+    public function getMediumInfoForRedemption()
+    {
+        if (strpos(env('RABBITMQ_QUEUE_EXCHANGE'),'qa_') !== false) {
+            $mediumInfoIsTest = 1;
+        }else{
+            $mediumInfoIsTest = 0;
+        }
+
+        $mediumInfos = MediumInfo::whereNull('redemption_date')
+            ->where('medium_info_is_test', $mediumInfoIsTest)
+            ->where('virtual_inventory', 0)
+            ->leftJoin('merchants', 'medium_info.merchant_id', '=', 'merchants.id')
+            ->get([
+                'medium_info.purchase_date',
+                'medium_info.redemption_value',
+                'medium_info.cost_basis',
+                'medium_info.discount',
+                'medium_info.sku_value',
+                'medium_info.code',
+                'medium_info.pin',
+                'medium_info.redemption_url',
+                'merchants.merchant_code']);
+
+        return $mediumInfos;
     }
 }
