@@ -37,7 +37,7 @@ class AwardRequest extends FormRequest
                 'mimes:pdf,txt,doc,docx'
             ],
             'user_id' => 'required|array',
-            //'budget_cascading_id'=>'integer',
+            'total_cascading_amount' => 'nullable|numeric',
             'user_id.*' => 'required|integer',
         ];
     }
@@ -66,5 +66,4 @@ class AwardRequest extends FormRequest
             'event' => 'nullable|mustComeFromModel:Event|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
         ];
     }
-
 }
