@@ -367,7 +367,8 @@ class GiftcodeService
             $mediumInfoIsTest = 0;
         }
 
-        $mediumInfos = MediumInfo::whereNull('redemption_date')
+        $mediumInfos = DB::table('medium_info')
+            ->whereNull('redemption_date')
             ->where('virtual_inventory', 0)
             ->leftJoin('merchants', 'medium_info.merchant_id', '=', 'merchants.id')
             ->get([
@@ -379,7 +380,8 @@ class GiftcodeService
                 'medium_info.code',
                 'medium_info.pin',
                 'medium_info.redemption_url',
-                'merchants.merchant_code']);
+                'merchants.merchant_code'
+            ]);
 
         return $mediumInfos;
     }
