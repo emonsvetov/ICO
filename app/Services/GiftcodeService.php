@@ -368,7 +368,6 @@ class GiftcodeService
         }
 
         $mediumInfos = MediumInfo::whereNull('redemption_date')
-            ->where('medium_info_is_test', $mediumInfoIsTest)
             ->where('virtual_inventory', 0)
             ->leftJoin('merchants', 'medium_info.merchant_id', '=', 'merchants.id')
             ->get([
