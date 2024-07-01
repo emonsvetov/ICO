@@ -372,6 +372,7 @@ class GiftcodeService
             ->where('virtual_inventory', 0)
             ->leftJoin('merchants', 'medium_info.merchant_id', '=', 'merchants.id')
             ->get([
+                'medium_info.id',
                 'medium_info.purchase_date',
                 'medium_info.redemption_value',
                 'medium_info.cost_basis',
