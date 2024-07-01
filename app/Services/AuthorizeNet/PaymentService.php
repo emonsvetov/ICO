@@ -189,7 +189,7 @@ class PaymentService
         return $this->buildResponse( $response );
     }
 
-    public function processPayPalRedirect($invoice, $details)
+    public function processPayPalRedirect( $details )
     {
         // Set PayPal compatible merchant credentials
         $payPalType=new AnetAPI\PayPalType();
