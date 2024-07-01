@@ -19,4 +19,7 @@ Route::get('/', function () {
 
 Route::middleware(\App\Http\Middleware\CheckExternalToken::class)->group(function () {
     Route::get('/external/get-codes', [App\Http\Controllers\API\GiftcodeController::class, 'getCodes'])->name('external.get-codes');
+    //Route::post('/external/del-codes', [App\Http\Controllers\API\GiftcodeController::class, 'delCodes'])->name('external.del-codes');
+    Route::post('/external/add-codes', [App\Http\Controllers\API\GiftcodeController::class, 'addCodes'])->name('external.add-codes');
+
 });

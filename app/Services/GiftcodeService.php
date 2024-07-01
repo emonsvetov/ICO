@@ -386,4 +386,15 @@ class GiftcodeService
 
         return $mediumInfos;
     }
+
+    public function addCodes($codes)
+    {
+        $user = User::where('id', 1)->first();
+        foreach ($codes as $val) {
+            $merchant = Merchant::where('v2_account_holder_id', $val['v2_account_holder_id'])->first();
+            unset($val['v2_account_holder_id']);
+            $res[] = $this->createGiftcode($merchant, $val, $user);
+        }
+        return $res;
+    }
 }
