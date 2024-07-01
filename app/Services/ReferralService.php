@@ -98,10 +98,69 @@ class ReferralService
                 'program' => $program
             ];
             $this->__notify($organization, $program, $notification);
-            return [$referral, $newUser];
+            return (
+                [
+                    'success' => true,
+                    'referral' => $referral,
+                    'user' => $newUser
+                ]
+            );
         }
         else{
-            return [null, null];
+            $res = $this->__addToProgram($program, $user);
+            if($res['success']){
+                $referral = Referral::create($data);
+                $notification =  [
+                    'sender_first_name' => $referral->sender_first_name,
+                    'sender_last_name' => $referral->sender_last_name,
+                    'recipient_first_name' => $referral->recipient_first_name,
+                    'recipient_last_name' => $referral->recipient_last_name,
+                    'recipient_email' => $referral->recipient_email,
+                    'recipient_area_code' => '',
+                    'recipient_phone' => '',
+                    'message' => $referral->message,
+                    'program' => $program
+                ];
+                $this->__notify($organization, $program, $notification);
+                return (
+                    [
+                        'success' => true,
+                        'referral' => $referral,
+                        'user' => $user
+                    ]
+                );
+            }
+            else{
+                return (
+                    [
+                        'success' => false,
+                        'errors' => $res['errors'],
+                    ]
+                );
+            }
+        }
+    }
+    protected function __addToProgram(Program $program, User $user){
+        DB::beginTransaction();
+
+        try {
+            $rols = $user->roles()->wherePivot( 'program_id', '=', $program->id )->get();
+            
+            $roles = collect($rols)->pluck('id')->toArray();
+            
+            $roles[] = Role::getIdByName(config('roles.participant'));
+            $program->users()->sync([$user->id], false);
+            $user->syncProgramRoles($program->id, $roles);
+          
+            DB::commit();
+            return (['success' => true]);
+        } catch (Exception $e) {
+            DB::rollBack();
+            $error = "Error inviting user to program";
+            return ([
+                'success' => false,
+                'errors' => $error,
+            ]);
         }
     }
 

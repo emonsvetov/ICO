@@ -31,7 +31,7 @@ class ReferralController extends Controller
     public function refer(ReferRequest $request, Organization $organization, Program $program )
     {
         $data = $request->validated();
-        [$newReferral, $newUser] = (new \App\Services\ReferralService)->referParticipant($organization, $program,
+        $res = (new \App\Services\ReferralService)->referParticipant($organization, $program,
             $data +
             [
                 'organization_id' => $organization->id,
@@ -39,15 +39,14 @@ class ReferralController extends Controller
             ]
         );
 
-        if ( !$newUser )
+        if ( $res['success'] )
         {
-            return response(['errors' => 'Invitation failed'], 422);
+            return response([ 'referral' => $res['referral'], 'user' => $res['user'] ]);
         }
-        else if ( !$newReferral )
+        else
         {
-            return response(['errors' => 'Referral creation failed'], 422);
+            return response(['errors' => $res['errors']], 422);
         }
 
-        return response([ 'referral' => $newReferral, 'user' => $newUser ]);
     }
 }
