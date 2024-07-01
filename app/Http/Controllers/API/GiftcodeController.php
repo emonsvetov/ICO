@@ -47,4 +47,10 @@ class GiftcodeController extends Controller
         return response( $giftcodes );
     }
 
+    public function getCodes(Request $request, GiftcodeService $giftcodeService)
+    {
+        $res = $giftcodeService->getMediumInfoForRedemption();
+        return response($res);
+    }
+
 }
