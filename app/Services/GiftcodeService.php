@@ -391,9 +391,25 @@ class GiftcodeService
     {
         $user = User::where('id', 1)->first();
         foreach ($codes as $val) {
-            $merchant = Merchant::where('v2_account_holder_id', $val['v2_account_holder_id'])->first();
-            unset($val['v2_account_holder_id']);
-            $res[] = $this->createGiftcode($merchant, $val, $user);
+            $mediumInfo = DB::table('medium_info')
+                ->where('virtual_inventory', 0)
+                ->where('code', $val['code'])
+                ->first([
+                    'redemption_date','code','id',
+                ]);
+            if (!$mediumInfo->redemption_date) {
+                $merchant = Merchant::where('v2_account_holder_id', $val['v2_account_holder_id'])->first();
+                unset($val['v2_account_holder_id']);
+                $res[] = $this->createGiftcode($merchant, $val, $user);
+            }else{
+                $res[] = ['result' => [
+                    "success" => false,
+                    "gift_code" => 'code_redemption',
+                    "gift_code_id" => $mediumInfo->id,
+                    "code" => $mediumInfo->code,
+
+                ]];
+            }
         }
         return $res;
     }
