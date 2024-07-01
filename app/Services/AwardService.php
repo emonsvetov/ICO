@@ -120,7 +120,7 @@ class AwardService
             foreach ($data['user_id'] as $userId) {
                 $this->SaveBudgetCascadingApprovalDetail($event, $userId, $awarder, $award);
             }
-           
+
             // print_r( $journalEventType );
 
             // TODO
@@ -137,11 +137,11 @@ class AwardService
         return $result;
     }
 
-   
+
     public function SaveBudgetCascadingApprovalDetail($event, $user, $awarder, object $data = null)
     {
         $program = $event->program;
-        $budgets_cascading = $program->budgets_cascading;
+        //$budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
         $transaction_id = generate_unique_id();
         $awardData = [];
@@ -162,19 +162,18 @@ class AwardService
                     'program_approval_id' => 0,
                     'program_id' => $data->program_id,
                     'include_in_budget' => $event->include_in_budget,
-                    'budgets_cascading_id' => $budgets_cascading[0]['id'],
+                    'budgets_cascading_id' => $program['budgets_cascading'][0]['id'],
                     'rejection_note' => "",
                     'scheduled_date' => Carbon::now(),
                     'action_by' => $awarder->id,
                 ]);
             }
-            
-            $updatedAmount = $budgets_cascading[0]['budget_amount_remaining'] - $eventAwardLevel->amount;
-            BudgetCascading::where('id', $budgets_cascading[0]['id'])
-                ->update(['budget_amount_remaining' => $updatedAmount]);
         }
+        $updatedAmount = $program['budgets_cascading'][0]['budget_amount_remaining'] - $data->total_cascading_amount;
+        BudgetCascading::where('id', $program['budgets_cascading'][0]['id'])
+            ->update(['budget_amount_remaining' => $updatedAmount]);
     }
-    
+
 
     public function awardUser($event, $awardee, $awarder, object $data = null, $dontSendEmail = null)
     {
