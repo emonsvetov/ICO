@@ -53,4 +53,16 @@ class GiftcodeController extends Controller
         return response($res);
     }
 
+//    public function delCodes(Request $request, GiftcodeService $giftcodeService)
+//    {
+//        $res = $giftcodeService->delCodes($request->codes);
+//        return response($res);
+//    }
+
+    public function addCodes(Request $request, GiftcodeService $giftcodeService)
+    {
+        $cods = json_decode($request->codes,true);
+        $res = $giftcodeService->addCodes($cods);
+        return response($res);
+    }
 }
