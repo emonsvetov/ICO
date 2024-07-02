@@ -85,36 +85,33 @@ class BudgetProgramController extends Controller
         return response($budgetProgram);
     }
 
-    public function getBudgetCascadingApproval(Organization $organization, Program $program)
+    public function getBudgetCascadingApproval(Organization $organization, Program $program, string $title)
     {
-       /* if ($title == 'manage-approvals') {
-            $approved = 1;
-        }
-        if ($title == 'cascading-approvals') {
-            $approved = 0;
-        }*/
-        $cascadingApprovals = BudgetCascadingApproval::where('program_id', $program->id)
-            ->where('approved', 0)
-            ->with('event')
-            ->with('program')
-            ->with('requestor')
-            ->with('user')
-            ->get();
-        $cascading = [];
-        foreach ($cascadingApprovals as $key => $cascadingApproval) {
-            $cascading[$key]['cascading_id'] = $cascadingApproval['id'];
-            $cascading[$key]['program_name'] = $cascadingApproval['program']['name'];
-            $cascading[$key]['requested_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
-            $cascading[$key]['recipient'] = $cascadingApproval['user']['first_name'] . ' ' . $cascadingApproval['user']['last_name'];
-            $cascading[$key]['approved_by'] = '';
-            $cascading[$key]['event_name'] = $cascadingApproval['event']['name'];
-            $cascading[$key]['amount'] = $cascadingApproval['amount'];
-            $cascading[$key]['scheduled_date'] = $cascadingApproval['scheduled_date'];
-            $cascading[$key]['budgets_available'] = '';
-            $cascading[$key]['created_date'] = $cascadingApproval['created_at'];
-        }
-        if ($cascading) {
-            return response($cascading);
+        if ($title) {
+            $approved = $title == 'manage-approvals' ? 1 : ($title == "cascading-approvals" ? 0 : response([]));
+            $cascadingApprovals = BudgetCascadingApproval::where('program_id', $program->id)
+                ->where('approved', $approved)
+                ->with('event')
+                ->with('program')
+                ->with('requestor')
+                ->with('user')
+                ->get();
+            $cascading = [];
+            foreach ($cascadingApprovals as $key => $cascadingApproval) {
+                $cascading[$key]['cascading_id'] = $cascadingApproval['id'];
+                $cascading[$key]['program_name'] = $cascadingApproval['program']['name'];
+                $cascading[$key]['requested_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
+                $cascading[$key]['recipient'] = $cascadingApproval['user']['first_name'] . ' ' . $cascadingApproval['user']['last_name'];
+                $cascading[$key]['approved_by'] = '';
+                $cascading[$key]['event_name'] = $cascadingApproval['event']['name'];
+                $cascading[$key]['amount'] = $cascadingApproval['amount'];
+                $cascading[$key]['scheduled_date'] = $cascadingApproval['scheduled_date'];
+                $cascading[$key]['budgets_available'] = '';
+                $cascading[$key]['created_date'] = $cascadingApproval['created_at'];
+            }
+            if ($cascading) {
+                return response($cascading);
+            }
         }
         return response([]);
     }

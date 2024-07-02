@@ -926,7 +926,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/template', [App\Http\Controllers\API\BudgetProgramController::class, 'downloadAssignBudgetTemplate'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');
 
     //Budget Cascading approval
-    Route::get('/v1/organization/{organization}/program/{program}/pending-cascading-approvals', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
+    Route::get('/v1/organization/{organization}/program/{program}/report/{title}', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/{participant}/pending-approvals', [App\Http\Controllers\API\BudgetProgramController::class, 'getPendingCascadingApproval'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/budget-cascading-approval', [App\Http\Controllers\API\BudgetProgramController::class, 'acceptRejectBudgetCascadingApproval'])->middleware('can:updateCascadingApprovals,App\BudgetProgram,organization,program');
     Route::delete('/v1/organization/{organization}/program/{program}/budget-cascading-approval/{budgetcascadingapproval}', [App\Http\Controllers\API\BudgetProgramController::class, 'revokeBudgetCascadingApproval'])->middleware('can:revokeApproval,App\BudgetProgram,organization,program');
