@@ -25,6 +25,7 @@ use App\Models\Owner;
 use App\Models\User;
 use Carbon\Carbon;
 use App\Notifications\AwardNotification;
+use PHPUnit\Framework\MockObject\DuplicateMethodException;
 
 class AwardService
 {
@@ -109,7 +110,6 @@ class AwardService
         $result = null;
 
         try {
-
             $users = User::whereIn('id', $award->user_id)->get();
 
             foreach ($users as $user) {
@@ -117,12 +117,22 @@ class AwardService
             }
 
             // save budget cascading approval data
-            foreach ($data['user_id'] as $userId) {
-                $this->SaveBudgetCascadingApprovalDetail($event, $userId, $awarder, $award);
+            if (!empty($data['user_id'])) {
+                foreach ($data['user_id'] as $userId) {
+                    $this->SaveBudgetCascadingApprovalDetail($event, $userId, $awarder, $award);
+                }
+
+                $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
+                $amount = (float)$amount;
+                $numUsers = count($data['user_id']);
+                $multipliedAmount = $numUsers * $amount;
+
+                $updatedAmount = $program['budgets_cascading'][0]['budget_amount_remaining'] - $multipliedAmount;
+                BudgetCascading::where('id', $program['budgets_cascading'][0]['id'])
+                    ->update(['budget_amount_remaining' => $updatedAmount]);
             }
 
             // print_r( $journalEventType );
-
             // TODO
             // // Read the award levels assigned to the event
             // $assigned_award_levels = $this->event_templates_model->read_list_of_event_award_level_by_event ( $receiver_program_id, $event_template_id, 0, 99999 );
@@ -144,6 +154,12 @@ class AwardService
         //$budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
         $transaction_id = generate_unique_id();
+
+        $overrideCashValue = $data->override_cash_value ?? 0;
+        $eventAmountOverride = $overrideCashValue > 0;
+        $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
+        $amount = (float)$amount;
+
         $awardData = [];
         foreach ($event_award as $eventAwardLevel) {
             if ($program->use_cascading_approvals && $event->include_in_budget) {
@@ -155,7 +171,7 @@ class AwardService
                     'manager_id' => 0,
                     'event_id' => $event->id,
                     'award_id' => $eventAwardLevel->award_level_id,
-                    'amount' => $eventAwardLevel->amount,
+                    'amount' => $amount,
                     'approved' => 0,
                     'award_data' => json_encode($awardData),
                     'transaction_id' => $transaction_id,
@@ -169,9 +185,6 @@ class AwardService
                 ]);
             }
         }
-        $updatedAmount = $program['budgets_cascading'][0]['budget_amount_remaining'] - $data->total_cascading_amount;
-        BudgetCascading::where('id', $program['budgets_cascading'][0]['id'])
-            ->update(['budget_amount_remaining' => $updatedAmount]);
     }
 
 

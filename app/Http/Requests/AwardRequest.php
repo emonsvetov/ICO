@@ -37,7 +37,6 @@ class AwardRequest extends FormRequest
                 'mimes:pdf,txt,doc,docx'
             ],
             'user_id' => 'required|array',
-            'total_cascading_amount' => 'nullable|numeric',
             'user_id.*' => 'required|integer',
         ];
     }

@@ -194,6 +194,16 @@ class BudgetProgramController extends Controller
     }
 
 
+    public function manageScheduleDate(BudgetCascadinApprovalRequest $approvalRequest, Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadinApproval)
+    {
+        $approver = auth()->user();
+        $data = $approvalRequest->validated();
+        // Update the schedule Date
+        BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])
+            ->update(['scheduled_date' => $data['scheduled_date'], 'action_by' => $approver->id]);
+        return response()->json(['message' => 'Scheduled Date updated successfully.']);
+    }
+
     public function downloadAssignBudgetTemplate(Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
         //return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));

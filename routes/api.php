@@ -949,7 +949,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/program/{program}/budget-cascading-approval', [App\Http\Controllers\API\BudgetProgramController::class, 'acceptRejectBudgetCascadingApproval'])->middleware('can:updateCascadingApprovals,App\BudgetProgram,organization,program');
     Route::delete('/v1/organization/{organization}/program/{program}/budget-cascading-approval/{budgetcascadingapproval}', [App\Http\Controllers\API\BudgetProgramController::class, 'revokeBudgetCascadingApproval'])->middleware('can:revokeApproval,App\BudgetProgram,organization,program');
     Route::get('/v1/organization/{organization}/program/{program}/award-pendings', [App\Http\Controllers\API\BudgetProgramController::class, 'awardsPending'])->middleware('can:viewAny,App\BudgetProgram,organization,program');
-    
+    Route::put('/v1/organization/{organization}/program/{program}/manage-schedule-date', [App\Http\Controllers\API\BudgetProgramController::class, 'manageScheduleDate'])->middleware('can:updateCascadingApprovals,App\BudgetProgram,organization,program');
 });
 
 Route::post('/v1/user/{account_holder_id}/hmi/checkout', [App\Http\Controllers\API\CheckoutController::class, 'hmiStore']);
