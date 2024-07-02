@@ -43,6 +43,11 @@ class BudgetCascadingApproval extends Model
         return $this->belongsTo(User::class, 'requestor_id');
     }
 
+    public function action_by()
+    {
+        return $this->belongsTo(User::class, 'action_by');
+    }
+
     // Define the relationship for user
     public function user()
     {
