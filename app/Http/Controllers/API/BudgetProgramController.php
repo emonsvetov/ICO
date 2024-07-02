@@ -85,20 +85,16 @@ class BudgetProgramController extends Controller
         return response($budgetProgram);
     }
 
-    public function getBudgetCascadingApproval(Organization $organization, Program $program)
+    public function getBudgetCascadingApproval(Organization $organization, Program $program, string $title)
     {
-       /* if ($title == 'manage-approvals') {
-            $approved = 1;
-        }
-        if ($title == 'cascading-approvals') {
-            $approved = 0;
-        }*/
-        $cascadingApprovals = BudgetCascadingApproval::where('program_id', $program->id)
-            ->where('approved', 0)
-            ->with('event')
-            ->with('program')
-            ->with('requestor')
-            ->with('approved_by')
+        if ($title) {
+            $approved = $title == 'manage-approvals' ? 1 : ($title == "cascading-approvals" ? 0 : response([]));
+            $cascadingApprovals = BudgetCascadingApproval::where('program_id', $program->id)
+                ->where('approved', $approved)
+                ->with('event')
+                ->with('program')
+                ->with('requestor')
+                ->with('approved_by')
             ->with('user')
             ->get();
         $cascading = [];
