@@ -230,11 +230,11 @@ class BudgetProgramService
                 'yearly_award_pending' => 0,
                 'yerly_budget_amount_remaining' => 0,
                 'yearly_awarded_distributed' => 0,
-                'award_pending' => 0,
-                'award_schedule' => 0,
             ];
             $monthlyAwardDistributedAmount = 0;
             $yearlyAwardDistributedAmount = 0;
+            $awardPending = 0;
+            $awardSchedule = 0;
 
             foreach ($currentBudgetCascading as $key => $budgetCascading) {
                 $approvalMonth = $budgetCascading->budget_start_date;
@@ -251,7 +251,7 @@ class BudgetProgramService
                     }
                     if ($budgetCascadingApproval->approved == 0 && $currentYear) {
                         $budgetCascadingProgramData['yearly_award_pending'] += $budgetCascadingApproval->amount;
-                        $budgetCascadingProgramData['award_pending'] += $budgetCascadingApproval->amount;
+                        $awardPending += $budgetCascadingApproval->amount;
                     }
 
                     if ($budgetCascadingApproval->approved == 1 && $approvalMonth == $currentMonth) {
@@ -260,16 +260,18 @@ class BudgetProgramService
                     if ($budgetCascadingApproval->approved == 1) {
                         $yearlyAwardDistributedAmount += $budgetCascadingApproval->amount;
                     }
-                    if ($scheduled_date) {
-                        //todo it pending
-                        $budgetCascadingProgramData['award_schedule'] += $budgetCascadingApproval->amount;
+                    if ($budgetCascadingApproval->approved == 1) {
+                        $awardSchedule += $budgetCascadingApproval->amount;
                     }
                 }
             }
-           
+
             $budgetCascadingProgramData['monthly_awarded_distributed'] += $monthlyAwardDistributedAmount;
             $budgetCascadingProgramData['yearly_awarded_distributed'] += $yearlyAwardDistributedAmount;
-            $result[] = $budgetCascadingProgramData;
+            $result["cascadingData"] = array($budgetCascadingProgramData);
+            $result["award_pendings"] = $awardPending;
+            $result["award_schedule"] = $awardSchedule;
+
             return $result;
         }
 

@@ -11,6 +11,8 @@ class ReportAwardSummaryService extends ReportServiceAbstract
     public function getTable(): array
     {
         $params = $this->params;
+        $params[self::SQL_LIMIT] = null;
+        $params[self::SQL_OFFSET] = null;
         $table = [];
         $className = ReportAwardSummaryParticipantsService::class;
         $participantsReport = (new $className($params))->getReport();
@@ -82,14 +84,43 @@ class ReportAwardSummaryService extends ReportServiceAbstract
             }
         }
 
+        $total = 0;
         foreach ($table as $key => $item) {
-            $table[$key]->program_name = $item->name;
             foreach ($item->awards as $awardKey => $awardItem) {
-                $table[$key]->subRows[] = $awardItem;
+                $total++;
             }
         }
+
+        $break = false;
+        $offset = 0;
+        $count = 0;
+        foreach ($table as $key => $item) {
+            if ($break){
+                unset($table[$key]);
+                continue;
+            }
+            $table[$key]->program_name = $item->name;
+            foreach ($item->awards as $awardKey => $awardItem) {
+                $offset++;
+                if ($offset <= $this->params[self::SQL_OFFSET]) {
+                    continue;
+                }
+                $table[$key]->subRows[] = $awardItem;
+                $count++;
+                if ($count>= $this->params[self::SQL_LIMIT]){
+                    $break = true;
+                    break;
+                }
+            }
+        }
+        foreach ($table as $key => $item) {
+            if(empty($item->subRows)){
+                unset($table[$key]);
+            }
+        }
+
         $this->table['data'] = $table;
-        $this->table['total'] = $participantsReport['total'];
+        $this->table['total'] = $total;
 
         return $this->table;
     }

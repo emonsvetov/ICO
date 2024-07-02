@@ -87,11 +87,11 @@ Route::group([
     ], function () {
         Route::get('', [App\Http\Controllers\API\EventController::class, 'index'])->name('api.v1.organization.program.event.index')->middleware('can:view,App\ProgramEvent,organization,program');
         Route::get('/{event}', [App\Http\Controllers\API\EventController::class, 'show'])->name('api.v1.organization.program.event.show')->middleware('can:view,App\ProgramEvent,organization,program,event');
-        Route::post('', [App\Http\Controllers\API\EventController::class, 'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
-        Route::put('{event}', [App\Http\Controllers\API\EventController::class, 'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class, 'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class, 'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::delete('{event}', [App\Http\Controllers\API\EventController::class, 'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
+        Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
+        Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class,'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class,'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy1')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
     Route::group([
         'prefix' => '/event-award-level',
@@ -204,42 +204,24 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/permission/{permission}', [App\Http\Controllers\API\PermissionController::class, 'destroy'])->name('api.v1.organization.permission.delete')->middleware('can:delete,permission');
 
     //Domain Routes
-    Route::get(
-        '/v1/organization/{organization}/domain',
-        [App\Http\Controllers\API\DomainController::class, 'index']
-    )->name('api.v1.domain.index')->middleware('can:viewAny,App\Domain,organization');
-    Route::post(
-        '/v1/organization/{organization}/domain',
-        [App\Http\Controllers\API\DomainController::class, 'store']
-    )->name('api.v1.domain.store')->middleware('can:create,App\Domain,organization');
-    Route::get(
-        '/v1/organization/{organization}/domain/{domain}',
-        [App\Http\Controllers\API\DomainController::class, 'show']
-    )->name('api.v1.domain.show')->middleware('can:view,App\Domain,organization,domain');
-    Route::put(
-        '/v1/organization/{organization}/domain/{domain}',
-        [App\Http\Controllers\API\DomainController::class, 'update']
-    )->name('api.v1.domain.update')->middleware('can:update,App\Domain,organization,domain');
-    Route::delete(
-        '/v1/organization/{organization}/domain/{domain}',
-        [App\Http\Controllers\API\DomainController::class, 'delete']
-    )->name('api.v1.domain.delete')->middleware('can:delete,App\Domain,organization,domain');
-    Route::get(
-        '/v1/organization/{organization}/domain/{domain}/generateSecretKey',
-        [App\Http\Controllers\API\DomainController::class, 'generateSecretKey']
-    )->name('api.v1.domain.generateSecretKey')->middleware('can:generateSecretKey,App\Domain,organization,domain');
-    Route::post(
-        '/v1/organization/{organization}/domain/{domain}/addip',
-        [App\Http\Controllers\API\DomainIPController::class, 'store']
-    )->name('api.v1.domain_ip.store')->middleware('can:addIp,App\Domain,organization,domain');
-    Route::delete(
-        '/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}',
-        [App\Http\Controllers\API\DomainIPController::class, 'delete']
-    )->name('api.v1.domain_ip.delete')->middleware('can:deleteIp,App\Domain,organization,domain');
-    Route::get(
-        '/v1/organization/{organization}/domain/{domain}/check-status',
-        [App\Http\Controllers\API\DomainController::class, 'checkStatus']
-    )->name('api.v1.domain.generateSecretKey')->middleware('can:checkStatus,App\Domain,organization,domain');
+    Route::get('/v1/organization/{organization}/domain',
+    [App\Http\Controllers\API\DomainController::class, 'index'])->name('api.v1.domain.index')->middleware('can:viewAny,App\Domain,organization');
+    Route::post('/v1/organization/{organization}/domain',
+    [App\Http\Controllers\API\DomainController::class, 'store'])->name('api.v1.domain.store')->middleware('can:create,App\Domain,organization');
+    Route::get('/v1/organization/{organization}/domain/{domain}',
+    [App\Http\Controllers\API\DomainController::class, 'show'])->name('api.v1.domain.show')->middleware('can:view,App\Domain,organization,domain');
+    Route::put('/v1/organization/{organization}/domain/{domain}',
+    [App\Http\Controllers\API\DomainController::class, 'update'])->name('api.v1.domain.update')->middleware('can:update,App\Domain,organization,domain');
+    Route::delete('/v1/organization/{organization}/domain/{domain}',
+    [App\Http\Controllers\API\DomainController::class, 'delete'])->name('api.v1.domain.delete')->middleware('can:delete,App\Domain,organization,domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}/generateSecretKey',
+    [App\Http\Controllers\API\DomainController::class, 'generateSecretKey'])->name('api.v1.domain.generateSecretKey')->middleware('can:generateSecretKey,App\Domain,organization,domain');
+    Route::post('/v1/organization/{organization}/domain/{domain}/addip',
+    [App\Http\Controllers\API\DomainIPController::class, 'store'])->name('api.v1.domain_ip.store')->middleware('can:addIp,App\Domain,organization,domain');
+    Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}',
+    [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.delete')->middleware('can:deleteIp,App\Domain,organization,domain');
+    Route::get('/v1/organization/{organization}/domain/{domain}/check-status',
+        [App\Http\Controllers\API\DomainController::class, 'checkStatus'])->name('api.v1.domain.generateSecretKey1')->middleware('can:checkStatus,App\Domain,organization,domain');
 
     //DomainProgram routes
 
