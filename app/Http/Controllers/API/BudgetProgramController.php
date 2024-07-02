@@ -88,6 +88,7 @@ class BudgetProgramController extends Controller
     public function getBudgetCascadingApproval(Organization $organization, Program $program)
     {
         $cascadingApprovals = BudgetCascadingApproval::where('program_id', $program->id)
+            ->where('approved', 0)
             ->with('event')
             ->with('program')
             ->with('requestor')
