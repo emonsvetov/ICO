@@ -367,11 +367,12 @@ class GiftcodeService
             $mediumInfoIsTest = 0;
         }
 
-        $mediumInfos = MediumInfo::whereNull('redemption_date')
-            ->where('medium_info_is_test', $mediumInfoIsTest)
+        $mediumInfos = DB::table('medium_info')
+            ->whereNull('redemption_date')
             ->where('virtual_inventory', 0)
             ->leftJoin('merchants', 'medium_info.merchant_id', '=', 'merchants.id')
             ->get([
+                'medium_info.id',
                 'medium_info.purchase_date',
                 'medium_info.redemption_value',
                 'medium_info.cost_basis',
@@ -380,8 +381,36 @@ class GiftcodeService
                 'medium_info.code',
                 'medium_info.pin',
                 'medium_info.redemption_url',
-                'merchants.merchant_code']);
+                'merchants.merchant_code'
+            ]);
 
         return $mediumInfos;
+    }
+
+    public function addCodes($codes)
+    {
+        $user = User::where('id', 1)->first();
+        foreach ($codes as $val) {
+            $mediumInfo = DB::table('medium_info')
+                ->where('virtual_inventory', 0)
+                ->where('code', $val['code'])
+                ->first([
+                    'redemption_date','code','id',
+                ]);
+            if (!$mediumInfo->redemption_date) {
+                $merchant = Merchant::where('v2_account_holder_id', $val['v2_account_holder_id'])->first();
+                unset($val['v2_account_holder_id']);
+                $res[] = $this->createGiftcode($merchant, $val, $user);
+            }else{
+                $res[] = ['result' => [
+                    "success" => false,
+                    "gift_code" => 'code_redemption',
+                    "gift_code_id" => $mediumInfo->id,
+                    "code" => $mediumInfo->code,
+
+                ]];
+            }
+        }
+        return $res;
     }
 }
