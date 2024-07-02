@@ -98,6 +98,7 @@ class BudgetProgramController extends Controller
             ->with('event')
             ->with('program')
             ->with('requestor')
+            ->with('action_by')
             ->with('user')
             ->get();
         $cascading = [];
@@ -106,7 +107,7 @@ class BudgetProgramController extends Controller
             $cascading[$key]['program_name'] = $cascadingApproval['program']['name'];
             $cascading[$key]['requested_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
             $cascading[$key]['recipient'] = $cascadingApproval['user']['first_name'] . ' ' . $cascadingApproval['user']['last_name'];
-            $cascading[$key]['approved_by'] = '';
+            $cascading[$key]['approved_by'] = $cascadingApproval['action_by']['first_name']. ' ' . $cascadingApproval['action_by']['last_name'];
             $cascading[$key]['event_name'] = $cascadingApproval['event']['name'];
             $cascading[$key]['amount'] = $cascadingApproval['amount'];
             $cascading[$key]['scheduled_date'] = $cascadingApproval['scheduled_date'];
