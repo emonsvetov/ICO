@@ -13,6 +13,9 @@ class CreateBudgetsCascadingTable extends Migration
      */
     public function up()
     {
+        // Drop the table if it exists
+        Schema::dropIfExists('budgets_cascading');
+
         Schema::create('budgets_cascading', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('budget_program_id');
@@ -29,7 +32,7 @@ class CreateBudgetsCascadingTable extends Migration
             $table->smallInteger('flag')->unsigned()->nullable()->default(null);
             $table->boolean('status')->default(1);
             $table->string('reason_for_budget_change')->nullable();
-            $table->index(['id','program_id']);
+            $table->index(['id', 'program_id']);
             $table->timestamps();
         });
     }

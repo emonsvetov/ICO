@@ -154,14 +154,13 @@ class AwardService
         //$budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
         $transaction_id = generate_unique_id();
-
+        $award_level_id= $event_award[0]['award_level_id'] ?? 0;
         $overrideCashValue = $data->override_cash_value ?? 0;
         $eventAmountOverride = $overrideCashValue > 0;
         $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
         $amount = (float)$amount;
-
         $awardData = [];
-        foreach ($event_award as $eventAwardLevel) {
+       // foreach ($event_award as $eventAwardLevel) {
             if ($program->use_cascading_approvals && $event->include_in_budget) {
                 BudgetCascadingApproval::create([
                     'parent_id' => $program->parent_id,
@@ -170,7 +169,7 @@ class AwardService
                     'requestor_id' => $awarder->id,
                     'manager_id' => 0,
                     'event_id' => $event->id,
-                    'award_id' => $eventAwardLevel->award_level_id,
+                    'award_id' => $award_level_id,
                     'amount' => $amount,
                     'approved' => 0,
                     'award_data' => json_encode($awardData),
@@ -184,7 +183,7 @@ class AwardService
                     'action_by' => $awarder->id,
                 ]);
             }
-        }
+       // }
     }
 
 
