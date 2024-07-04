@@ -28,6 +28,7 @@ class BudgetCascadinApprovalRequest extends FormRequest
             'budget_cascading_approval_id.*' => 'required|integer',
             'approved' => 'integer',
             'scheduled_date' => 'nullable|string',
+            'rejection_note'=>'nullable|string'
         ];
     }
 }
