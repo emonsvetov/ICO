@@ -154,41 +154,36 @@ class AwardService
         //$budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
         $transaction_id = generate_unique_id();
-        $award_level_id = $event_award[0]['award_level_id'] ?? 0;
+        $award_level_id= $event_award[0]['award_level_id'] ?? 0;
         $overrideCashValue = $data->override_cash_value ?? 0;
         $eventAmountOverride = $overrideCashValue > 0;
         $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
         $amount = (float)$amount;
         $awardData = [];
-        // foreach ($event_award as $eventAwardLevel) {
-        if ($program->enable_schedule_awards) {
-            $scheduled_date = $data->scheduled_date;
-        } else {
-            $scheduled_date = '';
-        }
-        if ($program->use_cascading_approvals && $event->include_in_budget) {
-            BudgetCascadingApproval::create([
-                'parent_id' => $program->parent_id,
-                'awarder_id' => $awarder->id,
-                'user_id' => $user,
-                'requestor_id' => $awarder->id,
-                'manager_id' => 0,
-                'event_id' => $event->id,
-                'award_id' => $award_level_id,
-                'amount' => $amount,
-                'approved' => 0,
-                'award_data' => json_encode($awardData),
-                'transaction_id' => $transaction_id,
-                'program_approval_id' => 0,
-                'program_id' => $data->program_id,
-                'include_in_budget' => $event->include_in_budget,
-                'budgets_cascading_id' => $program['budgets_cascading'][0]['id'],
-                'rejection_note' => "",
-                'scheduled_date' => $scheduled_date,
-                'action_by' => $awarder->id,
-            ]);
-        }
-        // }
+       // foreach ($event_award as $eventAwardLevel) {
+            if ($program->use_cascading_approvals && $event->include_in_budget) {
+                BudgetCascadingApproval::create([
+                    'parent_id' => $program->parent_id,
+                    'awarder_id' => $awarder->id,
+                    'user_id' => $user,
+                    'requestor_id' => $awarder->id,
+                    'manager_id' => 0,
+                    'event_id' => $event->id,
+                    'award_id' => $award_level_id,
+                    'amount' => $amount,
+                    'approved' => 0,
+                    'award_data' => json_encode($awardData),
+                    'transaction_id' => $transaction_id,
+                    'program_approval_id' => 0,
+                    'program_id' => $data->program_id,
+                    'include_in_budget' => $event->include_in_budget,
+                    'budgets_cascading_id' => $program['budgets_cascading'][0]['id'],
+                    'rejection_note' => "",
+                    'scheduled_date' => Carbon::now(),
+                    'action_by' => $awarder->id,
+                ]);
+            }
+       // }
     }
 
 
