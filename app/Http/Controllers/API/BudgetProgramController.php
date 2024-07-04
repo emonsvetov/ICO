@@ -125,7 +125,7 @@ class BudgetProgramController extends Controller
         $budgetCascadingApprovals = BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])->get();
         // Update the approved status
         BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])
-            ->update(['approved' => $data['approved'], 'action_by' => $approver->id]);
+            ->update(['approved' => $data['approved'], 'rejection_note' => $data['rejection_note'], 'action_by' => $approver->id]);
 
         if ($data['approved'] == '1') {
             // Additional steps when the approval is accepted
