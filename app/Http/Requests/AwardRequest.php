@@ -38,6 +38,7 @@ class AwardRequest extends FormRequest
             ],
             'user_id' => 'required|array',
             'user_id.*' => 'required|integer',
+            'scheduled_date'=>'nullable|string'
         ];
     }
 
