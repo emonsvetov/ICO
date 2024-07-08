@@ -13,10 +13,14 @@ use App\Models\BudgetCascadingApproval;
 use App\Http\Requests\BudgetProgramRequest;
 use App\Http\Requests\BudgetCascadinApprovalRequest;
 use App\Http\Requests\BudgetProgramAssignRequest;
+use App\Models\Traits\Filterable;
+use App\Models\Traits\UserFilters;
 use Illuminate\Http\Request;
 
 class BudgetProgramController extends Controller
 {
+
+    use Filterable, UserFilters;
 
     protected $budgetProgramService;
 
@@ -85,18 +89,25 @@ class BudgetProgramController extends Controller
         return response($budgetProgram);
     }
 
-    public function getBudgetCascadingApproval(Organization $organization, Program $program, string $title)
+    public function getBudgetCascadingApproval(Organization $organization, Program $program, string $title, Request $request)
     {
         if ($title) {
             $approved = $title == 'manage-approvals' ? 1 : ($title == "cascading-approvals" ? 0 : response([]));
-            $cascadingApprovals = BudgetCascadingApproval::where('program_id', $program->id)
+            self::$query = BudgetCascadingApproval::where('program_id', $program->id)
                 ->where('approved', $approved)
                 ->with('event')
                 ->with('program')
                 ->with('requestor')
                 ->with('approved_by')
-                ->with('user')
-                ->get();
+                ->with('user');
+
+            // Get the page and limit from the request
+            $limit = $request->query('limit');
+            $page = $request->query('page');
+
+            // Paginate the results
+            $cascadingApprovals = self::$query->paginate($limit, ['*'], 'page', $page);
+
             $cascading = [];
             foreach ($cascadingApprovals as $key => $cascadingApproval) {
                 $approved_by = $cascadingApproval['approved_by']['first_name'] . ' ' . $cascadingApproval['approved_by']['last_name'] ?? '';
@@ -108,15 +119,42 @@ class BudgetProgramController extends Controller
                 $cascading[$key]['event_name'] = $cascadingApproval['event']['name'];
                 $cascading[$key]['amount'] = $cascadingApproval['amount'];
                 $cascading[$key]['scheduled_date'] = $cascadingApproval['scheduled_date'];
-                $cascading[$key]['budgets_available'] = '';
+                $cascading[$key]['budgets_available'] = ''; // You can populate this field if needed
                 $cascading[$key]['created_date'] = $cascadingApproval['created_at'];
             }
-            if ($cascading) {
-                return response($cascading);
+
+            if ($cascadingApprovals->count() > 0) {
+                return response()->json([
+                    'current_page' => $cascadingApprovals->currentPage(),
+                    'data' => $cascading,
+                    'first_page_url' => $cascadingApprovals->url(1),
+                    'from' => $cascadingApprovals->firstItem(),
+                    'last_page' => $cascadingApprovals->lastPage(),
+                    'last_page_url' => $cascadingApprovals->url($cascadingApprovals->lastPage()),
+                    'links' => [
+                        [
+                            'url' => $cascadingApprovals->previousPageUrl(),
+                            'label' => '&laquo; Previous',
+                            'active' => false,
+                        ],
+                        [
+                            'url' => $cascadingApprovals->url(1),
+                            'label' => '1',
+                            'active' => true,
+                        ],
+                    ],
+                    'next_page_url' => $cascadingApprovals->nextPageUrl(),
+                    'path' => $cascadingApprovals->path(),
+                    'per_page' => $cascadingApprovals->perPage(),
+                    'prev_page_url' => $cascadingApprovals->previousPageUrl(),
+                    'to' => $cascadingApprovals->lastItem(),
+                    'total' => $cascadingApprovals->total(),
+                ]);
             }
-            return response([]);
+            return response()->json([]);
         }
     }
+
 
     public function acceptRejectBudgetCascadingApproval(BudgetCascadinApprovalRequest $approvalRequest, Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadinApproval)
     {
@@ -190,7 +228,7 @@ class BudgetProgramController extends Controller
 
     public function awardsPending(Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadingApproval)
     {
-        $pendingCount = BudgetCascadingApproval::where('program_id', $program->id)
+        $pendingCount = BudgetCascadingApproval::where('parent_id', $program->parent_id)
             ->where('approved', 0)
             ->count();
 
@@ -198,7 +236,6 @@ class BudgetProgramController extends Controller
             'pending_count' => $pendingCount
         ], 200);
     }
-
 
     public function manageScheduleDate(BudgetCascadinApprovalRequest $approvalRequest, Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadinApproval)
     {
