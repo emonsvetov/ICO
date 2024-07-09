@@ -46,8 +46,13 @@ class BudgetProgramController extends Controller
 
     public function store(BudgetProgramRequest $budgetProgramRequest, Organization $organization, Program $program)
     {
+        if ($program->parent_id != NULL) {
+            $p_id = $program->parent_id;
+        } else {
+            $p_id = $program->id;
+        }
         $data = $budgetProgramRequest->validated();
-        $data = $data + ['program_id' => $program->id];
+        $data = $data + ['program_id' => $p_id];
         try {
             $budgetProgram = $this->budgetProgramService->createBudgetProgram($data);
             return response($budgetProgram);

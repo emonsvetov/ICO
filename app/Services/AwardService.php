@@ -120,7 +120,7 @@ class AwardService
             // save budget cascading approval data
             if (!empty($data['user_id'])) {
                 foreach ($data['user_id'] as $userId) {
-                    $this->SaveBudgetCascadingApprovalDetail($event, $userId, $awarder, $award);
+                    $this->SaveBudgetCascadingApprovalDetail($program, $event, $userId, $awarder, $award);
                 }
 
                 $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
@@ -144,17 +144,15 @@ class AwardService
             $result['error'] = "Error while processing awarding. Error:{$e->getMessage()} in line {$e->getLine()}";
             DB::rollBack();
         }
-
         return $result;
     }
 
-    public function SaveBudgetCascadingApprovalDetail($event, $user, $awarder, object $data = null)
+
+    public function SaveBudgetCascadingApprovalDetail($program, $event, $user, $awarder, object $data = null)
     {
         $parent_program = new Program();
         $parent_id = $parent_program->get_top_level_program_id($data->program_id);
-        $program = $event->program;
-
-        //$budgets_cascading = $program->budgets_cascading;
+        $budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
         $transaction_id = generate_unique_id();
         $award_level_id = $event_award[0]['award_level_id'] ?? 0;
@@ -162,8 +160,8 @@ class AwardService
         $eventAmountOverride = $overrideCashValue > 0;
         $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
         $amount = (float)$amount;
+
         $awardData = [];
-        // foreach ($event_award as $eventAwardLevel) {
         if ($data->use_cascading_approvals && $event->include_in_budget) {
             BudgetCascadingApproval::create([
                 'parent_id' => $parent_id,
@@ -180,20 +178,19 @@ class AwardService
                 'program_approval_id' => 0,
                 'program_id' => $data->program_id,
                 'include_in_budget' => $event->include_in_budget,
-                'budgets_cascading_id' => $program['budgets_cascading'][0]['id'],
+                'budgets_cascading_id' => $budgets_cascading[0]['id'],
                 'rejection_note' => "",
                 'scheduled_date' => Carbon::now(),
                 'action_by' => $awarder->id,
             ]);
         }
-        // }
     }
 
 
     public function awardUser($event, $awardee, $awarder, object $data = null, $dontSendEmail = null)
     {
-        //        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
-        //        DB::statement($statement);
+        //$statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
+        //DB::statement($statement);
         DB::beginTransaction();
 
         $program = $event->program;
