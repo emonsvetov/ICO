@@ -233,7 +233,7 @@ class BudgetProgramController extends Controller
 
     public function awardsPending(Organization $organization, Program $program, BudgetCascadingApproval $budgetCascadingApproval)
     {
-        $pendingCount = BudgetCascadingApproval::where('parent_id', $program->parent_id)
+        $pendingCount = BudgetCascadingApproval::where('parent_id', $program->id)
             ->where('approved', 0)
             ->count();
 
