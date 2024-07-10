@@ -36,15 +36,14 @@ class EventIconController extends Controller
 
         $eventIcons = $query->get();
         $filesystemDriver = config('filesystems.default');
-        foreach ($eventIcons as $key => $eventIcon) {
-            if (!Storage::disk($filesystemDriver)->exists($eventIcon->path)) {
-                $eventIcon->path = 'eventIcons\default\1.jpg';
-            }
-        }
+
+        $eventIcons = $eventIcons->filter(function($item) use ($filesystemDriver) {
+            return Storage::disk($filesystemDriver)->exists($item->path);
+        });
 
         if ( $eventIcons->isNotEmpty() )
         {
-            return response( $eventIcons );
+            return response( $eventIcons->values() );
         }
         return response( [] );
     }
