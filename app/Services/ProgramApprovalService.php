@@ -9,7 +9,7 @@ use App\Models\ProgramApproval;
 class ProgramApprovalService
 {
 
-    public function createProgramApprovalStep(array $data)
+    /* public function createProgramApprovalStep(array $data)
     {
         $createdBy = auth()->user();
         $program = new Program();
@@ -25,6 +25,36 @@ class ProgramApprovalService
             ]);
         } catch (\Exception $e) {
             throw $e;
+        }
+    }*/
+
+    public function createProgramApprovalStep(array $data)
+    {
+        $createdBy = auth()->user();
+        $program = new Program();
+        $status = 1;
+        foreach ($data['program_id'] as $program_id) {
+            $parent_id = $program->get_top_level_program_id($program_id);
+            foreach ($data['approval_request'] as $approvalRequest) {
+                $step = $approvalRequest['step'];
+                if ($step > 0) {
+                    try {
+                        // Create ProgramApproval for each program_id and step
+                        $programApproval = ProgramApproval::create([
+                            'step' => $step,
+                            'program_id' => $program_id,
+                            'program_parent_id' => $parent_id,
+                            'status' => $status,
+                            'created_by' => $createdBy->id,
+                        ]);
+
+                        // Assign position levels to the created ProgramApproval
+                        $this->assign($programApproval, $approvalRequest);
+                    } catch (\Exception $e) {
+                        throw $e;
+                    }
+                }
+            }
         }
     }
 

@@ -24,7 +24,11 @@ class ProgramApprovalRequest extends FormRequest
     public function rules()
     {
         return [
-            'step' => 'integer',
+            'program_id' => 'array',
+            // 'step' => 'integer',
+            // 'position_level_id' => 'required|array',
+            // 'position_level_id.*' => 'required|integer',
+            'approval_request' => 'array',
         ];
     }
 }
