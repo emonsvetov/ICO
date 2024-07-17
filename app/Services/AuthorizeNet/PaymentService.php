@@ -5,7 +5,9 @@ namespace App\Services\AuthorizeNet;
 use net\authorize\api\contract\v1 as AnetAPI;
 use net\authorize\api\controller as AnetController;
 
+use App\Models\AnetApiLog;
 use App\Models\Invoice;
+use App\Models\BillTo;
 
 class PaymentService
 {    
@@ -23,18 +25,45 @@ class PaymentService
         $this->referenceId = 'ref' . time();
     }
 
+    private function setOrganizationAndProgram( $organization, $program )
+    {
+        $this->organizationId = $organization;
+        $this->programId = $program;
+    }
+
+    private function aNetUrl()
+    {
+        if ( env('APP_ENV') == 'production' )
+        {
+            return \net\authorize\api\constants\ANetEnvironment::PRODUCTION;
+        }            
+            return \net\authorize\api\constants\ANetEnvironment::SANDBOX;
+    }
+
     private function aNetTransaction( $transactionRequestType )
     {
         $request = new AnetAPI\CreateTransactionRequest();
 		$request->setMerchantAuthentication( $this->merchantAuthentication );
         $request->setRefId( $this->referenceId );
 		$request->setTransactionRequest( $transactionRequestType );
-		$controller = new AnetController\CreateTransactionController($request);
+		$controller = new AnetController\CreateTransactionController( $request );
 		
         //Add production URL as well
-        $response = $controller->executeWithApiResponse( \net\authorize\api\constants\ANetEnvironment::SANDBOX);
+        $response = $controller->executeWithApiResponse( $this->aNetUrl() );
 
-        //You need to log the responses
+        //We do not want to store card data in the DB
+        $request = json_decode(json_encode($request), true);
+        unset( $request['transactionRequest']['payment']);
+
+        //Save request and response to log
+        $log = AnetApiLog::create([
+            'organization_id' => $this->organizationId,
+            'program_id' => $this->programId,
+            'url' => $this->aNetUrl(),
+            'request' =>  json_encode($request),
+            'response' => json_encode($response),
+        ]); 
+        
         return $response;
     }
 
@@ -56,6 +85,9 @@ class PaymentService
             $customerAddress->setZip( $details['zip'] );
         if ( isset($details['country']) )
             $customerAddress->setCountry( $details['country'] );
+
+        //Update Last Bill To
+        BillTo::saveLastUsed( $this->organizationId, $this->programId, $details );
 
         return $customerAddress;
     }
@@ -115,8 +147,9 @@ class PaymentService
         return $data;
     }
 
-    public function byApplePay( $details )
+    public function byApplePay( $details, $organization, $program )
     {
+        $this->setOrganizationAndProgram( $organization, $program );
         /*/setOpaqueData
         THis is the base64 encoding of the result from apple. The contents of Payment Token: { "paymentData": {this must be base64 encoded}
         */
@@ -141,10 +174,11 @@ class PaymentService
         return $this->buildResponse( $response );
     }
 
-    public function byGooglePay( $details )
+    public function byGooglePay( $details, $organization, $program )
     {
+        $this->setOrganizationAndProgram( $organization, $program );
+        
         //opaqueData
-
         $opaqueData = new AnetAPI\OpaqueDataType();
         $opaqueData->setDataDescriptor("COMMON.GOOGLE.INAPP.PAYMENT");
         $opaqueData->setDataValue( $details['opaqueData'] );
@@ -168,9 +202,10 @@ class PaymentService
         return $this->buildResponse( $response );
     }
 
-    public function byPayPal( $details )
+    public function byPayPal( $details, $organization, $program )
     {
-        
+        $this->setOrganizationAndProgram( $organization, $program );
+
         $payPalType=new AnetAPI\PayPalType();
         $payPalType->setCancelUrl( $details['redirectUrl'] );
         $payPalType->setSuccessUrl( $details['redirectUrl'] );
@@ -189,8 +224,10 @@ class PaymentService
         return $this->buildResponse( $response );
     }
 
-    public function processPayPalRedirect( $details )
+    public function processPayPalRedirect( $details, $organization, $program )
     {
+        $this->setOrganizationAndProgram( $organization, $program );
+
         // Set PayPal compatible merchant credentials
         $payPalType=new AnetAPI\PayPalType();
         $payPalType->setPayerID( $details['payerID'] );
@@ -208,9 +245,10 @@ class PaymentService
         return $this->buildResponse( $response );
     }
 
-    public function byCreditCard($invoice, $details)
+    public function byCreditCard($invoice, $details, $organization, $program)
     {
-                
+        $this->setOrganizationAndProgram( $organization, $program );
+
         // Create order information
         $order = new AnetAPI\OrderType();
         $order->setInvoiceNumber($invoice); //This needs to be unique $invoice
@@ -241,9 +279,10 @@ class PaymentService
     }
 
 
-    public function byBankDebit($invoice, $details)
+    public function byBankDebit($invoice, $details, $organization, $program)
     {
-        
+        $this->setOrganizationAndProgram( $organization, $program );
+
         // Create order information
         $order = new AnetAPI\OrderType();
         $order->setInvoiceNumber($invoice); //This needs to be unique $invoice

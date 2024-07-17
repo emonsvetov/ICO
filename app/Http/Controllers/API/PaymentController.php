@@ -18,80 +18,147 @@ use App\Http\Requests\AnetGooglePaymentRequest;
 use App\Http\Requests\AnetApplePaymentRequest;
 use App\Http\Requests\AnetSubscribeRequest;
 
+use App\Models\AnetSubscriptions;
+
 class PaymentController extends Controller
 {
     /*
-    Subscription Vra
-    As subscription payment fail. Do we cancel access to system?
-    If subscription Details is renewed after failing to pay. Money is only deducted the next day at 2am. Do they have access until then?
+                - Webhooks    
+                - - Create invoice when subscription is charged webhook
+                - - Create invoice when program is funded webhook
+- Link subscriptions to programs instead of organizations
+- Allow for bill to information to be saved when payment is done (one for subscriptions and one for fund by)
+- Allow providing bill to information for subscriptions on call
+- Allow providing bill to information for funding by call
+                - Allow system to make journal entries with new payment types in system (Google Pay etc)
+                - Change System to make journal capable of Credit Card and well as Bank Debit subscriptions        
+- Create Login for fasteezy
+- - Add optional request variable on register to indicate fasteezy
+- Create Signup for fasteezy
+- - Determine and apply default permissions, roles etc. 
+                - Create invite user to fasteezy and all steps related
+                - - track sign ups with affiliate code
+                - Create Middleware compatable with V3 that prevents usage when it is fasteezy user and subscriptions are not paid
+                - Create Policies where needed for fasteezy users
+                - Create Add User to Program for fasteezy
+                - - Allow users to be in multiple programs
+                - Allow for user to be manager and participant for fasteeazy on different programs
 
+                Unknowns:
+                - changes that Stepan or Arvind requests 
+                - unforseen changes required to make fasteezy work on the same code base (duh)
+
+                Extra
+                - Participants can log in and redeem when subscription is not active
+                - Campaign can be created for programs
     */
-    public function subscribe(SubscriptionService $aNet, AnetSubscribeRequest $request, $organization)
+
+    public function subscribe(SubscriptionService $aNet, AnetSubscribeRequest $request, $organization, $program)
     {
-        
+        $payment = [];
+        $charge_now = false;
         $details = $request->validated();
 
-        //Check if valid subscription exists
-
+        //Set monthly or yearly and charge dates
+        $aNet->setSubscriptionType($details);        
         
-        //if trial_end_date == NULL
-        $details['subscription_first_charge_date'] = new \DateTime('+30 days');
-        //else
-        $details['subscription_first_charge_date']= new \DateTime();
+        //Check if there is an active subscription
+        $subscription = $aNet->getActiveSubscription($organization, $program);
 
-        //if monthly
-        if ($details['subscription_type'] == 'monthly')
+        if ( $aNet->isActiveSubscription($subscription) )
         {
-            $details['charge_interval_in_months'] = 1;
-            $details['charge_amount'] = 9.99;
-        } else {
-            $details['charge_interval_in_months'] = 12;
-            $details['charge_amount'] = 99.00;
+            return response([
+                'subscribed' => true,
+                'status' => 'Already Subscribed',
+                'subscriptionId' => $subscription->subscription_id,
+                'subscription_next_charge_date' => $subscription->subscription_next_charge_date
+            ]);
         }
-
         
-        $subscription = $aNet->subscribe($details);
+        $previous_subscription = $aNet->getPreviousSubscription($organization, $program);
 
-        if ( $subscription['subscribed'] )
+        if ( $aNet->mustChargeNow($previous_subscription) )
         {
-            //Save to database. 
-        }
+            $invoice = rand(10000,99999);
+            $pay = new PaymentService();
+            if ( $details['payment_type'] == 'creditcard' )
+            {
+                $payment = $pay->byCreditCard($invoice, $details, $organization, $program);
 
-        return response($subscription);
+            } else {
+
+                $payment = $pay->byBankDebit($invoice, $details, $organization, $program);
+            }
+
+            if ( !$payment['successful'] )
+            {
+                //Figure out what to do with invoicing or rollback
+                return response($payment);
+            }
+            
+            //Calculate when subscription should charge 
+            $next_charge_date = new \DateTime('+' . $details['charge_interval_in_months']  . ' month');
+
+            $details['subscription_first_charge_date'] = new \DateTime($next_charge_date->format('Y-m-d') . ' 10:00:00'); 
+            $details['subscription_next_charge_date']  = new \DateTime($next_charge_date->format('Y-m-d') . ' 10:00:00');
+
+            //Unsubscribe if an subscription is active
+            if ( $subscription != false )
+            {
+                $aNet->unsubscribe($subscription->subscription_id, $organization, $program);
+                $subscription->cancelled = now();
+                $subscription->save();
+            }
+        } elseif ( $previous_subscription ) {
+
+            // They already paid, must only charge based on previous subscription next charge date. 
+            $details['subscription_first_charge_date']  = new \DateTime($previous_subscription->subscription_next_charge_date);
+            $details['subscription_next_charge_date']  = new \DateTime($previous_subscription->subscription_next_charge_date);            
+        }
+        
+        $subscription = $aNet->subscribe($details, $organization, $program);
+
+        return response($subscription + $payment);
     }
 
     
-    public function unsubscribe(SubscriptionService $aNet, $organization)
+    public function unsubscribe(SubscriptionService $aNet, $organization, $program)
     {
-        //get subscription ID
-        $subscriptionId = 9263730; //9263713
-
-        //If no valid subsription
-        //return unsubscribed
+        //Check if valid subscription exists
+        $activeSubscription = AnetSubscriptions::where('organization_id', $organization)
+                                                ->where('program_id', $program)
+                                                ->whereNull('cancelled')
+                                                ->first();
+        if ( is_null($activeSubscription) )
+        {
+            return response([
+                'unsubscribed' => true,
+                'status' => 'No Active Subscription',
+                "subscriptionId" => null
+            ]);
+        }
         
-        $subscription = $aNet->unsubscribe($subscriptionId);
+        $subscription = $aNet->unsubscribe($activeSubscription->subscription_id, $organization, $program);
 
         if ( $subscription['unsubscribed'] )
         {
-            //update database. 
+            $activeSubscription->cancelled = now();            
+            $activeSubscription->save();
         }
 
         return response($subscription);
     }
-    
-    
-    //Route::post('/v1/organization/{organization}/program/{program}/payment',[App\Http\Controllers\API\ProgramController::class, 'deposit'])->middleware('can:updatePayments,App\Program,organization,program');
-   
+       
 
     public function creditCard(PaymentService $pay, AnetCreditCardPaymentRequest $request, $organization, $program)
     {
 
         $details = $request->validated();
-
+ 
         //!!!!NEED TO GET/CREATE INVOICE DETAILS AND LINE ITEMS
         $invoice = rand(10000,99999);
 
-        $payment = $pay->byCreditCard($invoice, $details);
+        $payment = $pay->byCreditCard($invoice, $details, $organization, $program);
 
         if ( $payment['successful'] )
         {
@@ -108,7 +175,7 @@ class PaymentController extends Controller
         //!!!!NEED TO GET/CREATE INVOICE DETAILS AND LINE ITEMS
         $invoice = rand(10000,99999);
 
-        $payment = $pay->byBankDebit($invoice, $details);
+        $payment = $pay->byBankDebit($invoice, $details, $organization, $program);
 
         if ( $payment['successful'] )
         {
@@ -123,7 +190,7 @@ class PaymentController extends Controller
     {
         $details = $request->validated();
 
-        $payment = $pay->byGooglePay( $details );
+        $payment = $pay->byGooglePay( $details, $organization, $program );
 
         if ( $payment['successful'] )
         {
@@ -137,7 +204,7 @@ class PaymentController extends Controller
     {
         $details = $request->validated();
 
-        $payment = $pay->byApplePay( $details );
+        $payment = $pay->byApplePay( $details, $organization, $program );
 
         if ( $payment['successful'] )
         {
@@ -151,7 +218,7 @@ class PaymentController extends Controller
     {
         $details = $request->validated();
 
-        $payment = $pay->byPayPal( $details );
+        $payment = $pay->byPayPal( $details, $organization, $program );
 
         if ( $payment['successful'] )
         {
@@ -165,7 +232,7 @@ class PaymentController extends Controller
     {
         $details = $request->validated();
 
-        $payment = $pay->processPayPalRedirect( $details );
+        $payment = $pay->processPayPalRedirect( $details, $organization, $program );
 
         if ( $payment['successful'] )
         {
