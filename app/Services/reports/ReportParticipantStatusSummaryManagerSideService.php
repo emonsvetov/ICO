@@ -21,6 +21,11 @@ class ReportParticipantStatusSummaryManagerSideService extends ReportServiceAbst
     protected function calc(): array
     {
         $programs = Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray();
+        $organizationId = 0;
+        if($programs){
+            $program = Program::find($programs[0]);
+            $organizationId = $program->organization_id;
+        }
 
         // Get user ids for report query to optimise query execution time
         $query = DB::table('users');
@@ -47,6 +52,10 @@ class ReportParticipantStatusSummaryManagerSideService extends ReportServiceAbst
         $subQuery->leftJoin('roles', 'roles.id', '=', 'model_has_roles.role_id');
         $subQuery->leftJoin('statuses', 'statuses.id', '=', 'users.user_status_id');
         $subQuery->whereIn('programs.id', $programs);
+        $subQuery->whereIn('model_has_roles.program_id', $programs);
+        $subQuery->where('users.organization_id', $organizationId);
+        $subQuery->where('roles.name', 'LIKE', config('roles.participant'));
+        $subQuery->groupBy('account_holder_id', 'program_name', 'user_status_id', 'status');
 
         // subQuery2
         $subQuery2 = DB::table(DB::raw("({$subQuery->toSql()}) as sub"));
@@ -76,17 +85,8 @@ class ReportParticipantStatusSummaryManagerSideService extends ReportServiceAbst
         $table = $query->get()->toArray();
         $total = ['status' => 'Total Participants', 'count' => 0, 'unique_count' => 0];
         foreach ($table as $item){
-            if(in_array($item->status, [
-                User::STATUS_ACTIVE,
-                User::STATUS_PENDING_ACTIVATION,
-                User::STATUS_LOCKED,
-                User::STATUS_PENDING_DEACTIVATION,
-                User::STATUS_NEW,
-            ])){
-                $total['count'] += $item->count;
-                $total['unique_count'] += $item->unique_count;
-            }
-
+            $total['count'] += $item->count;
+            $total['unique_count'] += $item->unique_count;
         }
         $table[] = $total;
 
