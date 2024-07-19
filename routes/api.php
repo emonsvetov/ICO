@@ -952,6 +952,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::put('/v1/organization/{organization}/program/{program}/manage-schedule-date', [App\Http\Controllers\API\BudgetProgramController::class, 'manageScheduleDate'])->middleware('can:updateCascadingApprovals,App\BudgetProgram,organization,program');
 
     //Approval Flow
+    Route::get('/v1/organization/{organization}/program/{program}/program-approval-step', [App\Http\Controllers\API\ProgramApprovalController::class, 'index'])->middleware('can:viewAny,App\ProgramApproval,organization,program');
     Route::post('/v1/organization/{organization}/program/{program}/program-approval-step', [App\Http\Controllers\API\ProgramApprovalController::class, 'store'])->middleware('can:create,App\ProgramApproval,organization,program');
     Route::put('/v1/organization/{organization}/program/{program}/program-approval-step/{programApproval}', [App\Http\Controllers\API\ProgramApprovalController::class, 'update'])->middleware('can:update,App\ProgramApproval,organization,program,programApproval');
     Route::get('/v1/organization/{organization}/program/{program}/program-approval-step/{programApproval}', [App\Http\Controllers\API\ProgramApprovalController::class, 'show'])->middleware('can:view,App\ProgramApproval,organization,program,programApproval');

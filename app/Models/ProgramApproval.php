@@ -16,4 +16,21 @@ class ProgramApproval extends Model
         return $this->belongsToMany(PositionLevel::class, 'program_approval_assignment')
             ->withTimestamps();
     }
+
+    public function position_approval_relations()
+    {
+        return $this->belongsToMany(PositionLevel::class, 'approval_relations')
+            ->withPivot('approver_position_id', 'awarder_position_id', 'created_by');
+    }
+
+    public function approval_relations()
+    {
+        return $this->hasMany(ApprovalRelation::class, 'program_approval_id');
+    }
+
+    public function program_approval_assignment()
+    {
+        return $this->hasMany(ApprovalRelation::class, 'program_approval_id');
+    }
+
 }

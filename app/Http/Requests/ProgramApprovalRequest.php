@@ -29,6 +29,7 @@ class ProgramApprovalRequest extends FormRequest
             // 'position_level_id' => 'required|array',
             // 'position_level_id.*' => 'required|integer',
             'approval_request' => 'array',
+            'allow_same_step_approval' => 'nullable|integer',
         ];
     }
 }

@@ -20,6 +20,13 @@ class ProgramApprovalController extends Controller
         $this->programApprovalService = $programApprovalService;
     }
 
+    public function index(Organization $organization, Program $program)
+    {
+        //return response((new \App\Services\ProgramApprovalService)->index($program));
+        $data = (new \App\Services\ProgramApprovalService)->index($program);
+        return response()->json($data);
+    }
+
     public function store(ProgramApprovalRequest $programApprovalRequest, Organization $organization, Program $program)
     {
         $data = $programApprovalRequest->validated();
@@ -58,12 +65,12 @@ class ProgramApprovalController extends Controller
     public function assign(ProgramApprovalAssignmentRequest $programApprovalAssignRequest, Organization $organization, Program $program, ProgramApproval $programApproval)
     {
         $data = $programApprovalAssignRequest->validated();
-        return response( (new \App\Services\ProgramApprovalService)->assign($programApproval, $data) );
+        return response((new \App\Services\ProgramApprovalService)->assign($programApproval, $data));
     }
 
     public function unassign(ProgramApprovalAssignmentRequest $programApprovalAssignRequest, Organization $organization, Program $program, ProgramApproval $programApproval)
     {
         $data = $programApprovalAssignRequest->validated();
-        return response( (new \App\Services\ProgramApprovalService)->unassign($programApproval, $data) );
+        return response((new \App\Services\ProgramApprovalService)->unassign($programApproval, $data));
     }
 }
