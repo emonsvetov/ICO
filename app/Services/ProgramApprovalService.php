@@ -11,46 +11,38 @@ use Illuminate\Support\Facades\DB;
 class ProgramApprovalService
 {
 
-
     public function index(Program $program)
     {
         // Fetch ProgramApproval records
         $programApprovals = ProgramApproval::where('program_id', $program->id)
-            ->with(['approval_relations','program_approval_assignment'])
+            ->with(['approval_relations', 'program_approval_assignment'])
             ->get();
         return $programApprovals;
     }
 
-    /* public function createProgramApprovalStep(array $data)
-    {
-        $createdBy = auth()->user();
-        $program = new Program();
-        $parent_id = $program->get_top_level_program_id($data['program_id']);
-        $status = 1;
-        try {
-            return ProgramApproval::create([
-                'step' => $data['step'],
-                'program_id' => $data['program_id'],
-                'program_parent_id' => $parent_id,
-                'status' => $status,
-                'created_by' => $createdBy->id,
-            ]);
-        } catch (\Exception $e) {
-            throw $e;
-        }
-    }*/
 
     public function createProgramApprovalStep(array $data)
     {
         $createdBy = auth()->user();
         $program = new Program();
         $status = 1;
+
         foreach ($data['program_id'] as $program_id) {
             $parent_id = $program->get_top_level_program_id($program_id);
+
             foreach ($data['approval_request'] as $approvalRequest) {
-                ///dd($approvalRequest['allow_same_step_approval']);
                 $step = $approvalRequest['step'];
+
                 if ($step > 0) {
+                    // Check for existing ProgramApproval with the same program_id and step
+                    $exists = ProgramApproval::where('program_id', $program_id)
+                        ->where('step', $step)
+                        ->exists();
+
+                    if ($exists) {
+                        throw new \Exception("Duplicate entry found for program approval");
+                    }
+
                     try {
                         // Create ProgramApproval for each program_id and step
                         $programApproval = ProgramApproval::create([
@@ -74,6 +66,7 @@ class ProgramApprovalService
             }
         }
     }
+
 
     public function updateProgramApprovalStep(ProgramApproval $programApproval, array $data)
     {
@@ -104,10 +97,12 @@ class ProgramApprovalService
     {
         $approvalRelations = $data['approval_relation'] ?: [];
         $syncData = [];
+
         if (!empty($approvalRelations)) {
             foreach ($approvalRelations as $relation) {
                 $awarderId = $relation['awarder_id'];
                 $approverIds = $relation['approver_ids'] ?: [];
+
                 if (!empty($approverIds)) {
                     foreach ($approverIds as $approverId) {
                         // Check if the entry already exists
@@ -117,7 +112,9 @@ class ProgramApprovalService
                             ->where('approver_position_id', $approverId)
                             ->exists();
 
-                        if (!$exists) {
+                        if ($exists) {
+                            throw new \Exception("Duplicate entry found for programapproval relations");
+                        } else {
                             $syncData[] = [
                                 'program_approval_id' => $programApproval->id,
                                 'approver_position_id' => $approverId,
@@ -135,7 +132,7 @@ class ProgramApprovalService
         if (!empty($syncData)) {
             return DB::table('approval_relations')->insert($syncData);
         }
-        return true;
+        return true; // Return true if no new data to insert
     }
 
 
