@@ -30,7 +30,7 @@ class ProgramApproval extends Model
 
     public function program_approval_assignment()
     {
-        return $this->hasMany(ApprovalRelation::class, 'program_approval_id');
+        return $this->hasMany(ProgramApprovalAssignment::class, 'program_approval_id');
     }
 
 }

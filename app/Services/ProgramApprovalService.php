@@ -15,11 +15,14 @@ class ProgramApprovalService
     {
         // Fetch ProgramApproval records
         $programApprovals = ProgramApproval::where('program_id', $program->id)
-            ->with(['approval_relations', 'program_approval_assignment'])
+            ->with([
+                'program_approval_assignment.position_level',
+                'approval_relations.awarder_position_level',
+                'approval_relations.approver_position_level',
+            ])
             ->get();
         return $programApprovals;
     }
-
 
     public function createProgramApprovalStep(array $data)
     {
@@ -34,17 +37,19 @@ class ProgramApprovalService
                 $step = $approvalRequest['step'];
 
                 if ($step > 0) {
-                    // Check for existing ProgramApproval with the same program_id and step
-                    $exists = ProgramApproval::where('program_id', $program_id)
-                        ->where('step', $step)
-                        ->exists();
-
-                    if ($exists) {
-                        throw new \Exception("Duplicate entry found for program approval");
-                    }
-
                     try {
-                        // Create ProgramApproval for each program_id and step
+                        // Check for existing ProgramApproval with the same program_id and step
+                        $existingApprovals = ProgramApproval::where('program_id', $program_id)
+                            ->get();
+
+                        // Delete existing ProgramApprovals if they exist
+                        foreach ($existingApprovals as $existingApproval) {
+                            $existingApproval->program_approval_assignment()->delete();
+                            $existingApproval->approval_relations()->delete(); // Delete related approval relations
+                            $existingApproval->delete(); // Delete the ProgramApproval
+                        }
+
+                        // Create new ProgramApproval for each program_id and step
                         $programApproval = ProgramApproval::create([
                             'step' => $step,
                             'program_id' => $program_id,
@@ -134,7 +139,6 @@ class ProgramApprovalService
         }
         return true; // Return true if no new data to insert
     }
-
 
     public static function unassign(ProgramApproval $programApproval, array $data)
     {

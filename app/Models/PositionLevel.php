@@ -25,11 +25,12 @@ class PositionLevel extends Model
             ->withTimestamps();
     }
 
-    public function positionPermissionAssignments()
+    public function approval_relations()
     {
-        return $this->hasMany(PositionPermissionAssignment::class, 'position_level_id')->with('positionPermission');
+        return $this->belongsTo(ApprovalRelation::class);
     }
 
+   
     public function position_permissions()
     {
         return $this->belongsToMany(PositionPermission::class, 'position_permission_assignments')

@@ -13,4 +13,8 @@ class ProgramApprovalAssignment extends Model
     protected $guarded = [];
     public $timestamp = true;
 
+    public function position_level()
+    {
+        return $this->belongsTo(PositionLevel::class, 'position_level_id');
+    }
 }

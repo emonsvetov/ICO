@@ -15,4 +15,14 @@ class ApprovalRelation extends Model
     {
         return $this->belongsTo(ProgramApproval::class);
     }
+
+    public function awarder_position_level()
+    {
+        return $this->belongsTo(PositionLevel::class, 'awarder_position_id');
+    }
+
+    public function approver_position_level()
+    {
+        return $this->belongsTo(PositionLevel::class, 'approver_position_id');
+    }
 }
