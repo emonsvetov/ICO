@@ -23,7 +23,6 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Hash;
 
-
 class AuthController extends Controller
 {
 
@@ -134,7 +133,7 @@ class AuthController extends Controller
             if (!auth()->guard('web')->attempt( ['email' => $validated['email'], 'password' => $validated['password']] )) {
                 return response(['message' => 'Invalid Credentials'], 422);
             }
-
+            /** @var \App\User|null $user */
             $user = auth()->guard('web')->user();
 
             $status = User::getStatusByName(User::STATUS_ACTIVE );
@@ -152,7 +151,7 @@ class AuthController extends Controller
 
             $user->load(['organization', 'roles']);
 
-            $accessToken = auth()->guard('web')->user()->createToken('authToken')->accessToken;
+            $accessToken = $user->createToken('authToken')->accessToken;
 
             $response = ['user' => $user, 'access_token' => $accessToken];
 
@@ -165,17 +164,27 @@ class AuthController extends Controller
                 if( !$user->programRoles )  {
                     return response(['message' => 'No program roles '], 422);
                 }
-                unset($domain->programs); //keep it private
+                // unset($domain->programs); //keep it private - Fasteezy uses it
                 $response['domain'] = $domain;
                 return response( $response );
             }
             else if( is_null($isValidDomain) )
             {
-                if( ($user->isSuperAdmin() || $user->isAdmin()) )
-                {
-                    $response['programCount'] = $user->organization->programs()->count();
-                    return response($response);
+                $user->setHidden(['roles']);
+
+                if( $user->isSuperAdmin() ) {
+                    //super admin related processing
                 }
+
+                if( $user->isAdmin() )
+                {
+                    //super admin related processing
+                    $user->setFirstOrganization();
+                    // $response['programCount'] = $user->organization->programs()->count();
+                    // return response($response);
+                }
+                $response['user'] =  $user;
+                return response($response);
             }
 
             throw new \Exception ('Unknown error: Invalid domain or user');
