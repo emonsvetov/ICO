@@ -26,6 +26,9 @@ class ProgramUserService
                 $userService = new UserService;
                 $userService->updateUnitNumber($user, $validated['unit_number']);
             }
+            if ( isset($validated['is_organization_admin']) ) {
+                $user->syncOrgAdminRoleByProgram($program, $validated['is_organization_admin']);
+            }
             if (!empty($validated['send_invite'])) {
                 // $participantRoleId = Role::getParticipantRoleId();
                 // if( in_array($participantRoleId, $validated['roles']))
@@ -50,6 +53,10 @@ class ProgramUserService
 
         if ( ! empty($validated['program_roles'])) {
             $user->syncProgramRoles($program->id, $validated['program_roles']);
+        }
+
+        if ( isset($validated['is_organization_admin']) ) {
+            $user->syncOrgAdminRoleByProgram($program, $validated['is_organization_admin']);
         }
         return $user;
     }

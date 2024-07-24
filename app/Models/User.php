@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Traits\OrgHasUserViaProgram;
+use App\Models\Traits\HasOrganizationRoles;
 use App\Models\Traits\HasProgramRoles;
 use App\Models\Traits\GetModelByMixed;
 use App\Models\Traits\IdExtractor;
@@ -31,6 +32,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, IdExtractor, HasProgramRoles, WithOrganizationScope, GetModelByMixed, OrgHasUserViaProgram;
     use SoftDeletes;
+    use HasOrganizationRoles;
 
     const IMAGE_FIELDS = ['avatar'];
     const IMAGE_PATH = 'users';
@@ -107,6 +109,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         //'created_at',
         'updated_at',
         'deleted_at',
+        'roles'
     ];
 
     protected $visible = [
@@ -134,20 +137,20 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
     {
         return $this->hasRole(config('roles.super_admin'));
     }
-    protected function getIsAdminAttribute()
-    {
-        return $this->hasRole(config('roles.admin'));
-    }
+    // protected function getIsAdminAttribute()
+    // {
+    //     return $this->hasRole(config('roles.admin'));
+    // }
     protected function setPasswordAttribute($password)
     {
         // Save md5 password from v2 when run migrate users.
         $routeName = request()->route()->getName();
         $this->attributes['password'] = $routeName == 'runMigrations' ? $password : bcrypt($password);
     }
-    public function isAdmin()
-    {
-        return $this->hasRole(config('roles.admin'));
-    }
+    // public function isAdmin()
+    // {
+    //     return $this->hasRole(config('roles.admin'));
+    // }
     public function isSuperAdmin()
     {
         return $this->hasRole(config('roles.super_admin'));
@@ -175,6 +178,7 @@ class User extends Authenticatable implements MustVerifyEmail, ImageInterface
         if( $this->organizations->contains($organization->id) ) {
             return true;
         }
+        if( $this->isAdminInOrganization($organization) ) return true;
         return $this->orgHasUserViaProgram($organization, $this, true);
     }
     public function status()

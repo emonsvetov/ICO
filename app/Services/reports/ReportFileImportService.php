@@ -5,6 +5,7 @@ namespace App\Services\reports;
 use App\Models\CsvImport;
 use App\Models\Program;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use stdClass;
 
 class ReportFileImportService extends ReportServiceAbstract
@@ -52,7 +53,10 @@ class ReportFileImportService extends ReportServiceAbstract
     protected function calc(): array
     {
         $query = DB::table('csv_imports');
-        $programs = Program::whereIn('account_holder_id', $this->params[self::PROGRAMS])->get()->pluck('id')->toArray();
+        $programIDs = $this->params[self::PROGRAM_IDS];
+        if (!blank($programIDs)) {
+            $query->whereIn('program_id', $programIDs);
+        }
         $query->whereBetween('created_at', [$this->params[self::DATE_BEGIN], $this->params[self::DATE_END]]);
         $query->selectRaw("
             name,
@@ -60,10 +64,26 @@ class ReportFileImportService extends ReportServiceAbstract
             created_at
         ");
         $query->orderBy('created_at', 'DESC');
-        $table = $query->get();
+        $table = $query->get()->toArray();
+
+        $table = $this->checkExistFiles($table);
+
         $this->table['data'] = $table;
 
         return $this->table;
+    }
+
+    public function checkExistFiles($table)
+    {
+        if (!blank($table)) {
+            foreach ($table as $key => $file) {
+                $file = (array) $file;
+                $file['file_exists'] = Storage::disk('public')->exists($file['path']);
+                $table[$key] = (object) $file;
+            }
+        }
+
+        return $table;
     }
 
     public function getCsvHeaders(): array
