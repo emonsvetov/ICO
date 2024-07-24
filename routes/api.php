@@ -92,7 +92,7 @@ Route::group([
         Route::post('', [App\Http\Controllers\API\EventController::class,'store'])->name('api.v1.organization.program.event.store')->middleware('can:create,App\ProgramEvent,organization,program');
         Route::put('{event}', [App\Http\Controllers\API\EventController::class,'update'])->name('api.v1.organization.program.event.update')->middleware('can:update,App\ProgramEvent,organization,program,event');
         Route::put('{event}/hierarchy-prepare', [App\Http\Controllers\API\EventController::class,'updateHierarchyPrepare'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
-        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class,'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy')->middleware('can:update,App\ProgramEvent,organization,program,event');
+        Route::put('{event}/hierarchy', [App\Http\Controllers\API\EventController::class,'updateHierarchy'])->name('api.v1.organization.program.event.updateHierarchy1')->middleware('can:update,App\ProgramEvent,organization,program,event');
         Route::delete('{event}', [App\Http\Controllers\API\EventController::class,'delete'])->name('api.v1.organization.program.event.delete')->middleware('can:delete,App\ProgramEvent,organization,program,event');
     });
     Route::group([
@@ -153,7 +153,6 @@ Route::middleware(['auth:api', 'json.response'])->group(function () {
 
     Route::post('/v1/email/verification-notification', [App\Http\Controllers\API\EmailVerificationController::class, 'sendVerificationEmail']);
     Route::get('/v1/email/verify/{id}/{hash}', [App\Http\Controllers\API\EmailVerificationController::class, 'verify'])->name('verification.verify');
-
 });
 
 
@@ -225,7 +224,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::delete('/v1/organization/{organization}/domain/{domain}/domain_ip/{domain_ip}',
     [App\Http\Controllers\API\DomainIPController::class, 'delete'])->name('api.v1.domain_ip.delete')->middleware('can:deleteIp,App\Domain,organization,domain');
     Route::get('/v1/organization/{organization}/domain/{domain}/check-status',
-        [App\Http\Controllers\API\DomainController::class, 'checkStatus'])->name('api.v1.domain.generateSecretKey')->middleware('can:checkStatus,App\Domain,organization,domain');
+        [App\Http\Controllers\API\DomainController::class, 'checkStatus'])->name('api.v1.domain.generateSecretKey1')->middleware('can:checkStatus,App\Domain,organization,domain');
 
     //DomainProgram routes
 

@@ -18,6 +18,7 @@ class OrganizationPolicy
      */
     public function viewAny(User $user)
     {
+        if( $user->isAdmin() ) return true;
         return $user->permissions()->contains('view-organization');
     }
 
@@ -30,6 +31,7 @@ class OrganizationPolicy
      */
     public function view(User $user, Organization $organization)
     {
+        if( $user->isAdminInOrganization($organization) ) return true;
         return $user->permissions()->contains('view-organization');
     }
 

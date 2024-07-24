@@ -52,6 +52,7 @@ class UserController extends Controller
 
     public function show( Organization $organization, User $user ): UserResource
     {
+        $user->makeVisible(['roles']);
         return $this->UserResponse($user);
     }
 
