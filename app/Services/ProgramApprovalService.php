@@ -29,8 +29,12 @@ class ProgramApprovalService
         $createdBy = auth()->user();
         $program = new Program();
         $status = 1;
-
         foreach ($data['program_id'] as $program_id) {
+
+            $allow_same_step_approval =  (isset($data['allow_same_step_approval']) && $data['allow_same_step_approval'] == 1) ? 1 : 0;
+            Program::where('id', $program_id)
+                ->update(['allow_same_step_approval' => $allow_same_step_approval]);
+
             $parent_id = $program->get_top_level_program_id($program_id);
 
             foreach ($data['approval_request'] as $approvalRequest) {
@@ -71,7 +75,6 @@ class ProgramApprovalService
             }
         }
     }
-
 
     public function updateProgramApprovalStep(ProgramApproval $programApproval, array $data)
     {

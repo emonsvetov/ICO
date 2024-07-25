@@ -150,6 +150,7 @@ class AwardService
 
     public function SaveBudgetCascadingApprovalDetail($program, $event, $user, $awarder, object $data = null)
     {
+        dd($program);
         $parent_program = new Program();
         $parent_id = $parent_program->get_top_level_program_id($data->program_id);
         $budgets_cascading = $program->budgets_cascading;
@@ -161,7 +162,13 @@ class AwardService
         $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
         $amount = (float)$amount;
 
-        $awardData = [];
+        $awardData = [
+            'event_transaction_object' => $transaction_id,
+            'event_id' => $event->id,
+            'program_id' => $data->program_id,
+            'extraArgs' => []
+        ];
+
         if ($data->use_cascading_approvals && $event->include_in_budget) {
             BudgetCascadingApproval::create([
                 'parent_id' => $parent_id,
