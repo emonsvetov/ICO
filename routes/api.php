@@ -271,6 +271,8 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
     Route::get('/v1/reports', [App\Http\Controllers\API\ReportsController::class, 'getAllReports'])->middleware('auth:api');
     Route::get('/v1/reports/{program}', [App\Http\Controllers\API\ReportsController::class, 'getReportsByProgramId'])->middleware(['auth:api', 'reports.available']);
     Route::get('/v1/reports/{program}/selected', [App\Http\Controllers\API\ReportsController::class, 'getSelectedReportsByProgramId'])->middleware('auth:api');
+    Route::post('/v1/organization/{organization}/program/{program}/default-domain', [App\Http\Controllers\API\ProgramController::class, 'defaultDomain'])->middleware('can:create,App\Program,organization');
+
 
     // Subprogram Routes
     Route::get('/v1/organization/{organization}/program/{program}/subprogram', [App\Http\Controllers\API\SubprogramController::class, 'index'])->middleware('can:viewAny,App\Subprogram,organization,program');
