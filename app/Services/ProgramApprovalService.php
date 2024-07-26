@@ -43,7 +43,7 @@ class ProgramApprovalService
                 if ($step > 0) {
                     try {
                         // Check for existing ProgramApproval with the same program_id and step
-                        $existingApprovals = ProgramApproval::where('program_id', $program_id)
+                        $existingApprovals = ProgramApproval::where('program_id', $program_id)->where('step', $step)
                             ->get();
 
                         // Delete existing ProgramApprovals if they exist

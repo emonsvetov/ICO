@@ -9,6 +9,7 @@ use Exception;
 
 use App\Models\BudgetCascadingApproval;
 use App\Models\BudgetCascading;
+use App\Models\ProgramApproval;
 use App\Models\JournalEventType;
 use App\Models\Organization;
 use App\Models\EventXmlData;
@@ -46,7 +47,7 @@ class AwardService
     {
         return $this->isCron;
     }
-
+    const AWARD_APPROVED = 3;
     public function awardMany(Program $program, Organization $organization, User $awarder, array $data)
     {
         $userIds = $data['user_id'] ?? [];
@@ -150,9 +151,10 @@ class AwardService
 
     public function SaveBudgetCascadingApprovalDetail($program, $event, $user, $awarder, object $data = null)
     {
-        dd($program);
         $parent_program = new Program();
+        $program_approval = new ProgramApproval();
         $parent_id = $parent_program->get_top_level_program_id($data->program_id);
+        $program_approval_id = $program_approval->get_program_approval_id($data->program_id);
         $budgets_cascading = $program->budgets_cascading;
         $event_award = $event->event_award_level;
         $transaction_id = generate_unique_id();
@@ -169,6 +171,14 @@ class AwardService
             'extraArgs' => []
         ];
 
+        $program_approval_id = (isset($program_approval_id) && $program_approval_id > 0) ? $program_approval_id : 0;
+
+        if ($program_approval_id == 0) {
+            $approved = self::AWARD_APPROVED;
+        } else {
+            $approved = 0;
+        }
+
         if ($data->use_cascading_approvals && $event->include_in_budget) {
             BudgetCascadingApproval::create([
                 'parent_id' => $parent_id,
@@ -179,10 +189,10 @@ class AwardService
                 'event_id' => $event->id,
                 'award_id' => $award_level_id,
                 'amount' => $amount,
-                'approved' => 0,
+                'approved' => $approved,
                 'award_data' => json_encode($awardData),
                 'transaction_id' => $transaction_id,
-                'program_approval_id' => 0,
+                'program_approval_id' => $program_approval_id,
                 'program_id' => $data->program_id,
                 'include_in_budget' => $event->include_in_budget,
                 'budgets_cascading_id' => $budgets_cascading[0]['id'],

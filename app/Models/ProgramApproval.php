@@ -32,4 +32,12 @@ class ProgramApproval extends Model
     {
         return $this->hasMany(ProgramApprovalAssignment::class, 'program_approval_id');
     }
+
+    public function get_program_approval_id($program_id)
+    {
+        return ProgramApproval::where('program_id', $program_id)->where('status', 1)
+            ->orderBy('id', 'asc')
+            ->limit(1)
+            ->value('program_id');
+    }
 }
