@@ -23,6 +23,11 @@ class Event extends Model
         return $this->belongsTo(Program::class);
     }
 
+    public function event_award_level()
+    {
+        return $this->hasMany(EventAwardLevel::class);
+    }
+
     public function eventIcon()
     {
         return $this->belongsTo(EventIcon::class, 'event_icon_id');

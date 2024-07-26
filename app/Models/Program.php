@@ -41,7 +41,7 @@ class Program extends BaseModel
     const STATUS_ACTIVE = 'Active';
     const STATUS_DELETED = 'Deleted';
     const STATUS_LOCKED = 'Locked';
-    const MIN_FIELDS = ['id', 'name', 'parent_id', 'account_holder_id'];
+    const MIN_FIELDS = ['id', 'name', 'parent_id', 'account_holder_id','use_budget_cascading','use_cascading_approvals'];
     const CACHE_FULL_HIERARCHY_NAME = 'hierarchy_list_of_all_programs';
 
     public function resolveSoftDeletableRouteBinding($value, $field = null)
@@ -77,6 +77,21 @@ class Program extends BaseModel
     public function unit_numbers()
     {
         return $this->hasMany(UnitNumber::class);
+    }
+
+    public function position_levels()
+    {
+        return $this->hasMany(PositionLevel::class);
+    }
+
+    public function budget_programs()
+    {
+        return $this->hasMany(BudgetProgram::class);
+    }
+
+    public function budgets_cascading()
+    {
+        return $this->hasMany(BudgetCascading::class);
     }
 
     public function address()
