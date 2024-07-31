@@ -179,25 +179,30 @@ class PaymentController extends Controller
         return response($payment);
     }
 
-    public function bankDebit(PaymentService $pay, AnetBankDebitPaymentRequest $request, $organization, $program)
+    public function bankDebit(PaymentService $pay, AnetBankDebitPaymentRequest $request, $organization, Program $program)
     {
         $details = $request->validated();
 
-        //!!!!NEED TO GET/CREATE INVOICE DETAILS AND LINE ITEMS
-        $invoice = rand(10000,99999);
+        $invoice = $helper->getSetInvoice($program, $details);
+        $invoiceNumber = $invoice->key.'-'.$invoice->seq;
 
         $payment = $pay->byBankDebit($invoice, $details, $organization, $program);
 
         if ( $payment['successful'] )
         {
+            $invoiceClass = new \stdClass();
+            $invoiceClass->invoice_id = $invoice->id;
+            $invoiceClass->amount = $details['amount'];
+
             //Figure out what to do with invoicing or rollback
+            $desposit->finalize($program, $invoiceClass);
         }
 
         return response($payment);
         
     }
     
-    public function googlePay( PaymentService $pay, AnetGooglePaymentRequest $request, $organization, $program )
+    public function googlePay( PaymentService $pay, AnetGooglePaymentRequest $request, $organization, Program $program )
     {
         $details = $request->validated();
 
@@ -205,13 +210,21 @@ class PaymentController extends Controller
 
         if ( $payment['successful'] )
         {
+            $invoice = $helper->getSetInvoice($program, $details);
+            $invoiceNumber = $invoice->key.'-'.$invoice->seq;
+
+            $invoiceClass = new \stdClass();
+            $invoiceClass->invoice_id = $invoice->id;
+            $invoiceClass->amount = $details['amount'];
+
             //Figure out what to do with invoicing or rollback
+            $desposit->finalize($program, $invoiceClass);
         }
 
         return response($payment);
     }
 
-    public function applePay( PaymentService $pay, AnetApplePaymentRequest $request, $organization, $program )
+    public function applePay( PaymentService $pay, AnetApplePaymentRequest $request, $organization, Program $program )
     {
         $details = $request->validated();
 
@@ -219,17 +232,25 @@ class PaymentController extends Controller
 
         if ( $payment['successful'] )
         {
+            $invoice = $helper->getSetInvoice($program, $details);
+            $invoiceNumber = $invoice->key.'-'.$invoice->seq;
+
+            $invoiceClass = new \stdClass();
+            $invoiceClass->invoice_id = $invoice->id;
+            $invoiceClass->amount = $details['amount'];
+
             //Figure out what to do with invoicing or rollback
+            $desposit->finalize($program, $invoiceClass);
         }
 
         return response($payment);
     }
 
-    public function paypal( PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, $program )
+    public function paypal( PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, Program $program )
     {
         $details = $request->validated();
 
-        $payment = $pay->byPayPal( $details, $organization, $program );
+        $payment = $pay->byPayPal( $details, $organization, $program->id );
 
         if ( $payment['successful'] )
         {
@@ -239,15 +260,23 @@ class PaymentController extends Controller
         return response($payment);
     }
 
-    public function paypalRedirect( PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, $program )
+    public function paypalRedirect( PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, Program $program )
     {
         $details = $request->validated();
 
-        $payment = $pay->processPayPalRedirect( $details, $organization, $program );
+        $payment = $pay->processPayPalRedirect( $details, $organization, $program->id );
 
         if ( $payment['successful'] )
         {
+            $invoice = $helper->getSetInvoice($program, $details);
+            $invoiceNumber = $invoice->key.'-'.$invoice->seq;
+
+            $invoiceClass = new \stdClass();
+            $invoiceClass->invoice_id = $invoice->id;
+            $invoiceClass->amount = $details['amount'];
+
             //Figure out what to do with invoicing or rollback
+            $desposit->finalize($program, $invoiceClass);
         }
 
         return response($payment);
