@@ -210,7 +210,8 @@ class SubscriptionService
 
     public function setSubscriptionType(&$details)
     {
-        $date_start = new \DateTime('+1 month');
+        //$date_start = new \DateTime('+1 month');
+        $date_start = new \DateTime();
         $details['subscription_first_charge_date'] = new \DateTime($date_start->format('Y-m-d') . ' 10:00:00');
         $details['subscription_next_charge_date']  = new \DateTime($date_start->format('Y-m-d') . ' 10:00:00'); 
 
