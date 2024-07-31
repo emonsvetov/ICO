@@ -157,7 +157,7 @@ class PaymentController extends Controller
     }
        
 
-    public function creditCard(DepositHelper $helper, CreditcardDepositService $desposit ,PaymentService $pay, AnetCreditCardPaymentRequest $request, $organization, Program $program)
+    public function creditCard(DepositHelper $helper, CreditcardDepositService $desposit, PaymentService $pay, AnetCreditCardPaymentRequest $request, $organization, Program $program)
     {
         $details = $request->validated();
 
@@ -179,7 +179,7 @@ class PaymentController extends Controller
         return response($payment);
     }
 
-    public function bankDebit(PaymentService $pay, AnetBankDebitPaymentRequest $request, $organization, Program $program)
+    public function bankDebit(DepositHelper $helper, CreditcardDepositService $desposit, PaymentService $pay, AnetBankDebitPaymentRequest $request, $organization, Program $program)
     {
         $details = $request->validated();
 
@@ -202,7 +202,7 @@ class PaymentController extends Controller
         
     }
     
-    public function googlePay( PaymentService $pay, AnetGooglePaymentRequest $request, $organization, Program $program )
+    public function googlePay( DepositHelper $helper, CreditcardDepositService $desposit, PaymentService $pay, AnetGooglePaymentRequest $request, $organization, Program $program )
     {
         $details = $request->validated();
 
@@ -224,7 +224,7 @@ class PaymentController extends Controller
         return response($payment);
     }
 
-    public function applePay( PaymentService $pay, AnetApplePaymentRequest $request, $organization, Program $program )
+    public function applePay( DepositHelper $helper, CreditcardDepositService $desposit, PaymentService $pay, AnetApplePaymentRequest $request, $organization, Program $program )
     {
         $details = $request->validated();
 
@@ -260,7 +260,7 @@ class PaymentController extends Controller
         return response($payment);
     }
 
-    public function paypalRedirect( PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, Program $program )
+    public function paypalRedirect( DepositHelper $helper, CreditcardDepositService $desposit, PaymentService $pay, AnetPayPalPaymentRequest $request, $organization, Program $program )
     {
         $details = $request->validated();
 
