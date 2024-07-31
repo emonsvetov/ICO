@@ -7,8 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+use Illuminate\Auth\Events\Registered;
 use App\Http\Requests\UserRegisterFastEezyRequest;
+use App\Http\Requests\UserLoginRequest;
 use App\Models\Organization;
+use App\Models\User;
+use App\Models\Role;
 use App\Services\DomainService;
 
 class AuthFastEezyController extends Controller
@@ -33,7 +37,7 @@ class AuthFastEezyController extends Controller
             $managerRole = Role::where('name', config('roles.manager'))->pluck('id');            
             $participantRole = Role::where('name', config('roles.participant'))->pluck('id');            
 
-            $user->syncRoles( $adminRole );            
+            $user->syncRoles( $managerRole );            
             $user->syncRoles( $participantRole );
             
 
