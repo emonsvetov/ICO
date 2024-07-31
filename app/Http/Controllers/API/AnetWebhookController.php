@@ -5,6 +5,8 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
+use App\Services\Program\Deposit\CreditcardDepositService;
+use App\Services\Program\Deposit\DepositHelper;
 use App\Models\AnetSubscriptions;
 use App\Models\AnetApiLog;
 use App\Models\Program;
@@ -40,7 +42,7 @@ class AnetWebhookController extends Controller
     public function store(DepositHelper $helper, CreditcardDepositService $desposit ,Request $request)
     {
         $log = AnetApiLog::create([            
-            'url' => $this->aNetUrl(),
+            'url' => $request->fullUrl(),
             'request' =>  json_encode($request),
             'response' => json_encode(['webhook' => true]),
         ]);
