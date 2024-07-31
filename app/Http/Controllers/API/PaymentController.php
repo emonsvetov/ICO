@@ -164,7 +164,7 @@ class PaymentController extends Controller
         $invoice = $helper->getSetInvoice($program, $details);
         $invoiceNumber = $invoice->key.'-'.$invoice->seq;
         
-        $payment = $pay->byCreditCard($invoiceNumber, $details, $organization, $program);
+        $payment = $pay->byCreditCard($invoiceNumber, $details, $organization, $program->id);
 
         if ( $payment['successful'] )
         {
@@ -186,7 +186,7 @@ class PaymentController extends Controller
         $invoice = $helper->getSetInvoice($program, $details);
         $invoiceNumber = $invoice->key.'-'.$invoice->seq;
 
-        $payment = $pay->byBankDebit($invoice, $details, $organization, $program);
+        $payment = $pay->byBankDebit($invoice, $details, $organization, $program->id);
 
         if ( $payment['successful'] )
         {
@@ -206,7 +206,7 @@ class PaymentController extends Controller
     {
         $details = $request->validated();
 
-        $payment = $pay->byGooglePay( $details, $organization, $program );
+        $payment = $pay->byGooglePay( $details, $organization, $program->id );
 
         if ( $payment['successful'] )
         {
@@ -228,7 +228,7 @@ class PaymentController extends Controller
     {
         $details = $request->validated();
 
-        $payment = $pay->byApplePay( $details, $organization, $program );
+        $payment = $pay->byApplePay( $details, $organization, $program->id );
 
         if ( $payment['successful'] )
         {
