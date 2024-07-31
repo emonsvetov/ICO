@@ -129,6 +129,7 @@ class SubscriptionService
         //Save request and response to log
         $log = AnetApiLog::create([
             'organization_id' => $this->organizationId,
+            'program_id' => $this->programId,
             'url' => $this->aNetUrl(),
             'request' =>  json_encode($request),
             'response' => json_encode($response),

@@ -10,6 +10,9 @@ use net\authorize\api\controller as AnetController;
 
 use App\Services\AuthorizeNet\SubscriptionService;
 use App\Services\AuthorizeNet\PaymentService;
+use App\Services\Program\Deposit\CreditcardDepositService;
+use App\Services\Program\Deposit\DepositHelper;
+
 
 use App\Http\Requests\AnetCreditCardPaymentRequest;
 use App\Http\Requests\AnetBankDebitPaymentRequest;
@@ -19,6 +22,10 @@ use App\Http\Requests\AnetApplePaymentRequest;
 use App\Http\Requests\AnetSubscribeRequest;
 
 use App\Models\AnetSubscriptions;
+use App\Models\Program;
+
+//DELETE
+use Illuminate\Support\Facades\Auth;
 
 class PaymentController extends Controller
 {
@@ -150,19 +157,23 @@ class PaymentController extends Controller
     }
        
 
-    public function creditCard(PaymentService $pay, AnetCreditCardPaymentRequest $request, $organization, $program)
+    public function creditCard(DepositHelper $helper, CreditcardDepositService $desposit ,PaymentService $pay, AnetCreditCardPaymentRequest $request, $organization, Program $program)
     {
-
         $details = $request->validated();
- 
-        //!!!!NEED TO GET/CREATE INVOICE DETAILS AND LINE ITEMS
-        $invoice = rand(10000,99999);
 
-        $payment = $pay->byCreditCard($invoice, $details, $organization, $program);
+        $invoice = $helper->getSetInvoice($program, $details);
+        $invoiceNumber = $invoice->key.'-'.$invoice->seq;
+        
+        $payment = $pay->byCreditCard($invoiceNumber, $details, $organization, $program);
 
         if ( $payment['successful'] )
         {
+            $invoiceClass = new \stdClass();
+            $invoiceClass->invoice_id = $invoice->id;
+            $invoiceClass->amount = $details['amount'];
+
             //Figure out what to do with invoicing or rollback
+            $desposit->finalize($program, $invoiceClass);
         }
 
         return response($payment);

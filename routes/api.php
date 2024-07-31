@@ -833,22 +833,27 @@ Route::get('/v1/user/{account_holder_id}/return/url',[App\Http\Controllers\API\P
 
 Route::group(['middleware' => ['json.response']], function () {
    
-Route::post('/v1/login/fasteezy', [App\Http\Controllers\API\AuthFastEezyController::class, 'login'])->name('api.v1.login.fasteezy');    
-Route::post('/v1/register/fasteezy', [App\Http\Controllers\API\AuthFastEezyController::class, 'register'])->name('api.v1.register.fasteezy');    
+    Route::post('/v1/login/fasteezy', [App\Http\Controllers\API\AuthFastEezyController::class, 'login'])->name('api.v1.login.fasteezy');    
+    Route::post('/v1/register/fasteezy', [App\Http\Controllers\API\AuthFastEezyController::class, 'register'])->name('api.v1.register.fasteezy');
+    
+    Route::get('/v1/authorizenet/webhook', [App\Http\Controllers\API\AnetWebhookController::class, 'store']);
+    Route::post('/v1/authorizenet/webhook', [App\Http\Controllers\API\AnetWebhookController::class, 'store']);
+    Route::get('/v1/authorizenet/webhook/last', [App\Http\Controllers\API\AnetWebhookController::class, 'index']);
+});
 
-Route::post('/v1/organization/{organization}/program/{program}/subscribe',[App\Http\Controllers\API\PaymentController::class, 'subscribe']);
-Route::post('/v1/organization/{organization}/program/{program}/unsubscribe',[App\Http\Controllers\API\PaymentController::class, 'unsubscribe']);
+Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () {
 
-Route::post('/v1/organization/{organization}/program/{program}/fundby/creditcard', [App\Http\Controllers\API\PaymentController::class, 'creditCard']);
-Route::post('/v1/organization/{organization}/program/{program}/fundby/bankdebit', [App\Http\Controllers\API\PaymentController::class, 'bankDebit']);
-Route::post('/v1/organization/{organization}/program/{program}/fundby/paypal', [App\Http\Controllers\API\PaymentController::class, 'paypal']);
-Route::post('/v1/organization/{organization}/program/{program}/fundby/paypalreturn', [App\Http\Controllers\API\PaymentController::class, 'paypalRedirect']);
-Route::post('/v1/organization/{organization}/program/{program}/fundby/googlepay', [App\Http\Controllers\API\PaymentController::class, 'googlePay']);
-Route::post('/v1/organization/{organization}/program/{program}/fundby/applepay', [App\Http\Controllers\API\PaymentController::class, 'applePay']);
+    Route::post('/v1/organization/{organization}/program/{program}/subscribe',[App\Http\Controllers\API\PaymentController::class, 'subscribe']);
+    Route::post('/v1/organization/{organization}/program/{program}/unsubscribe',[App\Http\Controllers\API\PaymentController::class, 'unsubscribe']);
 
-Route::get('/v1/organization/{organization}/program/{program}/billto', [App\Http\Controllers\API\BillToController::class, 'index']);
-Route::get('/v1/organization/{organization}/program/{program}/billto/last', [App\Http\Controllers\API\BillToController::class, 'lastUsed']);
+    Route::post('/v1/organization/{organization}/program/{program}/fundby/creditcard', [App\Http\Controllers\API\PaymentController::class, 'creditCard']);
+    Route::post('/v1/organization/{organization}/program/{program}/fundby/bankdebit', [App\Http\Controllers\API\PaymentController::class, 'bankDebit']);
+    Route::post('/v1/organization/{organization}/program/{program}/fundby/paypal', [App\Http\Controllers\API\PaymentController::class, 'paypal']);
+    Route::post('/v1/organization/{organization}/program/{program}/fundby/paypalreturn', [App\Http\Controllers\API\PaymentController::class, 'paypalRedirect']);
+    Route::post('/v1/organization/{organization}/program/{program}/fundby/googlepay', [App\Http\Controllers\API\PaymentController::class, 'googlePay']);
+    Route::post('/v1/organization/{organization}/program/{program}/fundby/applepay', [App\Http\Controllers\API\PaymentController::class, 'applePay']);
 
- 
+    Route::get('/v1/organization/{organization}/program/{program}/billto', [App\Http\Controllers\API\BillToController::class, 'index']);
+    Route::get('/v1/organization/{organization}/program/{program}/billto/last', [App\Http\Controllers\API\BillToController::class, 'lastUsed']);
 
 });
