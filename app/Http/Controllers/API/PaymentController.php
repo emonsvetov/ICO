@@ -186,7 +186,7 @@ class PaymentController extends Controller
         $invoice = $helper->getSetInvoice($program, $details);
         $invoiceNumber = $invoice->key.'-'.$invoice->seq;
 
-        $payment = $pay->byBankDebit($invoice, $details, $organization, $program->id);
+        $payment = $pay->byBankDebit($invoiceNumber, $details, $organization, $program->id);
 
         if ( $payment['successful'] )
         {
