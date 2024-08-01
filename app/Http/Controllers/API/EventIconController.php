@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\EventIcon;
 use App\Models\Organization;
 use App\Http\Requests\EventIconRequest;
+use Illuminate\Support\Facades\Storage;
 
 class EventIconController extends Controller
 {
@@ -34,10 +35,15 @@ class EventIconController extends Controller
         }
 
         $eventIcons = $query->get();
+        $filesystemDriver = config('filesystems.default');
+
+        $eventIcons = $eventIcons->filter(function($item) use ($filesystemDriver) {
+            return Storage::disk($filesystemDriver)->exists($item->path);
+        });
 
         if ( $eventIcons->isNotEmpty() )
         {
-            return response( $eventIcons );
+            return response( $eventIcons->values() );
         }
         return response( [] );
     }

@@ -97,12 +97,14 @@ class ProgramUserController extends Controller
             $users = $query->with([
                 'roles' => function ($query) use ($program, $selectedRoleId) {
                     $query->wherePivot('program_id', '=', $program->id);
+                    // $query->orWherePivot('organization_id', '=', $program->organization_id);
                     if ($selectedRoleId) {
                         $query->where('role_id', '=', $selectedRoleId);
                     }
                 },
                 'status'
             ])->paginate(request()->get('limit', 20));
+            $users->makeVisible('roles');
         }
 
         if ($users->isNotEmpty()) {
@@ -238,6 +240,25 @@ class ProgramUserController extends Controller
         ]);
     }
 
+    public function sendBalanceToHMI(
+        $account_holder_id) {
+        $user = User::where('account_holder_id', $account_holder_id)->with('programs')->first();
+        $program = Program::where('id', $user->programs[0]->id)->first();
+        $factor_valuation = $program->factor_valuation;
+        $amount_balance = $user->readAvailableBalance($program, $user);
+        $pointBalance = $amount_balance * $program->factor_valuation;
+        return response([
+            'pointBalance' => $pointBalance,
+        ]);
+    }
+
+    public function returnLastLocation($account_holder_id) {
+        $user = User::where('account_holder_id', $account_holder_id)->first();
+        return response([
+            'return_url' => $user->last_location,
+        ]);
+    }
+
     public function readEventHistory(
         Organization $organization,
         Program $program,
@@ -268,7 +289,8 @@ class ProgramUserController extends Controller
         $sortby = request()->get('sortby', 'id');
         $direction = request()->get('direction', 'asc');
 
-        $where = ['organization_id' => $program->organization_id]; //Only users from same organization can be assigned to a program
+        // $where = ['organization_id' => $program->organization_id]; //Only users from same organization can be assigned to a program
+        $where = []; //Allow to found users to be found
 
         $query = User::where($where);
 
@@ -295,6 +317,7 @@ class ProgramUserController extends Controller
             },
             'status'
         ])->paginate(request()->get('limit', 1000));
+        $users->makeVisible('roles');
 
         if ($users->isNotEmpty()) {
             return response($users);
@@ -314,8 +337,19 @@ class ProgramUserController extends Controller
         DB::beginTransaction();
 
         try {
-            $program->users()->sync([$user->id], false);
-            $user->syncProgramRoles($program->id, $validated['roles']);
+            if( isset($validated['roles']) )
+            {
+                if( sizeof($validated['roles']) )
+                {
+                    $program->users()->sync([$user->id], false);
+                }
+
+                $user->syncProgramRoles($program->id, $validated['roles'], true);
+            }
+
+            if ( isset($validated['is_organization_admin']) ) {
+                $user->syncOrgAdminRoleByProgram($program, $validated['is_organization_admin']);
+            }
             DB::commit();
             return response(['success' => true]);
         } catch (Exception $e) {

@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
 
 use App\Models\Traits\OrgHasUserViaProgram;
@@ -39,5 +38,18 @@ class Organization extends BaseModel
     public function roles()
     {
         return $this->hasMany(User::class);
+    }
+
+    public function scopeAuthorized(\Illuminate\Database\Eloquent\Builder $builder): void
+    {
+        $user = auth()->user();
+        if( $user->isSuperAdmin )
+        {
+            return;
+        }
+        $orgFilter = $user->getOrganizationFilter();
+        if( $orgFilter ) {
+            $builder->whereIn('id', $orgFilter);
+        }
     }
 }

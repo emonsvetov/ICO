@@ -16,7 +16,7 @@ class ProgramUserService
         $validated['email_verified_at'] = now();
 
         $user = User::createAccount($validated);
-
+        //dd($user);
         if ($user) {
             $program->users()->sync([$user->id], false);
             if (isset($validated['roles'])) {
@@ -25,6 +25,13 @@ class ProgramUserService
             if ( ! empty($validated['unit_number']) ) {
                 $userService = new UserService;
                 $userService->updateUnitNumber($user, $validated['unit_number']);
+            }
+            if (!empty($validated['position_level'])) {
+                $userService = new UserService;
+                $userService->updatePositionLevel($user, $validated['position_level'],$program->id);
+            }
+            if ( isset($validated['is_organization_admin']) ) {
+                $user->syncOrgAdminRoleByProgram($program, $validated['is_organization_admin']);
             }
             if (!empty($validated['send_invite'])) {
                 // $participantRoleId = Role::getParticipantRoleId();
@@ -46,10 +53,14 @@ class ProgramUserService
             unset($validated['roles']);
         }
 
-        $userService->update($user, $validated);
+        $userService->update($user, $validated,$program->id);
 
         if ( ! empty($validated['program_roles'])) {
             $user->syncProgramRoles($program->id, $validated['program_roles']);
+        }
+
+        if ( isset($validated['is_organization_admin']) ) {
+            $user->syncOrgAdminRoleByProgram($program, $validated['is_organization_admin']);
         }
         return $user;
     }
