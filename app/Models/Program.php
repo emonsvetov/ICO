@@ -559,6 +559,21 @@ class Program extends BaseModel
         }
     }
 
+    public function hasCsvImportypes( $inherit = false )
+    {
+        $relationExists = $this->csv_import_types()->exists();
+        if($relationExists) {
+            return true;
+        }
+        if( $inherit ) {
+            $parent = $this->getParent();
+            if( $parent ) {
+                return $parent->hasCsvImportypes( $inherit );
+            }
+        }
+        return false;
+    }
+
     public function getMerchantsRecursively($status=null, &$inheritsFrom = null)
     {
         $query = $this->merchants();
