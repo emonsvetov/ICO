@@ -252,7 +252,7 @@ class PaymentService
         // Create order information
         $order = new AnetAPI\OrderType();
         $order->setInvoiceNumber($invoice); //This needs to be unique $invoice
-        $order->setDescription("Golf Shirts");
+        $order->setDescription("Fund Program");
 
         $customerAddress = $this->setCustomerAddress( $details );
 
@@ -286,7 +286,7 @@ class PaymentService
         // Create order information
         $order = new AnetAPI\OrderType();
         $order->setInvoiceNumber($invoice); //This needs to be unique $invoice
-        $order->setDescription("Golf Shirts");
+        $order->setDescription("Fund Program");
 
         $customerAddress = $this->setCustomerAddress( $details );
 
