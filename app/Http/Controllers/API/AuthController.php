@@ -164,7 +164,7 @@ class AuthController extends Controller
                 if( !$user->programRoles )  {
                     return response(['message' => 'No program roles '], 422);
                 }
-                unset($domain->programs); //keep it private
+                // unset($domain->programs); //keep it private - Fasteezy uses it
                 $response['domain'] = $domain;
                 return response( $response );
             }
