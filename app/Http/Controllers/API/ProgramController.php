@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Mail\templates\WelcomeEmail;
+use App\Models\DomainProgram;
 use App\Models\Merchant;
 use Illuminate\Support\Facades\DB;
 
@@ -109,10 +110,9 @@ class ProgramController extends Controller
 
     public function show(Organization $organization, Program $program)
     {
-
         if ($program) {
             if ( ! request()->get('only')) {
-                $program->load(['domains', 'organization', 'address', 'status','programExtras','programTransactionFee']);
+                $program->load(['domains', 'defaultDomain', 'organization', 'address', 'status','programExtras','programTransactionFee']);
                 $program->merchants = Merchant::where('status', Merchant::ACTIVE)->get();
             }
 
@@ -438,5 +438,23 @@ class ProgramController extends Controller
             return response(['errors' => $e->getMessage()], 422);
         }
     }
+
+     public function defaultDomain(Request $request,Organization $organization, Program $program,  ProgramService $programService)
+    {
+        DB::beginTransaction();
+        try {
+            $default_domain = $request->get("default_domain");
+            DomainProgram::findByProgramId($program->id)->update(['default' => 0]);
+            DomainProgram::findByProgramIdAndDomainId($program->id, $default_domain)->update(['default' => 1]);
+
+            DB::commit();
+            return response(['program' => $program]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response(['errors' => $e->getMessage()], 422);
+        }
+    }
+
+
 
 }

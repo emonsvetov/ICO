@@ -38,6 +38,7 @@ class AwardRequest extends FormRequest
             ],
             'user_id' => 'required|array',
             'user_id.*' => 'required|integer',
+            'scheduled_date'=>'nullable|string'
         ];
     }
 
@@ -65,5 +66,4 @@ class AwardRequest extends FormRequest
             'event' => 'nullable|mustComeFromModel:Event|matchWith:name|use:id|filterConstant:organization_id,=,organization_id',
         ];
     }
-
 }

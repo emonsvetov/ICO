@@ -68,13 +68,13 @@ class ProgramService
     {
         // pr($override);
         $params = [];
-        $programsId = ! empty($override['programsId']) ? $override['programsId'] : request()->get('programsId', '');
-        $orgId = ! empty($override['orgId']) ? $override['orgId'] : request()->get('orgId', '');
-        $programId = ! empty($override['programId']) ? $override['programId'] : request()->get('programId', '');
-        $status = ! empty($override['status']) ? $override['status'] : request()->get('status', '');
-        $keyword = ! empty($override['keyword']) ? $override['keyword'] : request()->get('keyword', '');
-        $sortby = ! empty($override['sortby']) ? $override['sortby'] : request()->get('sortby', 'id');
-        $direction = ! empty($override['direction']) ? $override['direction'] : request()->get('direction', 'asc');
+        $programsId = !empty($override['programsId']) ? $override['programsId'] : request()->get('programsId', '');
+        $orgId = !empty($override['orgId']) ? $override['orgId'] : request()->get('orgId', '');
+        $programId = !empty($override['programId']) ? $override['programId'] : request()->get('programId', '');
+        $status = !empty($override['status']) ? $override['status'] : request()->get('status', '');
+        $keyword = !empty($override['keyword']) ? $override['keyword'] : request()->get('keyword', '');
+        $sortby = !empty($override['sortby']) ? $override['sortby'] : request()->get('sortby', 'id');
+        $direction = !empty($override['direction']) ? $override['direction'] : request()->get('direction', 'asc');
         $tree = filter_var(isset($override['tree']) ? $override['tree'] : request()->get('tree', true), FILTER_VALIDATE_BOOLEAN);
         $minimal = filter_var(isset($override['minimal']) ? $override['minimal'] : request()->get('minimal', false), FILTER_VALIDATE_BOOLEAN);
         $flatlist = filter_var(isset($override['flatlist']) ? $override['flatlist'] : request()->get('flatlist', false), FILTER_VALIDATE_BOOLEAN);
@@ -122,13 +122,11 @@ class ProgramService
 
         $query = Program::where($where);
 
-        if( $programsId )
-        {
+        if ($programsId) {
             $programsId = explode(',', $programsId);
             $query->whereIn('id', $programsId);
         }
-        if( $orgId )
-        {
+        if ($orgId) {
             $orgIds = explode(',', $orgId);
             $query->whereIn('organization_id', $orgIds);
         }
@@ -136,14 +134,13 @@ class ProgramService
         if ($status) {
             $statuses = explode(',', $status);
             $statusIds = [];
-            foreach ($statuses as $s){
+            foreach ($statuses as $s) {
                 $statusIds[] = Program::getStatusIdByName($s);
             }
             $query->whereIn('status_id', $statusIds);
             $statusIdDeleted = Program::getIdStatusDeleted();
 
-            if( in_array($statusIdDeleted, $statusIds))
-            {
+            if (in_array($statusIdDeleted, $statusIds)) {
                 $query = $query->withTrashed();
             }
         }
@@ -161,7 +158,7 @@ class ProgramService
             if (is_array($except)) {
                 $notIn = $except;
             } elseif (strpos($except, ',')) {
-                $notIn = explode( trim($except), ',' );
+                $notIn = explode(trim($except), ',');
             } elseif ((int)$except) {
                 $notIn = [$except];
             }
@@ -199,7 +196,7 @@ class ProgramService
                 }
             }
         }
-        if ($organization){
+        if ($organization) {
             $query = $query->withOrganization($organization)->orderByRaw($orderByRaw);
         } else {
             $query = $query->orderByRaw($orderByRaw);
@@ -217,12 +214,12 @@ class ProgramService
             $query->orWhere('id', $params['programId']);
         }
 
-        if ( !$params['all'] && !$params['programId']) {
+        if (!$params['all'] && !$params['programId']) {
             $query->whereNull('parent_id');
         }
 
-        if( $params['paginate'] ) {
-            $results = $query->paginate( $params['limit']);
+        if ($params['paginate']) {
+            $results = $query->paginate($params['limit']);
             if ($params['minimal']) {
                 $results->getCollection()->transform(function ($value) {
                     $value = childrenizeModel($value);
@@ -245,12 +242,12 @@ class ProgramService
     {
         $params = $this->_buildParams($params);
         $query = $this->_buildQuery($organization, $params);
-        if ( !$params['all'] ) {
+        if (!$params['all']) {
             $query->whereNull('parent_id');
         }
 
-        if( $params['paginate'] ) {
-            $results = $query->paginate( $params['limit']);
+        if ($params['paginate']) {
+            $results = $query->paginate($params['limit']);
             if ($params['minimal']) {
                 $results->getCollection()->transform(function ($value) {
                     $value = childrenizeModel($value);
@@ -274,72 +271,70 @@ class ProgramService
         if (isset($data['status'])) { //If status present in "string" format
             $data['status_id'] = Program::getStatusIdByName($data['status']);
             unset($data['status']);
-        }
-        else if(empty($data['status_id'])) //if, the status_id also not set
+        } else if (empty($data['status_id'])) //if, the status_id also not set
         {
             //Set default status
             $data['status_id'] = Program::getIdStatusActive();
         }
 
-        $program_account_holder_id = AccountHolder::insertGetId(['context'=>'Program', 'created_at' => now()]);
+        $program_account_holder_id = AccountHolder::insertGetId(['context' => 'Program', 'created_at' => now()]);
 
-        if(isset($data['invoice_for_awards']) && $data['invoice_for_awards'])   {
+        if (isset($data['invoice_for_awards']) && $data['invoice_for_awards']) {
             $data['allow_creditcard_deposits'] = 1;
         }
-        if(!isset($data['expiration_rule_id']))   {
+        if (!isset($data['expiration_rule_id'])) {
             $data['expiration_rule_id'] = 3; //End of Next Year
         }
         if (!empty($data['status'])) { //If status present in string format
             $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : Program::getStatusIdByName($data['status']);
             unset($data['status']);
         }
-        if( empty($data['status_id']) )
-        {   //set default status to "Active"
+        if (empty($data['status_id'])) {   //set default status to "Active"
             $data['status_id'] = Program::getIdStatusActive();
         }
         $program = Program::create($data + ['account_holder_id' => $program_account_holder_id]);
         $liability = FinanceType::getIdByName('Liability');
         $asset = FinanceType::getIdByName('Asset', true);
         $monies_mt = MediumType::getIdByName('Monies', true);
-        $default_accounts = array (
-            array (
-                    'account_type' => 'Monies Deposits',
-                    'finance_type' => $liability,
-                    'medium_type' => $monies_mt
+        $default_accounts = array(
+            array(
+                'account_type' => 'Monies Deposits',
+                'finance_type' => $liability,
+                'medium_type' => $monies_mt
             ),
-            array (
-                    'account_type' => 'Monies Due to Owner',
-                    'finance_type' => $asset,
-                    'medium_type' => $monies_mt
+            array(
+                'account_type' => 'Monies Due to Owner',
+                'finance_type' => $asset,
+                'medium_type' => $monies_mt
             ),
-            array (
-                    'account_type' => 'Monies Fees',
-                    'finance_type' => $liability,
-                    'medium_type' => $monies_mt
+            array(
+                'account_type' => 'Monies Fees',
+                'finance_type' => $liability,
+                'medium_type' => $monies_mt
             ),
-            array (
-                    'account_type' => 'Monies Paid to Progam',
-                    'finance_type' => $liability,
-                    'medium_type' => $monies_mt
+            array(
+                'account_type' => 'Monies Paid to Progam',
+                'finance_type' => $liability,
+                'medium_type' => $monies_mt
             ),
-            array (
-                    'account_type' => 'Monies Redeemed',
-                    'finance_type' => $liability,
-                    'medium_type' => $monies_mt
+            array(
+                'account_type' => 'Monies Redeemed',
+                'finance_type' => $liability,
+                'medium_type' => $monies_mt
             ),
-            array (
-                    'account_type' => 'Monies Shared',
-                    'finance_type' => $liability,
-                    'medium_type' => $monies_mt
+            array(
+                'account_type' => 'Monies Shared',
+                'finance_type' => $liability,
+                'medium_type' => $monies_mt
             ),
-            array (
-                    'account_type' => 'Monies Transaction',
-                    'finance_type' => $liability,
-                    'medium_type' => $monies_mt
+            array(
+                'account_type' => 'Monies Transaction',
+                'finance_type' => $liability,
+                'medium_type' => $monies_mt
             )
         );
 
-        Account::create_multi_accounts ( $program_account_holder_id, $default_accounts );
+        Account::create_multi_accounts($program_account_holder_id, $default_accounts);
 
         //TODO ??
         // $this->tie_sub_program ( $program_account_holder_id, $program_account_holder_id );
@@ -361,9 +356,9 @@ class ProgramService
 
         if (!empty($data['program_extras'])) {
             $programExtra = new ProgramExtra();
-            $programExtra->updateProgramExtra($data['program_extras']['id'],$data['program_extras']);
+            $programExtra->updateProgramExtra($data['program_extras']['id'], $data['program_extras']);
             unset($data['program_extras']);
-        }else{
+        } else {
             unset($data['program_extras']);
         }
 
@@ -376,12 +371,9 @@ class ProgramService
                 $std->transaction_fee = (float)$val['transaction_fee'];
                 $programTransactionFee[] = $std;
             }
-
         }
         $programExtra->updateTransactionFees($program->id, $programTransactionFee);
         unset($data['program_transaction_fee']);
-
-
 
         if (isset($data['address'])) {
             if ($program->address()->exists()) {
@@ -395,16 +387,55 @@ class ProgramService
             $data['status_id'] = !empty($data['status_id']) ? $data['status_id'] : Program::getStatusIdByName($data['status']);
             unset($data['status']);
         }
-        if( empty($data['status_id']) )
-        {   //set default status to "Active"
+        if (empty($data['status_id'])) {   //set default status to "Active"
             $data['status_id'] = Program::getIdStatusActive();
         }
-        if($program->update($data)) {
-            if($program->setup_fee > 0 && !$this->isFeeAccountExists($program))  {
+        if ($program->update($data)) {
+            if ($program->setup_fee > 0 && !$this->isFeeAccountExists($program)) {
                 $program->create_setup_fee_account();
+            }
+            if (isset($data['use_budget_cascading']) || isset($data['use_cascading_approvals'])) {
+                // Get all descendant programs recursively
+                $childPrograms = $this->getHierarchyByProgramIdd(null, $program->id);
+                // Update each program recursively
+                $this->recursiveUpdate($childPrograms, $data);
             }
             cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
             return $program;
+        }
+    }
+
+    protected function recursiveUpdate($programs, $data)
+    {
+        foreach ($programs as $program) {
+            // Update the current program
+            $program->update([
+                'use_budget_cascading' => $data['use_budget_cascading'],
+                'use_cascading_approvals' => $data['use_cascading_approvals'],
+            ]);
+            // Load children relationship and recursively update them if any
+            $program->load('children');
+            if ($program->children) {
+                $this->recursiveUpdate($program->children, $data);
+            }
+        }
+    }
+
+    public function getHierarchyByProgramIdd($organization, $programId)
+    {
+        try {
+            $program = Program::find($programId);
+            $programsId = $program->descendantsAndSelf()->get()->pluck('id')->toArray();
+
+            $minimalFields = Program::MIN_FIELDS;
+            $query = Program::query();
+            $query->whereIn('id', $programsId);
+            $query = $query->select($minimalFields);
+            $query = $query->with(['childrenMinimal']);
+            $result = $query->get();
+            return $result;
+        } catch (\Exception $e) {
+            throw new \Exception(sprintf("Error %s in line: %d or file: %s", $e->getMessage(), $e->getLine(), $e->getFile()));
         }
     }
 
@@ -458,7 +489,7 @@ class ProgramService
         $query = $this->_buildQuery($organization, $params)
             ->where('parent_id', $program->id)
             ->withOrganization($organization, true);
-            // hierarchy=1&
+        // hierarchy=1&
         // if ($params['minimal']) {
         //     $results = $query->get();
         //     if ($params['flatlist']) {
@@ -469,8 +500,8 @@ class ProgramService
         //     return $results;
         // }
 
-        if( $params['paginate'] ) {
-            return $query->paginate( $params['limit']);
+        if ($params['paginate']) {
+            return $query->paginate($params['limit']);
         }
         $results = $query->get();
         if ($params['flatlist']) {
@@ -543,17 +574,16 @@ class ProgramService
         $ids = array_column($subprograms->toArray(), 'id');
         $diff = collect([]);
         foreach ($programs->toArray() as $program) {
-            if ( ! in_array($program['id'], $ids)) {
+            if (!in_array($program['id'], $ids)) {
                 $diff->push($program);
             }
-
         }
         return $diff;
     }
 
     public function unlinkNodeWithSubtree($organization, $program)
     {
-        if ( ! $program->children->isEmpty()) {
+        if (!$program->children->isEmpty()) {
             foreach ($program->children as $children) {
                 $children->parent_id = null;
                 $children->save();
@@ -568,7 +598,7 @@ class ProgramService
     public function unlinkNode($organization, $program)
     {
         $parent_id = $program->parent ? $program->parent->id : null;
-        if ( ! $program->children->isEmpty()) {
+        if (!$program->children->isEmpty()) {
             foreach ($program->children as $children) {
                 $children->parent_id = $parent_id;
                 $children->save();
@@ -582,7 +612,7 @@ class ProgramService
     public function listAvailableProgramsToAdd($organization, $domain)
     {
         $keyword = request()->get('keyword');
-        if ( ! $domain->programs->isEmpty()) {
+        if (!$domain->programs->isEmpty()) {
             // return $domain->programs;
             $existing = $domain->programs->pluck('id');
             //The logic here depends upon an assumption that a domain can have programs/subprograms from within only one program tree.
@@ -600,7 +630,7 @@ class ProgramService
             $constraint = function ($query) {
                 $query->whereNull('parent_id');
             };
-            $query = Program::treeOf($constraint)->withOrganization( $organization );
+            $query = Program::treeOf($constraint)->withOrganization($organization);
         }
 
         if ($keyword) {
@@ -636,7 +666,8 @@ class ProgramService
         return $result;
     }
 
-    public function isFeeAccountExists( $program )    {
+    public function isFeeAccountExists($program)
+    {
         DB::statement("SET SQL_MODE=''"); // to prevent groupby error. see shorturl.at/qrQ07
 
         $qry_statement = "
@@ -662,23 +693,25 @@ class ProgramService
         ";
 
         try {
-			$result = DB::select( DB::raw($qry_statement), array(
-				'journal_event_type' => 'Charge setup fee to program',
-				'program_account_holder_id' => $program->account_holder_id
-			));
-		} catch (\Exception $e) {
-			throw new \RuntimeException ( 'Could not get fee account information in  ProgramService:isFeeAccountExists. DB query failed.', 500 );
-		}
+            $result = DB::select(DB::raw($qry_statement), array(
+                'journal_event_type' => 'Charge setup fee to program',
+                'program_account_holder_id' => $program->account_holder_id
+            ));
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Could not get fee account information in  ProgramService:isFeeAccountExists. DB query failed.', 500);
+        }
 
-        if( sizeof($result) > 0) return true;
+        if (sizeof($result) > 0) return true;
         return false;
     }
 
-    public function getTransferMonies(Program $program)    {
+    public function getTransferMonies(Program $program)
+    {
         return (new \App\Services\Program\TransferMoniesService)->getTransferMoniesByProgram($program);
     }
 
-    public function submitTransferMonies(Program $program, $data)    {
+    public function submitTransferMonies(Program $program, $data)
+    {
         return (new \App\Services\Program\TransferMoniesService)->submitTransferMonies($program, $data);
     }
 
@@ -699,7 +732,7 @@ class ProgramService
         float $amount,
         array $extraArgs = []
     ): bool {
-        if ( $program->programIsInvoiceForAwards() ) {
+        if ($program->programIsInvoiceForAwards()) {
             // If we invoice for awards, the program will always pay later
             return true;
         } else {
@@ -743,27 +776,26 @@ class ProgramService
      * @param Program $program
      * @return float
      */
-    public function getBillableDescendants(Program $program): Array
+    public function getBillableDescendants(Program $program): array
     {
         $descendants = $program->descendants()->get();
         $billable_programs = [];
         $programs_to_skip = [];
-        foreach( $descendants as $subProgram)   {
-            $rank = explode ( ".", $subProgram->path );
+        foreach ($descendants as $subProgram) {
+            $rank = explode(".", $subProgram->path);
             $b_Skip_This = false;
-            if (count ( $programs_to_skip ) > 0) {
-				foreach ( $programs_to_skip as $program_to_skip ) {
-					if (in_array ( $program_to_skip, $rank )) {
-						$b_Skip_This = true;
-					}
-				}
-			}
-            if ( !$subProgram->bill_parent_program && !$b_Skip_This) {
-				$billable_programs[$subProgram->id] = $subProgram;
-
-			} else {
-				$programs_to_skip[] = $program->id;
-			}
+            if (count($programs_to_skip) > 0) {
+                foreach ($programs_to_skip as $program_to_skip) {
+                    if (in_array($program_to_skip, $rank)) {
+                        $b_Skip_This = true;
+                    }
+                }
+            }
+            if (!$subProgram->bill_parent_program && !$b_Skip_This) {
+                $billable_programs[$subProgram->id] = $subProgram;
+            } else {
+                $programs_to_skip[] = $program->id;
+            }
         }
         return $billable_programs;
     }
@@ -775,7 +807,7 @@ class ProgramService
     public function updateStatus($validated, $program)
     {
         cache()->forget(Program::CACHE_FULL_HIERARCHY_NAME);
-        return $program->update( ['status_id' => $validated['program_status_id']] );
+        return $program->update(['status_id' => $validated['program_status_id']]);
     }
 
     public function getTemplate(Program $program)
@@ -788,15 +820,16 @@ class ProgramService
      * @param string $demoStart
      * @return void
      */
-    public function deleteAwards(Collection $programsAward, string $demoStart){
+    public function deleteAwards(Collection $programsAward, string $demoStart)
+    {
         foreach ($programsAward as $awardData) {
             $awardJournalEventId = (int) $awardData->journal_event_id;
             $primeAccountHolderId = (int) $awardData->recipient_id;
             $journalEventTypeId = JournalEventType::getIdByType(JournalEventType::JOURNAL_EVENT_TYPES_REDEEM_POINTS_FOR_GIFT_CODES);
             $journalEvents = JournalEvent::getByPrimeAndEventType($primeAccountHolderId, $journalEventTypeId, $demoStart);
 
-            if($journalEvents){
-                foreach ($journalEvents as $journalEvent){
+            if ($journalEvents) {
+                foreach ($journalEvents as $journalEvent) {
                     $journalEventID = (int) $journalEvent->id;
                     $postings = Posting::where('journal_event_id', $journalEventID)->get();
                     $postingIds = $postings->pluck('id');
@@ -821,7 +854,8 @@ class ProgramService
         }
     }
 
-    public function getTransferTemplateCSV(Program $program)  {
+    public function getTransferTemplateCSV(Program $program)
+    {
         $transferMoniesService = app('App\Services\Program\TransferMoniesService');
         return $transferMoniesService->getTransferTemplateCSVStream($program);
     }
@@ -843,7 +877,8 @@ class ProgramService
             FROM ParentProgram
             ORDER BY depth DESC
             LIMIT 1;
-    "), ['program_id' => $subProgramId]
+    "),
+            ['program_id' => $subProgramId]
         );
 
         return $maxDepthProgram[0]->id ?? null;

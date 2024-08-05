@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Exception;
 
+use App\Models\BudgetCascadingApproval;
+use App\Models\BudgetCascading;
 use App\Models\JournalEventType;
 use App\Models\Organization;
 use App\Models\EventXmlData;
@@ -21,8 +23,9 @@ use App\Models\Account;
 use App\Models\Event;
 use App\Models\Owner;
 use App\Models\User;
-
+use Carbon\Carbon;
 use App\Notifications\AwardNotification;
+use PHPUnit\Framework\MockObject\DuplicateMethodException;
 
 class AwardService
 {
@@ -35,24 +38,25 @@ class AwardService
      * @throws Exception
      */
     protected bool $isCron = false;
-    protected function setIsCron( $bool ) {
+    protected function setIsCron($bool)
+    {
         $this->isCron = $bool;
     }
-    protected function isCron() {
+    protected function isCron()
+    {
         return $this->isCron;
     }
+
     public function awardMany(Program $program, Organization $organization, User $awarder, array $data)
     {
-
         $userIds = $data['user_id'] ?? [];
 
-        if( sizeof($userIds) <= 0 )
-        {
-            throw new InvalidArgumentException ( 'Invalid or no "recipients" passed', 400 );
+        if (sizeof($userIds) <= 0) {
+            throw new InvalidArgumentException('Invalid or no "recipients" passed', 400);
         }
 
-        if(in_array($awarder->id, $userIds)) {
-            throw new InvalidArgumentException ( 'Invalid "user" passed, you can\'t award your own account', 400 );
+        if (in_array($awarder->id, $userIds)) {
+            throw new InvalidArgumentException('Invalid "user" passed, you can\'t award your own account', 400);
         }
 
         /** @var Event $event */
@@ -66,10 +70,11 @@ class AwardService
         }
 
         $award = (object)($data +
-        [
-            'organization_id' => $organization->id,
-            'program_id' => $program->id
-        ]);
+            [
+                'organization_id' => $organization->id,
+                'program_id' => $program->id,
+                'use_cascading_approvals' => $program->use_cascading_approvals,
+            ]);
 
         $isBadge = $eventType->isEventTypeBadge();
         $isPeer2peer = $eventType->isEventTypePeer2Peer();
@@ -79,44 +84,56 @@ class AwardService
         $eventAmountOverride = $overrideCashValue > 0;
         $awardAmount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
 
-        if ( $isPeer2peerBadge ) {
+        if ($isPeer2peerBadge) {
             $isBadge = true;
             $isPeer2peer = true;
             $awardAmount = 0;
-		}
-        if( $isBadge )
-        {
+        }
+        if ($isBadge) {
             $awardAmount = 0;
         }
-        if ( $isPeer2peer ){
-            if (!$this->canPeerPayForAwards($program, $awarder, $awardAmount, $userIds)){
+        if ($isPeer2peer) {
+            if (!$this->canPeerPayForAwards($program, $awarder, $awardAmount, $userIds)) {
                 throw new Exception('Your program\'s account balance is too low to award.');
             }
         }
 
-        if( $program->isShellProgram() )
-        {
-            throw new \RuntimeException ( 'Invalid "receiver program", you cannot create an award in a shell program', 400 );
+        if ($program->isShellProgram()) {
+            throw new \RuntimeException('Invalid "receiver program", you cannot create an award in a shell program', 400);
         }
 
         $programService = resolve(\App\Services\ProgramService::class);
 
-        if ( !$programService->canProgramPayForAwards($program, $event, $userIds, $awardAmount)) {
+        if (!$programService->canProgramPayForAwards($program, $event, $userIds, $awardAmount)) {
             throw new Exception('Your program\'s account balance is too low to award.');
         }
 
         $result = null;
 
         try {
-
             $users = User::whereIn('id', $award->user_id)->get();
 
-            foreach( $users as $user)    {
+            foreach ($users as $user) {
                 $result[$user->id] = $this->awardUser($event, $user, $awarder, $award);
             }
 
-            // print_r( $journalEventType );
+            // save budget cascading approval data
+            if (!empty($data['user_id'])) {
+                foreach ($data['user_id'] as $userId) {
+                    $this->SaveBudgetCascadingApprovalDetail($program, $event, $userId, $awarder, $award);
+                }
 
+                $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
+                $amount = (float)$amount;
+                $numUsers = count($data['user_id']);
+                $multipliedAmount = $numUsers * $amount;
+
+                $updatedAmount = $program['budgets_cascading'][0]['budget_amount_remaining'] - $multipliedAmount;
+                BudgetCascading::where('id', $program['budgets_cascading'][0]['id'])
+                    ->update(['budget_amount_remaining' => $updatedAmount]);
+            }
+
+            // print_r( $journalEventType );
             // TODO
             // // Read the award levels assigned to the event
             // $assigned_award_levels = $this->event_templates_model->read_list_of_event_award_level_by_event ( $receiver_program_id, $event_template_id, 0, 99999 );
@@ -127,12 +144,53 @@ class AwardService
             $result['error'] = "Error while processing awarding. Error:{$e->getMessage()} in line {$e->getLine()}";
             DB::rollBack();
         }
-
         return $result;
     }
-    public function awardUser($event, $awardee, $awarder, object $data = null, $dontSendEmail = null) {
-//        $statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
-//        DB::statement($statement);
+
+
+    public function SaveBudgetCascadingApprovalDetail($program, $event, $user, $awarder, object $data = null)
+    {
+        $parent_program = new Program();
+        $parent_id = $parent_program->get_top_level_program_id($data->program_id);
+        $budgets_cascading = $program->budgets_cascading;
+        $event_award = $event->event_award_level;
+        $transaction_id = generate_unique_id();
+        $award_level_id = $event_award[0]['award_level_id'] ?? 0;
+        $overrideCashValue = $data->override_cash_value ?? 0;
+        $eventAmountOverride = $overrideCashValue > 0;
+        $amount = $eventAmountOverride ? $overrideCashValue : $event->max_awardable_amount;
+        $amount = (float)$amount;
+
+        $awardData = [];
+        if ($data->use_cascading_approvals && $event->include_in_budget) {
+            BudgetCascadingApproval::create([
+                'parent_id' => $parent_id,
+                'awarder_id' => $awarder->id,
+                'user_id' => $user,
+                'requestor_id' => $awarder->id,
+                'manager_id' => 0,
+                'event_id' => $event->id,
+                'award_id' => $award_level_id,
+                'amount' => $amount,
+                'approved' => 0,
+                'award_data' => json_encode($awardData),
+                'transaction_id' => $transaction_id,
+                'program_approval_id' => 0,
+                'program_id' => $data->program_id,
+                'include_in_budget' => $event->include_in_budget,
+                'budgets_cascading_id' => $budgets_cascading[0]['id'],
+                'rejection_note' => "",
+                'scheduled_date' => Carbon::now(),
+                'action_by' => $awarder->id,
+            ]);
+        }
+    }
+
+
+    public function awardUser($event, $awardee, $awarder, object $data = null, $dontSendEmail = null)
+    {
+        //$statement = "LOCK TABLES programs READ, postings WRITE, medium_info WRITE, journal_events WRITE;";
+        //DB::statement($statement);
         DB::beginTransaction();
 
         $program = $event->program;
@@ -141,7 +199,7 @@ class AwardService
 
         $organization_id = $data->organization_id ?? $program->organization_id;
         $eventType = $event->eventType()->firstOrFail();
-        
+
         $isCustom = $eventType->isEventTypeCustom();
         $isBadge = $eventType->isEventTypeBadge();
         $isPeer2peer = $eventType->isEventTypePeer2Peer();
@@ -158,48 +216,44 @@ class AwardService
         $awardPoints = $awardAmount * $factor_valuation;
 
         // check for peer2peer and badge type
-        if ( $isPeer2peerBadge ) {
+        if ($isPeer2peerBadge) {
             $isPeer2peer = true;
-		}
-        if( $isPeer2peerBadge || $isMilestoneBadge ||  $isBirthdayBadge)
-        {
+        }
+        if ($isPeer2peerBadge || $isMilestoneBadge ||  $isBirthdayBadge) {
             $isBadge = true;
         }
 
         //Set notification type
         $notificationType = 'Award';
 
-        if( $isCustom )
-        {
+        if ($isCustom) {
             $notificationType = 'CustomAward';
         }
-        if( $isBadge )
-        {
+        if ($isBadge) {
             $notificationType = 'BadgeAward';
         }
-        if ( $isMilestoneAward ) {
+        if ($isMilestoneAward) {
             $notificationType = 'MilestoneAward';
         }
-        if ( $isMilestoneBadge ) {
+        if ($isMilestoneBadge) {
             $notificationType = 'MilestoneBadge';
         }
-        if ( $isBirthdayAward ) {
+        if ($isBirthdayAward) {
             $notificationType = 'BirthdayAward';
         }
-        if ( $isBirthdayBadge ) {
+        if ($isBirthdayBadge) {
             $notificationType = 'BirthdayBadge';
         }
-        if ( $isPeer2peer ){
+        if ($isPeer2peer) {
             $notificationType = 'PeerAward';
         }
 
         // Set amount 0 for badge awards
-        if( $isBadge )
-        {
+        if ($isBadge) {
             $awardAmount = 0;
         }
-        if ( $isPeer2peer ){
-            if (!$this->canPeerPayForAwards($program, $awarder, $awardAmount, [$awardee->id])){
+        if ($isPeer2peer) {
+            if (!$this->canPeerPayForAwards($program, $awarder, $awardAmount, [$awardee->id])) {
                 throw new Exception('Your program\'s account balance is too low to award.');
             }
             $escrowAccountTypeName = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
@@ -207,14 +261,14 @@ class AwardService
 
         $transactionFee = 0;
 
-        if( $isAutoAward || !$isPromotional ) {
-            if($awardAmount > 0){
-				$transactionFee = (new \App\Services\ProgramsTransactionFeeService)->calculateTransactionFee ( $program, $awardAmount );
+        if ($isAutoAward || !$isPromotional) {
+            if ($awardAmount > 0) {
+                $transactionFee = (new \App\Services\ProgramsTransactionFeeService)->calculateTransactionFee($program, $awardAmount);
                 $programService = resolve(\App\Services\ProgramService::class);
-				if ($transactionFee > 0 && ! $programService->canProgramPayForAwards ( $program, $event, [$awardee->id], $transactionFee )) {
-					throw new \RuntimeException ( "The program's balance is too low.", 400 );
-				}
-			}
+                if ($transactionFee > 0 && !$programService->canProgramPayForAwards($program, $event, [$awardee->id], $transactionFee)) {
+                    throw new \RuntimeException("The program's balance is too low.", 400);
+                }
+            }
         }
 
         $userId = $awardee->id;
@@ -243,21 +297,21 @@ class AwardService
 
         $userAccountHolderId = $awardee->account_holder_id;
         // continue;
-        if( $isInvoice4Awards )  {
+        if ($isInvoice4Awards) {
             $journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_POINTS_TO_RECIPIENT;
-		} else {
-			$journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT;
-		}
-
-		if ($event->only_internal_redeemable && $program->show_internal_store) {
-			$journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE;
-			$escrowCreditAccountTypeName = AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS;
-		} else if ( $isPromotional ) {
-        	$journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD;
-        	$escrowCreditAccountTypeName = AccountType::ACCOUNT_TYPE_PROMOTIONAL_POINTS;
+        } else {
+            $journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_AWARD_MONIES_TO_RECIPIENT;
         }
 
-        $journalEventTypeId = JournalEventType::getIdByType( $journalEventType );
+        if ($event->only_internal_redeemable && $program->show_internal_store) {
+            $journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_REDEEMABLE_ON_INTERNAL_STORE;
+            $escrowCreditAccountTypeName = AccountType::ACCOUNT_TYPE_INTERNAL_STORE_POINTS;
+        } else if ($isPromotional) {
+            $journalEventType = JournalEventType::JOURNAL_EVENT_TYPES_PROMOTIONAL_AWARD;
+            $escrowCreditAccountTypeName = AccountType::ACCOUNT_TYPE_PROMOTIONAL_POINTS;
+        }
+
+        $journalEventTypeId = JournalEventType::getIdByType($journalEventType);
 
         $liability = FinanceType::getIdByName('Liability');
         $asset = FinanceType::getIdByName('Asset', true);
@@ -297,7 +351,7 @@ class AwardService
             'created_at' => now()
         ]);
 
-        if( $escrowAccountTypeName != "")    {
+        if ($escrowAccountTypeName != "") {
             $result[$userId]['escrow_postings'] = Account::postings(
                 $awarderAccountHolderId,
                 $escrowAccountTypeName,
@@ -317,11 +371,10 @@ class AwardService
         }
 
         // pr('Run > awarder_postings');
-        if( $isInvoice4Awards )
-        {
+        if ($isInvoice4Awards) {
             // First posting i.e. if( $escrowAccountTypeName != "")... is done outside of this condition
             // "Monies Due to Owner/Points Available(conditional))" postings
-            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_POINTS_AVAILABLE;
+            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE;
             $result[$userId]['awarder_postings'] = Account::postings(
                 $program->account_holder_id,
                 AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
@@ -339,7 +392,7 @@ class AwardService
                 $currency_id
             );
             // "Points Available/Points Awarded(conditional)" postings
-            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_POINTS_AWARDED;
+            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
             $result[$userId]['awarder_postings'] = Account::postings(
                 $program->account_holder_id,
                 AccountType::ACCOUNT_TYPE_POINTS_AVAILABLE,
@@ -358,7 +411,7 @@ class AwardService
             );
 
             // "Monies Due to Owner/Monies Fees" (transaction fee) postings
-            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_MONIES_FEES;
+            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType::ACCOUNT_TYPE_MONIES_FEES;
             $result[$userId]['awarder_postings'] = Account::postings(
                 $program->account_holder_id,
                 AccountType::ACCOUNT_TYPE_MONIES_DUE_TO_OWNER,
@@ -378,7 +431,7 @@ class AwardService
         } else {
             // First posting i.e. if( $escrowAccountTypeName != "")... is done outside of this condition
             // 1st "Monies Available/Monies Awarded" postings
-            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType:: ACCOUNT_TYPE_MONIES_AWARDED;
+            $creditAccountTypeName = $escrowCreditAccountTypeName ? $escrowCreditAccountTypeName : AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
             // dump($creditAccountTypeName);
             $result[$userId]['awarder_postings'] = Account::postings(
                 $program->account_holder_id,
@@ -417,7 +470,7 @@ class AwardService
         // print_r( $userId );
 
         // If the program uses leaderboards get all the leaderboards that are tied to this event
-        if($program->uses_leaderboards)	{
+        if ($program->uses_leaderboards) {
             $leaderboardService = new LeaderboardService();
             $leaderboardService->createLeaderboardJournalEvent($event_id, $journalEventID);
         }
@@ -431,15 +484,13 @@ class AwardService
             'eventName' => $eventName,
         ];
 
-        if( $notificationType == 'PeerAward')
-        {
+        if ($notificationType == 'PeerAward') {
             $notification['awarder_first_name'] = $awarder->first_name;
             $notification['awarder_last_name'] = $awarder->last_name;
             $notification['availableAwardPoints'] = $awardee->readAvailableBalance($program) * $factor_valuation;
         }
 
-        if( $notificationType == 'CustomAward')
-        {
+        if ($notificationType == 'CustomAward') {
             $notification['restrictions'] = $restrictions;
         }
 
@@ -458,23 +509,22 @@ class AwardService
             $socialWallPostService->create($socialWallPostData, $program);
         }
 
-        if( $awardee->status()->first()->status == User::STATUS_NEW )
-        {
+        if ($awardee->status()->first()->status == User::STATUS_NEW) {
             $token = \Illuminate\Support\Facades\Password::broker()->createToken($awardee);
             event(new \App\Events\UserInvited($awardee, $program, $token));
         }
 
-        if(isset($dontSendEmail) && $dontSendEmail){
+        if (isset($dontSendEmail) && $dontSendEmail) {
             // no notification
         } else {
             $awardee->notify(new AwardNotification((object)$notification));
         }
 
-        (new \App\Services\PushNotificationService)->notifyUser( $awardee, [
-            'title'=>"You have a new reward!",
-            'body'=>$notificationBody,
-            'data'=>[ //to be consumed by the mobile app
-                'points_awarded'=>[
+        (new \App\Services\PushNotificationService)->notifyUser($awardee, [
+            'title' => "You have a new reward!",
+            'body' => $notificationBody,
+            'data' => [ //to be consumed by the mobile app
+                'points_awarded' => [
                     'points' => (int) $awardPoints,
                     'amount' => $awardAmount
                 ]
@@ -489,7 +539,6 @@ class AwardService
     }
     public function awardPeer2Peer(array $data, Event $event, Program $program, User $awarder)
     {
-
     }
 
     /**
@@ -517,33 +566,33 @@ class AwardService
 
         // return $programService->readAvailableBalance($program);
 
-        if ( !$programService->canProgramPayForAwards($program, $event, $userIds, $amount) ) {
+        if (!$programService->canProgramPayForAwards($program, $event, $userIds, $amount)) {
             throw new Exception('Your program\'s account balance is too low to allocate peer.');
         }
 
         if ($program->isShellProgram()) {
-            throw new InvalidArgumentException ('Invalid program passed, you cannot create an award in a shell program');
+            throw new InvalidArgumentException('Invalid program passed, you cannot create an award in a shell program');
         }
 
-        if ( ! $program->uses_peer2peer ) {
-            throw new InvalidArgumentException ('This program does not allow peer 2 peer allocation');
+        if (!$program->uses_peer2peer) {
+            throw new InvalidArgumentException('This program does not allow peer 2 peer allocation');
         }
 
         foreach ($userIds as $userId) {
             /** @var User $user */
             $user = User::findOrFail($userId);
 
-            if ( ! $user->canBeAwarded($program)) {
-                throw new InvalidArgumentException ("User cannot be rewarded. User Id: {$userId}");
+            if (!$user->canBeAwarded($program)) {
+                throw new InvalidArgumentException("User cannot be rewarded. User Id: {$userId}");
             }
         }
 
         if (in_array($currentUser->id, $userIds)) {
-            throw new InvalidArgumentException ('You can\'t award your own account');
+            throw new InvalidArgumentException('You can\'t award your own account');
         }
 
-        if ( ! $eventType->isEventTypePeer2PeerAllocation()) {
-            throw new InvalidArgumentException ("Event type must be peer2peer allocation. Current type: {$event->eventType()->first()->type}");
+        if (!$eventType->isEventTypePeer2PeerAllocation()) {
+            throw new InvalidArgumentException("Event type must be peer2peer allocation. Current type: {$event->eventType()->first()->type}");
         }
 
         $result = [];
@@ -552,7 +601,7 @@ class AwardService
             $users = User::whereIn('id', $userIds)->select(['id', 'account_holder_id', 'first_name'])->get();
             $event->program = $program;
             foreach ($users as $user) {
-                $this->awardPeer( $event, $user, $currentUser, $data);
+                $this->awardPeer($event, $user, $currentUser, $data);
             }
         } catch (Exception $e) {
             DB::rollBack();
@@ -561,10 +610,11 @@ class AwardService
         return $result;
     }
 
-    public function awardPeer( Event $event, User $awardee, User $awarder, array $data = null) {
+    public function awardPeer(Event $event, User $awardee, User $awarder, array $data = null)
+    {
         DB::beginTransaction();
 
-        try{
+        try {
             $userId = $awardee->id;
             $userAccountHolderId = $awardee->account_holder_id;
             $program = $event->program;
@@ -634,19 +684,19 @@ class AwardService
                 'awardNotificationBody' => $notificationBody,
                 'program' => $program
             ]));
-            (new \App\Services\PushNotificationService)->notifyUser( $awardee, [
-                'title'=>"You have a new peer reward!",
-                'body'=>$notificationBody,
-                'data'=>[ //to be consumed by the mobile app
-                    'points_awarded'=>[
+            (new \App\Services\PushNotificationService)->notifyUser($awardee, [
+                'title' => "You have a new peer reward!",
+                'body' => $notificationBody,
+                'data' => [ //to be consumed by the mobile app
+                    'points_awarded' => [
                         'points' => (int) $awardPoints,
                         'amount' => $amount
                     ]
                 ]
             ]);
             DB::commit();
-        } catch (\RuntimeException $e)  {
-            cronlog( sprintf( 'ERROR: could not award user:%d for error:%s', $awardee->id, $e->getMessage()));
+        } catch (\RuntimeException $e) {
+            cronlog(sprintf('ERROR: could not award user:%d for error:%s', $awardee->id, $e->getMessage()));
             DB::rollBack();
         }
     }
@@ -709,11 +759,11 @@ class AwardService
         );
 
         $query->where('users.account_holder_id', '=', $participant_account_holder_id);
-        $query->whereIn('account_types.name', [AccountType::ACCOUNT_TYPE_POINTS_AWARDED,AccountType::ACCOUNT_TYPE_MONIES_AWARDED]);
+        $query->whereIn('account_types.name', [AccountType::ACCOUNT_TYPE_POINTS_AWARDED, AccountType::ACCOUNT_TYPE_MONIES_AWARDED]);
         if (isset($extraArgs['onlyAwards']) && $extraArgs['onlyAwards'] == 1) {
             $query->whereNotNull('event_xml_data.id');
         }
-        $query->orderBy($order_column,$order_direction);
+        $query->orderBy($order_column, $order_direction);
 
         try {
             return [
@@ -729,26 +779,23 @@ class AwardService
     {
         $end_date_sql = $program->getPointsExpirationDateSql();
 
-		// build and run the query and store it into the $query variable for
-		// later use and validation of the $query object
+        // build and run the query and store it into the $query variable for
+        // later use and validation of the $query object
 
-		$reclaim_jet = [];
-		if ( $program->programIsInvoiceForAwards() )
-        {
-		    $account_name = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
-		    $reclaim_jet[] = "Reclaim points";
-		    $reclaim_jet[] = "Award credit reclaim points";
-		}
-        else
-        {
-		    $account_name = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
-			$reclaim_jet[] = "Reclaim monies";
-			$reclaim_jet[] = "Award credit reclaim monies";
+        $reclaim_jet = [];
+        if ($program->programIsInvoiceForAwards()) {
+            $account_name = AccountType::ACCOUNT_TYPE_POINTS_AWARDED;
+            $reclaim_jet[] = "Reclaim points";
+            $reclaim_jet[] = "Award credit reclaim points";
+        } else {
+            $account_name = AccountType::ACCOUNT_TYPE_MONIES_AWARDED;
+            $reclaim_jet[] = "Reclaim monies";
+            $reclaim_jet[] = "Award credit reclaim monies";
         }
-		// Get's the full list of points awarded and their expiration dates
-		// Note, we must get the full list awards to the user so we don't need to join back to the
-		// roles or programs this way. However, we do need to join back to the AWARDING program via the journal
-		// event so that we can tell where this award originated from
+        // Get's the full list of points awarded and their expiration dates
+        // Note, we must get the full list awards to the user so we don't need to join back to the
+        // roles or programs this way. However, we do need to join back to the AWARDING program via the journal
+        // event so that we can tell where this award originated from
 
         $query = DB::table('users');
 
@@ -811,28 +858,27 @@ class AwardService
         try {
             $result = $query->get();
 
-            if( $result->isNotEmpty() )
-            {
+            if ($result->isNotEmpty()) {
                 $accountService = resolve(\App\Services\AccountService::class);
                 // Get the points redeemed and expired
-                $points_redeemed = $accountService->readRedeemedTotalForParticipant ( $program, $user );
-                $points_expired = $accountService->readExpiredTotalForParticipant ( $program, $user );
+                $points_redeemed = $accountService->readRedeemedTotalForParticipant($program, $user);
+                $points_expired = $accountService->readExpiredTotalForParticipant($program, $user);
 
                 // // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successful
-                $points_reclaimed = $accountService->readReclaimedTotalForParticipant ( $program, $user );
+                $points_reclaimed = $accountService->readReclaimedTotalForParticipant($program, $user);
 
                 // pr($points_reclaimed);
                 // pr($points_expired);
                 // // Get the full list of reclaims, we need to do a "smart" whittle on these so that we...
-                $points_reclaimed_list = $accountService->readListParticipantPostingsByAccountAndJournalEvents ( $user->account_holder_id, $account_name, $reclaim_jet, 0 );
+                $points_reclaimed_list = $accountService->readListParticipantPostingsByAccountAndJournalEvents($user->account_holder_id, $account_name, $reclaim_jet, 0);
 
                 // ..."Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
-                if ( $points_reclaimed_list->isNotEmpty() ) {
-                    foreach ( $points_reclaimed_list as $reclaim_posting ) {
+                if ($points_reclaimed_list->isNotEmpty()) {
+                    foreach ($points_reclaimed_list as $reclaim_posting) {
                         if ($points_reclaimed <= 0) {
                             break;
                         }
-                        foreach ( $result as &$point_award3 ) {
+                        foreach ($result as &$point_award3) {
                             if ($points_reclaimed <= 0) {
                                 break;
                             }
@@ -862,7 +908,7 @@ class AwardService
                     }
                 }
                 // Finish the reclaim whittle using the regular method in case of errors
-                foreach ( $result as &$point_award4 ) {
+                foreach ($result as &$point_award4) {
                     if ($points_reclaimed <= 0) {
                         break;
                     }
@@ -883,7 +929,7 @@ class AwardService
 
                 // Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
                 // take away points that have been redeemed since we care about
-                foreach ( $result as &$point_award ) {
+                foreach ($result as &$point_award) {
                     if ($points_redeemed <= 0) {
                         break;
                     }
@@ -900,7 +946,7 @@ class AwardService
                     }
                 }
                 // take away points that have expired
-                foreach ( $result as &$point_award2 ) {
+                foreach ($result as &$point_award2) {
                     if ($points_expired <= 0) {
                         break;
                     }
@@ -917,9 +963,9 @@ class AwardService
                     }
                 }
                 // Remove any point awards that are now at 0
-                for($i = count ( $result ) - 1; $i >= 0; -- $i) {
-                    if ($result [$i]->amount <= 0) {
-                        unset ( $result [$i] );
+                for ($i = count($result) - 1; $i >= 0; --$i) {
+                    if ($result[$i]->amount <= 0) {
+                        unset($result[$i]);
                     }
                 }
                 // return array_values ( array_reverse( $result) );
@@ -937,38 +983,40 @@ class AwardService
     }
 
     /** readListReclaimablePeerPointsByProgramAndUser
-	 * v2 Alias: read_list_reclaimable_peer_points_by_program_and_user
-	 * @param Program $program
+     * v2 Alias: read_list_reclaimable_peer_points_by_program_and_user
+     * @param Program $program
      * @param User $user
      * @return Collection
-    */
-	public function readListReclaimablePeerPointsByProgramAndUser(Program $program, User $user) {
-		$result = $this->readListUnusedPeerAwards ( $program, $user );
-		return $result;
-	}
+     */
+    public function readListReclaimablePeerPointsByProgramAndUser(Program $program, User $user)
+    {
+        $result = $this->readListUnusedPeerAwards($program, $user);
+        return $result;
+    }
     /**
      * @method readListUnusedPeerAwards - alias to _read_list_unused_peer_awards
      *
-	 * @param Program $program
+     * @param Program $program
      * @param User $user
      * @return Collection
      * @throws Exception
      */
-	private function readListUnusedPeerAwards(Program $program, User $user) {
-		// build and run the query and store it into the $query variable for
-		// later use and validation of the $query object
-		$account_name = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
-		$reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
+    private function readListUnusedPeerAwards(Program $program, User $user)
+    {
+        // build and run the query and store it into the $query variable for
+        // later use and validation of the $query object
+        $account_name = AccountType::ACCOUNT_TYPE_PEER2PEER_POINTS;
+        $reclaim_jet = JournalEventType::JOURNAL_EVENT_TYPES_RECLAIM_PEER_POINTS;
 
-		// if (! $program->programIsInvoiceForAwards ()) {
+        // if (! $program->programIsInvoiceForAwards ()) {
         //     // throw new Exception('Function unsupported by this program.');
-		// 	$account_name = 'Monies Awarded';
-		// 	$reclaim_jet = "Reclaim monies";
-		// }
-		// Get's the full list of points awarded and their expiration dates
-		// Note, we must get the full list awards to the user so we don't need to join back to the
-		// roles or programs this way. However, we do need to join back to the AWARDING program via the journal
-		// event so that we can tell where this award originated from
+        // 	$account_name = 'Monies Awarded';
+        // 	$reclaim_jet = "Reclaim monies";
+        // }
+        // Get's the full list of points awarded and their expiration dates
+        // Note, we must get the full list awards to the user so we don't need to join back to the
+        // roles or programs this way. However, we do need to join back to the AWARDING program via the journal
+        // event so that we can tell where this award originated from
         $query = DB::table('users');
 
         $query->addSelect(
@@ -999,23 +1047,22 @@ class AwardService
         try {
             $result = $query->get();
 
-            if( $result->isNotEmpty() )
-            {
+            if ($result->isNotEmpty()) {
                 $accountService = resolve(\App\Services\AccountService::class);
                 // Get the points redeemed and expired
-                $points_redeemed = $accountService->readRedeemedTotalPeerPointsForParticipant (  $program, $user  );
+                $points_redeemed = $accountService->readRedeemedTotalPeerPointsForParticipant($program, $user);
                 // Get the total amount reclaimed, we can use this to verify that the "smart" whittle of reclaims was successfulreadReclaimedTotalPeerPointsForParticipant
-                $points_reclaimed = $accountService->readReclaimedTotalPeerPointsForParticipant( $program, $user );
+                $points_reclaimed = $accountService->readReclaimedTotalPeerPointsForParticipant($program, $user);
                 // Get the full list of reclaims, we need to do a "smart" whittle on these so that we
-                $points_reclaimed_list = $accountService->readListParticipantPostingsByAccountAndJournalEvents ( $user->account_holder_id, $account_name, $reclaim_jet, 0 );
+                $points_reclaimed_list = $accountService->readListParticipantPostingsByAccountAndJournalEvents($user->account_holder_id, $account_name, $reclaim_jet, 0);
                 // exit;
                 // "Smart" Whittle away the reclaims first making sure to match them up with the program id they were reclaimed to.
-                if ( $points_reclaimed_list->isNotEmpty() ) {
-                    foreach ( $points_reclaimed_list as $reclaim_posting ) {
+                if ($points_reclaimed_list->isNotEmpty()) {
+                    foreach ($points_reclaimed_list as $reclaim_posting) {
                         if ($points_reclaimed <= 0) {
                             break;
                         }
-                        foreach ( $result as &$point_award3 ) {
+                        foreach ($result as &$point_award3) {
                             if ($points_reclaimed <= 0) {
                                 break;
                             }
@@ -1045,7 +1092,7 @@ class AwardService
                     }
                 }
                 // Finish the reclaim whittle using the regular method in case of errors
-                foreach ( $result as &$point_award4 ) {
+                foreach ($result as &$point_award4) {
                     if ($points_reclaimed <= 0) {
                         break;
                     }
@@ -1062,7 +1109,7 @@ class AwardService
                 }
                 // Whittle away the points awarded by subtracting out the points redeemed and expired and removing entries that fall to 0
                 // take away points that have been redeemed since we care about
-                foreach ( $result as &$point_award ) {
+                foreach ($result as &$point_award) {
                     if ($points_redeemed <= 0) {
                         break;
                     }
@@ -1078,9 +1125,9 @@ class AwardService
                     }
                 }
             }
-            for($i = count ( $result ) - 1; $i >= 0; -- $i) {
-                if ($result [$i]->amount <= 0) {
-                    unset ( $result [$i] );
+            for ($i = count($result) - 1; $i >= 0; --$i) {
+                if ($result[$i]->amount <= 0) {
+                    unset($result[$i]);
                 }
             }
             return $result->reverse()->values();
@@ -1091,18 +1138,17 @@ class AwardService
 
     /**
      * @method reclaimPeerPoints - v2 (recliam_peer_points)
-	 *
-	 * @param Program $program
-	 * @param User $user
-	 * @param array $reclaimData
+     *
+     * @param Program $program
+     * @param User $user
+     * @param array $reclaimData
      * */
 
-    public function reclaimPeerPoints( Program $program, User $user, $reclaimData) {
-        if(sizeof($reclaimData) > 0)
-        {
+    public function reclaimPeerPoints(Program $program, User $user, $reclaimData)
+    {
+        if (sizeof($reclaimData) > 0) {
             $result = [];
-            foreach($reclaimData as $reclaim)
-            {
+            foreach ($reclaimData as $reclaim) {
                 $result[$user->id][] = $this->_reclaimPeerPoints($program, $user, $reclaim);
             }
             return $result;
@@ -1165,27 +1211,24 @@ class AwardService
         $authUser = auth()->user();
         $reclaimableList = $this->readListReclaimablePeerPointsByProgramAndUser($program, $user);
         $totalReclaimable = 0;
-        ['journal_event_id'=> $journal_event_id, 'amount' => $amount, 'note' => $notes] = $reclaim;
+        ['journal_event_id' => $journal_event_id, 'amount' => $amount, 'note' => $notes] = $reclaim;
 
-        $notes = strip_tags ( $notes, ALLOWED_HTML_TAGS );
+        $notes = strip_tags($notes, ALLOWED_HTML_TAGS);
 
-        if( $reclaimableList->isNotEmpty() )
-        {
-            foreach($reclaimableList as $reclaimablePosting)
-            {
+        if ($reclaimableList->isNotEmpty()) {
+            foreach ($reclaimableList as $reclaimablePosting) {
                 if ($reclaimablePosting->program_id != $program->id) {
                     continue;
                 }
                 $totalReclaimable += $reclaimablePosting->amount;
             }
 
-            if (compare_floats ( $totalReclaimable, $amount ) > 0) {
-                throw new InvalidArgumentException ( "The total reclaimable amount for this user is less than the amount trying to be reclaimed ({$totalReclaimable} < {$amount})" );
+            if (compare_floats($totalReclaimable, $amount) > 0) {
+                throw new InvalidArgumentException("The total reclaimable amount for this user is less than the amount trying to be reclaimed ({$totalReclaimable} < {$amount})");
             }
         }
 
-        if( $program->programIsInvoiceForAwards(true))
-        {
+        if ($program->programIsInvoiceForAwards(true)) {
             $result = null;
 
             DB::unprepared("LOCK TABLES postings WRITE, medium_info WRITE, journal_events WRITE;");
@@ -1227,10 +1270,10 @@ class AwardService
             $accountService = resolve(\App\Services\AccountService::class);
             $result = $accountService->posting($data);
             DB::commit();
-            DB::unprepared("UNLOCK TABLES;" );
+            DB::unprepared("UNLOCK TABLES;");
             return $result;
         } else {
-			throw new \RuntimeException ( "Program does not support this function." );
-		}
+            throw new \RuntimeException("Program does not support this function.");
+        }
     }
 }

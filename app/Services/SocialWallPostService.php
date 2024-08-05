@@ -64,10 +64,11 @@ class SocialWallPostService
         $uses_social_wall = (bool)$program->uses_social_wall;
         $can_view_hierarchy_social_wall = (bool)$program->can_view_hierarchy_social_wall;
         $social_wall_separation = (bool)$program->social_wall_separation;
+        $isManager = $request['isManager'] ?? false;
 
         $hierarchy = [];
         if ($uses_social_wall){
-            if ($social_wall_separation) {
+            if ($social_wall_separation && !$isManager) {
                 $hierarchy = $this->getOtherProgramIds($user);
             } else if ($can_view_hierarchy_social_wall) {
                 $hierarchy = $this->getHierarchyAllowOtherProgramIds($program);
