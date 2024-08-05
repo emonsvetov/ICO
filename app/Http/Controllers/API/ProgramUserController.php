@@ -82,7 +82,7 @@ class ProgramUserController extends Controller
 
         if ($keyword) {
             $query = $query->where(function ($query1) use ($keyword) {
-                $query1->orWhere('id', 'LIKE', "%{$keyword}%")
+                $query1->orWhere('users.id', 'LIKE', "%{$keyword}%")
                     ->orWhere('email', 'LIKE', "%{$keyword}%")
                     ->orWhere(DB::raw("CONCAT(first_name, ' ', last_name)"), 'LIKE', "%{$keyword}%")
                     ->orWhere(DB::raw("CONCAT(last_name, ' ', first_name)"), 'LIKE', "%{$keyword}%");
