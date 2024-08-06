@@ -933,6 +933,7 @@ Route::middleware(['auth:api', 'json.response', 'verified'])->group(function () 
         '/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/close',
         [App\Http\Controllers\API\BudgetProgramController::class, 'close']
     )->middleware('can:close,App\Models\BudgetProgram,organization,program,budgetProgram');
+    Route::post('/v1/organization/{organization}/program/{program}/budgetProgram/{budgetProgram}/upload-budget-program', [App\Http\Controllers\API\BudgetProgramController::class, 'uploadBudgetProgram'])->middleware('can:add,App\BudgetProgram,organization,program');
 
     //Budget Cascading
     Route::get('/v1/organization/{organization}/program/{program}/budgetprogram/{budgetProgram}/budgetcascading', [App\Http\Controllers\API\BudgetProgramController::class, 'getBudgetCascading'])->middleware('can:view,App\BudgetProgram,organization,program,budgetProgram');

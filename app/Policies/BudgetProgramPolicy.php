@@ -133,9 +133,12 @@ class BudgetProgramPolicy
      * @param  \App\Models\BudgetProgram  $budgetProgram
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function restore(User $user, BudgetProgram $budgetProgram)
+    public function add(User $user,Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-        //
+        if(!$this->__preAuthCheck($user, $organization, $program)) return false;
+        if($user->isAdmin()) return true;
+        if($user->isManagerToProgram($program)) return true;
+        return $user->can('budget-program-upload');
     }
 
     /**

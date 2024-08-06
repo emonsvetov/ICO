@@ -14,6 +14,8 @@ use App\Models\Program;
 use RuntimeException;
 use Exception;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+
 
 class BudgetProgramService
 {
@@ -313,5 +315,106 @@ class BudgetProgramService
     public function getManageBudgetTemplateCSVStream(Program $program, BudgetProgram $budgetProgram)
     {
         //templete
+    }
+
+    public function getManageBudgetUpload(Request $request, Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    {
+        $validated = $this->validate_CSVUpload($request);
+        if (empty($validated['from']) || empty($validated['to'])) {
+            throw new \Symfony\Component\HttpKernel\Exception\HttpException(400, "Invalid budget program manage request. ");
+        }
+        $year = Carbon::now()->year;
+        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        $data = [];
+        $monthData = [];
+        if ($validated['from']->Budget_Type == "Monthly") {
+            $data['budget_type'] = $validated['from']->Budget_Type;
+            $itemMonthData = [];
+            foreach ($validated['to'] as $key => $toProgram) {
+                foreach ($toProgram as $key => $value) {
+                    // Check if the key is a month name
+                    dump($value);
+                    if (in_array($key, $months)) {
+                        // Add the month data to the itemMonthData array
+                        $itemMonthData[$key] = $value;
+                    }
+                }
+               
+                // $data["budgetAmount"][$key] = [
+                //     "program_id" => $toProgram->Assign_Budget_to_Program_Id,
+                //     "budgets" => ["year" => $year, "month" => $toProgram->July, "nextMonth" => $toProgram->August]
+                // ];
+            }
+            $monthData[] = $itemMonthData;
+            dump($monthData);
+            // dump($data);
+        }
+        // $this->assignBudget($budgetProgram, $data);
+        die;
+    }
+
+
+    private function validate_CSVUpload($request)
+    {
+        $file = $request->file('file');
+
+        if ($file instanceof \Illuminate\Http\UploadedFile) {
+            $fromProgram = [];
+            $toProgram = [];
+            $filepath = $file->getRealPath();
+
+            $handle = fopen($filepath, 'r');
+            $headersFrom = [];
+            $headersTo = [];
+            $line = 0;
+            $fromFields = ["Total_Budget", "Remaining_Budget", "Budget_Type", "Budget_Start_Date", "Budget_End_Date"];
+            $toFields = ["Assign_Budget_to_Program_Id", "Assign_Budget_to_program_Name", "July", "August"];
+            while (($filedata = fgetcsv($handle)) !== FALSE) {
+                if ($line == 0) {
+                    foreach ($filedata as $key => $value) {
+                        $headersFrom[trim($value)] = $key;
+                    }
+                    $line++;
+
+                    continue;
+                }
+                if ($line == 1) {
+                    // $fromRules = $csvImportRequest->fromRules(); //TODO, dont remove
+                    foreach ($fromFields as $csvField) {
+                        $csvFieldValue = isset($headersFrom[$csvField]) ? trim($filedata[$headersFrom[$csvField]]) : NULL;
+                        $fromProgram[str_replace('Total_Budget_', '', $csvField)] = $csvFieldValue;
+
+                    }
+                    $line++;
+                    continue;
+                }
+                if ($line == 2) {
+                    $line++;
+                    continue;
+                }
+                if ($line > 2) {
+                    foreach ($filedata as $key => $value) {
+                        $headersTo[trim($value)] = $key;
+
+                    }
+                    $toProgramRow = [];
+                    foreach ($toFields as $csvField) {
+
+                        $csvFieldValue = isset($headersTo[$csvField]) ? trim($filedata[$headersTo[$csvField]]) : NULL;
+                        $toProgramRow[str_replace('Assign_Budget_to_Program_Id_', '', $csvField)] = $csvFieldValue;
+
+                    }
+                    $toProgram[] = (object) $toProgramRow;
+                    $line++;
+                    continue;
+                }
+            }
+            if ($fromProgram && $toProgram) {
+
+                array_shift($toProgram);
+                return ['from' => (object) $fromProgram, 'to' => $toProgram];
+            }
+
+        }
     }
 }

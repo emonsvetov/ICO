@@ -256,4 +256,11 @@ class BudgetProgramController extends Controller
     {
         //return response()->stream(...($this->budgetProgramService->getManageBudgetTemplateCSVStream($program, $budgetProgram)));
     }
+
+    public function uploadBudgetProgram(Request $request, Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    {
+        $budgetProgramManage = $this->budgetProgramService->getManageBudgetUpload($request, $organization, $program, $budgetProgram);
+        return response($budgetProgramManage);
+    }
+
 }
