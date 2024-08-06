@@ -33,10 +33,12 @@ class BudgetProgramService
     public function createBudgetProgram(array $data)
     {
         try {
+            $program = new Program();
+            $program_id = $program->get_top_level_program_id($data['program_id']);
             $existingBudget = BudgetProgram::where('budget_start_date', '<=', $data['budget_end_date'])
                 ->where('budget_end_date', '>=', $data['budget_start_date'])
                 ->where('budget_type_id', $data['budget_type_id'])
-                ->where('program_id', $data['program_id'])
+                ->where('program_id', $program_id)
                 ->first();
 
             if ($existingBudget) {
@@ -48,7 +50,7 @@ class BudgetProgramService
 
             return BudgetProgram::create([
                 'budget_type_id' => $data['budget_type_id'],
-                'program_id' => $data['program_id'],
+                'program_id' => $program_id,
                 'budget_amount' => $data['budget_amount'],
                 'remaining_amount' => $data['budget_amount'],
                 'budget_start_date' => $data['budget_start_date'],
