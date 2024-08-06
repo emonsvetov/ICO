@@ -150,4 +150,70 @@ class ProgramApprovalService
             return $programApproval->position_levels()->detach($positionLevelIds);
         }
     }
+
+
+    public function getAwardApprovalStepData($programId, $userId)
+    {
+        try {
+            $result = [];
+
+            // Fetch parent program ID
+            $parentProgramId = Program::getTopLevelProgramId($programId); // Assuming getTopLevelProgramId is a static method in Program model
+
+            // Fetch approval flow program ID
+            $approvalFlowProgramID = ProgramApproval::getApprovalsProgramId($programId); // Assuming getApprovalsProgramId is a static method in ProgramApproval model
+
+            if (empty($approvalFlowProgramID)) {
+                return $result;
+            }
+
+            // Build the main query using Laravel Query Builder
+            $queryResult = ProgramApproval::select('pa.*', 'p.allow_same_step_approval')
+                ->join('programs as p', 'p.account_holder_id', '=', 'pa.program_id')
+                ->join('program_approval_assignment as paa', 'paa.program_approval_id', '=', 'pa.id')
+                ->join('position_levels as pl', 'pl.id', '=', 'paa.position_level_id')
+                ->join('position_assignment as a', 'a.position_level_id', '=', 'pl.id')
+                ->where('pa.status', 1)
+                ->where('pa.program_id', $approvalFlowProgramID)
+                ->where('a.user_id', $userId)
+                ->where('pa.program_parent_id', $parentProgramId)
+                ->whereIn('a.program_id', function ($query) use ($programId) {
+                    $query->select('ancestor')
+                        ->from('program_paths')
+                        ->where('descendant', $programId);
+                })
+                ->orderBy('pa.step')
+                ->first();
+
+            // If queryResult is not empty, check awarder_position_id and return if conditions met
+            if (!empty($queryResult)) {
+                if ($queryResult->allow_same_step_approval == 1) {
+                    $awarderPositionId = ApprovalRelation::where('program_approval_id', $queryResult->id)
+                        ->where('awarder_position_id', $queryResult->position_level_id)
+                        ->value('awarder_position_id');
+                    if ($awarderPositionId > 0) {
+                        return $queryResult;
+                    }
+                }
+            }
+
+            // Build second query based on conditions
+            $secondQueryResult = ProgramApproval::where('status', 1)
+                ->where('program_id', $approvalFlowProgramID)
+                ->where('program_parent_id', $parentProgramId);
+
+            if (!empty($queryResult)) {
+                $secondQueryResult->where('step', '>', $queryResult->step);
+            } else {
+                $secondQueryResult->where('step', 1);
+            }
+
+            $result = $secondQueryResult->orderBy('step')
+                ->first();
+
+            return $result;
+        } catch (\Exception $ex) {
+            throw new \RuntimeException($ex->getMessage(), 500);
+        }
+    }
 }
