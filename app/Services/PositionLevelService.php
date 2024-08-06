@@ -19,7 +19,10 @@ class PositionLevelService
         $name = 'l' . $level;
         try {
             // Check if the title already exists, including soft deleted records
-            $existingPositionLevel = PositionLevel::withTrashed()->where('title', $data['title'])->first();
+            $existingPositionLevel = PositionLevel::withTrashed()
+                ->where('title', $data['title'])
+                ->where('program_id', $program_id)
+                ->first();
 
             if ($existingPositionLevel) {
                 if ($existingPositionLevel->trashed()) {
@@ -49,15 +52,15 @@ class PositionLevelService
         return $positionLevel->update($data);
     }
 
-    public function getPositionLevelList(Program $program, $filters = ['deleted'=>false, 'active'=>true])
+    public function getPositionLevelList(Program $program, $filters = ['deleted' => false, 'active' => true])
     {
         $query = $program->position_levels();
 
-        if( $filters['deleted'] ) {
+        if ($filters['deleted']) {
             $query->withTrashed();
         }
 
-        if( $filters['active'] ) {
+        if ($filters['active']) {
             $query->where('status', 1);
         }
 

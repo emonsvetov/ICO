@@ -23,12 +23,8 @@ class PositionLevelController extends Controller
     {
         $data = $positionLevelRequest->validated();
         $data = $data + ['program_id' => $program->id];
-        try {
-            $positionLevel = $this->positionLevelService->createPositionLevel($data);
-            return response($positionLevel);
-        } catch (\Exception $e) {
-            return response(['errors' => $e->getMessage(), 422]);
-        }
+        $positionLevel = $this->positionLevelService->createPositionLevel($data);
+        return response($positionLevel);
     }
 
     public function index(Organization $organization, Program $program)
