@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\UniqueTitle;
 
 class PositionLevelRequest extends FormRequest
 {
@@ -23,8 +24,9 @@ class PositionLevelRequest extends FormRequest
      */
     public function rules()
     {
+        $programId = $this->route('program')->id;
         return [
-            'title' => 'required|string',
+            'title' => ['required', 'string', new UniqueTitle($programId)],
             'name' => 'string',
             'level' => 'integer',
             'status' => 'boolean',

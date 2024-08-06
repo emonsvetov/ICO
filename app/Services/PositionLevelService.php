@@ -18,22 +18,6 @@ class PositionLevelService
         }
         $name = 'l' . $level;
         try {
-            // Check if the title already exists, including soft deleted records
-            $existingPositionLevel = PositionLevel::withTrashed()
-                ->where('title', $data['title'])
-                ->where('program_id', $program_id)
-                ->first();
-
-            if ($existingPositionLevel) {
-                if ($existingPositionLevel->trashed()) {
-                    // Title already exists and is inactive
-                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Title already exists and inactive');
-                } else {
-                    // Title already exists and is active
-                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Title already exists');
-                }
-            }
-
             return PositionLevel::create([
                 'name' => $name,
                 'title' => $data['title'],
