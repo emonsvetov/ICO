@@ -37,8 +37,8 @@ class BudgetProgramController extends Controller
 
     public function index(Organization $organization, Program $program)
     {
-        $program = new Program();
-        $program_id = $program->get_top_level_program_id($program->id);
+        $p_program = new Program();
+        $program_id = $p_program->get_top_level_program_id($program->id);
         $budgetPrograms = BudgetProgram::where('program_id', $program_id)
             ->with('budget_types')
             ->get();
@@ -98,8 +98,8 @@ class BudgetProgramController extends Controller
     public function getBudgetCascadingApproval(Organization $organization, Program $program, string $title, Request $request)
     {
         if ($title) {
-            $program = new Program();
-            $program_id = $program->get_top_level_program_id($program->id);
+            $p_program = new Program();
+            $program_id = $p_program->get_top_level_program_id($program->id);
             $approved = $title == 'manage-approvals' ? 1 : ($title == "cascading-approvals" ? 0 : response([]));
             self::$query = BudgetCascadingApproval::where('program_id', $program_id)
                 ->where('approved', $approved)
