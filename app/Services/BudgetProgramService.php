@@ -38,24 +38,13 @@ class BudgetProgramService
     public function createBudgetProgram(array $data)
     {
         try {
-            $program = new Program();
-            $program_id = $program->get_top_level_program_id($data['program_id']);
-            $existingBudget = BudgetProgram::where('budget_start_date', '<=', $data['budget_end_date'])
-                ->where('budget_end_date', '>=', $data['budget_start_date'])
-                ->where('budget_type_id', $data['budget_type_id'])
-                ->where('program_id', $program_id)
-                ->first();
-
-            if ($existingBudget) {
-                throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Budget already exists for the selected duration');
-            }
             if ($data['budget_amount'] <= 0) {
-                throw new \Symfony\Component\HttpKernel\Exception\HttpException(403, 'Budget Amount should be grater than 0');
+                throw new Exception('Budget Amount should be grater than 0');
             }
 
             return BudgetProgram::create([
                 'budget_type_id' => $data['budget_type_id'],
-                'program_id' => $program_id,
+                'program_id' => $data['program_id'],
                 'budget_amount' => $data['budget_amount'],
                 'remaining_amount' => $data['budget_amount'],
                 'budget_start_date' => $data['budget_start_date'],
@@ -87,7 +76,6 @@ class BudgetProgramService
     {
         $total_amount = $budgetProgram->budget_amount;
         $rem_amount = $budgetProgram->remaining_amount;
-
         $budgetProgramId = $budgetProgram->id;
         $parent_program_id = $data['parent_program_id'];
         $budgetAmounts = $data['budget_amount'];
@@ -176,7 +164,6 @@ class BudgetProgramService
 
         $budgetProgram->remaining_amount = $updated_amount;
         $budgetProgram->save();
-
         return $budgetRecord;
     }
 
@@ -315,7 +302,7 @@ class BudgetProgramService
         ];
     }
 
-    public function getBudgetCascadingApproval(Program $program, $title,Request $request)
+    public function getBudgetCascadingApproval(Program $program, $title, Request $request)
     {
         if ($title) {
             $p_program = new Program();
@@ -335,7 +322,7 @@ class BudgetProgramService
 
             // Paginate the results
             $cascadingApprovals = self::$query->paginate($limit, ['*'], 'page', $page);
-           
+
             $cascading = [];
             foreach ($cascadingApprovals as $key => $cascadingApproval) {
                 $approved_by = $cascadingApproval['approved_by']['first_name'] . ' ' . $cascadingApproval['approved_by']['last_name'] ?? '';
@@ -412,6 +399,7 @@ class BudgetProgramService
             $approvals = BudgetCascadingApproval::whereIn('id', $ids)->get();
             foreach ($approvals as $approval) {
                 $updatedAmount = $approval->budget_cascading->budget_amount_remaining + $approval->amount;
+
                 BudgetCascading::where('id', $approval->budgets_cascading_id)
                     ->update(['budget_amount_remaining' => $updatedAmount]);
             }
