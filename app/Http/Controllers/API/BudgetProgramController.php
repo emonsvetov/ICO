@@ -93,7 +93,7 @@ class BudgetProgramController extends Controller
 
     public function getBudgetCascadingApproval(Organization $organization, Program $program, string $title, Request $request)
     {
-        $getBudgetProgram = $this->budgetProgramService->getBudgetCascadingApproval($program, $title, $request,);
+        $getBudgetProgram = $this->budgetProgramService->getBudgetCascadingApproval($program, $title, $request);
         return response($getBudgetProgram);
     }
 

@@ -315,7 +315,7 @@ class BudgetProgramService
         ];
     }
 
-    public function getBudgetCascadingApproval($program, $title, Request $request)
+    public function getBudgetCascadingApproval(Program $program, $title,Request $request)
     {
         if ($title) {
             $p_program = new Program();
@@ -335,7 +335,7 @@ class BudgetProgramService
 
             // Paginate the results
             $cascadingApprovals = self::$query->paginate($limit, ['*'], 'page', $page);
-
+           
             $cascading = [];
             foreach ($cascadingApprovals as $key => $cascadingApproval) {
                 $approved_by = $cascadingApproval['approved_by']['first_name'] . ' ' . $cascadingApproval['approved_by']['last_name'] ?? '';
@@ -352,7 +352,7 @@ class BudgetProgramService
             }
 
             if ($cascadingApprovals->count() > 0) {
-                return response()->json([
+                return [
                     'current_page' => $cascadingApprovals->currentPage(),
                     'data' => $cascading,
                     'first_page_url' => $cascadingApprovals->url(1),
@@ -377,9 +377,9 @@ class BudgetProgramService
                     'prev_page_url' => $cascadingApprovals->previousPageUrl(),
                     'to' => $cascadingApprovals->lastItem(),
                     'total' => $cascadingApprovals->total(),
-                ]);
+                ];
             }
-            return response()->json([]);
+            return $cascadingApprovals;
         }
     }
 
@@ -401,7 +401,7 @@ class BudgetProgramService
                 }
             }
         }
-        return response()->json(['message' => 'Approval status updated successfully.']);
+        return ['message' => 'Approval status updated successfully.'];
     }
 
     public function revokeBudgetCascadingApproval($data)
@@ -416,10 +416,10 @@ class BudgetProgramService
                     ->update(['budget_amount_remaining' => $updatedAmount]);
             }
 
-            BudgetCascadingApproval::whereIn('id', $ids)->delete();
+            return BudgetCascadingApproval::whereIn('id', $ids)->delete();
         }
 
-        return response()->json(['message' => 'Revoked successfully.']);
+        return false;
     }
 
     public function getPendingCascadingApproval($participant)
@@ -439,9 +439,9 @@ class BudgetProgramService
             $cascading[$key]['date_of_award_submission'] = $cascadingApproval['scheduled_date'];
         }
         if ($cascading) {
-            return response($cascading);
+            return $cascading;
         }
-        return response([]);
+        return [];
     }
 
     public function awardsPending(Program $program)
@@ -450,9 +450,9 @@ class BudgetProgramService
             ->where('approved', 0)
             ->count();
 
-        return response()->json([
+        return [
             'pending_count' => $pendingCount
-        ], 200);
+        ];
     }
 
     public function manageScheduleDate($data)
@@ -461,7 +461,7 @@ class BudgetProgramService
         $approver = auth()->user();
         BudgetCascadingApproval::whereIn('id', $data['budget_cascading_approval_id'])
             ->update(['scheduled_date' => $data['scheduled_date'], 'action_by' => $approver->id]);
-        return response()->json(['message' => 'Scheduled Date updated successfully.']);
+        return ['message' => 'Scheduled Date updated successfully.'];
     }
 
     public function getManageBudgetTemplateCSVStream(Program $program, BudgetProgram $budgetProgram)
