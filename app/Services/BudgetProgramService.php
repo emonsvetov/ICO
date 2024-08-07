@@ -24,6 +24,10 @@ class BudgetProgramService
 
     const ASSIGN_BUDGET_CSV_FROM_HEADER = ["Total Budget", "Remaining Budget", "Budget Type", "Budget Start Date", "Budget End Date"];
     const ASSIGN_BUDGET_CSV_TO_HEADER = ["Assign Budget to Program Id", "Assign Budget to program Name"];
+    const MONTHLY=1;
+    const MONTHLY_ROLLOVER=2;
+    const SPECIFIED_PERIOD=3;
+    const YEARLY=4;
 
     public function getAllBudgetTypes()
     {
@@ -81,7 +85,7 @@ class BudgetProgramService
         $budgetAmounts = $data['budget_amount'];
         $processedBudgets = [];
 
-        if ($data['budget_type'] == '1') {
+        if ($data['budget_type'] == self::MONTHLY) {
             foreach ($budgetAmounts as $programData) {
                 $programId = $programData['program_id'];
                 $budgets = $programData['budgets'];
