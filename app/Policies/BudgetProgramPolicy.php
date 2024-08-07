@@ -12,11 +12,11 @@ use Illuminate\Auth\Access\HandlesAuthorization;
 class BudgetProgramPolicy
 {
     use HandlesAuthorization;
-	
-	private function __preAuthCheck($user, $organization, $program, BudgetProgram $budgetProgram = null): bool
+
+    private function __preAuthCheck($user, $organization, $program, BudgetProgram $budgetProgram = null): bool
     {
-        if( $organization->id != $user->organization_id ) return false;
-        if( $organization->id != $program->organization_id ) return false;
+        if ($organization->id != $user->organization_id) return false;
+        if ($organization->id != $program->organization_id) return false;
         return true;
     }
 
@@ -26,11 +26,11 @@ class BudgetProgramPolicy
      * @param  \App\Models\User  $user
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function viewAny(User $user,Organization $organization, Program $program)
+    public function viewAny(User $user, Organization $organization, Program $program)
     {
-        if(!$this->__preAuthCheck($user, $organization, $program)) return false;
-        if($user->isAdmin()) return true;
-        if($user->isManagerToProgram($program)) return true;
+        if (!$this->__preAuthCheck($user, $organization, $program)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-list');
     }
 
@@ -41,11 +41,11 @@ class BudgetProgramPolicy
      * @param  \App\Models\BudgetProgram  $budgetProgram
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function view(User $user, Organization $organization, Program $program,BudgetProgram $budgetProgram)
+    public function view(User $user, Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-        if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
-        if($user->isAdmin()) return true;
-        if($user->isManagerToProgram($program)) return true;
+        if (!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-view');
     }
 
@@ -55,11 +55,11 @@ class BudgetProgramPolicy
      * @param  \App\Models\User  $user
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function create(User $user,Organization $organization, Program $program)
+    public function create(User $user, Organization $organization, Program $program)
     {
-       if(!$this->__preAuthCheck($user, $organization, $program)) return false;
-        if($user->isAdmin()) return true;
-        if($user->isManagerToProgram($program)) return true;
+        if (!$this->__preAuthCheck($user, $organization, $program)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-create');
     }
 
@@ -70,19 +70,19 @@ class BudgetProgramPolicy
      * @param  \App\Models\BudgetProgram  $budgetProgram
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function update(User $user,Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    public function update(User $user, Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-        if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
-        if($user->isAdmin()) return true;
-        if($user->isManagerToProgram($program)) return true;
+        if (!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-update');
     }
 
-    public function updateCascadingApprovals(User $user,Organization $organization, Program $program)
+    public function updateCascadingApprovals(User $user, Organization $organization, Program $program)
     {
-        if(!$this->__preAuthCheck($user, $organization, $program)) return false;
-        if($user->isAdmin()) return true;
-        if($user->isManagerToProgram($program)) return true;
+        if (!$this->__preAuthCheck($user, $organization, $program)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
         return $user->can('budget-program-updateCascadingApprovals');
     }
 
@@ -93,60 +93,35 @@ class BudgetProgramPolicy
      * @param  \App\Models\BudgetProgram  $budgetProgram
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function delete(User $user, Organization $organization, Program $program,BudgetProgram $budgetProgram)
+    public function delete(User $user, Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-       if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
-       if($user->isAdmin()) return true;
-       if($user->isManagerToProgram($program)) return true;
-       return $user->can('budget-program-delete');
+        if (!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
+        return $user->can('budget-program-delete');
     }
 
-    public function close(User $user, Organization $organization, Program $program,BudgetProgram $budgetProgram)
+    public function close(User $user, Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-       if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
-       if($user->isAdmin()) return true;
-       if($user->isManagerToProgram($program)) return true;
-       return $user->can('budget-program-close');
+        if (!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
+        return $user->can('budget-program-close');
     }
 
-    public function assign(User $user, Organization $organization, Program $program,BudgetProgram $budgetProgram)
-    { 
-       if(!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
-       if($user->isAdmin()) return true;
-       if($user->isManagerToProgram($program)) return true;
-       return $user->can('budget-program-assign');
+    public function assign(User $user, Organization $organization, Program $program, BudgetProgram $budgetProgram)
+    {
+        if (!$this->__preAuthCheck($user, $organization, $program, $budgetProgram)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
+        return $user->can('budget-program-assign');
     }
-
 
     public function revokeApproval(User $user, Organization $organization, Program $program)
     {
-       if(!$this->__preAuthCheck($user, $organization, $program)) return false;
-       if($user->isAdmin()) return true;
-       if($user->isManagerToProgram($program)) return true;
-       return $user->can('budget-program-revokeApproval');
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\BudgetProgram  $budgetProgram
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function restore(User $user, BudgetProgram $budgetProgram)
-    {
-        //
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\BudgetProgram  $budgetProgram
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function forceDelete(User $user, BudgetProgram $budgetProgram)
-    {
-        //
+        if (!$this->__preAuthCheck($user, $organization, $program)) return false;
+        if ($user->isAdmin()) return true;
+        if ($user->isManagerToProgram($program)) return true;
+        return $user->can('budget-program-revokeApproval');
     }
 }

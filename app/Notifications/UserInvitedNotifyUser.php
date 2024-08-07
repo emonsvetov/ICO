@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Services\DomainService;
+use App\Services\HostService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -48,9 +50,20 @@ class UserInvitedNotifyUser extends Notification
      * @return \Illuminate\Notifications\Messages\MailMessage
      * @throws \Exception
      */
-    public function toMail($notifiable)
+    public function toMail($notifiablem)
     {
+        $domainService = new DomainService(new HostService());
         $url = app()->call('App\Services\DomainService@makeUrl'); //This to be removed, URL already set in SendgridEmail.php
+        if ($domainService->isAdminAppDomain()){
+            $defaultDomain = $this->program->defaultDomain;
+            if ($defaultDomain){
+                $defaultDomain = $defaultDomain[0];
+                $port = $defaultDomain->port;
+                $scheme = $defaultDomain->scheme ?? 'http';
+                $url =  $scheme . '://' . $defaultDomain->name . ($port ? ':' . $port : '');
+            }
+        }
+
         $tokenUrl = $url . '/invitation?token=' . $this->token;
         return (new InviteParticipantEmail($this->recepient->name, $tokenUrl, $this->program))->convertToMailMessage();
     }

@@ -29,7 +29,7 @@ class BudgetProgram extends Model
     {
         return $this->belongsTo(BudgetType::class, 'budget_type_id');
     }
-    
+
     public function budget_cascading()
     {
         return $this->hasMany(BudgetCascading::class);
@@ -39,15 +39,4 @@ class BudgetProgram extends Model
     {
         return $this->belongsTo(Program::class);
     }
-
-
-    /*protected $fillable = [
-        'budget_type_id',
-        'program_id ',
-        'budget_amount',
-        'remaining_amount',
-        'budget_start_date',
-        'budget_end_date',
-        'status',
-    ];*/
 }
