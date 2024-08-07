@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use App\Rules\UniqueBudgetDuration;
 
 class BudgetProgramRequest extends FormRequest
 {
@@ -23,12 +24,17 @@ class BudgetProgramRequest extends FormRequest
      */
     public function rules()
     {
-         return [
+        $programId = $this->route('program')->id;
+        $budgetTypeId = $this->input('budget_type_id');
+        $startDate = $this->input('budget_start_date');
+        $endDate = $this->input('budget_end_date');
+
+        return [
             'budget_type_id' => 'required|integer',
-            'budget_amount' => 'numeric',
+            'budget_amount' => 'numeric|min:1',
             'remaining_amount' => 'numeric',
-            'budget_start_date' => 'date',
-            'budget_end_date' => 'date',
+            'budget_start_date' => ['required', 'date'],
+            'budget_end_date' => ['required', 'date', new UniqueBudgetDuration($programId, $budgetTypeId, $startDate, $endDate)],
         ];
     }
 }

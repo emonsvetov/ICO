@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\PositionLevel; 
+use App\Models\PositionLevel;
 use App\Models\User;
 use App\Models\Organization;
 use App\Models\Program;
@@ -14,9 +14,9 @@ class PositionLevelPolicy
 
     private function __preAuthCheck($authUser, $organization, $program, PositionLevel $positionLevel = null): bool
     {
-        if( $organization->id != $authUser->organization_id ) return false;
-        if( $organization->id != $program->organization_id ) return false;
-        if( $positionLevel && $positionLevel->program_id != $program->id ) return false;
+        if ($organization->id != $authUser->organization_id) return false;
+        if ($organization->id != $program->organization_id) return false;
+        if ($positionLevel && $positionLevel->program_id != $program->id) return false;
         return true;
     }
 
@@ -28,8 +28,8 @@ class PositionLevelPolicy
      */
     public function viewAny(User $authUser, Organization $organization, Program $program)
     {
-        if(!$this->__preAuthCheck($authUser, $organization, $program)) return false;
-        if($authUser->isAdmin()) return true;
+        if (!$this->__preAuthCheck($authUser, $organization, $program)) return false;
+        if ($authUser->isAdmin()) return true;
         return $authUser->can('position-level-list');
     }
 
@@ -40,11 +40,11 @@ class PositionLevelPolicy
      * @param  \App\Models\PositionLevel  $positionLevel
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function view(User $authUser, Organization $organization, Program $program,PositionLevel $positionLevel)
+    public function view(User $authUser, Organization $organization, Program $program, PositionLevel $positionLevel)
     {
-        if(!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
-        if($authUser->isAdmin()) return true;
-        if($authUser->isManagerToProgram($program)) return true;
+        if (!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
+        if ($authUser->isAdmin()) return true;
+        if ($authUser->isManagerToProgram($program)) return true;
         return $authUser->can('position-level-view');
     }
 
@@ -54,10 +54,10 @@ class PositionLevelPolicy
      * @param  \App\Models\User  $authUser
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function create(User $authUser ,Organization $organization, Program $program)
+    public function create(User $authUser, Organization $organization, Program $program)
     {
-        if(!$this->__preAuthCheck($authUser, $organization, $program)) return false;
-        if($authUser->isAdmin()) return true;
+        if (!$this->__preAuthCheck($authUser, $organization, $program)) return false;
+        if ($authUser->isAdmin()) return true;
         return $authUser->can('position-level-create');
     }
 
@@ -68,10 +68,10 @@ class PositionLevelPolicy
      * @param  \App\Models\PositionLevel  $levelNumber
      * @return \Illuminate\Auth\Access\Response|bool
      */
-    public function update(User $authUser, Organization $organization, Program $program,PositionLevel $positionLevel)
+    public function update(User $authUser, Organization $organization, Program $program, PositionLevel $positionLevel)
     {
-        if(!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
-        if($authUser->isAdmin()) return true;
+        if (!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
+        if ($authUser->isAdmin()) return true;
         return $authUser->can('position-level-update');
     }
 
@@ -84,32 +84,8 @@ class PositionLevelPolicy
      */
     public function delete(User $authUser, Organization $organization, Program $program, PositionLevel $positionLevel)
     {
-        if(!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
-        if($authUser->isAdmin()) return true;
+        if (!$this->__preAuthCheck($authUser, $organization, $program, $positionLevel)) return false;
+        if ($authUser->isAdmin()) return true;
         return $authUser->can('position-level-delete');
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\PositionLevel  $positionLevel
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function restore(User $user, PositionLevel $positionLevel)
-    {
-        //
-    }
-
-    /**
-     * Determine whether the user can permanently delete the model.
-     *
-     * @param  \App\Models\User  $user
-     * @param  \App\Models\PositionLevel  $positionLevel
-     * @return \Illuminate\Auth\Access\Response|bool
-     */
-    public function forceDelete(User $user, PositionLevel $positionLevel)
-    {
-        //
     }
 }
