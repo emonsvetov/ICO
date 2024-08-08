@@ -14,7 +14,7 @@ class PositionLevelPolicy
 
     private function __preAuthCheck($authUser, $organization, $program, PositionLevel $positionLevel = null): bool
     {
-        if ($organization->id != $authUser->organization_id) return false;
+        if (!$authUser->belongsToOrg($organization)) return false;
         if ($organization->id != $program->organization_id) return false;
         if ($positionLevel && $positionLevel->program_id != $program->id) return false;
         return true;
