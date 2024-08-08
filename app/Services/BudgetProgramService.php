@@ -429,6 +429,7 @@ class BudgetProgramService
             $cascading[$key]['created_date'] = $cascadingApproval['created_at'];
             $cascading[$key]['submitted_by'] = $cascadingApproval['requestor']['first_name'] . ' ' . $cascadingApproval['requestor']['last_name'];
             $cascading[$key]['date_of_award_submission'] = $cascadingApproval['scheduled_date'];
+            $cascading[$key]['awarder_id'] = $cascadingApproval['awarder_id'];
         }
         if ($cascading) {
             return $cascading;
