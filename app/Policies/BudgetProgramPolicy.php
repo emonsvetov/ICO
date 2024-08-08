@@ -15,7 +15,8 @@ class BudgetProgramPolicy
 
     private function __preAuthCheck($user, $organization, $program, BudgetProgram $budgetProgram = null): bool
     {
-        if ($organization->id != $user->organization_id) return false;
+        //if ($organization->id != $user->organization_id) return false;
+        if (!$user->belongsToOrg($organization)) return false;
         if ($organization->id != $program->organization_id) return false;
         return true;
     }
