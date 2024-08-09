@@ -24,10 +24,11 @@ class BudgetProgramService
 
     const ASSIGN_BUDGET_CSV_FROM_HEADER = ["Total Budget", "Remaining Budget", "Budget Type", "Budget Start Date", "Budget End Date"];
     const ASSIGN_BUDGET_CSV_TO_HEADER = ["Assign Budget to Program Id", "Assign Budget to program Name"];
-    const MONTHLY=1;
-    const MONTHLY_ROLLOVER=2;
-    const SPECIFIED_PERIOD=3;
-    const YEARLY=4;
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const MONTHLY = 1;
+    const MONTHLY_ROLLOVER = 2;
+    const SPECIFIED_PERIOD = 3;
+    const YEARLY = 4;
 
     public function getAllBudgetTypes()
     {
@@ -464,90 +465,141 @@ class BudgetProgramService
 
     public function getManageBudgetUpload(Request $request, Organization $organization, Program $program, BudgetProgram $budgetProgram)
     {
-        $validated = $this->validate_CSVUpload($request);
+        $validated = $this->validate_budget_CSVUpload($request);
         if (empty($validated['from']) || empty($validated['to'])) {
-            throw new \Symfony\Component\HttpKernel\Exception\HttpException(400, "Invalid budget program manage request. ");
+            throw new Exception("Invalid budget program manage request.");
         }
-        $year = Carbon::now()->year;
-        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        $data = [];
-        $monthData = [];
-        if ($validated['from']->Budget_Type == "Monthly") {
-            $data['budget_type'] = $validated['from']->Budget_Type;
-            $itemMonthData = [];
-            foreach ($validated['to'] as $key => $toProgram) {
-                foreach ($toProgram as $key => $value) {
-                    // Check if the key is a month name
-                    dump($value);
-                    if (in_array($key, $months)) {
-                        // Add the month data to the itemMonthData array
-                        $itemMonthData[$key] = $value;
+
+        $p_program = new Program();
+        $p_program_id = $p_program->get_top_level_program_id($program->id);
+        $budget_type = $validated['from']->Budget_Type;
+        $programsToUpdate = [];
+        $newPrograms = [];
+        foreach ($validated['to'] as $toProgram) {
+            $monthData = [];
+            $program_id = $toProgram->Assign_Budget_to_Program_Id;
+
+            if ($budget_type == "Monthly") {
+                foreach (self::MONTHS as $month) {
+                    if (!empty($toProgram->$month) && (float) $toProgram->$month > 0) {
+                        $monthDates = $this->getMonthStartAndEndDate($month, Carbon::createFromFormat('d-m-Y', $validated['from']->Budget_Start_Date)->year);
+
+                        $monthData[] = [
+                            'month' => $month,
+                            'start_date' => $monthDates['start_date'],
+                            'end_date' => $monthDates['end_date'],
+                            'amount' => (float) $toProgram->$month,
+                        ];
                     }
                 }
 
-                // $data["budgetAmount"][$key] = [
-                //     "program_id" => $toProgram->Assign_Budget_to_Program_Id,
-                //     "budgets" => ["year" => $year, "month" => $toProgram->July, "nextMonth" => $toProgram->August]
-                // ];
+                if (!empty($monthData)) {
+                    foreach ($monthData as $data) {
+                        // Check if the budget program already exists
+                        $existingBudgetProgram = $this->checkExistingBudgetCascadingData($program_id, $data);
+                        if ($existingBudgetProgram) {
+                            $programsToUpdate[] = [
+                                'id' => $existingBudgetProgram->id,
+                                'month' => strtolower($data['month']),
+                                'amount' => $data['amount']
+                            ];
+                        }
+                    }
+                }
+            } else {
+                $data = [
+                    "start_date" => $validated["from"]->Budget_Start_Date,
+                    "end_date" => $validated["from"]->Budget_End_Date
+                ];
+                $existingBudgetProgram = $this->checkExistingBudgetCascadingData($program_id, $data);
+
+                if ($existingBudgetProgram) {
+                    BudgetCascading::where('id', $existingBudgetProgram->id)
+                        ->update(['budget_amount' => $toProgram->Amount]);
+                } else {
+                    if (!empty($toProgram->Amount)) {
+                        $newPrograms[] = BudgetCascading::create([
+                            'program_id' => $program_id,
+                            'parent_program_id' => $p_program_id,
+                            'budget_program_id' => $budgetProgram->id,
+                            'budget_start_date' => date("Y-m-t", strtotime($validated["from"]->Budget_Start_Date)),
+                            'budget_end_date' => date("Y-m-t", strtotime($validated["from"]->Budget_End_Date)),
+                            'budget_amount' => $toProgram->Amount,
+                            'budget_amount_remaining' => $toProgram->Amount,
+                            'reason_for_budget_change' => "assign budget"
+                        ]);
+                    }
+                }
             }
-            $monthData[] = $itemMonthData;
-            dump($monthData);
-            // dump($data);
+            // Perform bulk updates
+            foreach ($programsToUpdate as $updateData) {
+                BudgetCascading::where('id', $updateData['id'])
+                    ->update([$updateData['month'] => $updateData['amount']]);
+            }
         }
-        // $this->assignBudget($budgetProgram, $data);
-        die;
+        return ['message' => 'Budget data imported successfully'];
     }
 
-
-    private function validate_CSVUpload($request)
+    private function validate_budget_CSVUpload($request)
     {
-        $file = $request->file('file');
-
+        $file = $request->file('budget_program_file');
         if ($file instanceof \Illuminate\Http\UploadedFile) {
             $fromProgram = [];
             $toProgram = [];
             $filepath = $file->getRealPath();
-
             $handle = fopen($filepath, 'r');
+            $budgetType = "";
             $headersFrom = [];
             $headersTo = [];
             $line = 0;
             $fromFields = ["Total_Budget", "Remaining_Budget", "Budget_Type", "Budget_Start_Date", "Budget_End_Date"];
-            $toFields = ["Assign_Budget_to_Program_Id", "Assign_Budget_to_program_Name", "July", "August"];
+            $toFields = ["Assign_Budget_to_Program_Id", "Assign_Budget_to_program_Name"];
             while (($filedata = fgetcsv($handle)) !== FALSE) {
                 if ($line == 0) {
                     foreach ($filedata as $key => $value) {
                         $headersFrom[trim($value)] = $key;
                     }
                     $line++;
-
                     continue;
                 }
                 if ($line == 1) {
-                    // $fromRules = $csvImportRequest->fromRules(); //TODO, dont remove
                     foreach ($fromFields as $csvField) {
                         $csvFieldValue = isset($headersFrom[$csvField]) ? trim($filedata[$headersFrom[$csvField]]) : NULL;
                         $fromProgram[str_replace('Total_Budget_', '', $csvField)] = $csvFieldValue;
-
+                        if ($csvField == "Budget_Type") {
+                            $budgetType = $filedata[$headersFrom[$csvField]];
+                        }
                     }
                     $line++;
                     continue;
                 }
                 if ($line == 2) {
+                    if ($budgetType == "yearly") {
+                        foreach ($filedata as $key => $value) {
+                            if ($value == "Amount") {
+                                $toFields[trim("Amount")] = $value;
+                            }
+                            $headersTo[trim($value)] = $key;
+                        }
+                    }
                     $line++;
                     continue;
                 }
                 if ($line > 2) {
                     foreach ($filedata as $key => $value) {
+                        if ($budgetType == "Monthly") {
+                            foreach (self::MONTHS as $m_key => $m_value) {
+                                if ($m_value == $value) {
+                                    $toFields[trim($m_value)] = $value;
+                                }
+                            }
+                        }
                         $headersTo[trim($value)] = $key;
-
                     }
                     $toProgramRow = [];
                     foreach ($toFields as $csvField) {
-
                         $csvFieldValue = isset($headersTo[$csvField]) ? trim($filedata[$headersTo[$csvField]]) : NULL;
                         $toProgramRow[str_replace('Assign_Budget_to_Program_Id_', '', $csvField)] = $csvFieldValue;
-
                     }
                     $toProgram[] = (object) $toProgramRow;
                     $line++;
@@ -555,11 +607,27 @@ class BudgetProgramService
                 }
             }
             if ($fromProgram && $toProgram) {
-
-                array_shift($toProgram);
-                return ['from' => (object) $fromProgram, 'to' => $toProgram];
+                $toProgramData =  $budgetType == "Monthly" ? array_shift($toProgram) : $toProgram;
+                return ['from' => (object) $fromProgram, 'to' => $toProgramData,];
             }
-
         }
+    }
+
+    public function getMonthStartAndEndDate(string $monthName, int $year): array
+    {
+        $date = Carbon::parse("first day of $monthName $year");
+        return [
+            'start_date' => $date->startOfMonth()->format('Y-m-d'),
+            'end_date' => $date->endOfMonth()->format('Y-m-d'),
+        ];
+    }
+
+    public function checkExistingBudgetCascadingData($program_id, $data)
+    {
+        $existingBudgetProgram = BudgetProgram::where('program_id', $program_id)
+            ->where('budget_start_date', $data['start_date'])
+            ->where('budget_end_date', $data['end_date'])
+            ->first();
+        return $existingBudgetProgram;
     }
 }
